@@ -68,15 +68,15 @@ No Supabase or PayMongo yet.
 
 Customer:
 
-- [ ] Home
-- [ ] Our Creations
-- [ ] Orders
-- [ ] Feedback
+- [x] Home
+- [x] Our Creations
+- [x] Orders
+- [x] Feedback
 
 Admin:
 
-- [ ] Dashboard
-- [ ] Order Management
+- [x] Dashboard
+- [x] Order Management
 
 After each:
 
@@ -94,19 +94,19 @@ After each:
 
 Extend existing design language.
 
-- [ ] Login
-- [ ] Checkout shell
-- [ ] Terms
-- [ ] Privacy
-- [ ] Payment success
-- [ ] Payment failed
-- [ ] Order detail shell
-- [ ] Admin Products shell
-- [ ] Admin Inventory shell
-- [ ] Admin Pickup shell
-- [ ] Admin Promotions shell
-- [ ] Admin Feedback shell
-- [ ] Admin Settings shell
+- [x] Login
+- [x] Checkout shell
+- [x] Terms
+- [x] Privacy
+- [x] Payment success
+- [x] Payment failed
+- [x] Order detail shell
+- [x] Admin Products shell
+- [x] Admin Inventory shell
+- [x] Admin Pickup shell
+- [x] Admin Promotions shell
+- [x] Admin Feedback shell
+- [x] Admin Settings shell
 
 Still use mock data.
 
