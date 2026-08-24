@@ -255,14 +255,13 @@ A task is complete when:
 
 ---
 
-## 19. Git Delivery
+## 19. Git Handoff
 
 After completing and validating approved implementation work:
 
 1. Review `git status` and the final diff.
-2. Stage only files that belong to the requested task.
-3. Use a concise commit message that describes the completed scope.
-4. Provide the exact commit and push commands in the final handoff.
-5. If the user explicitly requests Git delivery, commit and push the changes and report the branch and commit hash.
+2. Report whether the entire requested feature is finished.
+3. Report validation results and any unresolved issues.
+4. Provide a concise suggested Git commit message that describes the completed scope.
 
-Never push directly to `main` unless the user explicitly authorizes it.
+Do not stage, commit, or push changes. The user handles all Git operations manually in the terminal.
