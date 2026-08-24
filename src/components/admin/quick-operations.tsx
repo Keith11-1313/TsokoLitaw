@@ -3,14 +3,14 @@ import Link from "next/link";
 
 const operations = [
   {
-    title: "Add New Product",
-    description: "Insert customized batches and pricing",
+    title: "Manage Catalog",
+    description: "Boxes, coatings, add-ons, images, and prices",
     icon: PlusCircle,
     href: "/admin/products",
   },
   {
     title: "View All Orders",
-    description: "Fulfill deliveries and update state",
+    description: "Review campus pickup and fulfillment state",
     icon: ClipboardList,
     href: "/admin/orders",
   },

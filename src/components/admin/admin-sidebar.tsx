@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 
 interface AdminNavigationItem { href: string; label: string; icon: LucideIcon }
 const adminNavigation: AdminNavigationItem[] = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard }, { href: "/admin/orders", label: "Orders", icon: ShoppingBag }, { href: "/admin/products", label: "Products", icon: Cookie }, { href: "/admin/inventory", label: "Inventory", icon: Package }, { href: "/admin/pickup", label: "Pickup", icon: CalendarDays }, { href: "/admin/promotions", label: "Promotions", icon: BadgePercent }, { href: "/admin/customers", label: "Customers", icon: Users }, { href: "/admin/reviews", label: "Reviews", icon: MessageSquare }, { href: "/admin/journal", label: "Journal", icon: Newspaper }, { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard }, { href: "/admin/orders", label: "Orders", icon: ShoppingBag }, { href: "/admin/products", label: "Catalog", icon: Cookie }, { href: "/admin/inventory", label: "Inventory", icon: Package }, { href: "/admin/pickup", label: "Pickup", icon: CalendarDays }, { href: "/admin/promotions", label: "Promotions", icon: BadgePercent }, { href: "/admin/customers", label: "Customers", icon: Users }, { href: "/admin/reviews", label: "Reviews", icon: MessageSquare }, { href: "/admin/journal", label: "Journal", icon: Newspaper }, { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function AdminSidebar({ activePath, adminName = "Administrator", adminEmail = "Admin email to be configured", className }: { activePath?: string; adminName?: string; adminEmail?: string; className?: string }) {

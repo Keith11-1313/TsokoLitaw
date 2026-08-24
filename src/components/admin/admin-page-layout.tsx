@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AdminScopeNote } from "@/components/admin/admin-scope-note";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminContent } from "@/components/layout/admin-content";
 
@@ -6,6 +7,8 @@ interface AdminPageLayoutProps {
   activePath: string;
   title: string;
   description: string;
+  purpose: string;
+  customerImpact: string;
   actions?: ReactNode;
   children: ReactNode;
 }
@@ -14,6 +17,8 @@ export function AdminPageLayout({
   activePath,
   title,
   description,
+  purpose,
+  customerImpact,
   actions,
   children,
 }: AdminPageLayoutProps) {
@@ -29,6 +34,7 @@ export function AdminPageLayout({
           </div>
           {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
         </header>
+        <div className="mt-6"><AdminScopeNote purpose={purpose} customerImpact={customerImpact} /></div>
         <div className="mt-8">{children}</div>
       </AdminContent>
     </AdminShell>

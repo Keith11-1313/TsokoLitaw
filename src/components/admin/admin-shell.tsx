@@ -12,7 +12,7 @@ export function AdminShell({ activePath, children }: AdminShellProps) {
       <AdminSidebar
         activePath={activePath}
         adminName="Chef Administrator"
-        adminEmail="owner@tsokolitaw.ph"
+        adminEmail="tsokolitaw@gmail.com"
       />
       {children}
     </div>

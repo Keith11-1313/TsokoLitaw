@@ -3,22 +3,6 @@ import { ArrowRight } from "lucide-react";
 import { adminOrders } from "@/components/admin/admin-order-data";
 import { StatusBadge } from "@/components/ui/status-badge";
 
-const dashboardDates = [
-  "Today, 10:45 AM",
-  "Today, 09:12 AM",
-  "Today, 08:30 AM",
-  "Yesterday",
-  "Yesterday",
-] as const;
-
-const dashboardItems = [
-  "Choco Litaw (Box of 6)",
-  "Cha-cha Litaw x2, SB Litaw",
-  "Caramel Litaw (Box of 12)",
-  "Choco Chips Add-on, Choco Litaw",
-  "Melted Chocolate cup, SB Litaw",
-] as const;
-
 export function RecentOrdersTable() {
   return (
     <section className="rounded-card border border-border bg-surface p-6 pb-[1.375rem]" aria-labelledby="recent-orders-heading">
@@ -56,20 +40,20 @@ export function RecentOrdersTable() {
             </tr>
           </thead>
           <tbody>
-            {adminOrders.slice(0, 5).map((order, index) => (
+            {adminOrders.slice(0, 5).map((order) => (
               <tr key={order.id} className="h-14 border-b border-border last:border-b-0">
                 <th className="px-4 font-bold text-foreground" scope="row">
                   {order.id}
                 </th>
                 <td className="px-4 text-foreground">{order.customer}</td>
                 <td className="max-w-[15rem] truncate px-4 text-muted-foreground">
-                  {dashboardItems[index]}
+                  {order.items}
                 </td>
                 <td className="px-4 font-bold text-foreground">{order.total}</td>
                 <td className="px-4">
                   <StatusBadge status={order.status} label={order.statusLabel} />
                 </td>
-                <td className="px-4 text-muted-foreground">{dashboardDates[index]}</td>
+                <td className="px-4 text-muted-foreground">{order.date}</td>
               </tr>
             ))}
           </tbody>

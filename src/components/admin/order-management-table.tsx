@@ -27,7 +27,7 @@ export function OrderManagementTable() {
             <tr className="h-[3.75rem] bg-surface-muted text-xs text-foreground">
               <th className="rounded-l-control px-4 font-bold">ID</th>
               <th className="px-4 font-bold">Customer</th>
-              <th className="px-4 font-bold">Email</th>
+              <th className="px-4 font-bold">Contact Email</th>
               <th className="px-4 font-bold">Items Ordered</th>
               <th className="px-4 font-bold">Qty</th>
               <th className="px-4 font-bold">Total</th>
@@ -80,7 +80,7 @@ export function OrderManagementTable() {
       </div>
 
       <footer className="flex flex-col gap-4 pt-8 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <p>Showing 1 to 8 of 245 orders</p>
+        <p>Showing all 8 mock orders</p>
         <nav className="flex items-center gap-2" aria-label="Order pagination">
           <button
             type="button"
