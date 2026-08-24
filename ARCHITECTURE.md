@@ -4,6 +4,18 @@
 
 Build a maintainable mobile-first storefront and admin interface in one Next.js codebase. Avoid microservices in V1.
 
+## Decision Traceability
+
+Architecture follows the workflows and rationale in `DECISIONS.md`. A UI decision is not isolated presentation work when it changes domain meaning. For example:
+
+- changing flavors to coatings changes catalog types, pricing validation, order snapshots, and admin controls
+- moving reviews behind completed orders changes authorization, uniqueness constraints, and moderation flow
+- using email as primary contact changes profile requirements and notification planning
+- campus pickup removes delivery-address data and adds controlled date/time/location records
+- moving My Orders into Account changes route protection and authentication behavior
+
+Update the architecture and proposed database whenever an approved UI decision changes one of these domain rules.
+
 ## 2. Current UI Architecture
 
 ```text
@@ -11,12 +23,33 @@ Next.js App Router
 ├── Server Components for static page composition
 ├── Client Components for interactive UI
 ├── Tailwind CSS design tokens
-├── Mock data modules
+├── Shared commerce and pickup mock-domain modules
 ├── localStorage cart
+├── localStorage account-state preview
 └── Local brand and product assets
 ```
 
 There is currently no database, authentication, payment provider, API, webhook, or email integration.
+
+Current customer/admin relationship:
+
+```text
+Shared mock commerce data
+├── Our Creations
+└── Admin Catalog
+
+Shared mock pickup data
+├── Checkout
+├── Admin Pickup
+└── Admin Settings defaults
+
+Aligned mock orders
+├── Customer My Orders
+├── Admin Orders
+└── Dashboard summaries
+```
+
+This relationship prevents UI drift. It does not make admin controls persistent or secure.
 
 Client Components are limited to interactions such as:
 
@@ -83,11 +116,13 @@ src/
 │   ├── layout/          # Content containers
 │   ├── orders/          # Order list/detail UI
 │   └── ui/              # Shared controls and tokens
-├── lib/                 # Commerce helpers and mock data
+├── lib/                 # Shared commerce, pickup, and order mock data
 └── types/               # Explicit domain types
 ```
 
 Business rules should move out of presentation components as backend work begins.
+
+Customer and admin previews must consume shared mock constants where they represent the same operational data. Admin Catalog and Our Creations share commerce constants; Admin Pickup and Checkout share pickup constants. This prevents UI drift but is not persistence or backend connectivity.
 
 ## 6. Current Cart
 

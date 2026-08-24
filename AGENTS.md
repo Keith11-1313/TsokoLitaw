@@ -5,13 +5,16 @@
 Read these first:
 
 1. `REQUIREMENTS.md`
-2. `ARCHITECTURE.md`
-3. `DATABASE.md`
-4. `DESIGN.md`
-5. `TASKS.md`
-6. `README.md`
+2. `DECISIONS.md`
+3. `ARCHITECTURE.md`
+4. `DATABASE.md`
+5. `DESIGN.md`
+6. `TASKS.md`
+7. `README.md`
 
 Inspect relevant existing code and assets before changing UI.
+
+`DECISIONS.md` explains why established workflows exist. Do not reverse an approved decision because an older reference or unused component shows different behavior.
 
 ## 2. Current Project Stage
 
@@ -24,6 +27,7 @@ Allowed:
 - local component state
 - browser-local cart state
 - static routes and temporary UI interactions
+- frontend-only authentication preview state for testing protected customer screens
 - local product photography and placeholders
 
 Do not implement unless the user explicitly starts a later phase:
@@ -109,6 +113,9 @@ Admin stays under `/admin` until subdomain configuration is explicitly authorize
 - Prefer Server Components unless interaction requires a Client Component.
 - Use Tailwind CSS and existing tokens.
 - Reuse existing components before adding variants.
+- Use shared mock/domain constants when customer and admin UI represent the same data; do not maintain contradictory page-local copies.
+- Every admin feature must have a clear operational purpose and customer impact. Mark unconnected controls as mock UI.
+- When an approved product decision changes workflow or domain meaning, update `DECISIONS.md` and every affected root specification in the same task.
 - Mobile-first responsive behavior.
 - Semantic HTML, labels, keyboard support, visible focus, and meaningful alt text.
 - Avoid unnecessary dependencies and premature abstraction.

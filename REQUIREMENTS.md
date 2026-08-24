@@ -4,7 +4,22 @@
 
 TsokoLitaw is a mobile-first B2C storefront for a student-operated Filipino dessert business. It sells chocolate-filled Litaw in configurable boxes for campus pickup.
 
-The product must eventually support browsing, customization, cart, checkout, online payment, order tracking, verified reviews, promotions, loyalty, and administration.
+The product must eventually support browsing, customization, cart, checkout, online payment, order tracking, completed-order-linked reviews, promotions, loyalty, and administration.
+
+## Decision Governance
+
+`DECISIONS.md` is the rationale record for these requirements. Requirements define what must be true; the decision log explains why the workflow and UI were chosen.
+
+Do not restore discarded rough-draft behavior—such as public Feedback, delivery addresses, outdated flavors, duplicate Order Now navigation, or Vlog-only content—without a new explicit product decision and synchronized documentation update.
+
+Workflow changes must be reflected together in:
+
+- customer requirements
+- admin requirements and customer impact
+- architecture/data flow
+- proposed database constraints
+- design behavior and states
+- implementation tasks
 
 ## 2. Delivery Stages
 
@@ -13,6 +28,7 @@ The product must eventually support browsing, customization, cart, checkout, onl
 - Next.js, React, TypeScript, and Tailwind UI
 - mock product, customer, order, and admin data
 - temporary client-side component interactions
+- frontend-only signed-in and signed-out preview state for protected account UI
 - browser-local cart persistence
 - static payment and account previews
 - no secure or persistent backend behavior
@@ -97,7 +113,7 @@ Profile UI includes:
 
 - name
 - read-only Google email
-- mobile number
+- optional mobile number; Google email is the primary contact method
 - loyalty progress
 - recent-order/account shortcuts
 
@@ -164,7 +180,7 @@ Future checkout collects:
 
 - full name
 - Google account email
-- mobile number
+- optional mobile number
 - pickup date
 - pickup time
 - pickup location
@@ -206,7 +222,7 @@ Reviews:
 - no unnecessary public personal data
 - admin may hide spam, abusive, illegal, or invalid content
 
-Selected verified reviews may appear as community highlights in the Journal.
+Selected order-linked reviews may appear as community highlights in the Journal.
 
 ## 11. Journal
 
@@ -216,7 +232,7 @@ Journal replaces Vlog and may contain:
 - kitchen stories
 - product features
 - customer stories
-- selected verified reviews
+- selected order-linked reviews
 - videos
 
 Admin requires Journal management for draft/published content and featured review selection.

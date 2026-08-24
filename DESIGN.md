@@ -13,6 +13,26 @@ Priority order:
 3. Responsive and accessibility requirements
 4. Rough reference PNGs
 
+The reasons behind established behavior are recorded in `DECISIONS.md`.
+
+## Workflow-Driven UI Rationale
+
+UI structure must communicate the real workflow rather than merely resemble a draft image.
+
+| UI choice | Workflow reason |
+| --- | --- |
+| Our Creations is the shopping entry | It owns product discovery and box configuration |
+| Cart is a separate header action | It owns line-item editing and the transition to Checkout |
+| My Orders is inside Account | It is private customer activity, not public navigation |
+| Mobile builder appears before coatings | Customers need configuration context before scanning all choices |
+| Mixed-box counters are on coating cards | Allocation happens piece by piece against visible coating options |
+| Terms and Privacy are in Footer and Checkout | They remain accessible and appear where acceptance matters |
+| Reviews begin on completed order details | Review eligibility is tied to a specific fulfilled order |
+| Journal replaces Vlog | Announcements and stories are not always videos |
+| Admin pages show purpose and connection | Mock controls must not imply a live customer change |
+
+When visual polish conflicts with workflow clarity, preserve the workflow and adjust the presentation around it.
+
 ## 2. Customer Design Language
 
 The storefront should feel warm, appetizing, calm, and recognizably Filipino.
@@ -126,8 +146,11 @@ Admin:
 - `AdminPageLayout`
 - `AdminStatCard`
 - `AdminDataTable`
+- `AdminScopeNote`
 
 Reuse these before adding page-local alternatives. Do not abstract tiny one-use fragments without a concrete reuse case.
+
+Every admin area should explain its purpose, customer impact, and current connection state. Do not use “active,” “open,” or similar live-system language for behavior that is only a mock preview.
 
 ## 6. Product Presentation
 

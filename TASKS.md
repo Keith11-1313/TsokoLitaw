@@ -4,6 +4,15 @@
 
 The project has completed the broad static UI phase. The next major phase is UI review and refinement, followed by backend planning and Supabase setup only after explicit approval.
 
+## Decision Baseline
+
+- [x] Record approved workflow and architecture rationale in `DECISIONS.md`
+- [x] Align Requirements, Architecture, Database, Design, Tasks, README, and AGENTS with the decision record
+- [x] Treat rough references as historical direction, not overriding requirements
+- [x] Document why customer navigation, account access, coatings, pickup, reviews, Journal, and Admin changed
+- [x] Document current mock-data connections and future server-authoritative boundaries
+- [ ] Update all affected root documentation whenever a future product decision changes
+
 ## Phase 0 — Project Foundation
 
 - [x] Initialize Next.js App Router
@@ -82,6 +91,11 @@ The project has completed the broad static UI phase. The next major phase is UI 
 - [x] Remove editable Store Name
 - [x] Add responsive tables and mobile navigation drawer
 - [x] Disable backend-dependent actions with explanations
+- [x] Align Admin Catalog with the three box sizes, seven coatings, add-on, images, and PHP prices
+- [x] Align Admin Pickup with Checkout dates, times, locations, and pickup rules
+- [x] Align admin and customer mock order products, coatings, totals, and statuses
+- [x] Add purpose, customer-impact, and connection guidance to every admin area
+- [x] Share customer/admin mock commerce and pickup constants
 - [ ] Review dense admin screens at small tablet widths
 
 ## Phase 5 — UI Quality Assurance

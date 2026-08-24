@@ -6,6 +6,24 @@ No database has been implemented. This document describes the proposed Supabase 
 
 Before implementation, convert this design into reviewed migrations, constraints, indexes, RLS policies, and seed data.
 
+## Decision-to-Schema Mapping
+
+The proposed schema follows `DECISIONS.md` and the current workflow:
+
+| Product decision | Database consequence |
+| --- | --- |
+| Google email is primary; mobile is optional | `profiles.email` required through Auth identity; `mobile_number` nullable |
+| Boxes have 4, 6, or 8 pieces | `product_variants.piece_count` and price records |
+| Choices are coatings, not flavors | dedicated `coatings` table |
+| Mixed boxes allocate every piece | `order_item_coatings.piece_count` totals must match the item snapshot |
+| First coating type is included | snapshot which type was included and price additional distinct types server-side |
+| Campus pickup only | pickup date, window, and location references; no delivery-address requirement |
+| Reviews require completed orders | unique review per order plus ownership/status validation |
+| Journal supports multiple content types | `journal_posts.content_type`, publication state, and optional media |
+| Admin mirrors customer operations | admin mutations update the same catalog, pickup, order, review, and Journal records customers consume |
+
+Do not create migrations directly from rough reference content. Reconfirm the decision log and business-policy items first.
+
 ## 2. Profiles
 
 ### `profiles`

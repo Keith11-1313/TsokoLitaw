@@ -2,6 +2,12 @@
 
 TsokoLitaw is a mobile-first storefront and administration interface for a Filipino chocolate-filled Litaw business operating through campus pickup.
 
+## Decision Record
+
+[`DECISIONS.md`](DECISIONS.md) explains the product, workflow, UI, and architecture decisions made during review. It records why navigation was simplified, why products are modeled as boxes and coatings, why reviews are order-linked, why Vlog became Journal, how Admin relates to Customer, and what remains intentionally unconnected.
+
+Read it before changing established workflows. The rough PNG references do not override these approved decisions.
+
 ## Current Status
 
 The project is in the **UI-only phase**.
@@ -14,8 +20,10 @@ Implemented with mock data:
 - single-coating and mixed-box selection
 - browser-local cart with quantity and totals
 - static checkout, account, profile, order, review, payment, and legal screens
+- frontend-only signed-in and signed-out preview state for testing protected account screens
 - Journal for announcements, stories, product features, and community highlights
 - responsive admin dashboard and management screens
+- admin purpose/customer-impact/connection guidance on every management area
 
 Not implemented:
 
@@ -27,6 +35,10 @@ Not implemented:
 - admin authorization or admin subdomain routing
 
 All current customer, order, payment, account, and admin data is mock data. Disabled actions identify features that require future backend work.
+
+Customer Catalog and Checkout currently share their mock commerce and pickup constants with the matching admin screens. This keeps the UI previews aligned, but admin controls do not persist changes until a database and server mutations are implemented.
+
+The account preview starts signed in so Profile and My Orders can be reviewed. Logging out stores a frontend-only signed-out state and redirects protected account pages to Login. Login can restore the preview state; this does not authenticate or create an account.
 
 ## Technology
 
@@ -114,6 +126,15 @@ These browser values are previews. Future checkout pricing must be recalculated 
 ## Project Structure
 
 ```text
+AGENTS.md
+ARCHITECTURE.md
+DATABASE.md
+DECISIONS.md
+DESIGN.md
+README.md
+REQUIREMENTS.md
+TASKS.md
+
 public/
 ├── brand/
 └── images/products/coatings/
