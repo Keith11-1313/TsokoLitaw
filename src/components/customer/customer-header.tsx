@@ -1,15 +1,14 @@
-import { Menu, ShoppingBag } from "lucide-react";
+import { Menu } from "lucide-react";
 import Link from "next/link";
 import { SiteContainer } from "@/components/layout/site-container";
 import { BrandLockup } from "@/components/ui/brand-lockup";
-import { primaryButtonClassName } from "@/components/ui/button";
+import { HeaderActions } from "@/components/customer/header-actions";
 import { cn } from "@/lib/cn";
 
 const navigationItems = [
   { href: "/", label: "Home" },
   { href: "/our-creations", label: "Our Creations" },
-  { href: "/orders", label: "Orders" },
-  { href: "/feedback", label: "Feedback" },
+  { href: "/journal", label: "Journal" },
 ] as const;
 
 interface CustomerHeaderProps {
@@ -25,7 +24,7 @@ export function CustomerHeader({ activePath }: CustomerHeaderProps) {
           aria-label="TsokoLitaw home"
           className="shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
         >
-          <BrandLockup />
+          <BrandLockup subtitle="Timeless dessert" />
         </Link>
 
         <nav className="hidden items-center gap-10 lg:flex" aria-label="Main navigation">
@@ -48,18 +47,7 @@ export function CustomerHeader({ activePath }: CustomerHeaderProps) {
           })}
         </nav>
 
-        <div className="hidden items-center gap-4 lg:flex">
-          <Link
-            href="/cart"
-            aria-label="View cart"
-            className="inline-flex size-10 items-center justify-center rounded-full bg-surface-muted text-brand transition-colors hover:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
-          >
-            <ShoppingBag aria-hidden="true" size={19} strokeWidth={1.8} />
-          </Link>
-          <Link className={primaryButtonClassName} href="/our-creations">
-            Order Now
-          </Link>
-        </div>
+        <div className="hidden lg:block"><HeaderActions /></div>
 
         <details className="group relative lg:hidden">
           <summary className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full bg-surface-muted text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
@@ -86,18 +74,7 @@ export function CustomerHeader({ activePath }: CustomerHeaderProps) {
                 );
               })}
             </nav>
-            <div className="mt-3 grid grid-cols-[auto_1fr] gap-3 border-t border-border pt-4">
-              <Link
-                href="/cart"
-                aria-label="View cart"
-                className="inline-flex size-11 items-center justify-center rounded-full bg-surface-muted text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-              >
-                <ShoppingBag aria-hidden="true" size={19} />
-              </Link>
-              <Link className={cn(primaryButtonClassName, "w-full")} href="/our-creations">
-                Order Now
-              </Link>
-            </div>
+            <div className="mt-3 border-t border-border pt-4"><HeaderActions mobile /></div>
           </div>
         </details>
       </SiteContainer>
