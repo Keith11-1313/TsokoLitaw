@@ -14,7 +14,7 @@ export function CustomerPageShell({ children, activePath }: CustomerPageShellPro
       <main>{children}</main>
       <CustomerFooter
         address="University of Caloocan City, Caloocan, Metro Manila, Philippines"
-        supportEmail="hello@tsokolitaw.ph"
+        supportEmail="tsokolitaw@gmail.com"
       />
     </>
   );

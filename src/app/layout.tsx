@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, Italianno, Lato } from "next/font/google";
 import "./globals.css";
+import { AuthPreviewProvider } from "@/components/auth/auth-preview-provider";
 import { CartProvider } from "@/components/cart/cart-provider";
 
 const lato = Lato({
@@ -32,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body
         className={`${lato.variable} ${dmSerifDisplay.variable} ${italianno.variable} antialiased`}
       >
-        <CartProvider>{children}</CartProvider>
+        <AuthPreviewProvider><CartProvider>{children}</CartProvider></AuthPreviewProvider>
       </body>
     </html>
   );

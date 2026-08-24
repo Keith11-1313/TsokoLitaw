@@ -81,7 +81,7 @@ export default function JournalPage() {
                   {Array.from({ length: review.rating }, (_, index) => <Star key={index} className="fill-warning-foreground text-warning-foreground" size={17} />)}
                 </div>
                 <p className="mt-4 leading-7">“{review.text}”</p>
-                <footer className="mt-4 text-sm font-bold text-muted-foreground">{review.name} · Verified completed order</footer>
+                <footer className="mt-4 text-sm font-bold text-muted-foreground">{review.name}</footer>
               </blockquote>
             ))}
           </div>
