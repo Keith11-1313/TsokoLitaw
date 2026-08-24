@@ -2,98 +2,118 @@
 
 ## 1. Goal
 
-Build a maintainable B2C e-commerce application using one Next.js codebase.
+Build a maintainable mobile-first storefront and admin interface in one Next.js codebase. Avoid microservices in V1.
 
-Avoid microservices in V1.
-
----
-
-## 2. High-Level Architecture
+## 2. Current UI Architecture
 
 ```text
-Customer / Admin Browser
-          |
-          v
-Next.js App on Vercel
-          |
-    +-----+------+
-    |            |
-    v            v
-Supabase      PayMongo
-Postgres      Payments
+Next.js App Router
+├── Server Components for static page composition
+├── Client Components for interactive UI
+├── Tailwind CSS design tokens
+├── Mock data modules
+├── localStorage cart
+└── Local brand and product assets
+```
+
+There is currently no database, authentication, payment provider, API, webhook, or email integration.
+
+Client Components are limited to interactions such as:
+
+- cart state and persistence
+- product configuration
+- custom dropdowns
+- account preview menu
+- admin mobile drawer
+- mock forms and dialogs
+
+## 3. Future Production Architecture
+
+```text
+Customer or Admin Browser
+            |
+            v
+Next.js on Vercel
+   |          |          |
+   v          v          v
+Supabase   PayMongo   Email provider
+Postgres   Payments   Notifications
 Auth
 Storage
 ```
 
----
+Next.js server responsibilities:
 
-## 3. Frontend
-
-Use:
-
-- Next.js App Router
-- TypeScript
-- Tailwind CSS
-
-Prefer Server Components.
-
-Use Client Components only when actual client interactivity is required.
-
-Examples:
-
-- cart state
-- product customization
-- modals
-- interactive forms
-- client-side filters
-
----
-
-## 4. Backend
-
-Use Next.js server-side capabilities:
-
-- Route Handlers
-- Server Actions where appropriate
-- Server Components
-- server-only utility modules
-
-Server responsibilities:
-
-- price validation
-- stock validation
-- order creation
-- promotion calculation
-- loyalty calculation
-- admin authorization
+- session and authorization checks
+- request validation
+- server-authoritative pricing
+- promotion and loyalty calculation
+- stock reservation and release
+- order creation and snapshots
 - PayMongo checkout creation
-- PayMongo webhook processing
+- webhook verification and idempotency
 - terms acceptance recording
+- admin mutations
 
----
+## 4. Routing
 
-## 5. Supabase
+Customer routes are public under the main application. Account, checkout, order, and review routes will require authentication when Supabase is implemented.
 
-Use Supabase for:
+Admin routes currently live under `/admin` for static UI development. The planned `admin.tsokolitaw.com` host is deferred. Future host routing may map the subdomain to `/admin`, but must not replace server-side admin authorization.
 
-- PostgreSQL
-- Google authentication
-- session handling
-- optional product image storage
+Legacy compatibility redirects:
 
-Use separate client patterns:
+- `/vlog` → `/journal`
+- `/feedback` → `/journal`
+- `/admin/vlog` → `/admin/journal`
+
+## 5. Frontend Layers
 
 ```text
-Browser client
-Server client
-Service/admin client
+src/
+├── app/                 # Routes, metadata, page composition
+├── components/
+│   ├── admin/           # Admin shells, tables, cards, mock actions
+│   ├── cart/            # Provider and cart UI
+│   ├── checkout/        # Static checkout UI
+│   ├── creations/       # Product catalog/configurator
+│   ├── customer/        # Header, footer, page shells
+│   ├── feedback/        # Order-linked review UI
+│   ├── home/            # Home and Journal visual sections
+│   ├── layout/          # Content containers
+│   ├── orders/          # Order list/detail UI
+│   └── ui/              # Shared controls and tokens
+├── lib/                 # Commerce helpers and mock data
+└── types/               # Explicit domain types
 ```
 
-Never expose service-role credentials to the browser.
+Business rules should move out of presentation components as backend work begins.
 
----
+## 6. Current Cart
 
-## 6. Authentication
+The UI cart is exposed through `CartProvider` and persisted under a browser-local storage key.
+
+It supports add, remove, quantity, subtotal, and clear operations. It is deliberately non-authoritative and must not be treated as an order record.
+
+Future checkout flow:
+
+1. Send configuration identifiers and quantities to the server.
+2. Reload active product, coating, add-on, promotion, and stock records.
+3. Validate mixed-box counts and availability.
+4. Recalculate all prices.
+5. Create immutable order snapshots.
+
+## 7. Supabase
+
+Future use:
+
+- PostgreSQL
+- Google authentication and sessions
+- optional product and Journal media storage
+
+Use separate browser, server, and service/admin client patterns. Never expose service-role credentials. Enable RLS before customer data is accessible.
+
+## 8. Authentication and Authorization
 
 ```text
 Google Sign-In
@@ -102,246 +122,68 @@ Google Sign-In
 Supabase Auth
       |
       v
-Authenticated User
+Profile + scoped session
 ```
 
-Admin authorization must be server-side.
+- Customer authorization is ownership-based.
+- Admin authorization is server-side role/identity validation.
+- UI route visibility is not authorization.
+- No guest checkout in V1.
 
----
+## 9. Pricing and Product Configuration
 
-## 7. UI Reference Layer
+- Product variants represent 4-, 6-, and 8-piece boxes.
+- Coatings are selectable per box or per piece.
+- The first distinct coating type is included.
+- Each additional distinct type adds a configurable charge.
+- Add-ons such as extra sea salt cream are separate records.
 
-Reference PNGs live in:
+Store IDs and counts from the client, then calculate money from database records on the server. Preserve names, counts, and prices as order snapshots.
+
+## 10. Payments
 
 ```text
-references/
+Validated cart
+→ PENDING_PAYMENT order
+→ Reserve stock
+→ PayMongo checkout
+→ Verified webhook
+→ Payment record
+→ Confirm order
 ```
 
-Expected files:
+The browser success page is informational. Only verified server-side provider events may mark payment paid.
 
-```text
-customer-home.png
-customer-our-creations.png
-customer-orders.png
-customer-feedback.png
-admin-dashboard.png
-admin-order-management.png
-```
+Payment webhook events require a provider event ID uniqueness constraint and idempotent processing.
 
-These are visual references only.
+## 11. Inventory
 
-They are not runtime page assets.
+Recommended V1 inventory:
 
-The real UI must be implemented under `src/`.
-
----
-
-## 8. UI Assets
-
-The project currently has no finalized asset library.
-
-For missing simple icons, use a reputable open-source icon library such as:
-
-- Lucide React
-
-Prefer using the library consistently instead of mixing multiple icon packs.
-
-For product photography:
-
-- use temporary placeholders during UI build
-- replace with real product photos later
-
-For simple decorative shapes:
-
-- use CSS or small inline SVG where appropriate
-
-Do not depend on premium design assets.
-
----
-
-## 9. Payments
-
-Use PayMongo only.
-
-```text
-Cart
-  |
-  v
-Checkout validation
-  |
-  v
-Create PENDING_PAYMENT order
-  |
-  v
-Reserve stock
-  |
-  v
-Create PayMongo checkout/payment
-  |
-  v
-Customer pays
-  |
-  v
-PayMongo webhook
-  |
-  v
-Verify webhook
-  |
-  v
-Update payment
-  |
-  v
-Confirm order
-```
-
-A browser redirect is not proof of payment.
-
----
-
-## 10. Payment Expiry
-
-Initial timeout:
-
-- 15 minutes
-
-Flow:
-
-```text
-PENDING_PAYMENT
-      |
-      v
-EXPIRED
-      |
-      v
-Release reserved stock
-```
-
-Use the simplest reliable V1 implementation.
-
----
-
-## 11. Order and Payment Separation
-
-Order status = fulfillment/business state.
-
-Payment status = financial state.
-
-Do not combine them.
-
----
-
-## 12. Inventory
-
-Recommended V1 model:
-
-- daily stock total
+- stock total by date and box variant
 - reserved quantity
 - sold quantity
-- available quantity
-
-Use database-safe operations to reduce overselling.
-
----
-
-## 13. Pickup
-
-Admin controls:
-
-- open pickup dates
-- pickup locations
-- lead time
-- grace period
-
-No fixed order-per-slot limit in current rules.
-
----
-
-## 14. Promotions
-
-Use configurable promotion records.
-
-Possible V1 type:
-
-- `BUY_X_BOXES_GET_Y_PIECES`
-
-Do not build a generic enterprise promotion engine.
-
----
-
-## 15. Loyalty
+- coating/add-on availability
+- atomic reservation and release operations
 
 ```text
-Order COMPLETED
-      |
-      v
-Increase loyalty progress
-      |
-      v
-Threshold reached
-      |
-      v
-Create reward
-      |
-      v
-Redeem reward
+available = stock_total - stock_reserved - stock_sold
 ```
 
----
+Expired payment reservations must be released safely.
 
-## 16. Feedback
+## 12. Orders, Reviews, and Journal
 
-Feedback should belong to:
+- Order and payment statuses are separate.
+- Customers read only their own orders.
+- Reviews belong to a completed order and its customer.
+- Enforce one review per order.
+- Public Journal highlights expose only approved display data.
+- Journal posts support content type, publication state, and optional media.
 
-- authenticated user
-- preferably a completed order
+## 13. Environment Variables
 
-Admin can hide invalid content.
-
----
-
-## 17. Suggested Source Structure
-
-```text
-src/
-├── app/
-│   ├── (customer)/
-│   ├── checkout/
-│   ├── login/
-│   ├── payment/
-│   ├── admin/
-│   ├── api/
-│   ├── globals.css
-│   └── layout.tsx
-│
-├── components/
-│   ├── ui/
-│   ├── layout/
-│   ├── products/
-│   ├── cart/
-│   ├── checkout/
-│   ├── orders/
-│   ├── feedback/
-│   └── admin/
-│
-├── lib/
-│   ├── auth/
-│   ├── supabase/
-│   ├── paymongo/
-│   ├── orders/
-│   ├── inventory/
-│   ├── promotions/
-│   ├── loyalty/
-│   └── validation/
-│
-├── types/
-└── utils/
-```
-
----
-
-## 18. Environment Variables
-
-Expected:
+Add only when the corresponding integration begins:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
@@ -355,29 +197,26 @@ PAYMONGO_WEBHOOK_SECRET=
 NEXT_PUBLIC_SITE_URL=
 ```
 
-Never commit `.env.local`.
+Never commit `.env.local` or real secrets.
 
----
+## 14. Deployment
 
-## 19. Deployment
+- UI preview: GitHub → Vercel
+- production app: Vercel
+- database/auth/storage: Supabase
+- payments: PayMongo
+- customer domain: `tsokolitaw.com`
+- planned admin domain: `admin.tsokolitaw.com`
 
-- Next.js → Vercel
-- Supabase → database/auth/storage
-- PayMongo → payments
-- Domain → `tsokolitaw.com`
+Use PayMongo test mode and non-production Supabase configuration before live rollout.
 
-Use test PayMongo keys before live mode.
+## 15. Principles
 
----
-
-## 20. Principles
-
-1. Keep business logic out of presentation components.
-2. Server-authoritative pricing.
-3. Server-authoritative payment state.
-4. Use RLS and database constraints.
-5. Keep operational values configurable.
-6. Avoid unnecessary dependencies.
-7. Preserve historical order snapshots.
-8. Protect admin operations server-side.
-9. Keep V1 simple.
+1. One codebase for V1.
+2. Server-authoritative money, stock, permissions, and payment state.
+3. RLS plus server-side authorization.
+4. Immutable order snapshots.
+5. Configurable operational values.
+6. Minimal dependencies.
+7. Accessible, mobile-first UI.
+8. Explicit mock/deferred behavior during the UI phase.

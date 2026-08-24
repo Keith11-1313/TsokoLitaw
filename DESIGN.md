@@ -1,320 +1,204 @@
-# TsokoLitaw — Design Specification
+# TsokoLitaw — Design System
 
-## 1. Source of Truth
+## 1. Current Source of Truth
 
-The approved Figma designs are exported as PNG references.
+The implemented customer and admin design systems are the current UI source of truth.
 
-Expected files:
+The PNG files in `references/` are rough early drafts. Use them for broad visual context only. Do not embed them, trace them pixel by pixel, or restore outdated navigation and product decisions from them.
 
-```text
-references/
-├── customer-home.png
-├── customer-our-creations.png
-├── customer-orders.png
-├── customer-feedback.png
-├── admin-dashboard.png
-└── admin-order-management.png
-```
+Priority order:
 
-These images define the visual language for the whole application.
-
----
+1. Current approved product and navigation decisions
+2. Existing reusable UI components and tokens
+3. Responsive and accessibility requirements
+4. Rough reference PNGs
 
 ## 2. Customer Design Language
 
-Derived from:
+The storefront should feel warm, appetizing, calm, and recognizably Filipino.
+
+Use:
+
+- cream page backgrounds
+- white-cream elevated surfaces
+- chocolate-brown text and actions
+- serif display headings
+- script typography as restrained decorative emphasis
+- soft borders and rounded cards
+- clear product photography
+- generous but consistent whitespace
+- mobile-first stacking
+
+The main customer navigation is:
 
 - Home
 - Our Creations
-- Orders
-- Feedback
+- Journal
 
-The customer site should feel:
+Account/Profile and Cart are actions. My Orders belongs inside the account experience and must not appear as a main navigation item.
 
-- warm
-- appetizing
-- clean
-- modern
-- student-friendly
-- Filipino-inspired
-
-Preserve the visual characteristics established in Figma:
-
-- cream/light backgrounds
-- brown/chocolate accents
-- restrained decorative styling
-- clean content width
-- soft card treatment
-- clear CTAs
-- consistent footer/header language
-
----
+Journal includes announcements, kitchen stories, product features, customer stories, selected reviews, and optional video—not video alone.
 
 ## 3. Admin Design Language
 
-Derived from:
+Admin pages reuse the same core tokens with a denser operational layout:
 
-- Admin Dashboard
-- Admin Order Management
+- persistent desktop sidebar
+- drawer navigation on mobile
+- consistent page title and action area
+- metric cards
+- bordered tables and cards
+- reusable status badges
+- responsive table containers
+- cream form controls
 
-Other admin pages should reuse:
+Do not create a separate visual identity for each admin page.
 
-- same sidebar
-- same top area
-- same table treatment
-- same cards
-- same buttons
-- same status badge language
-- same form controls
-- same spacing
+## 4. Design Tokens
 
----
+Tokens live in `src/app/globals.css`.
 
-## 4. Missing Pages
+### Colors
 
-Pages without direct Figma references should extend the established system.
+| Token | Value | Purpose |
+| --- | --- | --- |
+| `background` | `#faf5ee` | Page background |
+| `surface` | `#fffdf9` | Cards and navigation |
+| `surface-muted` | `#f5ece3` | Soft highlights |
+| `surface-control` | `#faf1e6` | Inputs and controls |
+| `foreground` | `#361e0a` | Primary text |
+| `brand` | `#4a2c11` | Primary actions |
+| `brand-hover` | `#5d3918` | Hover state |
+| `muted-foreground` | `#60462e` | Secondary text |
+| `subtle-foreground` | `#785e43` | Tertiary text |
+| `border` | `#e9dfd3` | Borders and separators |
+| `focus` | `#805436` | Visible focus rings |
 
-Examples:
+Semantic success, information, warning, and danger token pairs are also defined in `globals.css`.
 
-### Checkout
-Reuse:
-- customer header
-- customer colors
-- customer cards
-- same form treatment
-- same button style
+### Typography
 
-### Login
-Reuse:
-- customer typography
-- colors
-- content width
-- card/form language
+- Body: Lato
+- Display: DM Serif Display
+- Decorative script: Italianno
 
-### Admin Products
-Reuse:
-- admin sidebar
-- admin cards
-- admin table/form language
+Use the script face sparingly. Body copy, controls, tables, and long-form legal content must remain highly readable.
 
-### Terms / Privacy
-Reuse:
-- customer header/footer
-- typography
-- content width
-- spacing
+### Radius
 
-Do not introduce a separate visual identity.
+- Controls: `0.75rem`
+- Images: `1rem`
+- Cards: `1.25rem`
+- Primary compact actions may use full pill rounding
 
----
+### Content Widths
 
-## 5. Implementation Rules
+- Customer container: `80rem`
+- Reading container: `48rem`
+- Admin content: `66.5rem`
 
-Do not:
+### Spacing
 
-- embed full-page PNGs as pages
-- use full-page SVGs as pages
-- use rasterized text
-- recreate the entire layout through absolute positioning
-- invent a new visual style for missing screens
+- Default section spacing: `5rem`
+- Mobile section spacing: `3.5rem`
+- Prefer existing Tailwind spacing increments and shared containers over arbitrary page-specific widths.
 
-Do:
+## 5. Reusable Components
 
-- use semantic HTML
-- use Next.js components
-- use Tailwind CSS
-- build reusable components
-- preserve visual hierarchy
-- preserve spacing and proportions
-- preserve visual language
-- implement responsive behavior
-
----
-
-## 6. Assets
-
-The project currently has no finalized asset folder.
-
-Use this strategy:
-
-### Icons
-Use one open-source icon library consistently.
-
-Recommended:
-
-- Lucide React
-
-### Product Images
-Use temporary placeholders during UI development.
-
-Replace them with real product photography later.
-
-### Brand Assets
-If logo/vector assets become available, place them under:
-
-```text
-public/brand/
-```
-
-### Product Photos
-
-```text
-public/images/products/
-```
-
-### Simple Decorative Shapes
-Prefer:
-
-- CSS
-- small inline SVG
-- icon library
-
-Avoid paid asset dependencies.
-
----
-
-## 7. Responsive Design
-
-Support:
-
-- desktop
-- tablet
-- mobile
-
-If only desktop Figma frames exist, infer smaller layouts using the same visual language.
-
-Mobile priorities:
-
-- usable navigation
-- touch-friendly buttons
-- readable cards
-- stacked layout when needed
-- simple forms
-- clear order status
-- no horizontal scrolling
-
----
-
-## 8. Suggested Reusable Components
-
-Possible shared components:
+Customer and shared:
 
 - `CustomerHeader`
+- `HeaderActions`
 - `CustomerFooter`
-- `AdminSidebar`
+- `CustomerPageShell`
+- `SiteContainer`
+- `BrandLockup`
 - `PrimaryButton`
 - `SecondaryButton`
-- `ProductCard`
-- `OrderCard`
-- `ReviewCard`
-- `StatusBadge`
 - `FormField`
-- `DataTable`
-- `EmptyState`
-- `LoadingState`
+- `CustomSelect`
+- `StatusBadge`
 
-Do not over-componentize tiny one-off elements.
+Admin:
 
----
+- `AdminSidebar`
+- `AdminShell`
+- `AdminPageLayout`
+- `AdminStatCard`
+- `AdminDataTable`
 
-## 9. Design Tokens
+Reuse these before adding page-local alternatives. Do not abstract tiny one-use fragments without a concrete reuse case.
 
-Extract recurring values from Figma.
+## 6. Product Presentation
 
-Possible tokens:
+Real coating photography lives in `public/images/products/coatings/`.
 
-- background
-- foreground
-- chocolate
-- cream
-- muted text
-- border
-- success
-- warning
-- error
-- radius
-- spacing
-- typography
+Product cards should:
 
-Avoid arbitrary slightly different values across components.
+- use `next/image`
+- provide meaningful alt text
+- keep a consistent aspect ratio
+- show selection clearly
+- preserve the food as the focal point
+- avoid layout shifts
 
----
+Placeholders remain acceptable only when an actual asset is unavailable.
 
-## 10. Customer Pages
+## 7. Forms and Dropdowns
 
-### Home
-Match `customer-home.png`.
+Controls use cream surfaces, chocolate text, visible borders, rounded corners, and visible focus rings.
 
-### Our Creations
-Match `customer-our-creations.png`.
+The custom dropdown must support:
 
-### Orders
-Match `customer-orders.png`.
+- Arrow Up and Arrow Down navigation
+- Enter and Space selection
+- Escape closing
+- outside-click closing
+- selected and disabled states
+- labels and validation text
+- touch-friendly targets
 
-### Feedback
-Match `customer-feedback.png`.
+Do not introduce another UI library solely for dropdowns.
 
----
+## 8. Responsive Rules
 
-## 11. Admin Pages
+Design mobile first, then enhance for tablet and desktop.
 
-### Dashboard
-Match `admin-dashboard.png`.
+- minimum practical touch target: 44px
+- stack forms and cards on narrow screens
+- use the admin drawer below desktop width
+- keep tables within responsive overflow containers
+- avoid page-level horizontal scrolling
+- keep primary actions close to their related content
+- maintain readable line lengths
 
-### Order Management
-Match `admin-order-management.png`.
+The Our Creations builder appears before the coating gallery on mobile and becomes a compact sticky sidebar on desktop.
 
----
+## 9. Accessibility
 
-## 12. Checkout
-
-Create using the customer design system.
-
-Recommended content:
-
-```text
-Order summary
-Customer information
-Pickup
-Terms acceptance
-Payment
-```
-
-Show:
-
-- items
-- toppings
-- add-ons
-- discounts
-- total
-- pickup details
-- allergen notice
-- cancellation/no-show notice
-
----
-
-## 13. Accessibility
-
-- semantic HTML
-- labels
-- keyboard support
+- semantic landmarks and headings
+- explicit form labels
+- keyboard-operable controls
 - visible focus states
-- accessible contrast
-- meaningful alt text
-- no color-only status meaning
-- readable error messages
+- meaningful image alt text
+- status labels in addition to color
+- readable error and disabled explanations
+- sufficient contrast
 
----
+## 10. Required UI States
 
-## 14. Loading / Empty / Error States
+Future data-connected work must add consistent states for:
 
-Create visually consistent states for:
-
-- loading products
+- loading
+- empty catalog or cart
 - sold out
+- invalid mixed-box allocation
 - no orders
-- no reviews
+- no eligible reviews
 - no pickup dates
-- payment processing
-- payment failed
-- unauthorized
+- authentication required
+- unauthorized admin access
+- payment processing, success, failure, and expiry
+- network/server failure
+
+Current backend-dependent actions should remain disabled or clearly identified as mock behavior.

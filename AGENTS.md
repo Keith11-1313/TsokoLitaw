@@ -11,215 +11,126 @@ Read these first:
 5. `TASKS.md`
 6. `README.md`
 
-Inspect `/references` before implementing UI.
+Inspect relevant existing code and assets before changing UI.
 
----
+## 2. Current Project Stage
 
-## 2. Current UI Reference Rules
+The application is currently in the **UI-only phase**.
 
-Reference PNGs are the visual source of truth.
+Allowed:
 
-Expected:
+- React and Tailwind UI
+- mock data
+- local component state
+- browser-local cart state
+- static routes and temporary UI interactions
+- local product photography and placeholders
 
-```text
-references/customer-home.png
-references/customer-our-creations.png
-references/customer-orders.png
-references/customer-feedback.png
-references/admin-dashboard.png
-references/admin-order-management.png
-```
+Do not implement unless the user explicitly starts a later phase:
 
-Do not use them as actual page images.
+- Supabase
+- authentication
+- PayMongo
+- APIs, webhooks, or database logic
+- real CRUD or email
+- admin subdomain or DNS configuration
 
-Recreate them using real UI code.
+Never make mock UI look like secure authentication, verified payment, or persisted admin data.
 
----
+## 3. UI References
 
-## 3. Missing Assets
+Files in `references/` are rough early design drafts retained for context. They are not pixel-perfect requirements and must not override newer user decisions or the implemented design system.
 
-The project currently has no finalized asset library.
+Do not use reference PNGs as page images.
 
-For simple icons:
+Use this priority:
 
-- use Lucide React unless the project already uses another consistent icon library
+1. Latest user-approved behavior and content
+2. Existing shared components and tokens
+3. Responsive/accessibility requirements
+4. Reference PNGs for broad visual context
 
-For product images:
+## 4. Current Product Decisions
 
-- use temporary local placeholders during UI development
+- Currency is PHP.
+- Box sizes are 4, 6, and 8 pieces.
+- Products use coatings, not flavors or toppings.
+- Coatings: Cocoa, Milk, Palitaw, Crushed Nuts, Plain, Sesame Seeds, Cookies and Cream.
+- Palitaw means sugar, niyog, and sesame seeds.
+- One coating type is included.
+- Each additional coating type currently adds ₱5 in mock UI.
+- Mixed boxes allocate every piece and must total the selected box size.
+- Campus pickup only.
+- Browser pricing is never authoritative for future real checkout.
 
-Do not add paid assets or random external image dependencies.
+## 5. Navigation Decisions
 
-Do not add multiple icon libraries unless there is a strong reason.
+Customer main navigation:
 
----
+- Home
+- Our Creations
+- Journal
 
-## 4. Before Coding
+Header actions:
 
-1. Inspect existing files.
-2. Identify affected files.
-3. Inspect relevant reference images.
-4. Understand current data flow.
-5. Explain the smallest reasonable implementation.
-6. Identify schema/security implications.
-7. Avoid unrelated changes.
+- Account/Profile
+- Cart with item count
 
----
+My Orders belongs in the Account/Profile UI and must not be restored to the main navbar.
 
-## 5. After Coding
+Journal replaces Vlog and contains announcements, stories, features, community highlights, and optional videos.
 
-1. Run type checking.
-2. Run linting.
-3. Run relevant tests.
-4. Review diff.
-5. Check for unrelated changes.
-6. Summarize changed files.
-7. Mention unresolved issues.
+Reviews are available only from eligible completed order details. Do not add public Feedback navigation.
 
----
+Admin stays under `/admin` until subdomain configuration is explicitly authorized.
 
-## 6. Scope
+## 6. Assets
 
-- Do not implement unrelated features.
-- Do not rewrite working code unnecessarily.
-- Do not add dependencies casually.
-- Prefer simple maintainable solutions.
-- Avoid premature abstraction.
+- Use Lucide React for missing simple icons.
+- Do not add another icon library without a strong reason.
+- Logo: `public/brand/logo.png`.
+- Coating photos: `public/images/products/coatings/`.
+- Use local placeholders only when a real asset is unavailable.
+- Do not add random remote or paid asset dependencies.
 
----
+## 7. Before Coding
 
-## 7. TypeScript
+1. Inspect existing files and relevant assets.
+2. Identify the smallest affected surface.
+3. Understand current component and mock-data flow.
+4. Explain the intended change briefly.
+5. Identify future schema/security implications when relevant.
+6. Preserve unrelated user changes.
 
-- strict TypeScript
-- avoid `any`
-- use explicit domain types
-- runtime validation where needed
+## 8. Implementation Rules
 
----
+- Next.js App Router.
+- Strict TypeScript; avoid `any`.
+- Prefer Server Components unless interaction requires a Client Component.
+- Use Tailwind CSS and existing tokens.
+- Reuse existing components before adding variants.
+- Mobile-first responsive behavior.
+- Semantic HTML, labels, keyboard support, visible focus, and meaningful alt text.
+- Avoid unnecessary dependencies and premature abstraction.
 
-## 8. Next.js
+## 9. Future Backend Rules
 
-- App Router
-- prefer Server Components
-- Client Components only when interaction requires them
-- keep secrets server-side
+When backend work is explicitly approved:
 
----
+- Supabase RLS is required.
+- Never expose service-role or PayMongo secret keys.
+- Admin authorization must be checked server-side.
+- Recalculate prices and promotions server-side.
+- Validate stock with atomic/transaction-safe operations.
+- Preserve historical order snapshots.
+- Verify PayMongo webhooks and process them idempotently.
+- Never trust redirect parameters or browser payment state.
+- Keep order status separate from payment status.
+- Restrict customers to their own profiles and orders.
 
-## 9. Supabase
+## 10. Order Statuses
 
-- use RLS
-- never expose service-role key
-- customer data must be scoped
-- admin authorization must be server-side
-- prefer migrations for schema changes
-
----
-
-## 10. PayMongo
-
-Never:
-
-- hardcode secret keys
-- log secret keys
-- commit `.env.local`
-- mark payment successful from browser state
-- trust redirect query parameters
-
-Always:
-
-- verify server-side
-- verify webhooks
-- process webhooks idempotently
-- keep order status separate from payment status
-
----
-
-## 11. Pricing
-
-- browser is not authoritative
-- recalculate server-side
-- use database prices
-- preserve order snapshots
-- validate promotions server-side
-
----
-
-## 12. Inventory
-
-- avoid overselling
-- reserve stock safely
-- release expired reservations
-- use atomic/transaction-safe database logic
-
----
-
-## 13. Authentication
-
-- Google Sign-In through Supabase
-- one admin role
-- no frontend-only authorization
-
----
-
-## 14. UI
-
-For supplied reference pages:
-
-- match visual design closely
-- preserve hierarchy
-- preserve spacing
-- preserve typography feel
-- preserve card/button/form language
-- build responsive layout
-
-For missing pages:
-
-- extend existing customer/admin design system
-- do not invent a separate visual language
-
----
-
-## 15. Admin Settings
-
-Editable operational data may include:
-
-- prices
-- toppings
-- add-ons
-- stock
-- pickup dates
-- pickup locations
-- promotions
-- loyalty
-- support email
-
-Never expose infrastructure secrets.
-
----
-
-## 16. Testing Priorities
-
-Test:
-
-- price calculation
-- free topping rule
-- extra topping pricing
-- stock reservation/release
-- payment expiry
-- promotions
-- loyalty
-- order transitions
-- cancellation eligibility
-- unauthorized order access
-- admin authorization
-- webhook idempotency
-
----
-
-## 17. Status Transitions
-
-Primary:
+Primary flow:
 
 ```text
 PENDING_PAYMENT
@@ -237,31 +148,27 @@ CANCELLED
 EXPIRED
 ```
 
-Validate server-side.
+Future transitions must be validated server-side.
 
----
+## 11. After Coding
 
-## 18. Definition of Done
+1. Run typecheck.
+2. Run lint.
+3. Run relevant tests.
+4. Run a production build for route or integration-wide changes.
+5. Review the diff and check for unrelated changes.
+6. Check responsive behavior in proportion to the change.
+7. Summarize changed files and unresolved issues.
 
-A task is complete when:
+## 12. Git Handoff
 
-- requested scope is implemented
-- TypeScript passes
-- lint passes
-- relevant tests pass
-- security implications reviewed
-- responsive behavior checked
-- documentation updated if needed
+The user performs Git operations manually.
 
----
+Agents must:
 
-## 19. Git Handoff
+- report whether the requested feature is complete
+- report validation results
+- provide a concise Conventional Commit message
+- recommend modular commit groups when a large batch has accumulated
 
-After completing and validating approved implementation work:
-
-1. Review `git status` and the final diff.
-2. Report whether the entire requested feature is finished.
-3. Report validation results and any unresolved issues.
-4. Provide a concise suggested Git commit message that describes the completed scope.
-
-Do not stage, commit, or push changes. The user handles all Git operations manually in the terminal.
+Agents must not stage, commit, or push.

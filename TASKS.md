@@ -1,378 +1,189 @@
 # TsokoLitaw — Development Tasks
 
+## Current Milestone
+
+The project has completed the broad static UI phase. The next major phase is UI review and refinement, followed by backend planning and Supabase setup only after explicit approval.
+
 ## Phase 0 — Project Foundation
 
-- [ ] Initialize Next.js
-- [ ] Enable TypeScript
-- [ ] Enable Tailwind CSS
-- [ ] Enable ESLint
-- [ ] Use App Router
-- [ ] Initialize Git
-- [ ] Add `.env.local`
-- [ ] Add `.env.example`
-- [ ] Confirm `.env.local` is ignored
-- [ ] Keep documentation in project root
+- [x] Initialize Next.js App Router
+- [x] Enable strict TypeScript
+- [x] Enable Tailwind CSS
+- [x] Enable ESLint
+- [x] Use `src/` directory and `@/*` alias
+- [x] Initialize Git and connect public GitHub repository
+- [x] Add Lucide React
+- [x] Add lint, typecheck, and build scripts
+- [ ] Add `.env.example` when the first backend integration begins
+- [ ] Confirm production environment policy before adding secrets
 
----
+## Phase 1 — Design Foundation and Assets
 
-## Phase 1 — Add UI References
+- [x] Inspect reference PNGs
+- [x] Establish customer and admin design systems
+- [x] Create shared colors, typography, spacing, radius, and content-width tokens
+- [x] Create buttons, forms, cards, status badges, and custom dropdown
+- [x] Add responsive customer header/footer
+- [x] Add responsive admin sidebar and mobile drawer
+- [x] Add TsokoLitaw logo and favicon
+- [x] Add seven real coating images
+- [x] Reclassify PNG references as rough historical direction
 
-Create:
-
-```text
-references/
-```
-
-Add:
-
-- [ ] `customer-home.png`
-- [ ] `customer-our-creations.png`
-- [ ] `customer-orders.png`
-- [ ] `customer-feedback.png`
-- [ ] `admin-dashboard.png`
-- [ ] `admin-order-management.png`
-
-Then:
-
-- [ ] Inspect all references
-- [ ] Identify customer design system
-- [ ] Identify admin design system
-- [ ] Extract common colors
-- [ ] Extract typography
-- [ ] Extract spacing
-- [ ] Extract border radius
-- [ ] Identify repeated components
-
----
-
-## Phase 2 — UI Foundation
-
-- [ ] Install one icon library if needed
-- [ ] Prefer Lucide React
-- [ ] Create customer header
-- [ ] Create customer footer
-- [ ] Create admin sidebar
-- [ ] Create shared buttons
-- [ ] Create cards
-- [ ] Create form controls
-- [ ] Create status badge
-- [ ] Create responsive layout primitives
-
-Use mock data only.
-
-No Supabase or PayMongo yet.
-
----
-
-## Phase 3 — Reference Pages
-
-Customer:
+## Phase 2 — Customer UI
 
 - [x] Home
 - [x] Our Creations
-- [x] Orders
-- [x] Feedback
-
-Admin:
-
-- [x] Dashboard
-- [x] Order Management
-
-After each:
-
-- [ ] Compare against PNG reference
-- [ ] Fix spacing
-- [ ] Fix alignment
-- [ ] Fix sizing
-- [ ] Fix typography
-- [ ] Check tablet/mobile
-- [ ] Run lint/typecheck
-
----
-
-## Phase 4 — Missing Static Pages
-
-Extend existing design language.
-
-- [x] Login
+- [x] Cart
 - [x] Checkout shell
-- [x] Terms
+- [x] Login
+- [x] Profile
+- [x] Current orders and history
+- [x] Order details
+- [x] Completed-order review screen
+- [x] Terms & Conditions
 - [x] Privacy
 - [x] Payment success
 - [x] Payment failed
-- [x] Order detail shell
-- [x] Admin Products shell
-- [x] Admin Inventory shell
-- [x] Admin Pickup shell
-- [x] Admin Promotions shell
-- [x] Admin Feedback shell
-- [x] Admin Settings shell
+- [x] Journal
+- [x] Remove My Orders from main navigation
+- [x] Add Account/Profile and Cart header actions
+- [x] Add Terms and Privacy footer links
+- [ ] Perform final content and interaction review with product owner
+- [ ] Replace remaining placeholders when approved assets are supplied
 
-Still use mock data.
+## Phase 3 — Frontend Commerce Behavior
 
----
+- [x] Use PHP formatting
+- [x] Add 4-, 6-, and 8-piece boxes
+- [x] Add seven approved coatings
+- [x] Support single-coating selection
+- [x] Support mixed-box piece allocation
+- [x] Validate allocated pieces against box size in UI
+- [x] Calculate additional coating-type charge in UI
+- [x] Add extra sea salt cream option
+- [x] Add, remove, and update local cart items
+- [x] Persist cart in browser local storage
+- [x] Navigate from cart to checkout
+- [ ] Add automated unit tests for cart and configuration calculations
+- [ ] Replace all browser-authoritative calculations during backend phase
 
-## Phase 5 — Supabase Setup
+## Phase 4 — Admin Static UI
+
+- [x] Dashboard
+- [x] Orders
+- [x] Products
+- [x] Inventory
+- [x] Pickup
+- [x] Promotions
+- [x] Customers
+- [x] Review Management
+- [x] Journal Management
+- [x] Settings
+- [x] Remove editable Store Name
+- [x] Add responsive tables and mobile navigation drawer
+- [x] Disable backend-dependent actions with explanations
+- [ ] Review dense admin screens at small tablet widths
+
+## Phase 5 — UI Quality Assurance
+
+- [x] Run lint
+- [x] Run typecheck
+- [x] Run production build
+- [x] Check Our Creations on desktop and mobile
+- [x] Check coating image loading and cropping
+- [x] Check mixed-box calculations manually
+- [ ] Test every customer route at mobile, tablet, and desktop widths
+- [ ] Test every admin route at mobile, tablet, and desktop widths
+- [ ] Complete keyboard-only navigation audit
+- [ ] Complete screen-reader landmark and label audit
+- [ ] Add empty, loading, and server-error states before data integration
+- [ ] Confirm final legal and allergen wording
+
+## Phase 6 — Backend Planning Gate
+
+Do not begin without explicit approval.
+
+- [ ] Review and approve proposed database model
+- [ ] Finalize real prices and recipe/allergen data
+- [ ] Finalize pickup locations, schedules, lead time, and cutoff
+- [ ] Finalize cancellation, refund, and no-show policies
+- [ ] Choose email provider
+- [ ] Confirm admin identity and subdomain plan
+- [ ] Create environment variable inventory
+
+## Phase 7 — Supabase Setup
 
 - [ ] Create Supabase project
-- [ ] Add env variables
-- [ ] Create browser client
-- [ ] Create server client
-- [ ] Add migrations
-- [ ] Enable RLS
-- [ ] Add indexes/constraints
-- [ ] Add seed data
+- [ ] Add browser and server clients
+- [ ] Add migrations, constraints, and indexes
+- [ ] Enable and test RLS
+- [ ] Add controlled seed data
+- [ ] Add product image storage only if local/Vercel assets are insufficient
 
----
+## Phase 8 — Authentication and Authorization
 
-## Phase 6 — Google Authentication
+- [ ] Configure Google OAuth and Supabase provider
+- [ ] Implement sign-in and logout
+- [ ] Create/update profiles
+- [ ] Protect checkout and customer orders
+- [ ] Configure one admin identity/role
+- [ ] Protect admin routes server-side
+- [ ] Test unauthorized and cross-customer access
 
-- [ ] Configure Google OAuth
-- [ ] Configure Supabase Google provider
-- [ ] Implement login
-- [ ] Implement logout
-- [ ] Create/update profile
-- [ ] Protect checkout
-- [ ] Configure admin identity
-- [ ] Protect admin routes
-- [ ] Test unauthorized access
+## Phase 9 — Server Commerce
 
----
+- [ ] Load products, variants, coatings, add-ons, and availability from database
+- [ ] Validate mixed-box allocations server-side
+- [ ] Recalculate PHP prices server-side
+- [ ] Implement configurable promotions
+- [ ] Implement daily inventory
+- [ ] Reserve and release stock atomically
+- [ ] Create order and item snapshots
+- [ ] Record Terms acceptance
+- [ ] Prevent duplicate checkout submissions
 
-## Phase 7 — Product Data
+## Phase 10 — PayMongo Test Mode
 
-- [ ] Load products
-- [ ] Load variants
-- [ ] Load toppings
-- [ ] Load add-ons
-- [ ] Load availability
-- [ ] Replace mock data
-
----
-
-## Phase 8 — Product Customization
-
-- [ ] Select box size
-- [ ] One free topping
-- [ ] Paid extra toppings
-- [ ] Extra sauce
-- [ ] Quantity
-- [ ] Item total
-- [ ] Validation
-- [ ] Add to cart
-
----
-
-## Phase 9 — Cart
-
-- [ ] Add item
-- [ ] Remove item
-- [ ] Update quantity
-- [ ] Display toppings
-- [ ] Display add-ons
-- [ ] Display subtotal
-- [ ] Support multiple line items
-- [ ] Persist cart
-- [ ] Clear after success
-
----
-
-## Phase 10 — Pickup
-
-Admin:
-
-- [ ] Manage pickup dates
-- [ ] Manage pickup locations
-- [ ] Configure lead days
-- [ ] Configure grace period
-
-Customer:
-
-- [ ] Show valid dates
-- [ ] Prevent same-day pickup
-- [ ] Show locations
-- [ ] Capture time
-- [ ] Validate server-side
-
----
-
-## Phase 11 — Inventory
-
-- [ ] Daily inventory
-- [ ] Admin stock entry
-- [ ] Sold-out state
-- [ ] Validate before checkout
-- [ ] Reserve stock
-- [ ] Release expired stock
-- [ ] Convert reserved to sold after payment
-- [ ] Test concurrent checkout
-
----
-
-## Phase 12 — Checkout
-
-- [ ] Require login
-- [ ] Prefill profile
-- [ ] Capture mobile
-- [ ] Capture pickup
-- [ ] Capture notes
-- [ ] Show order summary
-- [ ] Show allergen warning
-- [ ] Require terms acceptance
-- [ ] Validate price server-side
-- [ ] Validate stock server-side
-- [ ] Validate promotion server-side
-- [ ] Create snapshots
-- [ ] Generate order number
-
----
-
-## Phase 13 — PayMongo Test Mode
-
-- [ ] Add test env variables
+- [ ] Add test environment variables
 - [ ] Create server-only PayMongo helper
-- [ ] Create checkout/payment
-- [ ] Store provider reference
-- [ ] Redirect customer
-- [ ] Success page
-- [ ] Failure page
-- [ ] Webhook endpoint
-- [ ] Verify webhook
-- [ ] Add idempotency
-- [ ] Update payment
-- [ ] Confirm order
-- [ ] Handle failed payment
-- [ ] Handle 15-minute expiry
+- [ ] Create pending payment orders
+- [ ] Create checkout/payment session
+- [ ] Add signed webhook endpoint
+- [ ] Store provider references
+- [ ] Enforce webhook idempotency
+- [ ] Handle success, failure, refund, and 15-minute expiry
+- [ ] Never infer payment success from browser redirects
 
----
+## Phase 11 — Orders, Reviews, Journal, and Admin CRUD
 
-## Phase 14 — Orders
+- [ ] Connect customer order list and details
+- [ ] Enforce order status transitions
+- [ ] Implement cancellation eligibility
+- [ ] Enforce completed-order review eligibility and uniqueness
+- [ ] Connect public selected reviews
+- [ ] Implement Journal draft/publish workflow
+- [ ] Implement product, coating, add-on, inventory, pickup, promotion, customer, review, Journal, and settings administration
+- [ ] Add auditability for sensitive admin actions
 
-Customer:
+## Phase 12 — Loyalty and Notifications
 
-- [ ] Current orders
-- [ ] Order history
-- [ ] Order details
-- [ ] Status
-- [ ] Payment status
-- [ ] Pickup details
-- [ ] Cancellation before PREPARING
+- [ ] Count completed orders only
+- [ ] Create and redeem seven-order reward
+- [ ] Prevent duplicate rewards
+- [ ] Send order confirmation email
+- [ ] Send ready-for-pickup email
+- [ ] Add cancellation/refund communication
+- [ ] Keep email sending server-side
 
-Admin:
+## Phase 13 — Security and Production
 
-- [ ] Order list
-- [ ] Search
-- [ ] Filters
-- [ ] Details
-- [ ] Status update
-- [ ] Prevent invalid transitions
-
----
-
-## Phase 15 — Feedback
-
-- [ ] 1–5 stars
-- [ ] Written comment
-- [ ] Authenticated only
-- [ ] Completed-order validation
-- [ ] Prevent duplicate review
-- [ ] Show public reviews
-- [ ] Average rating
-- [ ] Admin hide control
-
----
-
-## Phase 16 — Promotions
-
-- [ ] Promotion config
-- [ ] Admin enable/disable
-- [ ] Buy 2 boxes → free pieces
-- [ ] Display promo
-- [ ] Validate server-side
-- [ ] Save order effect
-
----
-
-## Phase 17 — Loyalty
-
-- [ ] Count completed orders
-- [ ] Threshold 7
-- [ ] Create reward
-- [ ] Show progress
-- [ ] Redeem reward
-- [ ] Prevent duplicate redemption
-- [ ] Continue/reset progression properly
-
----
-
-## Phase 18 — Admin Management
-
-- [ ] Product management
-- [ ] Variant price management
-- [ ] Topping management
-- [ ] Add-on management
-- [ ] Inventory
-- [ ] Pickup
-- [ ] Promotions
-- [ ] Loyalty
-- [ ] Feedback
-- [ ] Settings
-
----
-
-## Phase 19 — Email
-
-- [ ] Decide sending provider
-- [ ] Use business Google account operationally
-- [ ] Order confirmation email
-- [ ] Ready-for-pickup email
-- [ ] Cancellation/refund communication
-- [ ] Server-side sending only
-
----
-
-## Phase 20 — Security Review
-
-- [ ] RLS review
-- [ ] Admin authorization
-- [ ] Cross-user access tests
-- [ ] Price tampering tests
-- [ ] Stock tampering tests
-- [ ] Webhook spoofing tests
-- [ ] Duplicate checkout tests
-- [ ] Secret exposure review
-- [ ] Logging review
-- [ ] Rate limiting where needed
-
----
-
-## Phase 21 — Responsive / Accessibility QA
-
-- [ ] Keyboard navigation
-- [ ] Focus states
-- [ ] Labels
-- [ ] Contrast
-- [ ] Alt text
-- [ ] Mobile checkout
-- [ ] Mobile product customization
-- [ ] Mobile navigation
-- [ ] Tablet
-- [ ] Desktop
-- [ ] No unintended horizontal scroll
-
----
-
-## Phase 22 — Production
-
-- [ ] Deploy to Vercel
-- [ ] Add production env vars
+- [ ] Review RLS and admin authorization
+- [ ] Test price, stock, order, and webhook tampering
+- [ ] Review secret exposure and logging
+- [ ] Add rate limiting where appropriate
+- [ ] Deploy production configuration to Vercel
 - [ ] Connect `tsokolitaw.com`
-- [ ] Verify HTTPS
-- [ ] Configure production Supabase URLs
-- [ ] Configure Google OAuth URLs
-- [ ] Configure PayMongo production webhook
-- [ ] Switch to live keys after testing
-- [ ] Smoke test
-- [ ] Verify final prices
-- [ ] Verify pickup configuration
-- [ ] Verify Terms/Privacy
+- [ ] Configure `admin.tsokolitaw.com` if approved
+- [ ] Configure production OAuth and PayMongo webhook URLs
+- [ ] Switch to live keys only after test-mode sign-off
+- [ ] Complete final smoke test and policy verification

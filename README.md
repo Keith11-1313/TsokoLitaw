@@ -1,164 +1,178 @@
 # TsokoLitaw
 
-TsokoLitaw is a responsive B2C e-commerce website for a Filipino dessert business.
+TsokoLitaw is a mobile-first storefront and administration interface for a Filipino chocolate-filled Litaw business operating through campus pickup.
 
-Customers will be able to:
+## Current Status
 
-- browse products
-- customize toppings
-- place orders
-- choose campus pickup
-- pay through PayMongo
-- track orders
-- submit feedback
+The project is in the **UI-only phase**.
 
-## Stack
+Implemented with mock data:
 
-- Next.js
-- TypeScript
-- Tailwind CSS
-- Supabase PostgreSQL
-- Supabase Auth with Google
+- responsive customer and admin interfaces
+- product catalog with real coating photography
+- 4-, 6-, and 8-piece box configuration
+- single-coating and mixed-box selection
+- browser-local cart with quantity and totals
+- static checkout, account, profile, order, review, payment, and legal screens
+- Journal for announcements, stories, product features, and community highlights
+- responsive admin dashboard and management screens
+
+Not implemented:
+
+- Supabase or any database
+- Google authentication
 - PayMongo
-- Vercel
-- Domain: `tsokolitaw.com`
+- APIs, webhooks, email, or real CRUD
+- server-authoritative pricing and inventory
+- admin authorization or admin subdomain routing
 
-## Current Project Files
+All current customer, order, payment, account, and admin data is mock data. Disabled actions identify features that require future backend work.
 
-```text
-TsokoLitaw/
-├── AGENTS.md
-├── ARCHITECTURE.md
-├── DATABASE.md
-├── DESIGN.md
-├── README.md
-├── REQUIREMENTS.md
-└── TASKS.md
-```
+## Technology
 
-The Next.js app and additional folders should be created next.
+- Next.js 16 App Router
+- React 19
+- TypeScript 5 in strict mode
+- Tailwind CSS 4
+- ESLint 9
+- Lucide React
+- Next.js fonts and image optimization
 
-## UI References
+Future services:
 
-Create:
+- Supabase PostgreSQL and Google authentication
+- PayMongo payments
+- Vercel hosting
+- `tsokolitaw.com`
+- planned admin host: `admin.tsokolitaw.com`
 
-```text
-references/
-```
-
-Then place the exported Figma PNG frames:
+## Customer Routes
 
 ```text
-references/
-├── customer-home.png
-├── customer-our-creations.png
-├── customer-orders.png
-├── customer-feedback.png
-├── admin-dashboard.png
-└── admin-order-management.png
+/
+/our-creations
+/journal
+/cart
+/checkout
+/login
+/profile
+/orders
+/orders/[orderId]
+/orders/[orderId]/review
+/terms
+/privacy
+/payment/success
+/payment/failed
 ```
 
-These images are references only.
+Compatibility redirects currently remain at `/vlog` and `/feedback`.
 
-The AI should recreate them in Next.js + Tailwind.
+The main navigation contains Home, Our Creations, and Journal. My Orders is account-scoped and is available from the Account menu and Profile—not the main navbar.
 
-## Assets
+## Admin Routes
 
-There are currently no finalized assets.
+```text
+/admin
+/admin/orders
+/admin/products
+/admin/inventory
+/admin/pickup
+/admin/promotions
+/admin/customers
+/admin/reviews
+/admin/journal
+/admin/settings
+```
 
-For UI development:
+Admin pages remain under `/admin` until subdomain routing, authentication, and server authorization are implemented. Compatibility redirects remain for older admin URLs.
 
-- use Lucide React for icons if needed
-- use temporary local product placeholders
-- use CSS or small SVG for simple decorations
+## Current Product Model
 
-Later, real assets can be added under:
+Temporary UI prices:
+
+- Box of 4 — ₱60
+- Box of 6 — ₱85
+- Box of 8 — ₱110
+- First coating type included
+- Each additional coating type — ₱5
+- Extra sea salt cream — ₱18 per cup
+
+Coatings:
+
+- Cocoa
+- Milk
+- Palitaw: sugar, niyog, and sesame seeds
+- Crushed Nuts
+- Plain
+- Sesame Seeds
+- Cookies and Cream
+
+Mixed boxes allocate every piece to a coating. The allocated piece count must equal the selected box size.
+
+These browser values are previews. Future checkout pricing must be recalculated from database values on the server.
+
+## Project Structure
 
 ```text
 public/
 ├── brand/
-├── icons/
-└── images/
-    └── products/
+└── images/products/coatings/
+
+src/
+├── app/                 # App Router pages
+├── components/
+│   ├── admin/
+│   ├── cart/
+│   ├── checkout/
+│   ├── creations/
+│   ├── customer/
+│   ├── feedback/       # Order-linked review UI
+│   ├── home/
+│   ├── layout/
+│   ├── orders/
+│   └── ui/
+├── lib/                 # Mock commerce and order data
+└── types/
 ```
 
-## Recommended Next.js Initialization
+## Local Development
 
-From inside the project folder:
+Install dependencies once:
 
 ```bash
-npx create-next-app@latest .
+npm install
 ```
 
-Recommended answers:
+Start development:
 
-```text
-TypeScript: Yes
-ESLint: Yes
-Tailwind CSS: Yes
-src/ directory: Yes
-App Router: Yes
-Turbopack: Yes
-Import alias: Yes
+```bash
+npm run dev
 ```
 
-If the initializer refuses because the folder already contains files, create the app in a temporary folder and move the generated Next.js files into the project root without overwriting these Markdown files.
+If port 3000 is already occupied by this project, Next.js may report the existing server or select another port. Stop the earlier terminal process before starting a second development server.
 
-## Initial Source Structure
+Validation:
 
-After Next.js initialization, target:
-
-```text
-src/
-├── app/
-├── components/
-├── lib/
-├── types/
-└── utils/
+```bash
+npm run lint
+npm run typecheck
+npm run build
 ```
 
-Do not create every folder prematurely.
+## Assets and References
 
-## Environment Variables
+- The current logo is stored in `public/brand/logo.png` and is also used for the favicon.
+- Product photos are stored in `public/images/products/coatings/`.
+- PNG files in `references/` are retained as early visual direction and project history.
+- References must not be embedded as pages and are no longer pixel-perfect implementation requirements.
+- The implemented design system and approved product decisions take precedence over rough reference details.
 
-Later create:
+## Deployment
 
-```text
-.env.local
-.env.example
-```
+The public GitHub repository can be connected to Vercel during UI development. The current static/mock UI does not require Supabase or PayMongo environment variables.
 
-Typical variables:
+Do not add production secrets until the corresponding backend integration begins. Never commit `.env.local`.
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+## Git Workflow
 
-PAYMONGO_SECRET_KEY=
-PAYMONGO_PUBLIC_KEY=
-PAYMONGO_WEBHOOK_SECRET=
-
-NEXT_PUBLIC_SITE_URL=
-```
-
-Never commit real secrets.
-
-## Current Development Stage
-
-Current stage:
-
-**Project documentation + Figma UI reference preparation**
-
-Next:
-
-1. Export Figma frames as PNG
-2. Place them in `/references`
-3. Initialize Next.js
-4. Recreate UI with mock data
-5. Review visual fidelity
-6. Create Supabase project
-7. Configure Google login
-8. Implement database
-9. Add PayMongo
-10. Deploy to Vercel
+The user performs Git operations manually. Agents must report completion, validation results, changed files, and a suggested Conventional Commit message. Agents must not stage, commit, or push.
