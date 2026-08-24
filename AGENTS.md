@@ -252,3 +252,17 @@ A task is complete when:
 - security implications reviewed
 - responsive behavior checked
 - documentation updated if needed
+
+---
+
+## 19. Git Delivery
+
+After completing and validating approved implementation work:
+
+1. Review `git status` and the final diff.
+2. Stage only files that belong to the requested task.
+3. Use a concise commit message that describes the completed scope.
+4. Provide the exact commit and push commands in the final handoff.
+5. If the user explicitly requests Git delivery, commit and push the changes and report the branch and commit hash.
+
+Never push directly to `main` unless the user explicitly authorizes it.
