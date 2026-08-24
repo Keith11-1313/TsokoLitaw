@@ -1,0 +1,11 @@
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import { Star } from "lucide-react";
+import { AdminPageLayout } from "@/components/admin/admin-page-layout";
+import { AdminDataTable, type AdminTableColumn } from "@/components/admin/admin-data-table";
+import { AdminStatCard } from "@/components/admin/admin-stat-card";
+
+export const metadata: Metadata = { title: "Review Management | TsokoLitaw Admin" };
+const columns: readonly AdminTableColumn[] = [{ key: "customer", label: "Customer" }, { key: "order", label: "Completed Order" }, { key: "rating", label: "Rating" }, { key: "comment", label: "Review" }, { key: "visibility", label: "Public" }, { key: "action", label: "Action" }];
+const rows: readonly Record<string, ReactNode>[] = [["Maria Santos", "#ORD-004", "5", "Soft, warm, and perfect for sharing.", "Featured"], ["Juan Dela Cruz", "#ORD-003", "4", "Loved the mixed coatings.", "Visible"], ["Sophia Lim", "#ORD-001", "3", "Pickup instructions could be clearer.", "Hidden"]].map((item) => ({ customer: <strong className="text-foreground">{item[0]}</strong>, order: item[1], rating: <span className="inline-flex items-center gap-1 font-bold text-foreground"><Star className="fill-warning-foreground text-warning-foreground" size={15} />{item[2]}</span>, comment: item[3], visibility: item[4], action: <button type="button" disabled title="Moderation persistence requires backend setup" className="min-h-11 rounded-full border border-border px-3 text-xs font-bold opacity-60">Manage</button> }));
+export default function AdminReviewsPage() { return <AdminPageLayout activePath="/admin/reviews" title="Review Management" description="Verified reviews are tied to completed mock orders."><section className="mb-6 grid gap-4 sm:grid-cols-3"><AdminStatCard compact label="Average Rating" value="4.6" /><AdminStatCard compact label="Visible" value="47" /><AdminStatCard compact label="Featured" value="2" /></section><AdminDataTable caption="Customer reviews" columns={columns} rows={rows} minimumWidth="52rem" /></AdminPageLayout>; }
