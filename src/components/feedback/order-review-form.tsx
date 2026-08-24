@@ -1,0 +1,9 @@
+"use client";
+
+import { Star } from "lucide-react";
+import { useState } from "react";
+import { FormField } from "@/components/ui/form-field";
+import { PrimaryButton } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
+
+export function OrderReviewForm({ orderId }: { orderId: string }) { const [rating, setRating] = useState(0); const [submitted, setSubmitted] = useState(false); if (submitted) return <section className="rounded-card border border-border bg-surface p-8 text-center"><Star className="mx-auto fill-warning-foreground text-warning-foreground" size={38} /><h2 className="mt-4 font-display text-2xl">Thank you for your review</h2><p className="mt-2 text-sm text-muted-foreground">Your mock review for #{orderId} was recorded for this UI preview.</p></section>; return <form onSubmit={(event) => { event.preventDefault(); if (rating) setSubmitted(true); }} className="rounded-card border border-border bg-surface p-6 sm:p-8"><p className="text-sm font-bold">Rating for order #{orderId}</p><fieldset className="mt-5"><legend className="sr-only">Choose a rating</legend><div className="flex gap-2">{[1,2,3,4,5].map((value) => <button key={value} type="button" aria-label={`${value} star rating`} aria-pressed={rating === value} onClick={() => setRating(value)} className="flex size-12 items-center justify-center rounded-control bg-surface-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Star className={cn("text-warning-foreground", value <= rating && "fill-warning-foreground")} /></button>)}</div></fieldset><FormField id="review-comment" label="Tell us about your box and pickup experience" as="textarea" required className="mt-6" textareaProps={{ placeholder: "What did you enjoy?" }} /><PrimaryButton className="mt-6 w-full" type="submit" disabled={!rating}>Submit review</PrimaryButton></form>; }

@@ -1,0 +1,7 @@
+import { CalendarDays, MapPin, PackageOpen } from "lucide-react";
+import Link from "next/link";
+import { MOCK_ORDERS } from "@/lib/mock-orders";
+import { formatPhp } from "@/lib/commerce";
+import { StatusBadge } from "@/components/ui/status-badge";
+
+export function OrdersList() { return <div className="space-y-4">{MOCK_ORDERS.map((order) => <article key={order.id} className="rounded-card border border-border bg-surface p-5 sm:p-6"><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-3"><h2 className="font-display text-2xl">#{order.id}</h2><StatusBadge status={order.status} /></div><p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays size={15} />Ordered {order.date}</p><p className="mt-2 flex items-start gap-2 text-sm text-muted-foreground"><MapPin className="mt-0.5" size={15} />{order.pickup}</p></div><strong className="font-display text-xl">{formatPhp(order.total)}</strong></div><div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between"><p className="flex items-center gap-2 text-sm"><PackageOpen size={17} />{order.box} · {order.coatings}</p><Link href={`/orders/${order.id}`} className="inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand">View order</Link></div></article>)}</div>; }

@@ -35,9 +35,10 @@ const statusLabels: Record<OrderStatus, string> = {
 interface StatusBadgeProps {
   status: OrderStatus;
   className?: string;
+  label?: string;
 }
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+export function StatusBadge({ status, className, label }: StatusBadgeProps) {
   return (
     <span
       className={cn(
@@ -46,7 +47,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         className,
       )}
     >
-      {statusLabels[status]}
+      {label ?? statusLabels[status]}
     </span>
   );
 }
