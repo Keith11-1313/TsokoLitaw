@@ -36,6 +36,8 @@ The project has completed the broad static UI phase. The next major phase is UI 
 - [x] Add responsive admin sidebar and mobile drawer
 - [x] Add TsokoLitaw logo and favicon
 - [x] Add seven real coating images
+- [x] Add approved Home promotional photo and featured video
+- [x] Present Home feature media as a muted-autoplay carousel with end-of-video advancement
 - [x] Reclassify PNG references as rough historical direction
 
 ## Phase 2 — Customer UI
@@ -96,6 +98,8 @@ The project has completed the broad static UI phase. The next major phase is UI 
 - [x] Align admin and customer mock order products, coatings, totals, and statuses
 - [x] Add purpose, customer-impact, and connection guidance to every admin area
 - [x] Share customer/admin mock commerce and pickup constants
+- [x] Add frontend-only coating-entry preview with name, description, 1:1 image validation, and additional-type price
+- [ ] Connect coating creation, media upload, and publication during authorized Admin CRUD work
 - [ ] Review dense admin screens at small tablet widths
 
 ## Phase 5 — UI Quality Assurance

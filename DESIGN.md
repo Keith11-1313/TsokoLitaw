@@ -165,7 +165,16 @@ Product cards should:
 - preserve the food as the focal point
 - avoid layout shifts
 
+Admin coating entry should:
+
+- request name, description, additional-type price, and image together
+- require and preview a square 1:1 image
+- explain that the first coating remains included
+- distinguish a browser-session preview from a customer-visible published record
+
 Placeholders remain acceptable only when an actual asset is unavailable.
+
+Approved Home feature media uses a single stable portrait carousel frame so switching slides does not shift surrounding content. The video autoplays muted, uses `playsInline`, includes native controls plus a clear sound toggle, and advances to the promotional image when complete. The image remains uncropped and links to the relevant customer route. Carousel controls must remain touch-friendly and keyboard accessible. The Journal button is centered below this media block.
 
 ## 7. Forms and Dropdowns
 

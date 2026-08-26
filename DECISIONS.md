@@ -407,10 +407,23 @@ The server must verify the admin identity/role for every protected page and muta
 - use Lucide React for missing simple icons
 - use placeholders only when an asset is unavailable
 - do not introduce another icon or UI library without clear value
+- supplied Home feature media is stored locally and shown as responsive photo/video content
 
 ### Reason
 
 Real brand and product assets improve trust and remove the inconsistencies caused by generic flavor placeholders.
+
+The Home feature media uses one mobile-first carousel rather than two competing columns. Video plays first, starts muted to satisfy browser autoplay rules, exposes a sound toggle, and advances to the supplied promotional image when it ends. Manual previous, next, and slide-selection controls remain available. The Journal action is centered beneath the carousel as a separate editorial path.
+
+### Admin coating-entry decision
+
+Admin Catalog previews collect a coating name, customer-facing description, square 1:1 image, and additional-type price. The price represents the charge when that coating is used as an additional distinct type; the first coating type in a box remains included.
+
+The current interaction adds the entry only to in-memory page state. It is intentionally marked as a session preview because publishing it to Our Creations requires authenticated server CRUD, durable storage, and server-authoritative pricing.
+
+### Reason
+
+A consistent square image keeps coating cards and admin rows predictable across mobile and desktop. Separating the coating's additional-type price from its description prepares the catalog for future price changes without redefining the included-first-coating rule.
 
 ## 19. Legal and Policy Access
 

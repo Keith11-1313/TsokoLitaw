@@ -94,6 +94,8 @@ Admin stays under `/admin` until subdomain configuration is explicitly authorize
 - Do not add another icon library without a strong reason.
 - Logo: `public/brand/logo.png`.
 - Coating photos: `public/images/products/coatings/`.
+- Home feature media: `public/images/home/` and `public/videos/home/`.
+- New coating images use a square 1:1 presentation and must be validated before future upload.
 - Use local placeholders only when a real asset is unavailable.
 - Do not add random remote or paid asset dependencies.
 
@@ -115,6 +117,7 @@ Admin stays under `/admin` until subdomain configuration is explicitly authorize
 - Reuse existing components before adding variants.
 - Use shared mock/domain constants when customer and admin UI represent the same data; do not maintain contradictory page-local copies.
 - Every admin feature must have a clear operational purpose and customer impact. Mark unconnected controls as mock UI.
+- Admin coating previews collect name, description, square image, and additional-type price. Until backend CRUD exists, additions may live only in component state and must not imply publication to Customer.
 - When an approved product decision changes workflow or domain meaning, update `DECISIONS.md` and every affected root specification in the same task.
 - Mobile-first responsive behavior.
 - Semantic HTML, labels, keyboard support, visible focus, and meaningful alt text.

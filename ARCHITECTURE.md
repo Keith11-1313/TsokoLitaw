@@ -36,7 +36,8 @@ Current customer/admin relationship:
 ```text
 Shared mock commerce data
 ├── Our Creations
-└── Admin Catalog
+├── Admin Catalog
+└── Admin coating session previews (not published)
 
 Shared mock pickup data
 ├── Checkout
@@ -59,6 +60,8 @@ Client Components are limited to interactions such as:
 - account preview menu
 - admin mobile drawer
 - mock forms and dialogs
+- square-image validation and in-memory coating previews
+- Home feature-carousel state, muted autoplay, and video-ended slide transition
 
 ## 3. Future Production Architecture
 
@@ -124,6 +127,8 @@ Business rules should move out of presentation components as backend work begins
 
 Customer and admin previews must consume shared mock constants where they represent the same operational data. Admin Catalog and Our Creations share commerce constants; Admin Pickup and Checkout share pickup constants. This prevents UI drift but is not persistence or backend connectivity.
 
+The Admin coating form may create an in-memory preview containing name, description, a square image data URL, and an additional-type price. That object is deliberately page-session-only and must not be merged into the customer catalog. Future implementation replaces the data URL with a validated storage upload and publishes a database record through an authorized server mutation.
+
 ## 6. Current Cart
 
 The UI cart is exposed through `CartProvider` and persisted under a browser-local storage key.
@@ -170,7 +175,7 @@ Profile + scoped session
 - Product variants represent 4-, 6-, and 8-piece boxes.
 - Coatings are selectable per box or per piece.
 - The first distinct coating type is included.
-- Each additional distinct type adds a configurable charge.
+- Each additional distinct type adds that coating's configurable additional-type charge.
 - Add-ons such as extra sea salt cream are separate records.
 
 Store IDs and counts from the client, then calculate money from database records on the server. Preserve names, counts, and prices as order snapshots.

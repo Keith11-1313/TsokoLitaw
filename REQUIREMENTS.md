@@ -142,6 +142,15 @@ Coatings:
 
 Product photography should use the local coating images when available.
 
+Each coating catalog record requires:
+
+- customer-facing name
+- description
+- square 1:1 image
+- configurable additional-type price
+
+During the UI-only phase, Admin may add a temporary session preview of a coating. It must be labeled as unsaved and must not appear in the customer builder as though it were published.
+
 All prices must eventually be admin-editable and recalculated from database values on the server.
 
 ## 7. Product Customization
@@ -317,7 +326,11 @@ Admin pages:
 
 Admin may eventually manage boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, promotions, loyalty, orders, reviews, Journal posts, and operational settings.
 
+The Admin Catalog coating form must collect name, description, a validated 1:1 image, and the coating's additional-type price. Future publication requires authenticated server-side persistence and media storage; the current form is only a browser-session preview.
+
 The TsokoLitaw brand/store name is fixed and must not appear as an editable setting. Never expose infrastructure secrets in admin UI.
+
+The Home page may feature approved local promotional photography and video. Its feature carousel starts with an autoplaying muted video, allows sound to be toggled, and advances to the promotional image when playback ends. Media must use responsive presentation, accessible descriptions or captions, and browser-compatible delivery formats.
 
 Admin currently lives under `/admin`. A future `admin.tsokolitaw.com` mapping must still enforce server-side authorization.
 

@@ -16,6 +16,7 @@ Implemented with mock data:
 
 - responsive customer and admin interfaces
 - product catalog with real coating photography
+- mobile-first Home carousel with supplied promotional photo, muted-autoplay video, sound control, and automatic image advancement
 - 4-, 6-, and 8-piece box configuration
 - single-coating and mixed-box selection
 - browser-local cart with quantity and totals
@@ -24,6 +25,7 @@ Implemented with mock data:
 - Journal for announcements, stories, product features, and community highlights
 - responsive admin dashboard and management screens
 - admin purpose/customer-impact/connection guidance on every management area
+- Admin coating-entry session preview with square-image validation and PHP additional-type pricing
 
 Not implemented:
 
@@ -37,6 +39,8 @@ Not implemented:
 All current customer, order, payment, account, and admin data is mock data. Disabled actions identify features that require future backend work.
 
 Customer Catalog and Checkout currently share their mock commerce and pickup constants with the matching admin screens. This keeps the UI previews aligned, but admin controls do not persist changes until a database and server mutations are implemented.
+
+The Admin Catalog can temporarily add a coating preview with name, description, a 1:1 image, and additional-type price. The preview exists only in the current page session and is not published to Our Creations.
 
 The account preview starts signed in so Profile and My Orders can be reviewed. Logging out stores a frontend-only signed-out state and redirects protected account pages to Login. Login can restore the preview state; this does not authenticate or create an account.
 
@@ -137,7 +141,10 @@ TASKS.md
 
 public/
 ├── brand/
-└── images/products/coatings/
+├── images/
+│   ├── home/
+│   └── products/coatings/
+└── videos/home/
 
 src/
 ├── app/                 # App Router pages
@@ -184,6 +191,7 @@ npm run build
 
 - The current logo is stored in `public/brand/logo.png` and is also used for the favicon.
 - Product photos are stored in `public/images/products/coatings/`.
+- Supplied Home promotional media is stored in `public/images/home/` and `public/videos/home/`.
 - PNG files in `references/` are retained as early visual direction and project history.
 - References must not be embedded as pages and are no longer pixel-perfect implementation requirements.
 - The implemented design system and approved product decisions take precedence over rough reference details.
