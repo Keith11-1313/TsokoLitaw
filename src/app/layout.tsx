@@ -29,10 +29,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${lato.variable} ${dmSerifDisplay.variable} ${italianno.variable} antialiased`}
       >
+        <a
+          href="#main-content"
+          className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-full bg-brand px-5 py-3 text-sm font-bold text-surface shadow-xl transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2"
+        >
+          Skip to main content
+        </a>
         <AuthPreviewProvider><CartProvider>{children}</CartProvider></AuthPreviewProvider>
       </body>
     </html>

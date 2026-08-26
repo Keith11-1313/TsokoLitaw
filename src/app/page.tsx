@@ -21,7 +21,7 @@ export default function Home() {
   return (
     <>
       <CustomerHeader activePath="/" />
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <HomeHero {...homeContent.hero} />
         <FeaturedVideoSection {...homeContent.featuredVideo} />
       </main>

@@ -41,7 +41,13 @@ export function AdminDataTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, rowIndex) => (
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="px-4 py-12 text-center text-muted-foreground">
+                  No records are available yet.
+                </td>
+              </tr>
+            ) : rows.map((row, rowIndex) => (
               <tr key={rowIndex} className="min-h-14 border-b border-border last:border-b-0">
                 {columns.map((column) => (
                   <td key={column.key} className="px-4 py-4 text-muted-foreground">

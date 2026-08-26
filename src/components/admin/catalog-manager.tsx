@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { CheckCircle2, ImagePlus, Pencil, Plus, X } from "lucide-react";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AdminDataTable, type AdminTableColumn } from "@/components/admin/admin-data-table";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
@@ -81,14 +81,22 @@ export function CatalogManager() {
   const [imageError, setImageError] = useState("");
   const [formError, setFormError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
+  const dialogRef = useRef<HTMLElement>(null);
+  const returnFocusRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Tab") return;
+      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])');
+      if (!focusable?.length) return;
+      const first = focusable[0]; const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => { document.removeEventListener("keydown", handleKeyDown); returnFocusRef.current?.focus(); };
   }, [open]);
 
   function resetForm() {
@@ -203,7 +211,7 @@ export function CatalogManager() {
               Coating images must be square. The price is charged only when that coating is an additional type in a mixed box; the first type remains included.
             </p>
           </div>
-          <PrimaryButton type="button" onClick={() => { setStatusMessage(""); setOpen(true); }} className="shrink-0">
+          <PrimaryButton type="button" onClick={(event) => { returnFocusRef.current = event.currentTarget; setStatusMessage(""); setOpen(true); }} className="shrink-0">
             <Plus aria-hidden="true" size={17} /> Add coating
           </PrimaryButton>
         </div>
@@ -218,6 +226,7 @@ export function CatalogManager() {
       {open ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-foreground/40 p-4" onPointerDown={closeDialog}>
           <section
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="add-coating-title"

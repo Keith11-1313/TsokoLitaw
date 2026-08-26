@@ -100,7 +100,7 @@ The project has completed the broad static UI phase. The next major phase is UI 
 - [x] Share customer/admin mock commerce and pickup constants
 - [x] Add frontend-only coating-entry preview with name, description, 1:1 image validation, and additional-type price
 - [ ] Connect coating creation, media upload, and publication during authorized Admin CRUD work
-- [ ] Review dense admin screens at small tablet widths
+- [x] Review dense admin screens at small tablet widths
 
 ## Phase 5 — UI Quality Assurance
 
@@ -110,11 +110,11 @@ The project has completed the broad static UI phase. The next major phase is UI 
 - [x] Check Our Creations on desktop and mobile
 - [x] Check coating image loading and cropping
 - [x] Check mixed-box calculations manually
-- [ ] Test every customer route at mobile, tablet, and desktop widths
-- [ ] Test every admin route at mobile, tablet, and desktop widths
-- [ ] Complete keyboard-only navigation audit
-- [ ] Complete screen-reader landmark and label audit
-- [ ] Add empty, loading, and server-error states before data integration
+- [x] Test every customer route at 390px mobile, 768px tablet, and 1440px desktop widths
+- [x] Test every admin route at 390px mobile, 768px tablet, and 1440px desktop widths
+- [x] Complete keyboard-only navigation audit
+- [x] Complete screen-reader landmark and label audit
+- [x] Add empty, loading, server-error, and not-found states before data integration
 - [ ] Confirm final legal and allergen wording
 
 ## Phase 6 — Backend Planning Gate
