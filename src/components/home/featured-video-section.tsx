@@ -1,6 +1,6 @@
-import { DessertPlaceholder } from "@/components/home/dessert-placeholder";
-import { SiteContainer } from "@/components/layout/site-container";
 import Link from "next/link";
+import { FeaturedMediaCarousel } from "@/components/home/featured-media-carousel";
+import { SiteContainer } from "@/components/layout/site-container";
 import { secondaryButtonClassName } from "@/components/ui/button";
 
 interface FeaturedVideoSectionProps {
@@ -24,13 +24,10 @@ export function FeaturedVideoSection({
           </h2>
           <p className="text-sm text-muted-foreground">{supportingText}</p>
         </div>
-        <figure>
-          <DessertPlaceholder variant="featured" />
-          <figcaption className="sr-only">
-            A future video showing how TsokoLitaw is made and served.
-          </figcaption>
-        </figure>
-        <Link href="/journal" className={`${secondaryButtonClassName} mt-6`}>Visit our Journal</Link>
+        <FeaturedMediaCarousel />
+        <div className="mt-7 flex justify-center">
+          <Link href="/journal" className={secondaryButtonClassName}>Visit our Journal</Link>
+        </div>
       </SiteContainer>
     </section>
   );

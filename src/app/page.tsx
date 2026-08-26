@@ -12,8 +12,8 @@ const homeContent = {
       "Experience the softest, chewiest traditional rice cakes, filled with hot oozing local Tsokolate, rolled in grated coconut and toasted sesame seeds. Handmade daily.",
   },
   featuredVideo: {
-    heading: "Featured Video",
-    supportingText: "We make and we serve",
+    heading: "Featured at TsokoLitaw",
+    supportingText: "Watch the process and explore our selection",
   },
 } as const;
 
