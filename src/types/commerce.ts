@@ -10,6 +10,7 @@ export interface Coating {
   name: string;
   description: string;
   imageSrc: string;
+  additionalTypePrice: number;
   tone:
     | "cocoa-coating"
     | "milk"
