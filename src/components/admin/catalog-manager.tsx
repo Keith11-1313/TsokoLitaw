@@ -8,7 +8,7 @@ import { AdminDataTable, type AdminTableColumn } from "@/components/admin/admin-
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
-import { BOX_VARIANTS, COATINGS, EXTRA_SAUCE_PRICE, formatPhp } from "@/lib/commerce";
+import { BOX_VARIANTS, COATINGS, EXTRA_SAUCE_PRICE, INITIAL_PIECE_PRICE, formatPhp } from "@/lib/commerce";
 
 interface PreviewCoating {
   id: string;
@@ -35,6 +35,12 @@ const previewBadge = (
 const publishedBadge = (
   <span className="rounded-lg bg-success-background px-2.5 py-1 text-xs font-bold text-success-foreground">
     Shown in builder
+  </span>
+);
+
+const calculatedBadge = (
+  <span className="rounded-lg bg-surface-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">
+    Calculated from piece price
   </span>
 );
 
@@ -165,12 +171,19 @@ export function CatalogManager() {
   }
 
   const rows: readonly Record<string, ReactNode>[] = [
+    {
+      item: <div><strong className="block text-foreground">Base piece price</strong><span className="text-xs text-muted-foreground">Admin-controlled source price for every box size</span></div>,
+      type: "Product price",
+      price: <strong className="text-foreground">{formatPhp(INITIAL_PIECE_PRICE)} per piece</strong>,
+      availability: publishedBadge,
+      action: disabledEditButton("base piece price"),
+    },
     ...BOX_VARIANTS.map((variant) => ({
       item: <div><strong className="block text-foreground">{variant.label}</strong><span className="text-xs text-muted-foreground">{variant.pieceCount} chocolate-filled pieces</span></div>,
       type: "Box size",
-      price: <strong className="text-foreground">{formatPhp(variant.price)}</strong>,
+      price: <span><strong className="text-foreground">{formatPhp(variant.price)}</strong><span className="block text-xs text-muted-foreground">{variant.pieceCount} × {formatPhp(INITIAL_PIECE_PRICE)} per piece</span></span>,
       availability: publishedBadge,
-      action: disabledEditButton(variant.label),
+      action: calculatedBadge,
     })),
     ...COATINGS.map((coating) => ({
       item: <div className="flex items-center gap-3"><Image src={coating.imageSrc} alt="" width={48} height={48} className="size-12 rounded-control object-cover" /><div><strong className="block text-foreground">{coating.name}</strong><span className="line-clamp-2 max-w-xs text-xs text-muted-foreground">{coating.description}</span></div></div>,
@@ -208,7 +221,7 @@ export function CatalogManager() {
           <div>
             <h2 id="catalog-items-heading" className="font-display text-2xl text-foreground">Catalog items</h2>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Coating images must be square. The price is charged only when that coating is an additional type in a mixed box; the first type remains included.
+              Box totals currently use the ₱10-per-piece seed and will recalculate from the base piece price set by Admin. Coating charges apply only to additional types in a mixed box.
             </p>
           </div>
           <PrimaryButton type="button" onClick={(event) => { returnFocusRef.current = event.currentTarget; setStatusMessage(""); setOpen(true); }} className="shrink-0">

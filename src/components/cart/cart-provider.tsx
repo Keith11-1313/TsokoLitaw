@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { calculateItemUnitTotal } from "@/lib/commerce";
+import { calculateCartLineTotal } from "@/lib/commerce";
 import type { CartLineItem } from "@/types/commerce";
 
 interface CartContextValue {
@@ -46,7 +46,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CartContextValue>(() => ({
     items,
     itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
-    subtotal: items.reduce((sum, item) => sum + calculateItemUnitTotal(item.boxPrice, item.extraCoatingCharge, item.extraSauceQuantity) * item.quantity, 0),
+    subtotal: items.reduce((sum, item) => sum + calculateCartLineTotal(item), 0),
     addItem: (item) => setItems((current) => [...current, { ...item, id: crypto.randomUUID() }]),
     updateQuantity: (id, quantity) => setItems((current) => current.map((item) => item.id === id ? { ...item, quantity: Math.max(1, quantity) } : item)),
     removeItem: (id) => setItems((current) => current.filter((item) => item.id !== id)),

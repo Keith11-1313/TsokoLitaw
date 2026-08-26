@@ -4,7 +4,7 @@ import { Check, CheckCircle2, Minus, Plus, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
-import { BOX_VARIANTS, COATINGS, EXTRA_COATING_PRICE, EXTRA_SAUCE_PRICE, calculateItemUnitTotal, formatPhp } from "@/lib/commerce";
+import { BOX_VARIANTS, COATINGS, EXTRA_SAUCE_PRICE, INITIAL_EXTRA_COATING_PRICE, calculateExtraCoatingCharge, calculateItemUnitTotal, formatPhp, hasCompleteCoatingAllocation } from "@/lib/commerce";
 import { PrimaryButton } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { cn } from "@/lib/cn";
@@ -22,11 +22,14 @@ export function ProductConfigurator() {
   const variant = BOX_VARIANTS.find((item) => item.id === variantId) ?? BOX_VARIANTS[0];
   const selectedCoating = COATINGS.find((coating) => coating.id === singleCoating) ?? COATINGS[0];
   const mixedTotal = Object.values(counts).reduce((sum, count) => sum + count, 0);
-  const activeCoatings = mode === "single" ? 1 : Object.values(counts).filter((count) => count > 0).length;
-  const extraCoatingCharge = Math.max(0, activeCoatings - 1) * EXTRA_COATING_PRICE;
-  const unitTotal = calculateItemUnitTotal(variant.price, extraCoatingCharge, Number(extraSauce));
+  const extraCoatingCharge = calculateExtraCoatingCharge(
+    mode === "single" ? { [singleCoating]: variant.pieceCount } : counts,
+    INITIAL_EXTRA_COATING_PRICE,
+  );
+  const unitTotal = calculateItemUnitTotal(variant.price, extraCoatingCharge, Number(extraSauce), EXTRA_SAUCE_PRICE);
   const remainingPieces = variant.pieceCount - mixedTotal;
-  const error = mode === "mixed" && remainingPieces !== 0 ? `Assign ${remainingPieces} more ${remainingPieces === 1 ? "piece" : "pieces"}.` : "";
+  const hasValidAllocation = mode === "single" || hasCompleteCoatingAllocation(variant.pieceCount, counts);
+  const error = !hasValidAllocation ? `Assign ${remainingPieces} more ${remainingPieces === 1 ? "piece" : "pieces"}.` : "";
   const coatingNames = useMemo(() => Object.fromEntries(COATINGS.map((coating) => [coating.id, coating.name])), []);
 
   function changeVariant(value: string) {
@@ -88,7 +91,7 @@ export function ProductConfigurator() {
       <aside className="order-1 self-start lg:order-2 lg:sticky lg:top-6">
         <section className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-7" aria-labelledby="build-box-heading">
           <h2 id="build-box-heading" className="font-display text-3xl">Build your box</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">One coating type is included. Each additional type adds {formatPhp(EXTRA_COATING_PRICE)}.</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">One coating type is included. The current preview adds {formatPhp(INITIAL_EXTRA_COATING_PRICE)} for each additional type; Admin will control this price.</p>
 
           <div className="mt-6 space-y-5">
             <CustomSelect label="Box size" value={variantId} onChange={changeVariant} options={BOX_VARIANTS.map((item) => ({ value: item.id, label: `${item.label} — ${formatPhp(item.price)}` }))} />
