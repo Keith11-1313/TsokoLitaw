@@ -151,9 +151,11 @@ Production sending requires a verified domain or sending subdomain. Resend API k
 
 TsokoLitaw sells chocolate-filled Litaw in:
 
-- Box of 4 — temporary seed price ₱60
-- Box of 6 — temporary seed price ₱85
-- Box of 8 — temporary seed price ₱110
+- Box of 4 — 4 pieces × the current base piece price
+- Box of 6 — 6 pieces × the current base piece price
+- Box of 8 — 8 pieces × the current base piece price
+
+The temporary base piece price is ₱10, producing initial preview totals of ₱40, ₱60, and ₱80 respectively.
 
 Customer choices are coatings, not flavors or generic toppings:
 
@@ -169,12 +171,13 @@ Customer choices are coatings, not flavors or generic toppings:
 
 The chocolate center is the consistent product identity. The customer changes the exterior coating, so “coating” is the accurate domain term. Old mock products such as Matcha, Strawberry, Caramel, Cha-cha, and SB Litaw were removed because they no longer represent the approved catalog.
 
-The temporary prices are also the approved initial database seeds. They are not permanent business prices: authorized admins may update active prices, the server reloads and recalculates them at checkout, and completed order snapshots never change when catalog pricing changes.
+The ₱10 per-piece amount is the approved initial database seed, not a permanent business price. Authorized admins update the active base piece price; every box total is recalculated from its piece count. The server reloads and recalculates pricing at checkout, and completed order snapshots never change when catalog pricing changes.
 
 ### UI consequence
 
 - real coating photography appears in Our Creations and Admin Catalog
 - PHP is used everywhere
+- Admin Catalog shows the base piece price relationship behind each derived box total
 - Catalog is organized around box size, coating, and add-on—not unrelated product flavors
 
 ## 9. Single and Mixed Boxes
@@ -182,7 +185,7 @@ The temporary prices are also the approved initial database seeds. They are not 
 ### Decision
 
 - one coating type is included in a box
-- each additional distinct coating type currently adds ₱5
+- each additional distinct coating type uses its Admin-configured additional-type charge; the temporary seed is ₱5
 - a mixed box allocates every piece to a coating
 - allocated pieces must exactly equal the selected box size
 - extra sea salt cream is a separate optional add-on, temporarily ₱18 per cup
@@ -202,6 +205,8 @@ Customers need freedom to mix coatings without turning each coating into a separ
 ### Future server rule
 
 The browser is never authoritative. The server must reload current records, count distinct positive coating allocations, validate the piece total, and recalculate the charge.
+
+The ₱5 amount is only the initial coating-charge seed. It must not become a hardcoded production rule; Admin changes apply to future checkout calculations while completed order snapshots remain unchanged.
 
 ## 10. Cart and Checkout Workflow
 
@@ -383,6 +388,7 @@ Customer and admin UI use shared constants when they represent the same domain v
 Currently shared:
 
 - box variants
+- base piece price and derived box totals
 - coatings and images
 - coating/add-on prices
 - pickup dates
@@ -414,7 +420,7 @@ Subdomain routing is deployment configuration, not authorization. Moving the UI 
 
 The server must verify the admin identity/role for every protected page and mutation regardless of hostname.
 
-V1 has one admin permission role shared by five approved Google accounts. This means five administrators with equal access, not five different roles. Exact identities remain deployment-controlled data and must never be inferred from client state or a hostname.
+V1 has one admin permission role shared by up to five approved Google accounts. One identity may be configured initially and the remaining four added later. This means equal-permission administrators, not different roles. Exact identities remain deployment-controlled data and must never be inferred from client state or a hostname.
 
 ## 18. Assets and Visual Direction
 
@@ -453,7 +459,7 @@ Terms and Privacy links belong in the footer and Checkout, not the primary navig
 
 They must be easy to find and acknowledged at checkout without competing with primary shopping navigation.
 
-Final legal, refund, no-show, allergen, and privacy wording still requires business approval before production.
+The recipe/allergen disclosure is approved. Final general legal and privacy wording still requires business approval before production; the cancellation, refund, and no-show policy is already approved separately.
 
 ## 20. Git Workflow
 

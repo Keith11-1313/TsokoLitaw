@@ -75,7 +75,7 @@ The project has completed the broad static UI phase. The next major phase is UI 
 - [x] Add, remove, and update local cart items
 - [x] Persist cart in browser local storage
 - [x] Navigate from cart to checkout
-- [ ] Add automated unit tests for cart and configuration calculations
+- [x] Add automated unit tests for configurable piece/coating pricing, cart totals, and configuration calculations
 - [ ] Replace all browser-authoritative calculations during backend phase
 
 ## Phase 4 — Admin Static UI
@@ -115,21 +115,24 @@ The project has completed the broad static UI phase. The next major phase is UI 
 - [x] Complete keyboard-only navigation audit
 - [x] Complete screen-reader landmark and label audit
 - [x] Add empty, loading, server-error, and not-found states before data integration
-- [ ] Confirm final legal and allergen wording
+- [x] Confirm recipe and allergen wording
+- [ ] Confirm final general legal and privacy wording
 
 ## Phase 6 — Backend Planning Gate
 
 Do not begin without explicit approval.
 
-- [ ] Review and approve proposed database model
+- [x] Review and approve the database model as the Supabase baseline
 - [x] Approve provisional price seeds and admin-managed pricing
-- [ ] Finalize recipe and allergen data
+- [x] Finalize recipe and allergen data
 - [x] Approve admin-managed pickup locations, schedules, lead time, cutoff, capacity, and availability
 - [ ] Confirm launch pickup seed values
 - [x] Finalize cancellation, refund, and no-show policies
 - [x] Choose Resend as the transactional email provider
 - [x] Approve one equal-permission admin role for five accounts
-- [ ] Confirm the five admin Google identities and subdomain plan
+- [x] Approve one initial admin identity with four additional accounts later
+- [ ] Provide the initial admin Google identity
+- [x] Keep Admin under `/admin` for V1 and defer the admin subdomain
 - [x] Create environment variable inventory in `ARCHITECTURE.md`
 
 ## Phase 7 — Supabase Setup
@@ -147,7 +150,7 @@ Do not begin without explicit approval.
 - [ ] Implement sign-in and logout
 - [ ] Create/update profiles
 - [ ] Protect checkout and customer orders
-- [ ] Configure the five approved Google identities with one admin role
+- [ ] Configure the initial approved Google identity and support four additions under the same admin role
 - [ ] Protect admin routes server-side
 - [ ] Test unauthorized and cross-customer access
 

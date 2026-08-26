@@ -26,6 +26,7 @@ UI structure must communicate the real workflow rather than merely resemble a dr
 | My Orders is inside Account | It is private customer activity, not public navigation |
 | Mobile builder appears before coatings | Customers need configuration context before scanning all choices |
 | Mixed-box counters are on coating cards | Allocation happens piece by piece against visible coating options |
+| Admin Catalog explains each derived box price | Box size multiplies the current admin-managed price per piece; it is not a permanent fixed amount |
 | Terms and Privacy are in Footer and Checkout | They remain accessible and appear where acceptance matters |
 | Reviews begin on completed order details | Review eligibility is tied to a specific fulfilled order |
 | Journal replaces Vlog | Announcements and stories are not always videos |
@@ -170,6 +171,7 @@ Admin coating entry should:
 - request name, description, additional-type price, and image together
 - require and preview a square 1:1 image
 - explain that the first coating remains included
+- present ₱5 as an editable seed for the additional-type charge, not permanent pricing
 - distinguish a browser-session preview from a customer-visible published record
 
 Placeholders remain acceptable only when an actual asset is unavailable.

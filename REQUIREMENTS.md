@@ -106,7 +106,7 @@ Future V1 authentication:
 - Google Sign-In through Supabase
 - same sign-in flow for new and returning customers
 - no guest checkout
-- one admin permission role assigned to five approved Google accounts
+- one admin permission role supporting five approved Google accounts; one may be configured initially and four added later
 
 Signed-out Account opens `/login`. Future signed-in Account opens a menu containing Profile, My Orders, and Log out.
 
@@ -120,7 +120,7 @@ Profile UI includes:
 
 Authentication and authorization must never rely on frontend state alone.
 
-The five V1 admin accounts have the same permissions. Their exact Google identities are configured through controlled backend data, and every protected page and mutation must verify the admin role server-side.
+The five planned V1 admin accounts have the same permissions. One Google identity may bootstrap Admin initially, with four more added later through controlled backend data. Every protected page and mutation must verify the admin role server-side.
 
 Transactional order emails use Resend from server-only code. Initial events include order confirmation, ready-for-pickup, cancellation, and refund updates. Email delivery must not determine order or payment status, and failed sends must be retryable without duplicating messages.
 
@@ -128,11 +128,12 @@ Transactional order emails use Resend from server-only code. Initial events incl
 
 Temporary editable seed values:
 
-- 4-piece box — ₱60
-- 6-piece box — ₱85
-- 8-piece box — ₱110
+- base price per piece — ₱10
+- 4-piece box — ₱40 (`4 × ₱10`)
+- 6-piece box — ₱60 (`6 × ₱10`)
+- 8-piece box — ₱80 (`8 × ₱10`)
 - first coating type included
-- each additional coating type — ₱5
+- each additional coating type — temporary seed price ₱5, configurable by Admin
 - extra sea salt cream — ₱18 per cup
 
 Coatings:
@@ -156,7 +157,7 @@ Each coating catalog record requires:
 
 During the UI-only phase, Admin may add a temporary session preview of a coating. It must be labeled as unsaved and must not appear in the customer builder as though it were published.
 
-The temporary prices are approved as initial database seed values. Authorized admins may edit active box, coating, add-on, and related pricing. Checkout must reload current database values and recalculate money on the server, while completed orders retain immutable price snapshots.
+The temporary prices are approved as initial database seed values. Authorized admins may edit the active base price per piece plus each coating's additional-type charge, add-on pricing, and related pricing. Box totals are derived from the selected variant's piece count and the current base piece price. The ₱5 additional-coating amount is not fixed: checkout must reload its current Admin-managed value and recalculate money on the server, while completed orders retain immutable price snapshots.
 
 ## 7. Product Customization
 
@@ -166,7 +167,7 @@ Customer flow:
 2. Choose single coating or mixed box.
 3. For mixed boxes, allocate each piece to a coating.
 4. Require allocated pieces to exactly equal the selected box size.
-5. Charge ₱5 for each distinct coating type after the first.
+5. Charge the current Admin-configured additional-type price for each distinct coating type after the first; the provisional seed is ₱5.
 6. Optionally add extra sea salt cream.
 7. Select quantity.
 8. Add configuration to cart.
@@ -358,7 +359,7 @@ Terms and Privacy links must appear in the footer and checkout.
 
 Final Terms must cover ordering, pricing, availability, payment, pickup, late/no-show behavior, cancellation, refunds, food handling, allergens, data processing, and customer responsibilities.
 
-Potential allergens include peanuts, dairy, coconut, sesame, chocolate ingredients, and cookie ingredients. Final wording must match the actual recipe and business policy.
+The approved recipe/allergen disclosure covers peanuts or other nuts, dairy, coconut, sesame, chocolate ingredients, and cookie ingredients. Products may contain or come into contact with these allergens.
 
 ## 17. Responsive and Accessible UI
 

@@ -171,19 +171,21 @@ Profile + scoped session
 - UI route visibility is not authorization.
 - No guest checkout in V1.
 
-V1 authorizes five approved Google identities under one shared admin role. Bootstrap identities are controlled backend data; authorization is checked on every admin route and mutation, independent of the `/admin` path or future hostname.
+V1 supports five approved Google identities under one shared admin role. One identity may bootstrap Admin now and four may be added later through controlled backend data. Authorization is checked on every admin route and mutation, independent of the `/admin` path or any future hostname.
 
 ## 9. Pricing and Product Configuration
 
 - Product variants represent 4-, 6-, and 8-piece boxes.
+- Each box base total is `variant piece count × the product's current admin-managed price per piece`.
 - Coatings are selectable per box or per piece.
 - The first distinct coating type is included.
 - Each additional distinct type adds that coating's configurable additional-type charge.
+- The current ₱5 additional-type amount is a seed loaded from catalog data, not a permanent constant.
 - Add-ons such as extra sea salt cream are separate records.
 
 Store IDs and counts from the client, then calculate money from database records on the server. Preserve names, counts, and prices as order snapshots.
 
-The current mock amounts become provisional database seed values. Admin edits update active catalog pricing for future carts and checkouts only; they never mutate historical order snapshots.
+The current ₱10-per-piece mock amount becomes the provisional database seed, producing initial 4-, 6-, and 8-piece totals of ₱40, ₱60, and ₱80. Admin edits update the active per-piece catalog price for future carts and checkouts only; box-size labels do not carry permanent fixed prices, and edits never mutate historical order snapshots.
 
 ## 10. Payments
 

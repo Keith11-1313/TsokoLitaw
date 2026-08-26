@@ -107,11 +107,12 @@ Admin pages remain under `/admin` until subdomain routing, authentication, and s
 
 Temporary UI prices:
 
-- Box of 4 — ₱60
-- Box of 6 — ₱85
-- Box of 8 — ₱110
+- Base price per piece — ₱10
+- Box of 4 — ₱40 (`4 × ₱10`)
+- Box of 6 — ₱60 (`6 × ₱10`)
+- Box of 8 — ₱80 (`8 × ₱10`)
 - First coating type included
-- Each additional coating type — ₱5
+- Each additional coating type — temporary ₱5 seed, configurable by Admin
 - Extra sea salt cream — ₱18 per cup
 
 Coatings:
@@ -128,9 +129,9 @@ Mixed boxes allocate every piece to a coating. The allocated piece count must eq
 
 These browser values are previews. Future checkout pricing must be recalculated from database values on the server.
 
-The current amounts are approved as provisional database seeds. Authorized admins will manage active prices, while completed orders preserve immutable price snapshots. Pickup locations, schedules, lead time, cutoff, capacity, and availability will likewise be admin-managed without rewriting existing paid-order pickup snapshots.
+The ₱10 per-piece amount is approved as the provisional database seed. Authorized admins will manage the active base piece price, and each box total will be derived from its piece count. The ₱5 additional-coating charge is also only a seed and will come from the coating price configured in Admin. Completed orders preserve immutable price snapshots. Pickup locations, schedules, lead time, cutoff, capacity, and availability will likewise be admin-managed without rewriting existing paid-order pickup snapshots.
 
-V1 uses one equal-permission admin role assigned to five approved Google accounts. Customers may cancel through `CONFIRMED`; paid cancellations receive a full refund to the original PayMongo payment method. Cancellation and standard refund eligibility end at `PREPARING`, and no-shows are non-refundable. Order cancellation and refund processing remain separately tracked.
+V1 uses one equal-permission admin role supporting five approved Google accounts. One account may be configured first and four added later. Customers may cancel through `CONFIRMED`; paid cancellations receive a full refund to the original PayMongo payment method. Cancellation and standard refund eligibility end at `PREPARING`, and no-shows are non-refundable. Order cancellation and refund processing remain separately tracked.
 
 ## Project Structure
 
@@ -189,6 +190,7 @@ Validation:
 ```bash
 npm run lint
 npm run typecheck
+npm test
 npm run build
 ```
 

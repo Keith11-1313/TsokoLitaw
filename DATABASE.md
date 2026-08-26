@@ -1,8 +1,8 @@
-# TsokoLitaw — Proposed Database Design
+# TsokoLitaw — Approved Database Design
 
 ## 1. Status
 
-No database has been implemented. This document describes the proposed Supabase PostgreSQL model for a later approved phase.
+No database has been implemented yet. This model is approved as the Phase 7 Supabase baseline.
 
 Before implementation, convert this design into reviewed migrations, constraints, indexes, RLS policies, and seed data.
 
@@ -13,13 +13,13 @@ The proposed schema follows `DECISIONS.md` and the current workflow:
 | Product decision | Database consequence |
 | --- | --- |
 | Google email is primary; mobile is optional | `profiles.email` required through Auth identity; `mobile_number` nullable |
-| Boxes have 4, 6, or 8 pieces | `product_variants.piece_count` and price records |
+| Boxes have 4, 6, or 8 pieces | `product_variants.piece_count`; totals derive from `products.price_per_piece` |
 | Choices are coatings, not flavors | dedicated `coatings` table |
 | Mixed boxes allocate every piece | `order_item_coatings.piece_count` totals must match the item snapshot |
 | First coating type is included | snapshot which type was included and price additional distinct types server-side |
-| Admin-managed seed pricing | current mock values seed active price records; checkout recalculates server-side and orders preserve snapshots |
+| Admin-managed seed pricing | ₱10 seeds the product's active per-piece price; checkout derives each box total server-side and orders preserve snapshots |
 | Campus pickup only | admin-managed dates, windows, locations, lead/cutoff settings, capacity, and historical order snapshots; no delivery address |
-| Five admins share one role | five approved Google-backed profiles receive `admin`; all authorization remains server-side |
+| Five admins share one role | bootstrap one approved Google-backed admin now and add up to four later; all authorization remains server-side |
 | Cancellation closes at preparation | cancel through `CONFIRMED`; paid cancellation creates a separately tracked refund; prepared/no-show orders are non-refundable |
 | Reviews require completed orders | unique review per order plus ownership/status validation |
 | Journal supports multiple content types | `journal_posts.content_type`, publication state, and optional media |
@@ -44,7 +44,7 @@ updated_at timestamptz
 
 Google remains the authentication source for email. Admin authorization must be checked server-side.
 
-V1 has exactly five approved admin profiles using the same `admin` role. The exact emails are deployment-controlled bootstrap data. Customers cannot assign or modify roles, and client-provided profile metadata must never grant admin access.
+V1 supports five approved admin profiles using the same `admin` role. One Google identity may be configured initially and the remaining four added later through controlled backend data. Customers cannot assign or modify roles, and client-provided profile metadata must never grant admin access.
 
 ## 3. Products and Box Variants
 
@@ -56,6 +56,7 @@ name text
 slug text unique
 description text
 image_url text nullable
+price_per_piece numeric(10,2) check price_per_piece >= 0
 is_active boolean default true
 created_at timestamptz
 updated_at timestamptz
@@ -68,22 +69,22 @@ id uuid primary key
 product_id uuid references products(id)
 name text
 piece_count integer check piece_count > 0
-price numeric(10,2) check price >= 0
 is_active boolean default true
 sort_order integer
 created_at timestamptz
 updated_at timestamptz
 ```
 
-Initial variants:
+Initial product price and derived variants:
 
-- 4-piece box — ₱60
-- 6-piece box — ₱85
-- 8-piece box — ₱110
+- base price per piece — ₱10
+- 4-piece box — ₱40
+- 6-piece box — ₱60
+- 8-piece box — ₱80
 
-Prices are seed values, not permanent hardcoded rules.
+The box amount is calculated as `product_variants.piece_count × products.price_per_piece`. The initial ₱10 per-piece value produces ₱40, ₱60, and ₱80 totals for the three launch sizes.
 
-Authorized admins update active prices for future checkout calculations. Historical order-item snapshots remain unchanged.
+Authorized admins update the active product price per piece for future checkout calculations. Historical order-item box-total snapshots remain unchanged.
 
 ## 4. Coatings
 
@@ -115,6 +116,8 @@ Initial values:
 - Cookies and Cream
 
 Pricing rule: one distinct coating type is included; additional distinct coating types add the configured charge. Server validation must count distinct positive allocations.
+
+The initial `additional_type_price` is ₱5. It is an Admin-managed seed rather than a fixed business rule, and checkout reloads the active value before calculating the order.
 
 The application must validate coating media before upload. Customer catalog images use a square 1:1 presentation; future storage should retain image dimensions and reject unsupported or unsafe file types. Database `image_url` stores only the resulting approved asset location, never a browser data URL.
 
