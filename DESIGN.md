@@ -231,6 +231,11 @@ Future data-connected work must add consistent states for:
 - authentication required
 - unauthorized admin access
 - payment processing, success, failure, and expiry
+- cancellation available through Confirmed, with a clear warning that eligibility ends at Preparing
+- separate refund-requested, refund-processing, refunded, and refund-failed feedback
+- a visible no-refund notice for Preparing, Ready for Pickup, completed, and no-show orders
 - network/server failure
 
 Current backend-dependent actions should remain disabled or clearly identified as mock behavior.
+
+Cancellation confirmation must explain whether the action only releases an unpaid reservation or starts a full refund to the original payment method. Do not ask for a GCash, Maya, or bank destination during the normal PayMongo refund flow; show a restricted fallback form only after the automatic refund is unavailable or has failed.

@@ -137,7 +137,13 @@ Google Sign-In already supplies a stable account email. Requiring a phone number
 - Google email is read-only in Profile and Checkout
 - mobile fields are labeled optional
 - customer summaries prioritize email
-- order confirmation and ready-for-pickup notifications are planned as email events
+- order confirmation, ready-for-pickup, cancellation, and refund updates are planned as email events
+
+### Transactional email provider
+
+Resend is the approved V1 transactional email provider. Sending occurs only from trusted server code with idempotency protection. The application records the provider message ID and delivery state so failures can be retried and investigated without treating email delivery as proof of an order or payment transition.
+
+Production sending requires a verified domain or sending subdomain. Resend API keys and webhook signing secrets must never be exposed to the browser or stored in Admin settings.
 
 ## 8. Product Model: Boxes and Coatings
 
@@ -162,6 +168,8 @@ Customer choices are coatings, not flavors or generic toppings:
 ### Reason
 
 The chocolate center is the consistent product identity. The customer changes the exterior coating, so “coating” is the accurate domain term. Old mock products such as Matcha, Strawberry, Caramel, Cha-cha, and SB Litaw were removed because they no longer represent the approved catalog.
+
+The temporary prices are also the approved initial database seeds. They are not permanent business prices: authorized admins may update active prices, the server reloads and recalculates them at checkout, and completed order snapshots never change when catalog pricing changes.
 
 ### UI consequence
 
@@ -239,6 +247,8 @@ Current mock choices:
 - no same-day pickup
 - 15-minute grace period
 
+The future database treats locations, published dates, time windows, lead time, cutoff time, capacity, and availability as admin-managed operational configuration. Current mock values may seed the first backend environment, but operations can replace them before launch. Existing paid orders preserve their selected pickup details as historical snapshots.
+
 ### Reason
 
 Delivery addresses and delivery-hour UI did not match the actual operating model. Pickup scheduling keeps fulfillment practical for a student-operated business.
@@ -281,6 +291,12 @@ Payment and fulfillment answer different questions and must not be collapsed int
 - transitions are validated server-side
 - self-cancellation ends when preparation begins
 - customer access is ownership-scoped
+
+### Cancellation and refund policy
+
+Customers may request cancellation through `CONFIRMED`. If the order is unpaid, cancellation releases the stock reservation. If it is paid, cancellation creates a full PayMongo refund to the original payment method. Once the order enters `PREPARING`, the standard cancellation and refund path is closed. Prepared orders and no-shows are non-refundable because the product has already been made.
+
+Order cancellation and refund settlement are separate facts. An order may already be `CANCELLED` while its refund is `REQUESTED` or `PROCESSING`; only a verified PayMongo response or webhook may move the refund to `REFUNDED`. A manual transfer destination is collected only as a restricted fallback when the provider refund is unsupported or fails.
 
 ## 13. Reviews Instead of Public Feedback
 
@@ -397,6 +413,8 @@ Subdomain routing is deployment configuration, not authorization. Moving the UI 
 ### Future requirement
 
 The server must verify the admin identity/role for every protected page and mutation regardless of hostname.
+
+V1 has one admin permission role shared by five approved Google accounts. This means five administrators with equal access, not five different roles. Exact identities remain deployment-controlled data and must never be inferred from client state or a hostname.
 
 ## 18. Assets and Visual Direction
 

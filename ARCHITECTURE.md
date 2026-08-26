@@ -72,8 +72,8 @@ Customer or Admin Browser
 Next.js on Vercel
    |          |          |
    v          v          v
-Supabase   PayMongo   Email provider
-Postgres   Payments   Notifications
+Supabase   PayMongo     Resend
+Postgres   Payments   Transactional email
 Auth
 Storage
 ```
@@ -88,6 +88,7 @@ Next.js server responsibilities:
 - order creation and snapshots
 - PayMongo checkout creation
 - webhook verification and idempotency
+- idempotent Resend email dispatch and delivery-event handling
 - terms acceptance recording
 - admin mutations
 
@@ -170,6 +171,8 @@ Profile + scoped session
 - UI route visibility is not authorization.
 - No guest checkout in V1.
 
+V1 authorizes five approved Google identities under one shared admin role. Bootstrap identities are controlled backend data; authorization is checked on every admin route and mutation, independent of the `/admin` path or future hostname.
+
 ## 9. Pricing and Product Configuration
 
 - Product variants represent 4-, 6-, and 8-piece boxes.
@@ -179,6 +182,8 @@ Profile + scoped session
 - Add-ons such as extra sea salt cream are separate records.
 
 Store IDs and counts from the client, then calculate money from database records on the server. Preserve names, counts, and prices as order snapshots.
+
+The current mock amounts become provisional database seed values. Admin edits update active catalog pricing for future carts and checkouts only; they never mutate historical order snapshots.
 
 ## 10. Payments
 
@@ -196,6 +201,8 @@ The browser success page is informational. Only verified server-side provider ev
 
 Payment webhook events require a provider event ID uniqueness constraint and idempotent processing.
 
+Standard cancellation is allowed only before `PREPARING`. Unpaid cancellations release reserved stock; paid cancellations create a full refund to the original payment method. Refund lifecycle is tracked separately from order cancellation, and only verified provider events may confirm completion. Prepared and no-show orders are non-refundable. A restricted manual destination is collected only after an unsupported or failed provider refund.
+
 ## 11. Inventory
 
 Recommended V1 inventory:
@@ -211,6 +218,8 @@ available = stock_total - stock_reserved - stock_sold
 ```
 
 Expired payment reservations must be released safely.
+
+Pickup locations, dates, time windows, lead days, cutoff time, capacity, and availability are admin-managed database records or settings. Checkout reads only published, currently eligible options. Paid orders preserve pickup snapshots so later admin edits do not rewrite existing commitments.
 
 ## 12. Orders, Reviews, and Journal
 
@@ -234,10 +243,15 @@ PAYMONGO_SECRET_KEY=
 PAYMONGO_PUBLIC_KEY=
 PAYMONGO_WEBHOOK_SECRET=
 
+RESEND_API_KEY=
+RESEND_WEBHOOK_SECRET=
+EMAIL_FROM_ADDRESS=
+EMAIL_REPLY_TO_ADDRESS=
+
 NEXT_PUBLIC_SITE_URL=
 ```
 
-Never commit `.env.local` or real secrets.
+Only values intentionally prefixed with `NEXT_PUBLIC_` may be available to the browser. Supabase service-role, PayMongo, and Resend secrets remain server-only. Never commit `.env.local` or real secrets.
 
 ## 14. Deployment
 
@@ -245,6 +259,7 @@ Never commit `.env.local` or real secrets.
 - production app: Vercel
 - database/auth/storage: Supabase
 - payments: PayMongo
+- transactional email: Resend using a verified domain or sending subdomain
 - customer domain: `tsokolitaw.com`
 - planned admin domain: `admin.tsokolitaw.com`
 

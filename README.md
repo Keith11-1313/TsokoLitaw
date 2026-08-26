@@ -58,6 +58,7 @@ Future services:
 
 - Supabase PostgreSQL and Google authentication
 - PayMongo payments
+- Resend transactional email
 - Vercel hosting
 - `tsokolitaw.com`
 - planned admin host: `admin.tsokolitaw.com`
@@ -126,6 +127,10 @@ Coatings:
 Mixed boxes allocate every piece to a coating. The allocated piece count must equal the selected box size.
 
 These browser values are previews. Future checkout pricing must be recalculated from database values on the server.
+
+The current amounts are approved as provisional database seeds. Authorized admins will manage active prices, while completed orders preserve immutable price snapshots. Pickup locations, schedules, lead time, cutoff, capacity, and availability will likewise be admin-managed without rewriting existing paid-order pickup snapshots.
+
+V1 uses one equal-permission admin role assigned to five approved Google accounts. Customers may cancel through `CONFIRMED`; paid cancellations receive a full refund to the original PayMongo payment method. Cancellation and standard refund eligibility end at `PREPARING`, and no-shows are non-refundable. Order cancellation and refund processing remain separately tracked.
 
 ## Project Structure
 
@@ -198,7 +203,9 @@ npm run build
 
 ## Deployment
 
-The public GitHub repository can be connected to Vercel during UI development. The current static/mock UI does not require Supabase or PayMongo environment variables.
+The public GitHub repository can be connected to Vercel during UI development. The current static/mock UI does not require Supabase, PayMongo, or Resend environment variables.
+
+Future transactional order email will use Resend from server-only code. Production sending requires a verified domain or sending subdomain; API keys and webhook secrets belong only in protected local/Vercel environment settings.
 
 Do not add production secrets until the corresponding backend integration begins. Never commit `.env.local`.
 

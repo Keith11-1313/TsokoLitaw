@@ -122,12 +122,15 @@ The project has completed the broad static UI phase. The next major phase is UI 
 Do not begin without explicit approval.
 
 - [ ] Review and approve proposed database model
-- [ ] Finalize real prices and recipe/allergen data
-- [ ] Finalize pickup locations, schedules, lead time, and cutoff
-- [ ] Finalize cancellation, refund, and no-show policies
-- [ ] Choose email provider
-- [ ] Confirm admin identity and subdomain plan
-- [ ] Create environment variable inventory
+- [x] Approve provisional price seeds and admin-managed pricing
+- [ ] Finalize recipe and allergen data
+- [x] Approve admin-managed pickup locations, schedules, lead time, cutoff, capacity, and availability
+- [ ] Confirm launch pickup seed values
+- [x] Finalize cancellation, refund, and no-show policies
+- [x] Choose Resend as the transactional email provider
+- [x] Approve one equal-permission admin role for five accounts
+- [ ] Confirm the five admin Google identities and subdomain plan
+- [x] Create environment variable inventory in `ARCHITECTURE.md`
 
 ## Phase 7 — Supabase Setup
 
@@ -144,7 +147,7 @@ Do not begin without explicit approval.
 - [ ] Implement sign-in and logout
 - [ ] Create/update profiles
 - [ ] Protect checkout and customer orders
-- [ ] Configure one admin identity/role
+- [ ] Configure the five approved Google identities with one admin role
 - [ ] Protect admin routes server-side
 - [ ] Test unauthorized and cross-customer access
 
@@ -170,6 +173,8 @@ Do not begin without explicit approval.
 - [ ] Store provider references
 - [ ] Enforce webhook idempotency
 - [ ] Handle success, failure, refund, and 15-minute expiry
+- [ ] Implement full original-method refunds and verified refund webhooks
+- [ ] Track refund state separately from order cancellation
 - [ ] Never infer payment success from browser redirects
 
 ## Phase 11 — Orders, Reviews, Journal, and Admin CRUD
@@ -177,6 +182,8 @@ Do not begin without explicit approval.
 - [ ] Connect customer order list and details
 - [ ] Enforce order status transitions
 - [ ] Implement cancellation eligibility
+- [ ] Close customer cancellation at `PREPARING` and enforce no-show non-refund policy
+- [ ] Add restricted manual-refund fallback after provider failure
 - [ ] Enforce completed-order review eligibility and uniqueness
 - [ ] Connect public selected reviews
 - [ ] Implement Journal draft/publish workflow
@@ -192,6 +199,9 @@ Do not begin without explicit approval.
 - [ ] Send ready-for-pickup email
 - [ ] Add cancellation/refund communication
 - [ ] Keep email sending server-side
+- [ ] Configure and verify the Resend sending domain or subdomain
+- [ ] Add idempotent Resend sending and signed delivery webhooks
+- [ ] Record message IDs, delivery states, failures, and retry attempts
 
 ## Phase 13 — Security and Production
 

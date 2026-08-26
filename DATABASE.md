@@ -17,10 +17,14 @@ The proposed schema follows `DECISIONS.md` and the current workflow:
 | Choices are coatings, not flavors | dedicated `coatings` table |
 | Mixed boxes allocate every piece | `order_item_coatings.piece_count` totals must match the item snapshot |
 | First coating type is included | snapshot which type was included and price additional distinct types server-side |
-| Campus pickup only | pickup date, window, and location references; no delivery-address requirement |
+| Admin-managed seed pricing | current mock values seed active price records; checkout recalculates server-side and orders preserve snapshots |
+| Campus pickup only | admin-managed dates, windows, locations, lead/cutoff settings, capacity, and historical order snapshots; no delivery address |
+| Five admins share one role | five approved Google-backed profiles receive `admin`; all authorization remains server-side |
+| Cancellation closes at preparation | cancel through `CONFIRMED`; paid cancellation creates a separately tracked refund; prepared/no-show orders are non-refundable |
 | Reviews require completed orders | unique review per order plus ownership/status validation |
 | Journal supports multiple content types | `journal_posts.content_type`, publication state, and optional media |
 | Admin mirrors customer operations | admin mutations update the same catalog, pickup, order, review, and Journal records customers consume |
+| Resend sends transactional email | store idempotency keys, provider message IDs, delivery status, and retry metadata without storing provider secrets |
 
 Do not create migrations directly from rough reference content. Reconfirm the decision log and business-policy items first.
 
@@ -39,6 +43,8 @@ updated_at timestamptz
 ```
 
 Google remains the authentication source for email. Admin authorization must be checked server-side.
+
+V1 has exactly five approved admin profiles using the same `admin` role. The exact emails are deployment-controlled bootstrap data. Customers cannot assign or modify roles, and client-provided profile metadata must never grant admin access.
 
 ## 3. Products and Box Variants
 
@@ -76,6 +82,8 @@ Initial variants:
 - 8-piece box — ₱110
 
 Prices are seed values, not permanent hardcoded rules.
+
+Authorized admins update active prices for future checkout calculations. Historical order-item snapshots remain unchanged.
 
 ## 4. Coatings
 
@@ -148,6 +156,7 @@ pickup_date_id uuid references pickup_dates(id)
 start_time time
 end_time time
 is_open boolean default true
+capacity integer nullable check capacity >= 0
 sort_order integer
 ```
 
@@ -204,6 +213,8 @@ customer_mobile text
 pickup_date date
 pickup_window_id uuid references pickup_windows(id)
 pickup_location_id uuid references pickup_locations(id)
+pickup_window_snapshot text
+pickup_location_snapshot text
 customer_notes text nullable
 subtotal numeric(10,2)
 discount_total numeric(10,2)
@@ -312,6 +323,30 @@ updated_at timestamptz
 
 Do not store card details or unnecessary raw sensitive payloads.
 
+### `refunds`
+
+```text
+id uuid primary key
+order_id uuid references orders(id)
+payment_id uuid references payments(id)
+provider text default 'paymongo'
+provider_refund_id text nullable unique
+amount numeric(10,2) check amount > 0
+currency text default 'PHP'
+status text check status in ('REQUESTED', 'PROCESSING', 'REFUNDED', 'FAILED')
+method text check method in ('ORIGINAL_PAYMENT_METHOD', 'MANUAL_FALLBACK')
+reason text
+failure_code text nullable
+failure_message text nullable
+requested_at timestamptz
+processed_at timestamptz nullable
+refunded_at timestamptz nullable
+created_at timestamptz
+updated_at timestamptz
+```
+
+An eligible paid cancellation creates a full refund to the original payment method. The order may already be `CANCELLED` while the refund remains pending. Only a verified provider result may set `REFUNDED`. Manual fallback destination details are collected only after an unsupported or failed PayMongo refund, stored separately with restricted access, and masked in Admin UI.
+
 ### `payment_webhook_events`
 
 ```text
@@ -325,6 +360,28 @@ created_at timestamptz
 ```
 
 The unique provider event ID supports idempotent processing.
+
+### `notification_deliveries`
+
+```text
+id uuid primary key
+order_id uuid references orders(id) nullable
+user_id uuid references profiles(id) nullable
+provider text default 'resend'
+event_type text
+recipient_email text
+idempotency_key text unique
+provider_message_id text nullable unique
+status text
+attempt_count integer default 0
+last_error text nullable
+sent_at timestamptz nullable
+delivered_at timestamptz nullable
+created_at timestamptz
+updated_at timestamptz
+```
+
+Transactional email is dispatched only by trusted server code. Resend delivery webhooks must be signature-verified and processed idempotently. Email status is operational metadata and never changes order or payment status by itself.
 
 ## 11. Reviews
 
@@ -441,6 +498,7 @@ Possible keys:
 - `pickup_grace_minutes`
 - `minimum_lead_days`
 - `daily_cutoff_time`
+- `default_pickup_capacity`
 - `support_email`
 - `extra_coating_type_price`
 - `loyalty_threshold`

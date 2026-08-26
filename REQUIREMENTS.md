@@ -58,6 +58,7 @@ Future integrations:
 - Supabase PostgreSQL and Auth
 - Google Sign-In
 - PayMongo
+- Resend transactional email
 - `tsokolitaw.com`
 - planned `admin.tsokolitaw.com`
 
@@ -105,7 +106,7 @@ Future V1 authentication:
 - Google Sign-In through Supabase
 - same sign-in flow for new and returning customers
 - no guest checkout
-- one admin role
+- one admin permission role assigned to five approved Google accounts
 
 Signed-out Account opens `/login`. Future signed-in Account opens a menu containing Profile, My Orders, and Log out.
 
@@ -118,6 +119,10 @@ Profile UI includes:
 - recent-order/account shortcuts
 
 Authentication and authorization must never rely on frontend state alone.
+
+The five V1 admin accounts have the same permissions. Their exact Google identities are configured through controlled backend data, and every protected page and mutation must verify the admin role server-side.
+
+Transactional order emails use Resend from server-only code. Initial events include order confirmation, ready-for-pickup, cancellation, and refund updates. Email delivery must not determine order or payment status, and failed sends must be retryable without duplicating messages.
 
 ## 6. Product and Pricing
 
@@ -151,7 +156,7 @@ Each coating catalog record requires:
 
 During the UI-only phase, Admin may add a temporary session preview of a coating. It must be labeled as unsaved and must not appear in the customer builder as though it were published.
 
-All prices must eventually be admin-editable and recalculated from database values on the server.
+The temporary prices are approved as initial database seed values. Authorized admins may edit active box, coating, add-on, and related pricing. Checkout must reload current database values and recalculate money on the server, while completed orders retain immutable price snapshots.
 
 ## 7. Product Customization
 
@@ -202,13 +207,15 @@ Primary location:
 
 - UCC North Congress Campus
 
-Pickup dates and locations must be admin-controlled. Initial business rules:
+Pickup locations, dates, time windows, lead time, cutoff time, capacity, and availability must be database-backed and admin-controlled. Current mock values may be used as provisional launch seeds until operations replaces them. Initial business rules:
 
 - no same-day pickup
 - minimum lead time: one day unless operations configure otherwise
 - pickup grace period: 15 minutes
 - no automatic refund for no-show
 - availability continues until configured stock is exhausted
+
+Admin changes affect future checkout availability and must not rewrite the pickup snapshot of an existing paid order.
 
 Before payment show order summary, discounts, total, pickup details, allergen notice, and cancellation/no-show notice.
 
@@ -281,6 +288,17 @@ PENDING, PAID, FAILED, REFUNDED
 ```
 
 Keep fulfillment and payment state separate.
+
+Cancellation and refund rules:
+
+- customers may request cancellation while an order is `PENDING_PAYMENT`, `PAID`, or `CONFIRMED`
+- an unpaid cancellation releases reserved stock and requires no refund
+- a paid cancellation creates a full refund to the original PayMongo payment method
+- customer cancellation and refund eligibility end when the order enters `PREPARING`
+- `PREPARING`, `READY_FOR_PICKUP`, completed, and no-show orders are non-refundable under the standard policy
+- no-show orders receive no refund because the product has already been prepared
+- the order may be `CANCELLED` while its refund remains `REQUESTED` or `PROCESSING`; refund completion requires provider confirmation
+- manual refund destination details may be requested only when an automatic provider refund is unsupported or fails, and must be handled as restricted personal data
 
 ## 13. Inventory
 
