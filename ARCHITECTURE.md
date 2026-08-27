@@ -59,6 +59,7 @@ This relationship prevents UI drift. It does not make admin controls persistent 
 Client Components are limited to interactions such as:
 
 - cart state and persistence
+- successful add-to-cart confirmation modal
 - product configuration
 - custom dropdowns
 - authenticated account menu and shared confirmation-based logout

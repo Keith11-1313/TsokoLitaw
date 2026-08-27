@@ -243,7 +243,7 @@ Cart and checkout serve different jobs: Cart edits the order; Checkout collects 
 
 ### Current connection
 
-The cart persists in browser local storage. Checkout reads the same local cart but does not create a real order or payment.
+The cart persists in browser local storage. A successful Add to cart action opens a confirmation modal with a static cart icon, a Continue shopping dismissal, and a Check cart action. Invalid configurations never open the modal. Checkout reads the same local cart but does not create a real order or payment.
 
 ### Future server rule
 

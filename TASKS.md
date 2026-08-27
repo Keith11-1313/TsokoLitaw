@@ -73,6 +73,7 @@ The project has completed the broad static UI phase. The next major phase is UI 
 - [x] Calculate additional coating-type charge in UI
 - [x] Add extra sea salt cream option
 - [x] Add, remove, and update local cart items
+- [x] Add an accessible add-to-cart confirmation modal with a cart icon and Check cart action
 - [x] Persist cart in browser local storage
 - [x] Navigate from cart to checkout
 - [x] Add automated unit tests for configurable piece/coating pricing, cart totals, and configuration calculations

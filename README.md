@@ -20,6 +20,7 @@ Implemented with mock data:
 - 4-, 6-, and 8-piece box configuration
 - single-coating and mixed-box selection
 - browser-local cart with quantity and totals
+- add-to-cart confirmation with a static cart icon, Continue shopping, and Check cart actions
 - static checkout, order, review, payment, and legal commerce screens
 - authenticated account, profile, and logout interfaces
 - Journal for announcements, stories, product features, and community highlights

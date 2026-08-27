@@ -184,6 +184,7 @@ Different configurations become separate cart line items. One order may contain 
 Current frontend cart supports:
 
 - add item
+- successful-addition modal with a cart icon, Continue shopping dismissal, and Check cart action
 - remove item
 - update quantity
 - item count

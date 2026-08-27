@@ -218,6 +218,8 @@ Design mobile first, then enhance for tablet and desktop.
 
 The Our Creations builder appears before the coating gallery on mobile and becomes a compact sticky sidebar on desktop.
 
+After a valid Add to cart action, an accessible modal confirms the addition with a static cart icon, Continue shopping dismissal, and a prominent Check cart action. Invalid configurations remain in the builder and do not open the modal.
+
 ## 9. Accessibility
 
 - semantic landmarks and headings
