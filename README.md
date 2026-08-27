@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-The project is in the **UI-only phase**.
+The project is in **Phase 7: Supabase foundation**. The UI still uses mock/browser-local data while the backend schema is validated and later integrations remain deferred.
 
 Implemented with mock data:
 
@@ -27,9 +27,17 @@ Implemented with mock data:
 - admin purpose/customer-impact/connection guidance on every management area
 - Admin coating-entry session preview with square-image validation and PHP additional-type pricing
 
-Not implemented:
+Phase 7 backend foundation (deployed and verified):
 
-- Supabase or any database
+- versioned PostgreSQL schema, constraints, indexes, and RLS policies
+- controlled product, coating, pickup-location, and operational-setting seeds
+- pgTAP authorization checks
+- separate browser, server, and service-role Supabase clients
+- five-admin database limit and service-only bootstrap function
+
+Not yet implemented:
+
+- runtime UI data access through the linked Supabase project
 - Google authentication
 - PayMongo
 - APIs, webhooks, email, or real CRUD
@@ -52,6 +60,8 @@ The account preview starts signed in so Profile and My Orders can be reviewed. L
 - Tailwind CSS 4
 - ESLint 9
 - Lucide React
+- Supabase JavaScript and SSR clients
+- Supabase CLI
 - Next.js fonts and image optimization
 
 Future services:
@@ -131,6 +141,10 @@ These browser values are previews. Future checkout pricing must be recalculated 
 
 The ₱10 per-piece amount is approved as the provisional database seed. Authorized admins will manage the active base piece price, and each box total will be derived from its piece count. The ₱5 additional-coating charge is also only a seed and will come from the coating price configured in Admin. Completed orders preserve immutable price snapshots. Pickup locations, schedules, lead time, cutoff, capacity, and availability will likewise be admin-managed without rewriting existing paid-order pickup snapshots.
 
+Pickup is centered at UCC Congress: 3rd Floor and Covered Court. Monday–Saturday, 7:00 AM–7:00 PM is the operating window, but Admin publishes the actual dates and slots. Most orders are made to order; when products are brought to school, Admin can publish ready stock for same-day pickup until it is sold out.
+
+The provisional made-to-order defaults are one day of lead time, a 5:00 PM daily cutoff, hourly slots, and 20 boxes per slot. These are operational Admin settings, not permanent storefront rules.
+
 V1 uses one equal-permission admin role supporting five approved Google accounts. One account may be configured first and four added later. Customers may cancel through `CONFIRMED`; paid cancellations receive a full refund to the original PayMongo payment method. Cancellation and standard refund eligibility end at `PREPARING`, and no-shows are non-refundable. Order cancellation and refund processing remain separately tracked.
 
 ## Project Structure
@@ -165,8 +179,14 @@ src/
 │   ├── layout/
 │   ├── orders/
 │   └── ui/
-├── lib/                 # Mock commerce and order data
+├── lib/                 # Mock domain data and Supabase client helpers
 └── types/
+
+supabase/
+├── migrations/          # Versioned database schema and RLS
+├── tests/database/      # pgTAP database checks
+├── config.toml          # Local Supabase configuration
+└── seed.sql             # Controlled non-PII seed data
 ```
 
 ## Local Development
@@ -194,6 +214,28 @@ npm test
 npm run build
 ```
 
+### Supabase setup
+
+Copy `.env.example` to `.env.local` and fill in the project URL and publishable key. Keep the service-role key and initial admin email server-only; never commit them.
+
+With Docker running, validate the local database:
+
+```bash
+npm run supabase:start
+npm run db:reset
+npm run db:lint
+npm run db:test
+```
+
+To verify the linked hosted development project without resetting it, start Docker Desktop first. The CLI still uses a local container for the pgTAP runner even though the database target is remote:
+
+```bash
+npm run db:lint:linked
+npm run db:test:linked
+```
+
+To connect a hosted project, authenticate the CLI, link the project reference, review a dry run, and then push the migration. Seed data is appropriate for local/development environments; review it before applying to production. The approved initial Google identity must sign in once before trusted server-side setup invokes `promote_admin_by_email`.
+
 ## Assets and References
 
 - The current logo is stored in `public/brand/logo.png` and is also used for the favicon.
@@ -205,7 +247,7 @@ npm run build
 
 ## Deployment
 
-The public GitHub repository can be connected to Vercel during UI development. The current static/mock UI does not require Supabase, PayMongo, or Resend environment variables.
+The public GitHub repository can be connected to Vercel during UI development. The current static/mock UI does not call Supabase yet, so missing Supabase values do not affect existing pages.
 
 Future transactional order email will use Resend from server-only code. Production sending requires a verified domain or sending subdomain; API keys and webhook secrets belong only in protected local/Vercel environment settings.
 

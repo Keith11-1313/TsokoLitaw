@@ -240,4 +240,6 @@ Future data-connected work must add consistent states for:
 
 Current backend-dependent actions should remain disabled or clearly identified as mock behavior.
 
+Pickup UI must distinguish made-to-order availability from ready stock. The Monday–Saturday, 7:00 AM–7:00 PM operating window is guidance only; checkout shows only dates and slots published by Admin, and same-day pickup appears only for available ready stock.
+
 Cancellation confirmation must explain whether the action only releases an unpaid reservation or starts a full refund to the original payment method. Do not ask for a GCash, Maya, or bank destination during the normal PayMongo refund flow; show a restricted fallback form only after the automatic refund is unavailable or has failed.

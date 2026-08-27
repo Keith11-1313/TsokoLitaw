@@ -2,9 +2,9 @@
 
 ## 1. Status
 
-No database has been implemented yet. This model is approved as the Phase 7 Supabase baseline.
+The Phase 7 Supabase baseline is implemented as a versioned migration in `supabase/migrations/20260827000000_initial_schema.sql`, with controlled data in `supabase/seed.sql` and pgTAP checks in `supabase/tests/database/000_schema.test.sql`.
 
-Before implementation, convert this design into reviewed migrations, constraints, indexes, RLS policies, and seed data.
+The migration and controlled seed have been applied to the linked hosted development project. All 18 pgTAP schema and authorization checks passed against the hosted database, and database lint reported no schema errors. The Phase 7 database foundation is verified.
 
 ## Decision-to-Schema Mapping
 
@@ -145,6 +145,7 @@ Initial add-on:
 ```text
 id uuid primary key
 pickup_date date unique
+availability_mode text check availability_mode in ('MADE_TO_ORDER', 'READY_STOCK', 'HYBRID') default 'MADE_TO_ORDER'
 is_open boolean default true
 notes text nullable
 created_at timestamptz
@@ -175,6 +176,18 @@ created_at timestamptz
 updated_at timestamptz
 ```
 
+### `pickup_window_locations`
+
+```text
+pickup_window_id uuid references pickup_windows(id)
+pickup_location_id uuid references pickup_locations(id)
+is_open boolean default true
+capacity_override integer nullable check capacity_override >= 0
+primary key(pickup_window_id, pickup_location_id)
+```
+
+This join lets Admin offer one window at one or both campus pickup locations without duplicating the window record.
+
 ## 7. Inventory
 
 ### `daily_inventory`
@@ -197,6 +210,21 @@ Available stock:
 ```text
 stock_total - stock_reserved - stock_sold
 ```
+
+For a `READY_STOCK` or `HYBRID` pickup date, same-day checkout is available only while the corresponding on-hand stock remains available. Admin-recorded walk-in sales must reduce the same daily inventory balance used by online checkout.
+
+### `inventory_adjustments`
+
+```text
+id uuid primary key
+daily_inventory_id uuid references daily_inventory(id)
+quantity_delta integer check quantity_delta <> 0
+reason text check reason in ('RESTOCK', 'WALK_IN_SALE', 'WASTE', 'CORRECTION')
+created_by uuid references profiles(id)
+created_at timestamptz
+```
+
+This audit trail keeps school walk-in sales and corrections from silently causing online overselling.
 
 Optional coating and add-on availability may use separate dated inventory tables if operations need quantity-level tracking; otherwise active/available flags are sufficient for V1.
 
@@ -349,6 +377,21 @@ updated_at timestamptz
 ```
 
 An eligible paid cancellation creates a full refund to the original payment method. The order may already be `CANCELLED` while the refund remains pending. Only a verified provider result may set `REFUNDED`. Manual fallback destination details are collected only after an unsupported or failed PayMongo refund, stored separately with restricted access, and masked in Admin UI.
+
+### `manual_refund_destinations`
+
+```text
+id uuid primary key
+refund_id uuid unique references refunds(id)
+destination_type text check destination_type in ('GCASH', 'MAYA', 'BANK')
+account_name text
+account_reference_encrypted text
+collected_by uuid references profiles(id)
+created_at timestamptz
+deleted_at timestamptz nullable
+```
+
+The account reference must be encrypted by server-only code and is never customer-readable through RLS.
 
 ### `payment_webhook_events`
 
@@ -526,6 +569,24 @@ Customers may not:
 - feature or hide reviews
 
 Admin mutations still require server-side authorization even with RLS.
+
+Every public-schema table in the initial migration has RLS enabled. Grants are explicit: anonymous access is limited to publishable catalog/pickup/Journal/Terms data and safe review columns; authenticated customers receive ownership-scoped reads and profile edits that exclude the `role` column. Sensitive writes and the admin bootstrap function are reserved for trusted server-side code.
+
+The database trigger rejects a sixth admin profile. The service-role-only bootstrap function can promote an approved email only after that Google identity has signed in and created its customer profile.
+
+### `admin_audit_logs`
+
+```text
+id uuid primary key
+admin_id uuid references profiles(id)
+action text
+entity_type text
+entity_id text nullable
+metadata jsonb
+created_at timestamptz
+```
+
+Later Admin mutations must append audit entries from server-only code.
 
 ## 16. Seed Data
 

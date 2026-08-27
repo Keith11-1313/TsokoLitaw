@@ -29,7 +29,7 @@ Next.js App Router
 └── Local brand and product assets
 ```
 
-There is currently no database, authentication, payment provider, API, webhook, or email integration.
+A local Supabase foundation now defines the planned PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/service-role client helpers. The UI is not connected to it yet, and there is still no authentication, payment provider, API, webhook, or email integration.
 
 Current customer/admin relationship:
 
@@ -146,13 +146,17 @@ Future checkout flow:
 
 ## 7. Supabase
 
-Future use:
+Phase 7 foundation:
 
 - PostgreSQL
-- Google authentication and sessions
-- optional product and Journal media storage
+- versioned migrations under `supabase/migrations/`
+- controlled operational seeds in `supabase/seed.sql`
+- pgTAP authorization checks under `supabase/tests/database/`
+- separate browser, server, and service/admin client helpers under `src/lib/supabase/`
 
-Use separate browser, server, and service/admin client patterns. Never expose service-role credentials. Enable RLS before customer data is accessible.
+Google authentication and live data integration remain deferred. Local/Vercel product assets remain sufficient, so Supabase Storage is not required in Phase 7.
+
+Never expose service-role credentials. RLS is defined on every exposed table before customer data is connected. Direct customer-facing mutations remain unavailable until later server-commerce work can validate authorization, pricing, stock, and snapshots.
 
 ## 8. Authentication and Authorization
 
@@ -221,7 +225,7 @@ available = stock_total - stock_reserved - stock_sold
 
 Expired payment reservations must be released safely.
 
-Pickup locations, dates, time windows, lead days, cutoff time, capacity, and availability are admin-managed database records or settings. Checkout reads only published, currently eligible options. Paid orders preserve pickup snapshots so later admin edits do not rewrite existing commitments.
+Pickup locations, dates, time windows, lead days, cutoff time, capacity, and availability mode are admin-managed database records or settings. Made-to-order is the default; Admin can publish same-day ready-stock options when products are brought to school. Offline/walk-in stock changes must be recorded so checkout does not oversell. Checkout reads only published, currently eligible options. Paid orders preserve pickup snapshots so later admin edits do not rewrite existing commitments.
 
 ## 12. Orders, Reviews, and Journal
 
@@ -238,8 +242,9 @@ Add only when the corresponding integration begins:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
+INITIAL_ADMIN_EMAIL=
 
 PAYMONGO_SECRET_KEY=
 PAYMONGO_PUBLIC_KEY=
@@ -253,7 +258,7 @@ EMAIL_REPLY_TO_ADDRESS=
 NEXT_PUBLIC_SITE_URL=
 ```
 
-Only values intentionally prefixed with `NEXT_PUBLIC_` may be available to the browser. Supabase service-role, PayMongo, and Resend secrets remain server-only. Never commit `.env.local` or real secrets.
+Only values intentionally prefixed with `NEXT_PUBLIC_` may be available to the browser. Supabase service-role, initial admin identity, PayMongo, and Resend secrets remain server-only deployment configuration. Never commit `.env.local` or real secrets.
 
 ## 14. Deployment
 

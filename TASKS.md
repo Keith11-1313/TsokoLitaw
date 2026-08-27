@@ -126,23 +126,28 @@ Do not begin without explicit approval.
 - [x] Approve provisional price seeds and admin-managed pricing
 - [x] Finalize recipe and allergen data
 - [x] Approve admin-managed pickup locations, schedules, lead time, cutoff, capacity, and availability
-- [ ] Confirm launch pickup seed values
+- [x] Confirm launch pickup locations and the Monday–Saturday, 7:00 AM–7:00 PM operating window
+- [x] Confirm made-to-order default with Admin-published same-day ready stock
+- [x] Set provisional made-to-order defaults: one-day lead time, 5:00 PM cutoff, hourly slots, and 20 boxes per slot
 - [x] Finalize cancellation, refund, and no-show policies
 - [x] Choose Resend as the transactional email provider
 - [x] Approve one equal-permission admin role for five accounts
 - [x] Approve one initial admin identity with four additional accounts later
-- [ ] Provide the initial admin Google identity
+- [x] Receive the initial admin Google identity for secure deployment setup; do not commit it to the repository
 - [x] Keep Admin under `/admin` for V1 and defer the admin subdomain
 - [x] Create environment variable inventory in `ARCHITECTURE.md`
 
 ## Phase 7 — Supabase Setup
 
-- [ ] Create Supabase project
-- [ ] Add browser and server clients
-- [ ] Add migrations, constraints, and indexes
-- [ ] Enable and test RLS
-- [ ] Add controlled seed data
-- [ ] Add product image storage only if local/Vercel assets are insufficient
+- [x] Create and link the hosted Supabase development project
+- [x] Add browser, server, and service-role clients
+- [x] Add migrations, constraints, and indexes
+- [x] Define RLS on every public table and add pgTAP authorization checks
+- [x] Apply the migration and controlled seed to the hosted development project
+- [x] Execute all 18 pgTAP checks against the hosted development project
+- [x] Execute database lint against the hosted development project with no schema errors
+- [x] Add controlled seed data
+- [x] Confirm local/Vercel product assets are sufficient; Supabase Storage is not required now
 
 ## Phase 8 — Authentication and Authorization
 

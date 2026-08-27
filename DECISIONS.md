@@ -245,18 +245,20 @@ V1 uses campus pickup only.
 
 Current mock choices:
 
-- UCC North Congress Campus — Social Hall
-- UCC North Congress Campus — Court
-- published dates and times from shared pickup mock data
-- one-day lead time
-- no same-day pickup
+- UCC Congress — 3rd Floor
+- UCC Congress — Covered Court
+- operating window: Monday–Saturday, 7:00 AM–7:00 PM
+- published dates and time slots from shared pickup mock data
+- made-to-order by default, using Admin-controlled lead time and cutoff
+- same-day pickup only when Admin publishes ready stock brought to school
+- initial made-to-order seed: one-day lead time, 5:00 PM cutoff, hourly slots, and 20 boxes per slot
 - 15-minute grace period
 
-The future database treats locations, published dates, time windows, lead time, cutoff time, capacity, and availability as admin-managed operational configuration. Current mock values may seed the first backend environment, but operations can replace them before launch. Existing paid orders preserve their selected pickup details as historical snapshots.
+The future database treats locations, published dates, time windows, lead time, cutoff time, capacity, stock mode, and availability as admin-managed operational configuration. The operating window is a boundary, not a promise that each date or time will be offered. Existing paid orders preserve their selected pickup details as historical snapshots.
 
 ### Reason
 
-Delivery addresses and delivery-hour UI did not match the actual operating model. Pickup scheduling keeps fulfillment practical for a student-operated business.
+Delivery addresses and delivery-hour UI did not match the actual operating model. A hybrid made-to-order and ready-stock pickup model keeps campus selling practical: preorders can follow the production schedule, while stock brought to school can be offered the same day until it runs out.
 
 ### UI consequence
 
@@ -395,6 +397,8 @@ Currently shared:
 - pickup times
 - pickup locations
 - pickup lead time and grace period
+- operating days and hours
+- ready-stock versus made-to-order availability
 
 Admin and customer mock orders are aligned to the same approved catalog, totals, and statuses.
 

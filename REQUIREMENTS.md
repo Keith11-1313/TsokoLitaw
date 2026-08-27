@@ -23,7 +23,7 @@ Workflow changes must be reflected together in:
 
 ## 2. Delivery Stages
 
-### Current: UI-only
+### Current: Phase 7 — Supabase foundation
 
 - Next.js, React, TypeScript, and Tailwind UI
 - mock product, customer, order, and admin data
@@ -31,11 +31,11 @@ Workflow changes must be reflected together in:
 - frontend-only signed-in and signed-out preview state for protected account UI
 - browser-local cart persistence
 - static payment and account previews
-- no secure or persistent backend behavior
+- reviewed database migrations, RLS policies, pgTAP tests, controlled seed data, and Supabase client helpers
+- no runtime database connection, secure authentication, or persistent customer/Admin behavior yet
 
 ### Deferred
 
-- Supabase PostgreSQL
 - Supabase Google authentication
 - PayMongo
 - APIs, webhooks, email, and real CRUD
@@ -204,17 +204,21 @@ Future checkout collects:
 
 Campus pickup only.
 
-Primary location:
+Launch pickup locations:
 
-- UCC North Congress Campus
+- UCC Congress — 3rd Floor
+- UCC Congress — Covered Court
 
 Pickup locations, dates, time windows, lead time, cutoff time, capacity, and availability must be database-backed and admin-controlled. Current mock values may be used as provisional launch seeds until operations replaces them. Initial business rules:
 
-- no same-day pickup
-- minimum lead time: one day unless operations configure otherwise
+- operating window: Monday–Saturday, 7:00 AM–7:00 PM
+- Admin publishes only the dates and time slots the team can actually serve; the operating window does not promise that every slot is available
+- made-to-order is the default and follows Admin-configured lead-time and cutoff rules
+- same-day pickup is available only when Admin publishes ready stock brought to school
+- provisional made-to-order setup: one-day lead time, 5:00 PM daily cutoff, hourly slots, and 20 boxes per slot
 - pickup grace period: 15 minutes
+- ready-stock availability closes when its configured on-hand stock is exhausted
 - no automatic refund for no-show
-- availability continues until configured stock is exhausted
 
 Admin changes affect future checkout availability and must not rewrite the pickup snapshot of an existing paid order.
 
@@ -309,6 +313,7 @@ Future inventory supports:
 - reserved, sold, and available quantities
 - coating and add-on availability
 - pickup date availability
+- ready-stock availability for school selling days, with recorded walk-in sales or adjustments so online stock remains accurate
 - sold-out UI
 - reservation during pending payment
 - release after expiry

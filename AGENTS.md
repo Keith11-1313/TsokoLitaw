@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-The application is currently in the **UI-only phase**.
+The application is currently in **Phase 7: Supabase foundation**. The customer and Admin screens still run on mock/browser-local data until later integration phases.
 
 Allowed:
 
@@ -29,13 +29,14 @@ Allowed:
 - static routes and temporary UI interactions
 - frontend-only authentication preview state for testing protected customer screens
 - local product photography and placeholders
+- Supabase migrations, constraints, indexes, RLS policies, tests, and controlled seed data
+- browser, server, and service-role Supabase client helpers that are not yet connected to UI routes
 
 Do not implement unless the user explicitly starts a later phase:
 
-- Supabase
 - authentication
 - PayMongo
-- APIs, webhooks, or database logic
+- APIs, webhooks, runtime database reads/writes, or transactional commerce logic
 - real CRUD or email
 - admin subdomain or DNS configuration
 
