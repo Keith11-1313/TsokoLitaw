@@ -11,7 +11,7 @@ interface CustomerFooterProps {
 }
 
 export function CustomerFooter({
-  address = "UCC North Congress Campus, Caloocan",
+  address = "UCC Congress, Caloocan",
   supportEmail = "tsokolitaw@gmail.com",
   className,
 }: CustomerFooterProps) {
