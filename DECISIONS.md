@@ -280,6 +280,8 @@ Checkout exposes date, time, and location dropdowns. Admin Pickup exists to publ
 
 Customer Orders will show current orders and history after Phase 9 creates ownership-scoped order records. Until that write path is complete, authenticated customer order surfaces must not display mock records as if they belong to the signed-in Google identity. My Orders keeps its honest unconnected state, while dynamic order and review routes remain unavailable. Future order detail explains fulfillment progress, pickup, payment summary, cancellation eligibility, and review eligibility.
 
+Active Admin identities may also use the customer storefront to place orders for themselves. Checkout always derives the order owner from the signed-in session, so this does not permit an Admin storefront submission on behalf of another customer. Every new order receives one shared kiosk-style number from a database sequence, beginning with `TL-0001`; Customer and Admin surfaces display the same stored number.
+
 Primary future order flow:
 
 ```text

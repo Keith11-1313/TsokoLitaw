@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-The project is in **Phase 9: server commerce**. Authentication and authorization are complete. The customer catalog and published pickup options now load from Supabase; server-authoritative checkout pricing, inventory reservation, order snapshots, and idempotent order creation are in progress. PayMongo and broad Admin CRUD remain deferred.
+The project is in **Phase 9: server commerce**. Authentication and authorization are complete. The customer catalog and published pickup options load from Supabase. The local checkout implementation now performs server-authoritative pricing, promotion evaluation, inventory reservation/release, order snapshots, Terms acceptance, and idempotent pending-order creation. Hosted-project upgrade and end-to-end checkout validation remain. PayMongo and broad Admin CRUD are deferred.
 
 Implemented with mock data:
 
@@ -21,7 +21,7 @@ Implemented with mock data:
 - single-coating and mixed-box selection
 - browser-local cart with quantity and totals
 - add-to-cart confirmation with a static cart icon, Continue shopping, and Check cart actions
-- static checkout, order, review, payment, and legal commerce screens
+- static order, review, payment, and legal commerce screens
 - authenticated account, profile, and logout interfaces
 - Journal for announcements, stories, product features, and community highlights
 - responsive admin dashboard and management screens
@@ -58,17 +58,20 @@ Phase 9 server-commerce work completed so far:
 - Checkout lists only database-published pickup dates, windows, and locations and shows an honest unavailable state when none are published
 - untrusted cart IDs and counts are validated and repriced against the active catalog on the server
 - the canonical schema includes a service-only atomic pending-order writer for capacity checks, ready-stock reservation, immutable snapshots, Terms acceptance, and duplicate-submit protection
+- Checkout submits only catalog identifiers and counts to a server action; browser prices are ignored and active database prices are recalculated
+- overdue unpaid orders become `EXPIRED` and release ready-stock reservations before new checkout capacity is accepted
+- the controlled seed includes the current Terms version required for checkout acceptance snapshots
+- active Admin identities can place their own storefront orders, and new orders use a shared short number such as `TL-0001`
 
 Not yet implemented or externally configured:
 
 - initial Admin promotion and the remaining live authorization checks
-- server-authoritative cart validation, promotions, inventory reservation, order snapshots, and order creation
+- hosted-development schema upgrade and one authenticated end-to-end pending-order proof
 - PayMongo
 - APIs, webhooks, email, or real CRUD other than the approved account-deletion lifecycle
-- server-authoritative pricing and inventory
 - admin authorization or admin subdomain routing
 
-Customer identity, account state, catalog, and published pickup options are live Supabase data. Orders, payments, and Admin operational records remain mock or unconnected. Disabled actions identify features that require future backend work.
+Customer identity, account state, catalog, and published pickup options are live Supabase data. Checkout pending-order persistence is implemented locally but awaits the hosted schema upgrade and proof. Payments and Admin operational screens remain mock or unconnected. Disabled actions identify features that require future backend work.
 
 Our Creations and Checkout now read customer-safe commerce and pickup data from Supabase. Matching Admin screens remain non-persistent previews until Admin CRUD is implemented.
 

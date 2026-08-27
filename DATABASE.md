@@ -242,7 +242,7 @@ Optional coating and add-on availability may use separate dated inventory tables
 
 ```text
 id uuid primary key
-order_number text unique
+order_number text unique, generated from the global `order_number_sequence` as `TL-0001`
 user_id uuid references profiles(id)
 checkout_idempotency_key uuid nullable
 status text
@@ -294,7 +294,9 @@ Use database checks or controlled server transitions rather than unrestricted te
 
 `(user_id, checkout_idempotency_key)` is unique when both values are present. The browser creates a UUID for one checkout attempt and reuses it on retries; the atomic writer returns the existing order instead of inserting a duplicate.
 
-The service-role-only `create_pending_order` function is the transaction boundary for Phase 9. Next.js first reloads the active catalog and calculates trusted snapshot values, then the function locks the customer and pickup window, rechecks account and pickup eligibility, enforces slot capacity, reserves ready stock when required, inserts the order and all item/coating/add-on snapshots, and records the current Terms version. Authenticated browser clients cannot execute this function directly.
+`order_number_sequence` generates a short, concurrency-safe kiosk number such as `TL-0001`. The same stored value is shown to the customer and to Admin operations; it is never generated separately in either UI.
+
+The service-role-only `create_pending_order` function is the transaction boundary for Phase 9. Next.js first reloads the active catalog and calculates trusted snapshot values, then the function expires overdue unpaid orders, locks the signed-in profile and pickup window, rechecks account and pickup eligibility, enforces slot capacity, reserves ready stock when required, inserts the order and all item/coating/add-on snapshots, and records the current Terms version. Active admins may place their own storefront orders because the server action always binds `target_user_id` to the authenticated profile; it cannot submit for an arbitrary customer. The service-role-only `expire_pending_orders` function marks overdue unpaid orders `EXPIRED` and releases their ready-stock reservations. Authenticated browser clients cannot execute either function directly.
 
 ## 9. Order Items and Coating Allocations
 

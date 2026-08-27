@@ -254,6 +254,10 @@ Future data-connected work must add consistent states for:
 
 Current backend-dependent actions should remain disabled or clearly identified as mock behavior.
 
+Until PayMongo is connected, a successful Phase 9 checkout submission must state that a real pending order and reservation were created but no payment was collected. It must show the server-confirmed order number and total without presenting payment success.
+
+Order references use the short shared kiosk format `TL-0001`. Customer and Admin views must display the same stored order number so it can be spoken and matched quickly at pickup.
+
 Pickup UI must distinguish made-to-order availability from ready stock. The Monday–Saturday, 7:00 AM–7:00 PM operating window is guidance only; checkout shows only dates and slots published by Admin, and same-day pickup appears only for available ready stock.
 
 Cancellation confirmation must explain whether the action only releases an unpaid reservation or starts a full refund to the original payment method. Do not ask for a GCash, Maya, or bank destination during the normal PayMongo refund flow; show a restricted fallback form only after the automatic refund is unavailable or has failed.

@@ -175,14 +175,15 @@ Do not begin without explicit approval.
 ## Phase 9 — Server Commerce
 
 - [x] Load products, variants, coatings, add-ons, and published pickup availability from database
-- [ ] Validate mixed-box allocations server-side
-- [ ] Recalculate PHP prices server-side
-- [ ] Implement configurable promotions
-- [ ] Implement daily inventory
-- [ ] Reserve and release stock atomically
-- [ ] Create order and item snapshots
-- [ ] Record Terms acceptance
-- [ ] Prevent duplicate checkout submissions
+- [x] Validate mixed-box allocations server-side
+- [x] Recalculate PHP prices server-side
+- [x] Implement configurable promotions
+- [x] Implement daily inventory
+- [x] Reserve and release stock atomically
+- [x] Create order and item snapshots
+- [x] Record Terms acceptance
+- [x] Prevent duplicate checkout submissions
+- [ ] Apply the final Phase 9 schema upgrade to hosted development and complete one end-to-end pending-order proof
 
 ## Phase 10 — PayMongo Test Mode
 

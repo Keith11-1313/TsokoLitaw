@@ -30,7 +30,7 @@ Next.js App Router
 └── Local brand and product assets
 ```
 
-The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options now load from Supabase. Server checkout validation, inventory reservation, and order creation remain the active Phase 9 work; there is still no PayMongo, payment webhook, email, or broad Admin CRUD integration.
+The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options now load from Supabase. The local Phase 9 implementation validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. The hosted-project upgrade and end-to-end checkout proof remain; there is still no PayMongo, payment webhook, email, or broad Admin CRUD integration.
 
 Current customer/admin relationship:
 
@@ -101,7 +101,7 @@ Next.js server responsibilities:
 - terms acceptance recording
 - admin mutations
 
-Phase 9 uses a two-layer checkout boundary. Next.js accepts only catalog identifiers, coating allocations, add-on counts, and quantities; it reloads current database prices and evaluates active promotion configuration. It then calls the service-role-only `create_pending_order` PostgreSQL function with the trusted snapshot projection. That function atomically locks the customer and pickup window, enforces capacity, reserves required ready stock, writes the order graph and Terms acceptance, and returns an existing order when the same customer idempotency key is retried. Browser clients receive no direct execute permission on the writer.
+Phase 9 uses a two-layer checkout boundary. Next.js accepts only catalog identifiers, coating allocations, add-on counts, and quantities; it reloads current database prices and evaluates active promotion configuration. It then calls the service-role-only `create_pending_order` PostgreSQL function with the trusted snapshot projection. That function first expires overdue unpaid orders, releases any corresponding ready-stock reservations, then atomically locks the customer and pickup window, enforces capacity, reserves required ready stock, writes the order graph and Terms acceptance, and returns an existing order when the same customer idempotency key is retried. Browser clients receive no direct execute permission on either commerce writer.
 
 ## 4. Routing
 
@@ -185,6 +185,7 @@ Profile + scoped session
 - Admin authorization is server-side role/identity validation.
 - UI route visibility is not authorization.
 - No guest checkout in V1.
+- Active Admin identities may use customer checkout for their own orders; the server action always uses the authenticated profile as the owner.
 - Account deletion remains an authenticated RPC plus secret-protected daily processor. Phase 9 separately authorizes server commerce reads and the narrowly scoped mutations required for validated checkout and inventory; it does not authorize broad Admin CRUD, payment, or email APIs.
 - The processor rechecks active orders/refunds and permanently flips the due profile to inactive without deleting Auth or relational records.
 - Accounts pending deletion may access Profile and order history but cannot begin a new checkout.
