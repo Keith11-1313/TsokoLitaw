@@ -111,5 +111,45 @@ values
   ('loyalty_threshold', '7'::jsonb)
 on conflict (key) do update set value = excluded.value, updated_at = now();
 
+update public.terms_versions
+set is_current = false
+where is_current;
+
+insert into public.terms_versions (version, content, effective_at, is_current)
+values (
+  '2026-08-27',
+  $terms$
+TsokoLitaw Terms & Conditions — educational project terms
+
+TsokoLitaw is an academic e-commerce project for demonstration, testing, and evaluation within the UCC Congressional Campus community. Features marked as previews, mock data, test transactions, or unavailable do not create a binding order. An explicitly accepted live checkout concerns real edible products for campus pickup only.
+
+Product descriptions, coatings, prices, availability, pickup schedules, and promotions may change. The server confirms the final payable amount and availability during checkout. Customers must provide accurate account, contact, order, and pickup information.
+
+A live order is confirmed only after the payment provider and TsokoLitaw verify payment. A redirect, screenshot, email, or browser message alone is not proof of payment. Sandbox transactions have no cash value.
+
+Orders are prepared only for the selected available UCC Congressional Campus pickup location and window. Customers must follow campus access requirements and arrive during the communicated window. Products are perishable and fulfilled when released to the customer or authorized recipient.
+
+Cancellation is available only before an eligible order enters Preparing. An eligible paid cancellation starts a full refund to the original payment method, or an approved manual fallback if an automatic refund is unavailable. Prepared, ready-for-pickup, completed, and missed-pickup orders are non-refundable.
+
+Products may contain or contact milk, cocoa or chocolate ingredients, sesame, peanuts or other nuts, coconut, and cookie ingredients. Handmade products may reasonably differ in appearance, coating distribution, size, and presentation.
+
+Users must not test live payments without authorization, interfere with the platform, impersonate another person, or submit fraudulent information. Applicable non-waivable customer rights remain in effect.
+
+Preview and educational features are provided as available to the extent permitted by law. TsokoLitaw does not guarantee outcomes based on mock content or unavailable features, and does not exclude responsibilities that cannot lawfully be excluded.
+
+The TsokoLitaw name, original content, product presentation, software, and project materials may not be commercially reused without permission. Third-party materials remain the property of their owners.
+
+Order or payment concerns should first be sent to tsokolitaw@gmail.com. These terms are governed by applicable Philippine law. If one provision is invalid, the remainder continues to apply. The version accepted at checkout governs that order unless applicable law requires otherwise.
+
+Selecting the Terms & Conditions checkbox and continuing records electronic acceptance of these terms, the Privacy Policy, allergen notice, pickup window, and no-show policy.
+  $terms$,
+  '2026-08-27 00:00:00+08'::timestamptz,
+  true
+)
+on conflict (version) do update set
+  content = excluded.content,
+  effective_at = excluded.effective_at,
+  is_current = excluded.is_current;
+
 -- Pickup dates and windows are intentionally not seeded. Admin publishes only
 -- the dates the team can serve, choosing MADE_TO_ORDER, READY_STOCK, or HYBRID.

@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(26);
+select plan(29);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -12,6 +12,7 @@ select has_table('public', 'inventory_adjustments', 'inventory adjustments table
 select has_column('public', 'profiles', 'is_active', 'profiles track whether account access is active');
 select has_column('public', 'profiles', 'deactivated_at', 'profiles record when access was deactivated');
 select has_column('public', 'orders', 'checkout_idempotency_key', 'orders store a customer checkout idempotency key');
+select has_sequence('public', 'order_number_sequence', 'orders use a concurrency-safe kiosk number sequence');
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.profiles'::regclass),
@@ -64,6 +65,14 @@ select ok(
 select ok(
   has_function_privilege('service_role', 'public.deactivate_due_account(uuid)', 'EXECUTE'),
   'service role can invoke due-account deactivation'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.expire_pending_orders()', 'EXECUTE'),
+  'authenticated users cannot expire pending orders directly'
+);
+select ok(
+  has_function_privilege('service_role', 'public.expire_pending_orders()', 'EXECUTE'),
+  'service role can expire pending orders'
 );
 select ok(
   not has_function_privilege(

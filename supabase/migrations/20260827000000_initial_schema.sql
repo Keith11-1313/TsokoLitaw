@@ -388,6 +388,11 @@ create table public.terms_versions (
 
 create unique index terms_one_current_idx on public.terms_versions (is_current) where is_current;
 
+create sequence public.order_number_sequence
+  as bigint
+  minvalue 1
+  start with 1;
+
 create table public.business_settings (
   key text primary key,
   value jsonb not null,
@@ -695,6 +700,64 @@ begin
 end;
 $$;
 
+create or replace function public.expire_pending_orders()
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  expired_order record;
+  expired_count integer := 0;
+begin
+  for expired_order in
+    select
+      orders.id,
+      pickup_dates.pickup_date,
+      pickup_dates.availability_mode
+    from public.orders
+    left join public.pickup_windows
+      on pickup_windows.id = orders.pickup_window_id
+    left join public.pickup_dates
+      on pickup_dates.id = pickup_windows.pickup_date_id
+    where orders.status = 'PENDING_PAYMENT'
+      and orders.payment_status = 'PENDING'
+      and orders.payment_expires_at <= now()
+    for update of orders skip locked
+  loop
+    if expired_order.availability_mode = 'READY_STOCK'
+      or (
+        expired_order.availability_mode = 'HYBRID'
+        and expired_order.pickup_date = (current_timestamp at time zone 'Asia/Manila')::date
+      )
+    then
+      update public.daily_inventory
+      set stock_reserved = greatest(stock_reserved - reserved_items.quantity, 0),
+          updated_at = now()
+      from (
+        select
+          order_items.variant_id,
+          sum(order_items.quantity)::integer as quantity
+        from public.order_items
+        where order_items.order_id = expired_order.id
+          and order_items.variant_id is not null
+        group by order_items.variant_id
+      ) reserved_items
+      where daily_inventory.pickup_date = expired_order.pickup_date
+        and daily_inventory.product_variant_id = reserved_items.variant_id;
+    end if;
+
+    update public.orders
+    set status = 'EXPIRED'
+    where id = expired_order.id;
+
+    expired_count := expired_count + 1;
+  end loop;
+
+  return expired_count;
+end;
+$$;
+
 create or replace function public.create_pending_order(
   target_user_id uuid,
   checkout_key uuid,
@@ -741,6 +804,8 @@ declare
   inserted_order_item_id uuid;
   requested_variant record;
 begin
+  perform public.expire_pending_orders();
+
   if target_user_id is null or checkout_key is null then
     raise exception 'Customer and checkout identifiers are required';
   end if;
@@ -751,11 +816,10 @@ begin
   for update;
 
   if customer_profile.id is null
-    or customer_profile.role <> 'customer'
     or not customer_profile.is_active
     or customer_profile.deletion_scheduled_for is not null
   then
-    raise exception 'Customer is not eligible for checkout';
+    raise exception 'Account is not eligible for checkout';
   end if;
 
   select * into existing_order
@@ -885,8 +949,8 @@ begin
   where key = 'payment_expiry_minutes';
   payment_expiry_minutes := coalesce(payment_expiry_minutes, 15);
 
-  generated_order_number := 'TSL-' || to_char(now(), 'YYYYMMDD') || '-'
-    || upper(substr(replace(generated_order_id::text, '-', ''), 1, 8));
+  generated_order_number := 'TL-'
+    || lpad(nextval('public.order_number_sequence'::regclass)::text, 4, '0');
 
   insert into public.orders (
     id,
@@ -1062,6 +1126,7 @@ grant execute on function public.promote_admin_by_email(text) to service_role;
 grant execute on function public.request_account_deletion() to authenticated;
 grant execute on function public.cancel_account_deletion() to authenticated;
 grant execute on function public.deactivate_due_account(uuid) to service_role;
+grant execute on function public.expire_pending_orders() to service_role;
 grant execute on function public.create_pending_order(
   uuid, uuid, uuid, uuid, text, text, text, jsonb, numeric, numeric, numeric, text
 ) to service_role;
@@ -1229,6 +1294,8 @@ comment on function public.cancel_account_deletion() is
   'Cancels the authenticated customer account deletion request during its grace period.';
 comment on function public.deactivate_due_account(uuid) is
   'Service-role-only processor that marks an eligible due customer profile inactive while preserving its relational data.';
+comment on function public.expire_pending_orders() is
+  'Service-role-only processor that expires overdue unpaid orders and releases ready-stock reservations.';
 comment on function public.create_pending_order(
   uuid, uuid, uuid, uuid, text, text, text, jsonb, numeric, numeric, numeric, text
 ) is 'Service-role-only atomic order writer. Next.js must reload and validate active catalog prices before calling it.';
