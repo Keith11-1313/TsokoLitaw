@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(23);
+select plan(26);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -11,6 +11,7 @@ select has_table('public', 'refunds', 'refunds table exists');
 select has_table('public', 'inventory_adjustments', 'inventory adjustments table exists');
 select has_column('public', 'profiles', 'is_active', 'profiles track whether account access is active');
 select has_column('public', 'profiles', 'deactivated_at', 'profiles record when access was deactivated');
+select has_column('public', 'orders', 'checkout_idempotency_key', 'orders store a customer checkout idempotency key');
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.profiles'::regclass),
@@ -63,6 +64,22 @@ select ok(
 select ok(
   has_function_privilege('service_role', 'public.deactivate_due_account(uuid)', 'EXECUTE'),
   'service role can invoke due-account deactivation'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.create_pending_order(uuid,uuid,uuid,uuid,text,text,text,jsonb,numeric,numeric,numeric,text)',
+    'EXECUTE'
+  ),
+  'authenticated users cannot invoke the atomic order writer directly'
+);
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.create_pending_order(uuid,uuid,uuid,uuid,text,text,text,jsonb,numeric,numeric,numeric,text)',
+    'EXECUTE'
+  ),
+  'service role can invoke the atomic order writer'
 );
 
 select * from finish();
