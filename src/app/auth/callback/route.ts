@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSafeNextPath } from "@/lib/auth-redirect";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -20,16 +21,42 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createServerSupabaseClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
       const forwardedHost = request.headers.get("x-forwarded-host");
+      const redirectOrigin = process.env.NODE_ENV !== "development" && forwardedHost
+        ? `https://${forwardedHost}`
+        : requestUrl.origin;
+      const userId = sessionData.user?.id;
 
-      if (process.env.NODE_ENV !== "development" && forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${nextPath}`);
+      if (!userId) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(`${redirectOrigin}/auth/error?reason=profile`);
       }
 
-      return NextResponse.redirect(`${requestUrl.origin}${nextPath}`);
+      const adminSupabase = createAdminSupabaseClient();
+      const { data: profile, error: profileError } = await adminSupabase
+        .from("profiles")
+        .select("is_active")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (profileError || !profile) {
+        console.error("[auth/callback] Authenticated profile status could not be loaded", {
+          userId,
+          error: profileError,
+        });
+        await supabase.auth.signOut();
+        return NextResponse.redirect(`${redirectOrigin}/auth/error?reason=profile`);
+      }
+
+      if (!profile.is_active) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(`${redirectOrigin}/auth/account-deleted`);
+      }
+
+      return NextResponse.redirect(`${redirectOrigin}${nextPath}`);
     }
 
     console.error("[auth/callback] Supabase code exchange failed", {

@@ -2,13 +2,15 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(18);
+select plan(23);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
 select has_table('public', 'orders', 'orders table exists');
 select has_table('public', 'refunds', 'refunds table exists');
 select has_table('public', 'inventory_adjustments', 'inventory adjustments table exists');
+select has_column('public', 'profiles', 'is_active', 'profiles track whether account access is active');
+select has_column('public', 'profiles', 'deactivated_at', 'profiles record when access was deactivated');
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.profiles'::regclass),
@@ -41,6 +43,10 @@ select ok(
   not has_column_privilege('authenticated', 'public.profiles', 'role', 'UPDATE'),
   'authenticated users cannot update their role'
 );
+select ok(
+  not has_column_privilege('authenticated', 'public.profiles', 'is_active', 'UPDATE'),
+  'authenticated users cannot reactivate their profile'
+);
 
 select ok(
   not has_function_privilege('authenticated', 'public.promote_admin_by_email(text)', 'EXECUTE'),
@@ -49,6 +55,14 @@ select ok(
 select ok(
   has_function_privilege('service_role', 'public.promote_admin_by_email(text)', 'EXECUTE'),
   'service role can invoke controlled admin bootstrap'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.deactivate_due_account(uuid)', 'EXECUTE'),
+  'authenticated users cannot invoke due-account deactivation'
+);
+select ok(
+  has_function_privilege('service_role', 'public.deactivate_due_account(uuid)', 'EXECUTE'),
+  'service role can invoke due-account deactivation'
 );
 
 select * from finish();

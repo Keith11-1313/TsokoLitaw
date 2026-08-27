@@ -23,6 +23,7 @@ export async function GET(request: Request) {
     .from("profiles")
     .select("id")
     .eq("role", "customer")
+    .eq("is_active", true)
     .not("deletion_scheduled_for", "is", null)
     .lte("deletion_scheduled_for", now)
     .limit(100);
@@ -32,42 +33,37 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unable to load due accounts" }, { status: 500 });
   }
 
-  let deleted = 0;
+  let deactivated = 0;
   let deferred = 0;
   const failures: string[] = [];
 
   for (const profile of dueProfiles ?? []) {
-    const { data: prepared, error: prepareError } = await supabase.rpc(
-      "prepare_account_for_deletion",
+    const { data: accountDeactivated, error: deactivationError } = await supabase.rpc(
+      "deactivate_due_account",
       { target_user_id: profile.id },
     );
 
-    if (prepareError) {
-      console.error("[account-deletions] Preparation failed", {
+    if (deactivationError) {
+      console.error("[account-deletions] Deactivation failed", {
         userId: profile.id,
-        error: prepareError,
+        error: deactivationError,
       });
       failures.push(profile.id);
       continue;
     }
 
-    if (!prepared) {
+    if (!accountDeactivated) {
       deferred += 1;
       continue;
     }
 
-    const { error: deleteError } = await supabase.auth.admin.deleteUser(profile.id);
-    if (deleteError) {
-      console.error("[account-deletions] Auth user deletion failed", {
-        userId: profile.id,
-        error: deleteError,
-      });
-      failures.push(profile.id);
-      continue;
-    }
-
-    deleted += 1;
+    deactivated += 1;
   }
 
-  return NextResponse.json({ examined: dueProfiles?.length ?? 0, deleted, deferred, failures });
+  return NextResponse.json({
+    examined: dueProfiles?.length ?? 0,
+    deactivated,
+    deferred,
+    failures,
+  });
 }

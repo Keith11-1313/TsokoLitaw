@@ -6,6 +6,7 @@ const errorMessages: Record<string, string> = {
   provider: "Google or Supabase rejected the sign-in request. Check the configured Google client credentials, then try again.",
   exchange: "The one-time sign-in code could not be exchanged. Start again from Login in the same browser and use the same local address throughout the attempt.",
   "missing-code": "The sign-in callback did not contain an authorization code. Start again from Login and complete the Google prompt without reopening an older callback page.",
+  profile: "Your authenticated profile could not be verified. Please try again or contact TsokoLitaw support if the problem continues.",
 };
 
 type AuthErrorPageProps = {

@@ -19,13 +19,15 @@ create type public.journal_status as enum ('draft', 'published');
 create type public.loyalty_reward_status as enum ('earned', 'redeemed', 'expired');
 
 create table public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
+  id uuid primary key references auth.users(id) on delete restrict,
   full_name text not null default '',
   email text not null,
   mobile_number text,
   role public.profile_role not null default 'customer',
+  is_active boolean not null default true,
   deletion_requested_at timestamptz,
   deletion_scheduled_for timestamptz,
+  deactivated_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint profiles_deletion_schedule_consistent check (
@@ -34,6 +36,10 @@ create table public.profiles (
       deletion_requested_at is not null
       and deletion_scheduled_for = deletion_requested_at + interval '90 days'
     )
+  ),
+  constraint profiles_deactivation_consistent check (
+    (is_active and deactivated_at is null)
+    or (not is_active and deactivated_at is not null)
   )
 );
 
@@ -404,7 +410,7 @@ create index pickup_dates_open_idx on public.pickup_dates (pickup_date) where is
 create index pickup_windows_date_idx on public.pickup_windows (pickup_date_id, is_open, sort_order);
 create index daily_inventory_availability_idx on public.daily_inventory (pickup_date, is_available);
 create index profiles_deletion_due_idx on public.profiles (deletion_scheduled_for)
-  where deletion_scheduled_for is not null;
+  where is_active and deletion_scheduled_for is not null;
 create index orders_user_created_idx on public.orders (user_id, created_at desc);
 create index orders_status_created_idx on public.orders (status, created_at desc);
 create index orders_pickup_date_idx on public.orders (pickup_date, status);
@@ -488,6 +494,21 @@ create trigger profiles_enforce_admin_limit
   before insert or update of role on public.profiles
   for each row execute procedure public.enforce_admin_limit();
 
+create or replace function public.is_active_user()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.profiles
+    where id = (select auth.uid())
+      and is_active
+  );
+$$;
+
 create or replace function public.is_admin()
 returns boolean
 language sql
@@ -500,6 +521,7 @@ as $$
     from public.profiles
     where id = (select auth.uid())
       and role = 'admin'
+      and is_active
   );
 $$;
 
@@ -519,6 +541,7 @@ begin
   update public.profiles
   set role = 'admin', updated_at = now()
   where lower(email) = lower(trim(target_email))
+    and is_active
   returning id into promoted_user_id;
 
   if promoted_user_id is null then
@@ -542,6 +565,13 @@ declare
 begin
   if requesting_user_id is null then
     raise exception 'Authentication is required';
+  end if;
+
+  if not exists (
+    select 1 from public.profiles
+    where id = requesting_user_id and is_active
+  ) then
+    raise exception 'Account is inactive';
   end if;
 
   if exists (
@@ -575,6 +605,7 @@ begin
       ),
       updated_at = now()
   where id = requesting_user_id
+    and is_active
   returning deletion_scheduled_for into scheduled_for_value;
 
   if scheduled_for_value is null then
@@ -602,7 +633,8 @@ begin
   set deletion_requested_at = null,
       deletion_scheduled_for = null,
       updated_at = now()
-  where id = requesting_user_id;
+  where id = requesting_user_id
+    and is_active;
 
   if not found then
     raise exception 'Authenticated profile was not found';
@@ -610,7 +642,7 @@ begin
 end;
 $$;
 
-create or replace function public.prepare_account_for_deletion(target_user_id uuid)
+create or replace function public.deactivate_due_account(target_user_id uuid)
 returns boolean
 language plpgsql
 security definer
@@ -619,14 +651,15 @@ as $$
 declare
   target_role public.profile_role;
   target_due_at timestamptz;
+  target_is_active boolean;
 begin
-  select role, deletion_scheduled_for
-  into target_role, target_due_at
+  select role, deletion_scheduled_for, is_active
+  into target_role, target_due_at, target_is_active
   from public.profiles
   where id = target_user_id
   for update;
 
-  if target_role is null or target_role = 'admin'
+  if target_role is null or target_role = 'admin' or not target_is_active
     or target_due_at is null or target_due_at > now() then
     return false;
   end if;
@@ -647,31 +680,14 @@ begin
     return false;
   end if;
 
-  delete from public.manual_refund_destinations
-  using public.refunds, public.orders
-  where manual_refund_destinations.refund_id = refunds.id
-    and refunds.order_id = orders.id
-    and orders.user_id = target_user_id;
-
-  delete from public.reviews where user_id = target_user_id;
-
-  update public.notification_deliveries
-  set user_id = null,
-      recipient_email = 'deleted-account@tsokolitaw.invalid',
-      last_error = null,
+  update public.profiles
+  set is_active = false,
+      deactivated_at = now(),
       updated_at = now()
-  where user_id = target_user_id;
+  where id = target_user_id
+    and is_active;
 
-  update public.orders
-  set user_id = null,
-      customer_name = 'Deleted customer',
-      customer_email = 'deleted-account@tsokolitaw.invalid',
-      customer_mobile = null,
-      customer_notes = null,
-      updated_at = now()
-  where user_id = target_user_id;
-
-  return true;
+  return found;
 end;
 $$;
 
@@ -731,11 +747,12 @@ alter default privileges for role postgres in schema public revoke all on tables
 alter default privileges for role postgres in schema public revoke all on functions from public, anon, authenticated;
 
 grant usage on schema public to anon, authenticated;
+grant execute on function public.is_active_user() to anon, authenticated;
 grant execute on function public.is_admin() to anon, authenticated;
 grant execute on function public.promote_admin_by_email(text) to service_role;
 grant execute on function public.request_account_deletion() to authenticated;
 grant execute on function public.cancel_account_deletion() to authenticated;
-grant execute on function public.prepare_account_for_deletion(uuid) to service_role;
+grant execute on function public.deactivate_due_account(uuid) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
   public.pickup_locations, public.pickup_dates, public.pickup_windows,
@@ -787,27 +804,30 @@ create policy reviews_read_visible_owner_or_admin
   on public.reviews for select to anon, authenticated
   using (
     is_visible
-    or user_id = (select auth.uid())
+    or (user_id = (select auth.uid()) and public.is_active_user())
     or public.is_admin()
   );
 
 create policy profiles_read_own_or_admin
   on public.profiles for select to authenticated
-  using (id = (select auth.uid()) or public.is_admin());
+  using ((id = (select auth.uid()) and public.is_active_user()) or public.is_admin());
 create policy profiles_update_own
   on public.profiles for update to authenticated
-  using (id = (select auth.uid()))
-  with check (id = (select auth.uid()));
+  using (id = (select auth.uid()) and public.is_active_user())
+  with check (id = (select auth.uid()) and public.is_active_user());
 create policy orders_read_own_or_admin
   on public.orders for select to authenticated
-  using (user_id = (select auth.uid()) or public.is_admin());
+  using ((user_id = (select auth.uid()) and public.is_active_user()) or public.is_admin());
 create policy order_items_read_own_or_admin
   on public.order_items for select to authenticated
   using (
     exists (
       select 1 from public.orders
       where orders.id = order_items.order_id
-        and (orders.user_id = (select auth.uid()) or public.is_admin())
+        and (
+          (orders.user_id = (select auth.uid()) and public.is_active_user())
+          or public.is_admin()
+        )
     )
   );
 create policy order_item_coatings_read_own_or_admin
@@ -818,7 +838,10 @@ create policy order_item_coatings_read_own_or_admin
       from public.order_items
       join public.orders on orders.id = order_items.order_id
       where order_items.id = order_item_coatings.order_item_id
-        and (orders.user_id = (select auth.uid()) or public.is_admin())
+        and (
+          (orders.user_id = (select auth.uid()) and public.is_active_user())
+          or public.is_admin()
+        )
     )
   );
 create policy order_item_addons_read_own_or_admin
@@ -829,7 +852,10 @@ create policy order_item_addons_read_own_or_admin
       from public.order_items
       join public.orders on orders.id = order_items.order_id
       where order_items.id = order_item_addons.order_item_id
-        and (orders.user_id = (select auth.uid()) or public.is_admin())
+        and (
+          (orders.user_id = (select auth.uid()) and public.is_active_user())
+          or public.is_admin()
+        )
     )
   );
 create policy payments_read_own_or_admin
@@ -838,7 +864,10 @@ create policy payments_read_own_or_admin
     exists (
       select 1 from public.orders
       where orders.id = payments.order_id
-        and (orders.user_id = (select auth.uid()) or public.is_admin())
+        and (
+          (orders.user_id = (select auth.uid()) and public.is_active_user())
+          or public.is_admin()
+        )
     )
   );
 create policy refunds_read_own_or_admin
@@ -847,15 +876,18 @@ create policy refunds_read_own_or_admin
     exists (
       select 1 from public.orders
       where orders.id = refunds.order_id
-        and (orders.user_id = (select auth.uid()) or public.is_admin())
+        and (
+          (orders.user_id = (select auth.uid()) and public.is_active_user())
+          or public.is_admin()
+        )
     )
   );
 create policy loyalty_accounts_read_own_or_admin
   on public.loyalty_accounts for select to authenticated
-  using (user_id = (select auth.uid()) or public.is_admin());
+  using ((user_id = (select auth.uid()) and public.is_active_user()) or public.is_admin());
 create policy loyalty_rewards_read_own_or_admin
   on public.loyalty_rewards for select to authenticated
-  using (user_id = (select auth.uid()) or public.is_admin());
+  using ((user_id = (select auth.uid()) and public.is_active_user()) or public.is_admin());
 
 create policy daily_inventory_admin_read
   on public.daily_inventory for select to authenticated using (public.is_admin());
@@ -883,7 +915,7 @@ comment on function public.request_account_deletion() is
   'Schedules the authenticated customer account for deletion after a fixed 90-day grace period.';
 comment on function public.cancel_account_deletion() is
   'Cancels the authenticated customer account deletion request during its grace period.';
-comment on function public.prepare_account_for_deletion(uuid) is
-  'Service-role-only processor that deletes restricted refund destinations and anonymizes retained commerce data before Auth user deletion.';
+comment on function public.deactivate_due_account(uuid) is
+  'Service-role-only processor that marks an eligible due customer profile inactive while preserving its relational data.';
 comment on table public.manual_refund_destinations is
   'Restricted fallback data used only after an automatic PayMongo refund is unsupported or fails.';

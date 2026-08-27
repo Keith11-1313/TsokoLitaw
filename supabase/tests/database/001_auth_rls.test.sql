@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(20);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -99,11 +99,59 @@ select is(
 );
 
 reset role;
+insert into public.orders (
+  id, order_number, user_id, status, payment_status, customer_name,
+  customer_email, pickup_date, pickup_window_id, pickup_location_id,
+  pickup_window_snapshot, pickup_location_snapshot, subtotal, total,
+  terms_version, terms_accepted_at, completed_at
+)
+values (
+  '95000000-0000-4000-8000-000000000003', 'RLS-DEACTIVATED',
+  '91000000-0000-4000-8000-000000000004', 'COMPLETED', 'PAID',
+  'RLS Deletion', 'rls-deletion@example.test', '2099-01-01',
+  '94000000-0000-4000-8000-000000000001',
+  '92000000-0000-4000-8000-000000000001', '9:00 AM–10:00 AM',
+  'RLS test location', 40, 40, 'rls-test', now(), now()
+);
+
+update public.profiles
+set deletion_requested_at = now() - interval '91 days',
+    deletion_scheduled_for = now() - interval '1 day'
+where id = '91000000-0000-4000-8000-000000000004';
+
+select ok(
+  public.deactivate_due_account('91000000-0000-4000-8000-000000000004'),
+  'due eligible customer account is deactivated'
+);
+select is(
+  (select is_active from public.profiles where id = '91000000-0000-4000-8000-000000000004'),
+  false,
+  'deactivation marks the profile inactive'
+);
+select ok(
+  (select deactivated_at is not null from public.profiles where id = '91000000-0000-4000-8000-000000000004'),
+  'deactivation records its timestamp'
+);
+select is(
+  (select user_id from public.orders where order_number = 'RLS-DEACTIVATED'),
+  '91000000-0000-4000-8000-000000000004'::uuid,
+  'deactivation preserves the order-to-profile relationship'
+);
+
+select set_config('request.jwt.claim.sub', '91000000-0000-4000-8000-000000000004', true);
+set local role authenticated;
+select is(
+  (select count(*) from public.profiles),
+  0::bigint,
+  'inactive customer cannot read their retained profile'
+);
+
+reset role;
 select set_config('request.jwt.claim.sub', '91000000-0000-4000-8000-000000000003', true);
 set local role authenticated;
 
 select ok(public.is_admin(), 'approved admin satisfies the server-side role check');
-select is((select count(*) from public.orders), 2::bigint, 'approved admin can read customer orders');
+select is((select count(*) from public.orders), 3::bigint, 'approved admin can read customer orders');
 select throws_ok(
   $$select public.request_account_deletion()$$,
   'P0001',

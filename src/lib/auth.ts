@@ -22,7 +22,7 @@ export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, full_name, email, mobile_number, role, deletion_scheduled_for")
+    .select("id, full_name, email, mobile_number, role, is_active, deletion_scheduled_for")
     .eq("id", userId)
     .maybeSingle();
 
@@ -32,7 +32,7 @@ export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
     });
   }
 
-  if (!profile) return null;
+  if (!profile || !profile.is_active) return null;
 
   return {
     id: profile.id,
