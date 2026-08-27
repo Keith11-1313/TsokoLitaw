@@ -3,6 +3,7 @@ import "server-only";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getCommerceCatalog } from "@/lib/server-commerce";
 import { priceCheckoutCart } from "@/lib/commerce";
+import { calculatePromotionDiscount, isPromotionActive, type PromotionRule } from "@/lib/promotion";
 import type { CheckoutCartInput } from "@/types/commerce";
 
 export interface CreatePendingOrderInput {
@@ -24,42 +25,6 @@ export interface PendingOrderResult {
   created: boolean;
 }
 
-interface PromotionRow {
-  promotion_type: string;
-  config: Record<string, unknown>;
-}
-
-function getConfigNumber(config: Record<string, unknown>, key: string) {
-  const value = Number(config[key]);
-  return Number.isFinite(value) && value >= 0 ? value : null;
-}
-
-export function calculatePromotionDiscount(
-  subtotal: number,
-  promotions: readonly PromotionRow[],
-) {
-  return promotions.reduce((bestDiscount, promotion) => {
-    const minimumSubtotal = getConfigNumber(promotion.config, "minimum_subtotal") ?? 0;
-    if (subtotal < minimumSubtotal) return bestDiscount;
-
-    let candidate = 0;
-    if (promotion.promotion_type === "PERCENTAGE_DISCOUNT") {
-      const percentage = Math.min(
-        getConfigNumber(promotion.config, "percentage") ?? 0,
-        100,
-      );
-      candidate = subtotal * (percentage / 100);
-      const maximumDiscount = getConfigNumber(promotion.config, "maximum_discount");
-      if (maximumDiscount !== null) candidate = Math.min(candidate, maximumDiscount);
-    }
-    if (promotion.promotion_type === "FIXED_DISCOUNT") {
-      candidate = getConfigNumber(promotion.config, "amount") ?? 0;
-    }
-
-    return Math.max(bestDiscount, Math.min(candidate, subtotal));
-  }, 0);
-}
-
 export async function createPendingOrder(
   input: CreatePendingOrderInput,
 ): Promise<PendingOrderResult> {
@@ -69,6 +34,12 @@ export async function createPendingOrder(
   const pricedCart = priceCheckoutCart(input.items, catalog);
   const supabase = createAdminSupabaseClient();
   const now = new Date().toISOString();
+  const { error: expirationError } = await supabase.rpc("expire_pending_orders");
+  if (expirationError) {
+    throw new Error("Expired order reservations could not be released.", {
+      cause: expirationError,
+    });
+  }
   const [termsResult, promotionsResult] = await Promise.all([
     supabase
       .from("terms_versions")
@@ -78,10 +49,8 @@ export async function createPendingOrder(
       .maybeSingle(),
     supabase
       .from("promotions")
-      .select("promotion_type, config")
-      .eq("is_active", true)
-      .or(`starts_at.is.null,starts_at.lte.${now}`)
-      .or(`ends_at.is.null,ends_at.gt.${now}`),
+      .select("promotion_type, config, starts_at, ends_at")
+      .eq("is_active", true),
   ]);
 
   if (termsResult.error || !termsResult.data) {
@@ -97,7 +66,9 @@ export async function createPendingOrder(
 
   const discount = calculatePromotionDiscount(
     pricedCart.subtotal,
-    (promotionsResult.data ?? []) as PromotionRow[],
+    ((promotionsResult.data ?? []) as PromotionRule[]).filter((promotion) => (
+      isPromotionActive(promotion, now)
+    )),
   );
   const normalizedDiscount = Math.round(discount * 100) / 100;
   const total = Math.round((pricedCart.subtotal - normalizedDiscount) * 100) / 100;
