@@ -38,7 +38,7 @@ Deferred until separately approved:
 - Supabase
 - Google authentication
 - PayMongo
-- APIs, server actions, webhooks, email, and real CRUD
+- APIs, server actions, webhooks, email, and real CRUD, except the approved account-deletion lifecycle: authenticated schedule/cancel requests and the secret-protected scheduled processor that rechecks eligibility, anonymizes retained records, and deletes due customer Auth identities
 - database persistence
 - production authorization
 - admin subdomain and DNS configuration
@@ -96,26 +96,27 @@ Order Now duplicated Our Creations, the Home call to action, and Cart. My Orders
 - shopping begins through Our Creations or the Home call to action
 - Cart owns the transition toward checkout
 - signed-in account UI exposes Profile, My Orders, and Log out
+- signed-in Admin UI also exposes an Admin dashboard shortcut after the server confirms the Admin role
 - signed-out Account opens Login
 - protected Profile and Orders routes redirect signed-out users to Login
 
-## 6. Authentication Preview
+## 6. Authentication
 
 ### Decision
 
-A frontend-only signed-in/signed-out preview exists for UI testing. It is not authentication.
+Google OAuth through Supabase provides the real signed-in session. Customer and Admin route access is decided from the server-loaded profile role.
 
 ### Reason
 
-Both account states must be reviewable before Supabase is connected. A static page showing Profile and Sign in simultaneously created an impossible state.
+The account menu must reflect the verified session, while Admin visibility must match the same server-controlled role used by the route guard.
 
 ### UI consequence
 
-- the preview begins signed in so Profile and Orders can be inspected
-- Log out stores a local signed-out preview state
-- Login can restore the signed-in preview
-- Google Sign-In remains disabled and clearly marked as deferred
-- future Supabase sessions will replace this provider and route gate
+- signed-out visitors are sent to Login for protected customer routes
+- Google Sign-In creates or restores the Supabase session
+- Log out clears the Supabase session
+- authenticated customers can access Profile and the honest unconnected My Orders state
+- authenticated Admins receive an Admin dashboard shortcut, but `/admin` still performs its own server-side role check
 
 ## 7. Customer Contact Information
 
@@ -144,6 +145,16 @@ Google Sign-In already supplies a stable account email. Requiring a phone number
 Resend is the approved V1 transactional email provider. Sending occurs only from trusted server code with idempotency protection. The application records the provider message ID and delivery state so failures can be retried and investigated without treating email delivery as proof of an order or payment transition.
 
 Production sending requires a verified domain or sending subdomain. Resend API keys and webhook signing secrets must never be exposed to the browser or stored in Admin settings.
+
+### Account deletion
+
+Customers may schedule account deletion from a Profile danger zone. The request has a fixed 90-day grace period and remains cancellable until processing. Pending deletion blocks new checkout; active orders or refunds block the initial request. Admin identities use a separate controlled removal process.
+
+When the deadline arrives, trusted server code rechecks eligibility, anonymizes retained order and notification snapshots, removes customer reviews and loyalty data, and deletes the Supabase Auth identity. This preserves necessary commerce history without retaining the customer's direct profile/contact data. The external Google account is never deleted.
+
+### Production schema artifact
+
+The repository keeps one canonical bootstrap migration under `supabase/migrations/`. Approved schema refinements are folded into that file before production so a fresh production Supabase project receives the complete schema in one run. Existing linked environments may have older migration history and must not be reconciled by blindly replaying the squashed file.
 
 ## 8. Product Model: Boxes and Coatings
 
@@ -268,7 +279,7 @@ Checkout exposes date, time, and location dropdowns. Admin Pickup exists to publ
 
 ### Decision
 
-Customer Orders shows current orders and history. Order detail explains fulfillment progress, pickup, payment summary, cancellation eligibility, and review eligibility.
+Customer Orders will show current orders and history after scoped server commerce is connected. During Phase 8, authenticated customer order surfaces must not display mock records as if they belong to the signed-in Google identity. My Orders shows an honest unconnected state, while dynamic order and review routes remain unavailable until ownership-scoped database reads exist. Future order detail explains fulfillment progress, pickup, payment summary, cancellation eligibility, and review eligibility.
 
 Primary future order flow:
 
@@ -400,7 +411,7 @@ Currently shared:
 - operating days and hours
 - ready-stock versus made-to-order availability
 
-Admin and customer mock orders are aligned to the same approved catalog, totals, and statuses.
+Admin mock orders remain an explicitly operational preview and are not exposed as authenticated customer history.
 
 ### Reason
 
@@ -425,6 +436,12 @@ Subdomain routing is deployment configuration, not authorization. Moving the UI 
 The server must verify the admin identity/role for every protected page and mutation regardless of hostname.
 
 V1 has one admin permission role shared by up to five approved Google accounts. One identity may be configured initially and the remaining four added later. This means equal-permission administrators, not different roles. Exact identities remain deployment-controlled data and must never be inferred from client state or a hostname.
+
+### Production authentication domain
+
+Production Google authentication will use the branded Supabase custom domain `auth.tsokolitaw.com` so Google account selection does not display the opaque Supabase project reference. The default Supabase domain remains acceptable during development.
+
+Custom-domain activation is deferred until production DNS and a compatible paid Supabase plan are available. Before activation, the branded callback must be added to the Google OAuth client alongside the existing Supabase callback. The old callback remains available until the branded login, refresh, logout, and authorization flows pass production verification.
 
 ## 18. Assets and Visual Direction
 
@@ -463,7 +480,7 @@ Terms and Privacy links belong in the footer and Checkout, not the primary navig
 
 They must be easy to find and acknowledged at checkout without competing with primary shopping navigation.
 
-The recipe/allergen disclosure is approved. Final general legal and privacy wording still requires business approval before production; the cancellation, refund, and no-show policy is already approved separately.
+The recipe/allergen disclosure and the professor-provided educational Terms & Conditions baseline are approved. The Terms adapt the supplied demonstration clauses to the real physical-food, live-payment, campus-pickup, cancellation, refund, and no-show decisions; they must not describe accepted orders as digital-only consumption. Final Privacy wording still requires business approval before production.
 
 ## 20. Git Workflow
 

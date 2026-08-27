@@ -2,9 +2,9 @@
 
 ## 1. Status
 
-The Phase 7 Supabase baseline is implemented as a versioned migration in `supabase/migrations/20260827000000_initial_schema.sql`, with controlled data in `supabase/seed.sql` and pgTAP checks in `supabase/tests/database/000_schema.test.sql`.
+The Phase 7 Supabase baseline is implemented as the canonical production bootstrap schema in `supabase/migrations/20260827000000_initial_schema.sql`, with controlled data in `supabase/seed.sql` and pgTAP checks in `supabase/tests/database/000_schema.test.sql`. The repository intentionally keeps one squashed migration for a fresh production project.
 
-The migration and controlled seed have been applied to the linked hosted development project. All 18 pgTAP schema and authorization checks passed against the hosted database, and database lint reported no schema errors. The Phase 7 database foundation is verified.
+The schema and controlled seed have been applied to the linked hosted development project. That project retains the pre-squash migration history; do not replay the repository bootstrap file against it solely to align filenames. Database lint reported no schema errors.
 
 ## Decision-to-Schema Mapping
 
@@ -26,7 +26,7 @@ The proposed schema follows `DECISIONS.md` and the current workflow:
 | Admin mirrors customer operations | admin mutations update the same catalog, pickup, order, review, and Journal records customers consume |
 | Resend sends transactional email | store idempotency keys, provider message IDs, delivery status, and retry metadata without storing provider secrets |
 
-Do not create migrations directly from rough reference content. Reconfirm the decision log and business-policy items first.
+Do not change the bootstrap schema directly from rough reference content. Reconfirm the decision log and business-policy items first, then fold an approved schema refinement into the canonical file.
 
 ## 2. Profiles
 
@@ -38,6 +38,8 @@ full_name text
 email text
 mobile_number text nullable
 role text default 'customer' check role in ('customer', 'admin')
+deletion_requested_at timestamptz nullable
+deletion_scheduled_for timestamptz nullable
 created_at timestamptz
 updated_at timestamptz
 ```
@@ -45,6 +47,10 @@ updated_at timestamptz
 Google remains the authentication source for email. Admin authorization must be checked server-side.
 
 V1 supports five approved admin profiles using the same `admin` role. One Google identity may be configured initially and the remaining four added later through controlled backend data. Customers cannot assign or modify roles, and client-provided profile metadata must never grant admin access.
+
+The two deletion timestamps are either both null or exactly 90 days apart. Authenticated customers use ownership-bound security-definer functions to schedule or cancel deletion; they cannot select a target user. Active orders/refunds block scheduling, and Admin profiles are excluded.
+
+The daily service-role processor selects due customer profiles, rechecks eligibility, deletes restricted manual-refund destinations and customer reviews, clears loyalty data through the profile cascade, and anonymizes retained order/notification contact fields before deleting the Auth user. `orders.user_id` and `reviews.user_id` therefore permit null and use `on delete set null`; historical monetary and product snapshots remain intact.
 
 ## 3. Products and Box Variants
 

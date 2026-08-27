@@ -23,22 +23,22 @@ Workflow changes must be reflected together in:
 
 ## 2. Delivery Stages
 
-### Current: Phase 7 — Supabase foundation
+### Current: Phase 8 — Authentication and authorization
 
 - Next.js, React, TypeScript, and Tailwind UI
 - mock product, customer, order, and admin data
 - temporary client-side component interactions
-- frontend-only signed-in and signed-out preview state for protected account UI
+- Google OAuth, cookie-backed sessions, protected customer routes, authenticated profile updates, and server-side Admin role checks
 - browser-local cart persistence
 - static payment and account previews
-- reviewed database migrations, RLS policies, pgTAP tests, controlled seed data, and Supabase client helpers
-- no runtime database connection, secure authentication, or persistent customer/Admin behavior yet
+- one reviewed production bootstrap schema, RLS policies, pgTAP tests, controlled seed data, and Supabase client helpers
+- the approved account-deletion lifecycle: authenticated scheduling/cancellation plus a server-only scheduled processor that rechecks eligibility, anonymizes retained records, and deletes due customer Auth identities
+- catalog, orders, payments, and Admin operations remain mock/non-persistent until later phases
 
 ### Deferred
 
-- Supabase Google authentication
 - PayMongo
-- APIs, webhooks, email, and real CRUD
+- APIs, webhooks, email, and real CRUD other than the approved account-deletion lifecycle
 - server authorization and validation
 - admin subdomain configuration
 
@@ -100,7 +100,7 @@ Legacy `/vlog` and `/feedback` URLs may redirect to `/journal`.
 
 ## 5. Authentication and Account
 
-Future V1 authentication:
+V1 authentication:
 
 - customer accounts required
 - Google Sign-In through Supabase
@@ -108,7 +108,7 @@ Future V1 authentication:
 - no guest checkout
 - one admin permission role supporting five approved Google accounts; one may be configured initially and four added later
 
-Signed-out Account opens `/login`. Future signed-in Account opens a menu containing Profile, My Orders, and Log out.
+Signed-out Account opens `/login`. Signed-in Account opens a menu containing Profile, My Orders, and Log out. An authenticated Admin also receives an Admin dashboard shortcut; server-side role checks remain authoritative.
 
 Profile UI includes:
 
@@ -117,6 +117,11 @@ Profile UI includes:
 - optional mobile number; Google email is the primary contact method
 - loyalty progress
 - recent-order/account shortcuts
+- a sidebar danger-zone action that opens the account-deletion confirmation dialog
+
+Customers may schedule self-service account deletion from a clearly separated Profile danger zone. Deletion occurs only after a fixed 90-day grace period and may be cancelled before the deadline. A pending request blocks new checkout. Customers with active orders or refunds must resolve them first, and Admin accounts require controlled removal rather than customer self-service deletion.
+
+At the deadline, the trusted server process removes the Supabase Auth identity, profile, loyalty data, and customer reviews. Historical commerce and notification records required for operations or accounting are retained only after direct customer identifiers and notes are anonymized. Account deletion must never delete the customer's external Google account.
 
 Authentication and authorization must never rely on frontend state alone.
 
@@ -393,3 +398,7 @@ When backend work begins:
 - avoid duplicate checkout submissions
 - never log or expose secrets
 - preserve order-item snapshots
+- use `auth.tsokolitaw.com` as the production Supabase authentication domain once the paid custom-domain add-on and DNS are configured
+- keep the original Supabase OAuth callback during migration and remove it only after the branded production flow is verified
+- verify the branded domain across Google login, callback exchange, token refresh, logout, customer protection, and Admin authorization
+- protect the scheduled account-deletion processor with a server-only secret and recheck eligibility immediately before deletion

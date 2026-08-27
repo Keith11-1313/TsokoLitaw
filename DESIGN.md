@@ -56,7 +56,15 @@ The main customer navigation is:
 - Our Creations
 - Journal
 
-Account/Profile and Cart are actions. My Orders belongs inside the account experience and must not appear as a main navigation item.
+Account/Profile and Cart are actions. My Orders belongs inside the account experience and must not appear as a main navigation item. When the server confirms the Admin role, the account menu and Profile shortcuts also expose the Admin dashboard.
+
+Our Creations and legal-page heading blocks use the full available content width. The Home featured-media carousel relies on its previous/next controls and does not repeat slide-selector pills or visible explanatory copy beneath the media.
+
+Footer social links use recognizable Facebook and Instagram marks inside the established pill controls. The global Not Found state keeps its centered message and actions without an enclosing card, border, or shadow.
+
+Profile places the brand logo and `Personal details` heading inside the form card. Its right column contains Loyalty progress, Account shortcuts, and a visually separated Danger zone action without decorative leading icons. The action opens a modal where scheduling account deletion requires typing `DELETE`, clearly states the 90-day deadline and active-order restriction, and changes to a cancellation state while the request is pending. Modal actions share the available width evenly. Destructive and recovery actions remain keyboard accessible, use explicit status messaging, and never imply that the external Google account will be deleted.
+
+Route loading uses Boneyard-generated responsive bones captured from a non-customer fixture. The skeleton mirrors the customer shell without displaying loading prose or capturing authenticated data. Its reveal is delayed by 500 milliseconds so normal fast navigation does not flash a loading state; it appears only when a route wait becomes noticeable.
 
 Journal includes announcements, kitchen stories, product features, customer stories, selected reviews, and optional video—not video alone.
 

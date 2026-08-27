@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-The application is currently in **Phase 7: Supabase foundation**. The customer and Admin screens still run on mock/browser-local data until later integration phases.
+The application is currently in **Phase 8: authentication and authorization**. Supabase Google OAuth, cookie sessions, protected customer routes, profile updates, and server-side Admin role checks are implemented. Commerce and Admin operational screens still use mock data until later integration phases.
 
 Allowed:
 
@@ -27,16 +27,16 @@ Allowed:
 - local component state
 - browser-local cart state
 - static routes and temporary UI interactions
-- frontend-only authentication preview state for testing protected customer screens
 - local product photography and placeholders
 - Supabase migrations, constraints, indexes, RLS policies, tests, and controlled seed data
-- browser, server, and service-role Supabase client helpers that are not yet connected to UI routes
+- browser, server, and privileged Supabase client helpers
+- Google OAuth and authenticated profile access through Supabase
+- server-side guards for checkout, account/order, review, and Admin routes
 
 Do not implement unless the user explicitly starts a later phase:
 
-- authentication
 - PayMongo
-- APIs, webhooks, runtime database reads/writes, or transactional commerce logic
+- APIs, webhooks, runtime database reads/writes, or transactional commerce logic, except the approved account-deletion lifecycle: authenticated profile deletion requests plus the secret-protected scheduled processor that rechecks eligibility, anonymizes retained records, and deletes due customer Auth identities
 - real CRUD or email
 - admin subdomain or DNS configuration
 

@@ -95,7 +95,7 @@ The project has completed the broad static UI phase. The next major phase is UI 
 - [x] Disable backend-dependent actions with explanations
 - [x] Align Admin Catalog with the three box sizes, seven coatings, add-on, images, and PHP prices
 - [x] Align Admin Pickup with Checkout dates, times, locations, and pickup rules
-- [x] Align admin and customer mock order products, coatings, totals, and statuses
+- [x] Remove mock records from authenticated customer order history while retaining clearly labeled Admin operational previews
 - [x] Add purpose, customer-impact, and connection guidance to every admin area
 - [x] Share customer/admin mock commerce and pickup constants
 - [x] Add frontend-only coating-entry preview with name, description, 1:1 image validation, and additional-type price
@@ -116,7 +116,8 @@ The project has completed the broad static UI phase. The next major phase is UI 
 - [x] Complete screen-reader landmark and label audit
 - [x] Add empty, loading, server-error, and not-found states before data integration
 - [x] Confirm recipe and allergen wording
-- [ ] Confirm final general legal and privacy wording
+- [x] Apply the professor-provided educational Terms & Conditions baseline without contradicting approved physical-order policies
+- [ ] Confirm final Privacy wording
 
 ## Phase 6 — Backend Planning Gate
 
@@ -141,7 +142,7 @@ Do not begin without explicit approval.
 
 - [x] Create and link the hosted Supabase development project
 - [x] Add browser, server, and service-role clients
-- [x] Add migrations, constraints, and indexes
+- [x] Maintain one squashed production bootstrap schema with constraints and indexes
 - [x] Define RLS on every public table and add pgTAP authorization checks
 - [x] Apply the migration and controlled seed to the hosted development project
 - [x] Execute all 18 pgTAP checks against the hosted development project
@@ -151,13 +152,20 @@ Do not begin without explicit approval.
 
 ## Phase 8 — Authentication and Authorization
 
-- [ ] Configure Google OAuth and Supabase provider
-- [ ] Implement sign-in and logout
-- [ ] Create/update profiles
-- [ ] Protect checkout and customer orders
+- [x] Configure Google OAuth and Supabase provider
+- [x] Implement PKCE sign-in, callback handling, session refresh, and logout
+- [x] Create profiles from Auth identities and allow ownership-scoped profile updates
+- [x] Protect checkout, customer orders, profile, and eligible review routes server-side
 - [ ] Configure the initial approved Google identity and support four additions under the same admin role
-- [ ] Protect admin routes server-side
-- [ ] Test unauthorized and cross-customer access
+- [x] Add a controlled server-only initial Admin bootstrap command and enforce the five-admin database limit
+- [x] Protect Admin routes with a server-side profile-role check
+- [x] Add redirect-safety unit tests and cross-customer/Admin pgTAP tests
+- [x] Add Profile danger zone with authenticated 90-day account-deletion scheduling and cancellation
+- [x] Add due-account anonymization and a secret-protected scheduled deletion handler
+- [x] Apply the account-deletion schema changes to the hosted development project and fold them into the production bootstrap schema
+- [ ] Configure `CRON_SECRET` and the daily account-deletion schedule in Vercel
+- [ ] Verify deletion request, checkout blocking, cancellation, due processing, and retained-record anonymization against the hosted project
+- [ ] Execute live Google OAuth, initial Admin bootstrap, logout, unauthorized Admin, and cross-customer pgTAP verification
 
 ## Phase 9 — Server Commerce
 
@@ -219,6 +227,16 @@ Do not begin without explicit approval.
 - [ ] Add rate limiting where appropriate
 - [ ] Deploy production configuration to Vercel
 - [ ] Connect `tsokolitaw.com`
+- [ ] Upgrade the production Supabase project to a plan that supports the custom-domain add-on
+- [ ] Create the `auth.tsokolitaw.com` CNAME pointing to the Supabase project domain
+- [ ] Register `auth.tsokolitaw.com` with Supabase and publish the required domain-verification TXT records
+- [ ] Verify and activate the Supabase custom domain only after its TLS certificate is ready
+- [ ] Add `https://auth.tsokolitaw.com/auth/v1/callback` to the Google OAuth client before activation
+- [ ] Update the production Supabase URL, Google OAuth configuration, and Vercel environment to use `https://auth.tsokolitaw.com`
+- [ ] Configure and submit TsokoLitaw name, logo, homepage, privacy policy, and authorized domain under Google Auth Platform Branding
+- [ ] Verify Google account selection displays `auth.tsokolitaw.com` instead of the Supabase project reference
+- [ ] Test login, callback, token refresh, logout, customer route protection, and Admin authorization on the production domain
+- [ ] Retain the default Supabase callback during migration until the branded callback is verified
 - [ ] Configure `admin.tsokolitaw.com` if approved
 - [ ] Configure production OAuth and PayMongo webhook URLs
 - [ ] Switch to live keys only after test-mode sign-off

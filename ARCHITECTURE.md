@@ -25,11 +25,12 @@ Next.js App Router
 ├── Tailwind CSS design tokens
 ├── Shared commerce and pickup mock-domain modules
 ├── localStorage cart
-├── localStorage account-state preview
+├── Supabase Google OAuth and cookie-backed sessions
+├── Server-protected customer and Admin routes
 └── Local brand and product assets
 ```
 
-A local Supabase foundation now defines the planned PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/service-role client helpers. The UI is not connected to it yet, and there is still no authentication, payment provider, API, webhook, or email integration.
+The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Catalog, orders, payments, inventory, and Admin operations remain mock data; there is still no PayMongo, webhook, or email integration.
 
 Current customer/admin relationship:
 
@@ -44,10 +45,13 @@ Shared mock pickup data
 ├── Admin Pickup
 └── Admin Settings defaults
 
-Aligned mock orders
-├── Customer My Orders
+Admin-only mock orders
 ├── Admin Orders
 └── Dashboard summaries
+
+Authenticated customer order surfaces
+├── My Orders honest unconnected state
+└── Dynamic order/review routes unavailable until scoped database reads exist
 ```
 
 This relationship prevents UI drift. It does not make admin controls persistent or secure.
@@ -57,7 +61,7 @@ Client Components are limited to interactions such as:
 - cart state and persistence
 - product configuration
 - custom dropdowns
-- account preview menu
+- authenticated account menu and logout
 - admin mobile drawer
 - mock forms and dialogs
 - square-image validation and in-memory coating previews
@@ -94,9 +98,9 @@ Next.js server responsibilities:
 
 ## 4. Routing
 
-Customer routes are public under the main application. Account, checkout, order, and review routes will require authentication when Supabase is implemented.
+Customer routes are public under the main application. Account, checkout, order, and review routes require a verified Supabase session.
 
-Admin routes currently live under `/admin` for static UI development. The planned `admin.tsokolitaw.com` host is deferred. Future host routing may map the subdomain to `/admin`, but must not replace server-side admin authorization.
+Admin routes remain under `/admin` and require both a verified Supabase session and a server-loaded `profiles.role = 'admin'`. The planned `admin.tsokolitaw.com` host is deferred. Future host routing may map the subdomain to `/admin`, but must not replace server-side admin authorization.
 
 Legacy compatibility redirects:
 
@@ -149,14 +153,14 @@ Future checkout flow:
 Phase 7 foundation:
 
 - PostgreSQL
-- versioned migrations under `supabase/migrations/`
+- one squashed production bootstrap migration under `supabase/migrations/`
 - controlled operational seeds in `supabase/seed.sql`
 - pgTAP authorization checks under `supabase/tests/database/`
 - separate browser, server, and service/admin client helpers under `src/lib/supabase/`
 
-Google authentication and live data integration remain deferred. Local/Vercel product assets remain sufficient, so Supabase Storage is not required in Phase 7.
+Google authentication and profile integration are active. Live commerce data integration remains deferred. Local/Vercel product assets remain sufficient, so Supabase Storage is not currently required.
 
-Never expose service-role credentials. RLS is defined on every exposed table before customer data is connected. Direct customer-facing mutations remain unavailable until later server-commerce work can validate authorization, pricing, stock, and snapshots.
+Never expose privileged Supabase credentials. RLS is defined on every exposed table before customer data is connected. Direct customer-facing commerce mutations remain unavailable until later server-commerce work can validate authorization, pricing, stock, and snapshots.
 
 ## 8. Authentication and Authorization
 
@@ -174,6 +178,9 @@ Profile + scoped session
 - Admin authorization is server-side role/identity validation.
 - UI route visibility is not authorization.
 - No guest checkout in V1.
+- Account deletion is the narrow Phase 8 runtime-data exception: an authenticated RPC schedules or cancels the request, then a secret-protected daily job rechecks eligibility and processes eligible requests after 90 days. It does not authorize runtime commerce, Admin operational CRUD, payment, or email APIs.
+- The processor rechecks active orders/refunds, anonymizes retained commerce records, and invokes the server-only Supabase Auth Admin API.
+- Accounts pending deletion may access Profile and order history but cannot begin a new checkout.
 
 V1 supports five approved Google identities under one shared admin role. One identity may bootstrap Admin now and four may be added later through controlled backend data. Authorization is checked on every admin route and mutation, independent of the `/admin` path or any future hostname.
 
@@ -245,6 +252,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=
 INITIAL_ADMIN_EMAIL=
+CRON_SECRET=
 
 PAYMONGO_SECRET_KEY=
 PAYMONGO_PUBLIC_KEY=
@@ -258,19 +266,22 @@ EMAIL_REPLY_TO_ADDRESS=
 NEXT_PUBLIC_SITE_URL=
 ```
 
-Only values intentionally prefixed with `NEXT_PUBLIC_` may be available to the browser. Supabase service-role, initial admin identity, PayMongo, and Resend secrets remain server-only deployment configuration. Never commit `.env.local` or real secrets.
+Only values intentionally prefixed with `NEXT_PUBLIC_` may be available to the browser. The Supabase secret key, initial admin identity, PayMongo, and Resend secrets remain server-only deployment configuration. Never commit `.env.local` or real secrets.
 
 ## 14. Deployment
 
 - UI preview: GitHub → Vercel
 - production app: Vercel
 - database/auth/storage: Supabase
+- production authentication endpoint: `auth.tsokolitaw.com` through the Supabase custom-domain add-on
 - payments: PayMongo
 - transactional email: Resend using a verified domain or sending subdomain
 - customer domain: `tsokolitaw.com`
 - planned admin domain: `admin.tsokolitaw.com`
 
 Use PayMongo test mode and non-production Supabase configuration before live rollout.
+
+The default Supabase project domain is accepted for development OAuth. Production custom-domain activation requires DNS verification and TLS readiness, the branded callback in Google Auth Platform, the custom Supabase URL in Vercel, and an end-to-end session/authorization smoke test. Keep the original Supabase callback configured until the branded flow is verified.
 
 ## 15. Principles
 
