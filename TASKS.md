@@ -183,7 +183,7 @@ Do not begin without explicit approval.
 - [x] Create order and item snapshots
 - [x] Record Terms acceptance
 - [x] Prevent duplicate checkout submissions
-- [ ] Apply the final Phase 9 schema upgrade to hosted development and complete one end-to-end pending-order proof
+- [x] Apply the final Phase 9 schema upgrade to hosted development and complete customer/Admin pending-order proofs
 
 ## Phase 10 — PayMongo Test Mode
 

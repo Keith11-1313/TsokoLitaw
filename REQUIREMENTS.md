@@ -34,7 +34,7 @@ Workflow changes must be reflected together in:
 - one reviewed production bootstrap schema, RLS policies, pgTAP tests, controlled seed data, and Supabase client helpers
 - the approved account-deletion lifecycle: authenticated scheduling/cancellation plus a server-only scheduled processor that rechecks eligibility and permanently deactivates due customer profiles while retaining their Auth identities and relational data
 - active catalog and published pickup availability are loaded from Supabase
-- server-authoritative pricing, promotion evaluation, inventory reservation/release, immutable order snapshots, Terms acceptance, and duplicate-submit protection are implemented locally; hosted-project upgrade and end-to-end validation remain
+- server-authoritative pricing, promotion evaluation, inventory reservation/release, immutable order snapshots, Terms acceptance, and duplicate-submit protection are implemented and validated against hosted development
 - active Admin identities may place their own customer-storefront orders, and all new orders use one shared kiosk-style number such as `TL-0001`
 - payments and broad Admin operations remain mock/non-persistent until their later phases
 

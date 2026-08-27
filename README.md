@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-The project is in **Phase 9: server commerce**. Authentication and authorization are complete. The customer catalog and published pickup options load from Supabase. The local checkout implementation now performs server-authoritative pricing, promotion evaluation, inventory reservation/release, order snapshots, Terms acceptance, and idempotent pending-order creation. Hosted-project upgrade and end-to-end checkout validation remain. PayMongo and broad Admin CRUD are deferred.
+**Phase 9: server commerce is complete.** Authentication and authorization are complete. The customer catalog and published pickup options load from Supabase. Checkout performs server-authoritative pricing, promotion evaluation, inventory reservation/release, order snapshots, Terms acceptance, and idempotent pending-order creation. Hosted customer and Admin checkout proofs produced shared kiosk numbers `TL-0001` and `TL-0002`. PayMongo and broad Admin CRUD remain deferred until their approved phases.
 
 Implemented with mock data:
 
@@ -66,12 +66,12 @@ Phase 9 server-commerce work completed so far:
 Not yet implemented or externally configured:
 
 - initial Admin promotion and the remaining live authorization checks
-- hosted-development schema upgrade and one authenticated end-to-end pending-order proof
+- PayMongo test-mode integration
 - PayMongo
 - APIs, webhooks, email, or real CRUD other than the approved account-deletion lifecycle
 - admin authorization or admin subdomain routing
 
-Customer identity, account state, catalog, and published pickup options are live Supabase data. Checkout pending-order persistence is implemented locally but awaits the hosted schema upgrade and proof. Payments and Admin operational screens remain mock or unconnected. Disabled actions identify features that require future backend work.
+Customer identity, account state, catalog, published pickup options, and pending-order persistence are live Supabase data. Payments and Admin operational screens remain mock or unconnected. Disabled actions identify features that require future backend work.
 
 Our Creations and Checkout now read customer-safe commerce and pickup data from Supabase. Matching Admin screens remain non-persistent previews until Admin CRUD is implemented.
 
