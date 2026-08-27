@@ -1,9 +1,10 @@
 "use client";
 
-import { Check, CheckCircle2, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Check, Minus, Plus, ShoppingBag } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
+import { AddToCartModal } from "@/components/creations/add-to-cart-modal";
 import { BOX_VARIANTS, COATINGS, EXTRA_SAUCE_PRICE, INITIAL_EXTRA_COATING_PRICE, calculateExtraCoatingCharge, calculateItemUnitTotal, formatPhp, hasCompleteCoatingAllocation } from "@/lib/commerce";
 import { PrimaryButton } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -17,7 +18,11 @@ export function ProductConfigurator() {
   const [counts, setCounts] = useState<Record<string, number>>({ cocoa: 4 });
   const [quantity, setQuantity] = useState("1");
   const [extraSauce, setExtraSauce] = useState("0");
-  const [added, setAdded] = useState(false);
+  const [addedItem, setAddedItem] = useState<{
+    variantLabel: string;
+    quantity: number;
+    total: number;
+  } | null>(null);
 
   const variant = BOX_VARIANTS.find((item) => item.id === variantId) ?? BOX_VARIANTS[0];
   const selectedCoating = COATINGS.find((coating) => coating.id === singleCoating) ?? COATINGS[0];
@@ -31,6 +36,7 @@ export function ProductConfigurator() {
   const hasValidAllocation = mode === "single" || hasCompleteCoatingAllocation(variant.pieceCount, counts);
   const error = !hasValidAllocation ? `Assign ${remainingPieces} more ${remainingPieces === 1 ? "piece" : "pieces"}.` : "";
   const coatingNames = useMemo(() => Object.fromEntries(COATINGS.map((coating) => [coating.id, coating.name])), []);
+  const closeAddedItem = useCallback(() => setAddedItem(null), []);
 
   function changeVariant(value: string) {
     const next = BOX_VARIANTS.find((item) => item.id === value) ?? BOX_VARIANTS[0];
@@ -59,9 +65,13 @@ export function ProductConfigurator() {
   function submit() {
     if (error) return;
     const coatingCounts = mode === "single" ? { [singleCoating]: variant.pieceCount } : counts;
-    addItem({ variantId: variant.id, pieceCount: variant.pieceCount, boxPrice: variant.price, coatingCounts, coatingNames, extraCoatingCharge, extraSauceQuantity: Number(extraSauce), extraSaucePrice: EXTRA_SAUCE_PRICE, quantity: Number(quantity) });
-    setAdded(true);
-    window.setTimeout(() => setAdded(false), 2500);
+    const selectedQuantity = Number(quantity);
+    addItem({ variantId: variant.id, pieceCount: variant.pieceCount, boxPrice: variant.price, coatingCounts, coatingNames, extraCoatingCharge, extraSauceQuantity: Number(extraSauce), extraSaucePrice: EXTRA_SAUCE_PRICE, quantity: selectedQuantity });
+    setAddedItem({
+      variantLabel: variant.label,
+      quantity: selectedQuantity,
+      total: unitTotal * selectedQuantity,
+    });
   }
 
   return (
@@ -111,10 +121,17 @@ export function ProductConfigurator() {
 
             <div className="flex items-center justify-between border-t border-border pt-5"><span className="font-bold">Item total</span><strong className="font-display text-2xl">{formatPhp(unitTotal * Number(quantity))}</strong></div>
             <PrimaryButton type="button" disabled={Boolean(error)} onClick={submit} className="w-full rounded-control! text-base"><ShoppingBag size={18} />Add to cart</PrimaryButton>
-            {added ? <p role="status" className="flex items-center justify-center gap-2 text-sm font-bold text-success-foreground"><CheckCircle2 size={17} />Added to your cart.</p> : null}
           </div>
         </section>
       </aside>
+      {addedItem ? (
+        <AddToCartModal
+          variantLabel={addedItem.variantLabel}
+          quantity={addedItem.quantity}
+          total={addedItem.total}
+          onClose={closeAddedItem}
+        />
+      ) : null}
     </div>
   );
 }
