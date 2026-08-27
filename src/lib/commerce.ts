@@ -1,4 +1,4 @@
-import type { BoxVariant, CartLineItem, Coating } from "@/types/commerce";
+import type { BoxVariant, CartLineItem, CheckoutCartInput, Coating, CommerceCatalog, ServerPricedCart } from "@/types/commerce";
 
 export const INITIAL_PIECE_PRICE = 10;
 
@@ -42,6 +42,19 @@ export function calculateExtraCoatingCharge(
   return Math.max(0, distinctTypes - 1) * additionalTypePrice;
 }
 
+export function calculateConfiguredExtraCoatingCharge(
+  coatingCounts: Readonly<Record<string, number>>,
+  coatings: ReadonlyArray<Pick<Coating, "id" | "additionalTypePrice">>,
+) {
+  const selectedCoatings = coatings.filter(
+    (coating) => (coatingCounts[coating.id] ?? 0) > 0,
+  );
+
+  return selectedCoatings
+    .slice(1)
+    .reduce((total, coating) => total + coating.additionalTypePrice, 0);
+}
+
 export function hasCompleteCoatingAllocation(
   pieceCount: number,
   coatingCounts: Readonly<Record<string, number>>,
@@ -82,4 +95,94 @@ export function calculateCartLineTotal(item: PricedCartLine) {
     item.extraSauceQuantity,
     item.extraSaucePrice,
   ) * item.quantity;
+}
+
+export class CommerceValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CommerceValidationError";
+  }
+}
+
+export function priceCheckoutCart(
+  items: readonly CheckoutCartInput[],
+  catalog: CommerceCatalog,
+): ServerPricedCart {
+  if (!items.length || items.length > 20) {
+    throw new CommerceValidationError("The cart must contain between 1 and 20 lines.");
+  }
+
+  const lines = items.map((item) => {
+    const variant = catalog.variants.find((entry) => entry.id === item.variantId);
+    if (!variant) throw new CommerceValidationError("A selected box is no longer available.");
+    if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 20) {
+      throw new CommerceValidationError("Each box quantity must be between 1 and 20.");
+    }
+    if (!hasCompleteCoatingAllocation(variant.pieceCount, item.coatingCounts)) {
+      throw new CommerceValidationError(`Every piece in ${variant.label} must have a coating.`);
+    }
+
+    const selectedCoatings = catalog.coatings.filter(
+      (coating) => (item.coatingCounts[coating.id] ?? 0) > 0,
+    );
+    const submittedCoatingIds = Object.entries(item.coatingCounts)
+      .filter(([, count]) => count > 0)
+      .map(([id]) => id);
+    if (selectedCoatings.length !== submittedCoatingIds.length) {
+      throw new CommerceValidationError("A selected coating is no longer available.");
+    }
+
+    const coatings = selectedCoatings.map((coating, index) => ({
+      id: coating.id,
+      name: coating.name,
+      pieceCount: item.coatingCounts[coating.id],
+      additionalPrice: index === 0 ? 0 : coating.additionalTypePrice,
+      isIncludedType: index === 0,
+    }));
+    const extraCoatingTotal = coatings.reduce(
+      (total, coating) => total + coating.additionalPrice,
+      0,
+    );
+
+    if (!Number.isInteger(item.addonQuantity) || item.addonQuantity < 0 || item.addonQuantity > 10) {
+      throw new CommerceValidationError("The add-on quantity must be between 0 and 10.");
+    }
+    const selectedAddon = item.addonQuantity > 0
+      ? catalog.addons.find((addon) => addon.id === item.addonId)
+      : null;
+    if (item.addonQuantity > 0 && !selectedAddon) {
+      throw new CommerceValidationError("The selected add-on is no longer available.");
+    }
+    const addon = selectedAddon ? {
+      id: selectedAddon.id,
+      name: selectedAddon.name,
+      unitPrice: selectedAddon.price,
+      quantity: item.addonQuantity,
+      lineTotal: selectedAddon.price * item.addonQuantity,
+    } : null;
+    const lineSubtotal = (
+      variant.price
+      + extraCoatingTotal
+      + (addon?.lineTotal ?? 0)
+    ) * item.quantity;
+
+    return {
+      productId: catalog.productId,
+      productName: catalog.productName,
+      variantId: variant.id,
+      variantName: variant.label,
+      pieceCount: variant.pieceCount,
+      baseUnitPrice: variant.price,
+      extraCoatingTotal,
+      quantity: item.quantity,
+      lineSubtotal,
+      coatings,
+      addon,
+    };
+  });
+
+  return {
+    lines,
+    subtotal: lines.reduce((total, line) => total + line.lineSubtotal, 0),
+  };
 }

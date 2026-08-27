@@ -1,5 +1,5 @@
 export interface BoxVariant {
-  id: "box-4" | "box-6" | "box-8";
+  id: string;
   label: string;
   pieceCount: 4 | 6 | 8;
   price: number;
@@ -21,6 +21,23 @@ export interface Coating {
     | "cookies-cream";
 }
 
+export interface CommerceAddon {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+}
+
+export interface CommerceCatalog {
+  productId: string;
+  productName: string;
+  productDescription: string;
+  piecePrice: number;
+  variants: readonly BoxVariant[];
+  coatings: readonly Coating[];
+  addons: readonly CommerceAddon[];
+}
+
 export interface CartLineItem {
   id: string;
   variantId: BoxVariant["id"];
@@ -29,7 +46,47 @@ export interface CartLineItem {
   coatingCounts: Record<string, number>;
   coatingNames: Record<string, string>;
   extraCoatingCharge: number;
+  extraSauceAddonId: string | null;
   extraSauceQuantity: number;
   extraSaucePrice: number;
   quantity: number;
+}
+
+export interface CheckoutCartInput {
+  variantId: string;
+  coatingCounts: Record<string, number>;
+  addonId: string | null;
+  addonQuantity: number;
+  quantity: number;
+}
+
+export interface ServerPricedCartLine {
+  productId: string;
+  productName: string;
+  variantId: string;
+  variantName: string;
+  pieceCount: number;
+  baseUnitPrice: number;
+  extraCoatingTotal: number;
+  quantity: number;
+  lineSubtotal: number;
+  coatings: Array<{
+    id: string;
+    name: string;
+    pieceCount: number;
+    additionalPrice: number;
+    isIncludedType: boolean;
+  }>;
+  addon: {
+    id: string;
+    name: string;
+    unitPrice: number;
+    quantity: number;
+    lineTotal: number;
+  } | null;
+}
+
+export interface ServerPricedCart {
+  lines: ServerPricedCartLine[];
+  subtotal: number;
 }

@@ -4,10 +4,12 @@ import {
   INITIAL_PIECE_PRICE,
   calculateBoxPrice,
   calculateCartLineTotal,
+  calculateConfiguredExtraCoatingCharge,
   calculateExtraCoatingCharge,
   calculateItemUnitTotal,
   createBoxVariants,
   hasCompleteCoatingAllocation,
+  priceCheckoutCart,
 } from "./commerce";
 
 describe("box pricing", () => {
@@ -30,6 +32,20 @@ describe("configuration calculations", () => {
     expect(calculateExtraCoatingCharge({ cocoa: 2, milk: 2, plain: 2 }, 7)).toBe(14);
   });
 
+  it("uses each additional coating type's current catalog price", () => {
+    const coatings = [
+      { id: "cocoa", additionalTypePrice: 4 },
+      { id: "milk", additionalTypePrice: 6 },
+      { id: "plain", additionalTypePrice: 2 },
+    ];
+
+    expect(calculateConfiguredExtraCoatingCharge(
+      { cocoa: 2, milk: 2, plain: 2 },
+      coatings,
+    )).toBe(8);
+    expect(calculateConfiguredExtraCoatingCharge({ milk: 4 }, coatings)).toBe(0);
+  });
+
   it("accepts only complete, whole-piece allocations", () => {
     expect(hasCompleteCoatingAllocation(6, { cocoa: 3, milk: 3 })).toBe(true);
     expect(hasCompleteCoatingAllocation(6, { cocoa: 3, milk: 2 })).toBe(false);
@@ -49,5 +65,55 @@ describe("configuration calculations", () => {
       extraSaucePrice: 18,
       quantity: 3,
     })).toBe(219);
+  });
+});
+
+describe("server-authoritative cart pricing", () => {
+  const catalog = {
+    productId: "product-1",
+    productName: "Chocolate-Filled Litaw",
+    productDescription: "Chocolate center",
+    piecePrice: 10,
+    variants: [{ id: "variant-4", label: "Box of 4", pieceCount: 4 as const, price: 40 }],
+    coatings: [
+      { id: "cocoa", name: "Cocoa", description: "", imageSrc: "", additionalTypePrice: 4, tone: "cocoa-coating" as const },
+      { id: "milk", name: "Milk", description: "", imageSrc: "", additionalTypePrice: 7, tone: "milk" as const },
+    ],
+    addons: [{ id: "cream", name: "Cream", slug: "cream", price: 18 }],
+  };
+
+  it("ignores browser prices and calculates current catalog totals", () => {
+    const priced = priceCheckoutCart([{
+      variantId: "variant-4",
+      coatingCounts: { cocoa: 2, milk: 2 },
+      addonId: "cream",
+      addonQuantity: 1,
+      quantity: 2,
+    }], catalog);
+
+    expect(priced.subtotal).toBe(130);
+    expect(priced.lines[0]).toMatchObject({
+      baseUnitPrice: 40,
+      extraCoatingTotal: 7,
+      lineSubtotal: 130,
+    });
+  });
+
+  it("rejects incomplete allocations and unavailable identifiers", () => {
+    expect(() => priceCheckoutCart([{
+      variantId: "variant-4",
+      coatingCounts: { cocoa: 3 },
+      addonId: null,
+      addonQuantity: 0,
+      quantity: 1,
+    }], catalog)).toThrow("Every piece");
+
+    expect(() => priceCheckoutCart([{
+      variantId: "missing",
+      coatingCounts: { cocoa: 4 },
+      addonId: null,
+      addonQuantity: 0,
+      quantity: 1,
+    }], catalog)).toThrow("no longer available");
   });
 });

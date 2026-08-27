@@ -1,0 +1,155 @@
+import "server-only";
+
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { getCommerceCatalog } from "@/lib/server-commerce";
+import { priceCheckoutCart } from "@/lib/commerce";
+import type { CheckoutCartInput } from "@/types/commerce";
+
+export interface CreatePendingOrderInput {
+  userId: string;
+  checkoutKey: string;
+  pickupWindowId: string;
+  pickupLocationId: string;
+  customerName: string;
+  customerMobile: string;
+  customerNotes: string;
+  termsAccepted: boolean;
+  items: readonly CheckoutCartInput[];
+}
+
+export interface PendingOrderResult {
+  orderId: string;
+  orderNumber: string;
+  total: number;
+  created: boolean;
+}
+
+interface PromotionRow {
+  promotion_type: string;
+  config: Record<string, unknown>;
+}
+
+function getConfigNumber(config: Record<string, unknown>, key: string) {
+  const value = Number(config[key]);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+export function calculatePromotionDiscount(
+  subtotal: number,
+  promotions: readonly PromotionRow[],
+) {
+  return promotions.reduce((bestDiscount, promotion) => {
+    const minimumSubtotal = getConfigNumber(promotion.config, "minimum_subtotal") ?? 0;
+    if (subtotal < minimumSubtotal) return bestDiscount;
+
+    let candidate = 0;
+    if (promotion.promotion_type === "PERCENTAGE_DISCOUNT") {
+      const percentage = Math.min(
+        getConfigNumber(promotion.config, "percentage") ?? 0,
+        100,
+      );
+      candidate = subtotal * (percentage / 100);
+      const maximumDiscount = getConfigNumber(promotion.config, "maximum_discount");
+      if (maximumDiscount !== null) candidate = Math.min(candidate, maximumDiscount);
+    }
+    if (promotion.promotion_type === "FIXED_DISCOUNT") {
+      candidate = getConfigNumber(promotion.config, "amount") ?? 0;
+    }
+
+    return Math.max(bestDiscount, Math.min(candidate, subtotal));
+  }, 0);
+}
+
+export async function createPendingOrder(
+  input: CreatePendingOrderInput,
+): Promise<PendingOrderResult> {
+  if (!input.termsAccepted) throw new Error("Terms acceptance is required.");
+
+  const catalog = await getCommerceCatalog();
+  const pricedCart = priceCheckoutCart(input.items, catalog);
+  const supabase = createAdminSupabaseClient();
+  const now = new Date().toISOString();
+  const [termsResult, promotionsResult] = await Promise.all([
+    supabase
+      .from("terms_versions")
+      .select("version")
+      .eq("is_current", true)
+      .lte("effective_at", now)
+      .maybeSingle(),
+    supabase
+      .from("promotions")
+      .select("promotion_type, config")
+      .eq("is_active", true)
+      .or(`starts_at.is.null,starts_at.lte.${now}`)
+      .or(`ends_at.is.null,ends_at.gt.${now}`),
+  ]);
+
+  if (termsResult.error || !termsResult.data) {
+    throw new Error("The current Terms & Conditions version could not be loaded.", {
+      cause: termsResult.error,
+    });
+  }
+  if (promotionsResult.error) {
+    throw new Error("Active promotions could not be loaded.", {
+      cause: promotionsResult.error,
+    });
+  }
+
+  const discount = calculatePromotionDiscount(
+    pricedCart.subtotal,
+    (promotionsResult.data ?? []) as PromotionRow[],
+  );
+  const normalizedDiscount = Math.round(discount * 100) / 100;
+  const total = Math.round((pricedCart.subtotal - normalizedDiscount) * 100) / 100;
+  const pricedLines = pricedCart.lines.map((line) => ({
+    product_id: line.productId,
+    product_name: line.productName,
+    variant_id: line.variantId,
+    variant_name: line.variantName,
+    piece_count: line.pieceCount,
+    base_unit_price: line.baseUnitPrice,
+    extra_coating_total: line.extraCoatingTotal,
+    quantity: line.quantity,
+    line_subtotal: line.lineSubtotal,
+    coatings: line.coatings.map((coating) => ({
+      id: coating.id,
+      name: coating.name,
+      piece_count: coating.pieceCount,
+      additional_price: coating.additionalPrice,
+      is_included_type: coating.isIncludedType,
+    })),
+    addon: line.addon ? {
+      id: line.addon.id,
+      name: line.addon.name,
+      unit_price: line.addon.unitPrice,
+      quantity: line.addon.quantity,
+      line_total: line.addon.lineTotal,
+    } : null,
+  }));
+
+  const { data, error } = await supabase.rpc("create_pending_order", {
+    target_user_id: input.userId,
+    checkout_key: input.checkoutKey,
+    selected_pickup_window_id: input.pickupWindowId,
+    selected_pickup_location_id: input.pickupLocationId,
+    customer_name_value: input.customerName,
+    customer_mobile_value: input.customerMobile,
+    customer_notes_value: input.customerNotes,
+    priced_lines: pricedLines,
+    subtotal_value: pricedCart.subtotal,
+    discount_value: normalizedDiscount,
+    total_value: total,
+    terms_version_value: termsResult.data.version,
+  });
+
+  if (error) throw new Error("The pending order could not be created.", { cause: error });
+  const result = Array.isArray(data) ? data[0] : data;
+  if (!result) throw new Error("The pending order did not return a result.");
+
+  return {
+    orderId: result.created_order_id,
+    orderNumber: result.created_order_number,
+    total: Number(result.created_total),
+    created: result.was_created,
+  };
+}
