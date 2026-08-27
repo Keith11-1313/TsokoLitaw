@@ -36,7 +36,7 @@ Allowed:
 Do not implement unless the user explicitly starts a later phase:
 
 - PayMongo
-- APIs, webhooks, runtime database reads/writes, or transactional commerce logic, except the approved account-deletion lifecycle: authenticated profile deletion requests plus the secret-protected scheduled processor that rechecks eligibility, anonymizes retained records, and deletes due customer Auth identities
+- APIs, webhooks, runtime database reads/writes, or transactional commerce logic, except the approved account-deletion lifecycle: authenticated profile deletion requests plus the secret-protected scheduled processor that rechecks eligibility and permanently deactivates due customer profiles without deleting their Auth identities or relational data
 - real CRUD or email
 - admin subdomain or DNS configuration
 

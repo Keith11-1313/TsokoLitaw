@@ -38,7 +38,7 @@ Deferred until separately approved:
 - Supabase
 - Google authentication
 - PayMongo
-- APIs, server actions, webhooks, email, and real CRUD, except the approved account-deletion lifecycle: authenticated schedule/cancel requests and the secret-protected scheduled processor that rechecks eligibility, anonymizes retained records, and deletes due customer Auth identities
+- APIs, server actions, webhooks, email, and real CRUD, except the approved account-deletion lifecycle: authenticated schedule/cancel requests and the secret-protected scheduled processor that rechecks eligibility and permanently deactivates due customer profiles without deleting Auth identities or relational data
 - database persistence
 - production authorization
 - admin subdomain and DNS configuration
@@ -151,7 +151,7 @@ Production sending requires a verified domain or sending subdomain. Resend API k
 
 Customers may schedule account deletion from a Profile danger zone. The request has a fixed 90-day grace period and remains cancellable until processing. Pending deletion blocks new checkout; active orders or refunds block the initial request. Admin identities use a separate controlled removal process.
 
-When the deadline arrives, trusted server code rechecks eligibility, anonymizes retained order and notification snapshots, removes customer reviews and loyalty data, and deletes the Supabase Auth identity. This preserves necessary commerce history without retaining the customer's direct profile/contact data. The external Google account is never deleted.
+When the deadline arrives, trusted server code rechecks eligibility, sets `profiles.is_active` to false, and records `deactivated_at`. The Auth identity, profile, orders, reviews, loyalty, notifications, and foreign-key relationships remain stored so operational records are not orphaned. RLS and server role helpers deny inactive identities, while the OAuth callback immediately clears any new session and sends the user to a dedicated deleted-account screen. The external Google account is never changed.
 
 ### Production schema artifact
 

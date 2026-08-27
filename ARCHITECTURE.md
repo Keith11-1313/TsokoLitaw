@@ -180,8 +180,9 @@ Profile + scoped session
 - UI route visibility is not authorization.
 - No guest checkout in V1.
 - Account deletion is the narrow Phase 8 runtime-data exception: an authenticated RPC schedules or cancels the request, then a secret-protected daily job rechecks eligibility and processes eligible requests after 90 days. It does not authorize runtime commerce, Admin operational CRUD, payment, or email APIs.
-- The processor rechecks active orders/refunds, anonymizes retained commerce records, and invokes the server-only Supabase Auth Admin API.
+- The processor rechecks active orders/refunds and permanently flips the due profile to inactive without deleting Auth or relational records.
 - Accounts pending deletion may access Profile and order history but cannot begin a new checkout.
+- Inactive profiles fail RLS and server authorization checks. OAuth callback handling clears any newly exchanged session and redirects to the deleted-account screen.
 
 V1 supports five approved Google identities under one shared admin role. One identity may bootstrap Admin now and four may be added later through controlled backend data. Authorization is checked on every admin route and mutation, independent of the `/admin` path or any future hostname.
 

@@ -46,7 +46,8 @@ Phase 8 authentication foundation:
 - confirmation-based logout that clears the session and returns to Home
 - in-place global Not Found treatment for signed-in customers who attempt to open Admin routes
 - Profile danger zone with cancellable 90-day account-deletion scheduling
-- secret-protected daily deletion processing that anonymizes retained commerce records before removing Auth identities
+- secret-protected daily processing that permanently deactivates due profiles while preserving Auth identities and relational records
+- deleted-account login bounce that clears the new session and explains the disabled access
 
 Not yet implemented or externally configured:
 
@@ -65,7 +66,7 @@ The Admin Catalog can temporarily add a coating preview with name, description, 
 
 Signed-out visitors are redirected to Login when opening checkout, Profile, My Orders, order details, or eligible review routes. A Google session creates a customer profile through the database trigger. Admin routes require both a verified session and the protected `admin` profile role; signed-in customers who attempt to open them receive the global Not Found page while the requested Admin URL remains in the address bar. Logout always requires confirmation and returns to Home after the Supabase session is cleared.
 
-Customers may schedule account deletion from Profile. The request remains cancellable for 90 days, blocks new checkout, and cannot begin while orders or refunds are active. At the deadline, a trusted scheduled job rechecks eligibility, anonymizes retained commerce/contact snapshots, removes customer-scoped data, and deletes the Supabase Auth identity. The Google account itself is unaffected.
+Customers may schedule account deletion from Profile. The request remains cancellable for 90 days, blocks new checkout, and cannot begin while orders or refunds are active. At the deadline, a trusted scheduled job rechecks eligibility and permanently marks the profile inactive without deleting the Supabase Auth identity or linked operational records. RLS and server checks deny inactive profiles. A later Google sign-in is immediately cleared and redirected to the Account deleted screen. The external Google account is unaffected.
 
 ## Technology
 
@@ -275,7 +276,7 @@ The bootstrap command reads `INITIAL_ADMIN_EMAIL` and the Supabase secret key fr
 
 ### Account-deletion scheduler
 
-Account-deletion tables and functions are included in the canonical bootstrap schema. Set a strong server-only `CRON_SECRET` in Vercel; `vercel.json` invokes `/api/cron/account-deletions` daily. The endpoint rejects requests without the matching bearer token and processes at most 100 due customer accounts per run.
+Account-deletion tables and functions are included in the canonical bootstrap schema. Set a strong server-only `CRON_SECRET` in Vercel; `vercel.json` invokes `/api/cron/account-deletions` daily. The endpoint rejects requests without the matching bearer token and deactivates at most 100 eligible due customer profiles per run without deleting their Auth or relational records.
 
 ## Assets and References
 

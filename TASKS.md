@@ -164,10 +164,12 @@ Do not begin without explicit approval.
 - [x] Render the global Not Found boundary in place for non-Admin access to Admin routes
 - [x] Add redirect-safety unit tests and cross-customer/Admin pgTAP tests
 - [x] Add Profile danger zone with authenticated 90-day account-deletion scheduling and cancellation
-- [x] Add due-account anonymization and a secret-protected scheduled deletion handler
-- [x] Apply the account-deletion schema changes to the hosted development project and fold them into the production bootstrap schema
+- [x] Add secret-protected due-account soft deactivation that preserves Auth and relational records
+- [x] Add inactive-profile checks to OAuth callback handling, RLS helpers, customer access, and Admin authorization
+- [x] Add the deleted-account login bounce screen
+- [ ] Apply the revised account-deactivation schema to the hosted development project; keep the production bootstrap schema squashed
 - [ ] Configure `CRON_SECRET` and the daily account-deletion schedule in Vercel
-- [ ] Verify deletion request, checkout blocking, cancellation, due processing, and retained-record anonymization against the hosted project
+- [ ] Verify deletion request, checkout blocking, cancellation, due deactivation, retained relationships, access denial, and login bounce against the hosted project
 - [ ] Execute live Google OAuth, initial Admin bootstrap, logout, unauthorized Admin, and cross-customer pgTAP verification
 
 ## Phase 9 — Server Commerce

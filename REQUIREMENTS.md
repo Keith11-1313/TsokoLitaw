@@ -32,7 +32,7 @@ Workflow changes must be reflected together in:
 - browser-local cart persistence
 - static payment and account previews
 - one reviewed production bootstrap schema, RLS policies, pgTAP tests, controlled seed data, and Supabase client helpers
-- the approved account-deletion lifecycle: authenticated scheduling/cancellation plus a server-only scheduled processor that rechecks eligibility, anonymizes retained records, and deletes due customer Auth identities
+- the approved account-deletion lifecycle: authenticated scheduling/cancellation plus a server-only scheduled processor that rechecks eligibility and permanently deactivates due customer profiles while retaining their Auth identities and relational data
 - catalog, orders, payments, and Admin operations remain mock/non-persistent until later phases
 
 ### Deferred
@@ -121,7 +121,7 @@ Profile UI includes:
 
 Customers may schedule self-service account deletion from a clearly separated Profile danger zone. Deletion occurs only after a fixed 90-day grace period and may be cancelled before the deadline. A pending request blocks new checkout. Customers with active orders or refunds must resolve them first, and Admin accounts require controlled removal rather than customer self-service deletion.
 
-At the deadline, the trusted server process removes the Supabase Auth identity, profile, loyalty data, and customer reviews. Historical commerce and notification records required for operations or accounting are retained only after direct customer identifiers and notes are anonymized. Account deletion must never delete the customer's external Google account.
+At the deadline, the trusted server process sets the customer profile inactive and records the deactivation time. It does not delete the Supabase Auth identity, profile, orders, reviews, loyalty data, notifications, or their relationships. RLS and server authorization must reject inactive identities even if an older token exists. A later Google OAuth attempt must clear the newly created application session and show the dedicated deleted-account screen. The customer's external Google account is never changed.
 
 Authentication and authorization must never rely on frontend state alone.
 
@@ -402,4 +402,4 @@ When backend work begins:
 - use `auth.tsokolitaw.com` as the production Supabase authentication domain once the paid custom-domain add-on and DNS are configured
 - keep the original Supabase OAuth callback during migration and remove it only after the branded production flow is verified
 - verify the branded domain across Google login, callback exchange, token refresh, logout, customer protection, and Admin authorization
-- protect the scheduled account-deletion processor with a server-only secret and recheck eligibility immediately before deletion
+- protect the scheduled account-deletion processor with a server-only secret and recheck eligibility immediately before permanent deactivation

@@ -38,8 +38,10 @@ full_name text
 email text
 mobile_number text nullable
 role text default 'customer' check role in ('customer', 'admin')
+is_active boolean default true
 deletion_requested_at timestamptz nullable
 deletion_scheduled_for timestamptz nullable
+deactivated_at timestamptz nullable
 created_at timestamptz
 updated_at timestamptz
 ```
@@ -48,9 +50,9 @@ Google remains the authentication source for email. Admin authorization must be 
 
 V1 supports five approved admin profiles using the same `admin` role. One Google identity may be configured initially and the remaining four added later through controlled backend data. Customers cannot assign or modify roles, and client-provided profile metadata must never grant admin access.
 
-The two deletion timestamps are either both null or exactly 90 days apart. Authenticated customers use ownership-bound security-definer functions to schedule or cancel deletion; they cannot select a target user. Active orders/refunds block scheduling, and Admin profiles are excluded.
+The two deletion timestamps are either both null or exactly 90 days apart. Active profiles have a null `deactivated_at`; inactive profiles require it. Authenticated customers use ownership-bound security-definer functions to schedule or cancel deletion; they cannot select a target user. Active orders/refunds block scheduling, and Admin profiles are excluded.
 
-The daily service-role processor selects due customer profiles, rechecks eligibility, deletes restricted manual-refund destinations and customer reviews, clears loyalty data through the profile cascade, and anonymizes retained order/notification contact fields before deleting the Auth user. `orders.user_id` and `reviews.user_id` therefore permit null and use `on delete set null`; historical monetary and product snapshots remain intact.
+The daily service-role processor selects due active customer profiles, rechecks eligibility, and sets `is_active = false` plus `deactivated_at = now()`. It does not delete or anonymize the Auth identity, profile, orders, reviews, loyalty, notifications, or their links. The profile-to-Auth foreign key uses `on delete restrict` to prevent accidental hard deletion. RLS ownership branches require an active profile, and `is_admin()` also requires the Admin profile to be active.
 
 ## 3. Products and Box Variants
 
@@ -576,7 +578,7 @@ Customers may not:
 
 Admin mutations still require server-side authorization even with RLS.
 
-Every public-schema table in the initial migration has RLS enabled. Grants are explicit: anonymous access is limited to publishable catalog/pickup/Journal/Terms data and safe review columns; authenticated customers receive ownership-scoped reads and profile edits that exclude the `role` column. Sensitive writes and the admin bootstrap function are reserved for trusted server-side code.
+Every public-schema table in the initial migration has RLS enabled. Grants are explicit: anonymous access is limited to publishable catalog/pickup/Journal/Terms data and safe review columns; active authenticated customers receive ownership-scoped reads and profile edits that exclude the `role` and `is_active` columns. Inactive identities receive no ownership-scoped access. Sensitive writes, profile deactivation, and the admin bootstrap function are reserved for trusted server-side code.
 
 The database trigger rejects a sixth admin profile. The service-role-only bootstrap function can promote an approved email only after that Google identity has signed in and created its customer profile.
 
