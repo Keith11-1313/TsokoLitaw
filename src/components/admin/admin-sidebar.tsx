@@ -1,10 +1,11 @@
 "use client";
 
-import { BadgePercent, CalendarDays, Cookie, LayoutDashboard, Menu, MessageSquare, Newspaper, Package, Settings, ShoppingBag, Users, X, type LucideIcon } from "lucide-react";
+import { BadgePercent, CalendarDays, Cookie, LayoutDashboard, LogOut, Menu, MessageSquare, Newspaper, Package, Settings, ShoppingBag, Users, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { cn } from "@/lib/cn";
+import { signOutAction } from "@/app/auth/actions";
 
 interface AdminNavigationItem { href: string; label: string; icon: LucideIcon }
 const adminNavigation: AdminNavigationItem[] = [
@@ -34,6 +35,6 @@ export function AdminSidebar({ activePath, adminName = "Administrator", adminEma
   return <>
     <header className="flex min-h-20 items-center justify-between border-b border-border bg-surface px-4 lg:hidden"><Link href="/admin" className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"><BrandLockup context="admin" /></Link><button ref={menuButtonRef} type="button" aria-label="Open admin menu" aria-expanded={open} onClick={() => setOpen(true)} className="flex size-11 items-center justify-center rounded-full bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Menu aria-hidden="true" size={20} /></button></header>
     {open ? <div className="fixed inset-0 z-50 bg-foreground/30 lg:hidden" onClick={() => setOpen(false)}><aside ref={drawerRef} aria-label="Admin menu" className="h-full w-[min(20rem,86vw)] overflow-y-auto bg-surface p-5 shadow-xl" onClick={(event) => event.stopPropagation()}><div className="flex items-center justify-between"><BrandLockup context="admin" /><button type="button" aria-label="Close admin menu" autoFocus onClick={() => setOpen(false)} className="flex size-11 items-center justify-center rounded-full bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" size={20} /></button></div>{navigation}</aside></div> : null}
-    <aside className={cn("sticky top-0 hidden h-screen w-[17.5rem] shrink-0 flex-col border-r border-border bg-surface px-8 py-8 lg:flex", className)}><Link href="/admin"><BrandLockup context="admin" /></Link>{navigation}<div className="mt-auto border-t border-border pt-6"><p className="text-sm font-bold">{adminName}</p><p className="truncate text-xs text-muted-foreground">{adminEmail}</p></div></aside>
+    <aside className={cn("sticky top-0 hidden h-screen w-[17.5rem] shrink-0 flex-col border-r border-border bg-surface px-8 py-8 lg:flex", className)}><Link href="/admin"><BrandLockup context="admin" /></Link>{navigation}<div className="mt-auto border-t border-border pt-6"><p className="text-sm font-bold">{adminName}</p><p className="truncate text-xs text-muted-foreground">{adminEmail}</p><form action={signOutAction}><button type="submit" className="mt-3 flex min-h-11 w-full items-center gap-2 rounded-control text-left text-sm text-muted-foreground hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"><LogOut aria-hidden="true" size={16} />Log out</button></form></div></aside>
   </>;
 }

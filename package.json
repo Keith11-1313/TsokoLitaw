@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "skeleton:build": "boneyard-js build http://localhost:3000/boneyard-preview",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
@@ -16,11 +17,13 @@
     "db:lint": "supabase db lint --level error",
     "db:test": "supabase test db",
     "db:lint:linked": "supabase db lint --linked --level error --fail-on error",
-    "db:test:linked": "supabase test db --linked"
+    "db:test:linked": "supabase test db --linked",
+    "admin:bootstrap": "node --env-file=.env.local scripts/bootstrap-admin.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
+    "boneyard-js": "^1.9.0",
     "lucide-react": "^1.34.0",
     "next": "16.3.2",
     "react": "19.2.8",

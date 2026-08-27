@@ -4,6 +4,7 @@ import { SiteContainer } from "@/components/layout/site-container";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { HeaderActions } from "@/components/customer/header-actions";
 import { cn } from "@/lib/cn";
+import { getAuthProfile } from "@/lib/auth";
 
 const navigationItems = [
   { href: "/", label: "Home" },
@@ -15,7 +16,8 @@ interface CustomerHeaderProps {
   activePath?: string;
 }
 
-export function CustomerHeader({ activePath }: CustomerHeaderProps) {
+export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
+  const profile = await getAuthProfile();
   return (
     <header className="relative z-40 border-b border-border bg-surface">
       <SiteContainer className="flex min-h-22 items-center justify-between gap-6">
@@ -47,7 +49,7 @@ export function CustomerHeader({ activePath }: CustomerHeaderProps) {
           })}
         </nav>
 
-        <div className="hidden lg:block"><HeaderActions /></div>
+        <div className="hidden lg:block"><HeaderActions isSignedIn={Boolean(profile)} isAdmin={profile?.role === "admin"} /></div>
 
         <details className="group relative lg:hidden">
           <summary className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full bg-surface-muted text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
@@ -74,7 +76,7 @@ export function CustomerHeader({ activePath }: CustomerHeaderProps) {
                 );
               })}
             </nav>
-            <div className="mt-3 border-t border-border pt-4"><HeaderActions mobile /></div>
+            <div className="mt-3 border-t border-border pt-4"><HeaderActions mobile isSignedIn={Boolean(profile)} isAdmin={profile?.role === "admin"} /></div>
           </div>
         </details>
       </SiteContainer>

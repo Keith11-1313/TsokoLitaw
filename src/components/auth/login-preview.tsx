@@ -1,26 +1,29 @@
 "use client";
 
-import { LogIn, LogOut, ShieldCheck, UserRound } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useAuthPreview } from "@/components/auth/auth-preview-provider";
-import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
+import { LogIn } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { PrimaryButton, secondaryButtonClassName } from "@/components/ui/button";
 
-export function LoginPreview() {
-  const router = useRouter();
-  const { isReady, isSignedIn, signInPreview, signOut } = useAuthPreview();
+export function LoginPreview({ nextPath }: { nextPath: string }) {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
 
-  if (!isReady) return <p role="status" className="text-sm text-muted-foreground">Loading account preview…</p>;
+  async function signInWithGoogle() {
+    setIsStarting(true);
+    setErrorMessage(null);
+    const supabase = createBrowserSupabaseClient();
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo },
+    });
 
-  if (isSignedIn) {
-    return (
-      <>
-        <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-surface-muted text-brand"><UserRound aria-hidden="true" size={26} /></span>
-        <h1 className="mt-6 font-display text-3xl text-brand">You’re signed in</h1>
-        <p className="mt-4 text-sm leading-6 text-muted-foreground">The frontend account preview is active. Real Google authentication has not been connected yet.</p>
-        <PrimaryButton className="mt-8 w-full" onClick={() => router.push("/profile")}>View profile</PrimaryButton>
-        <SecondaryButton className="mt-3 w-full" onClick={() => { signOut(); router.replace("/login"); }}><LogOut aria-hidden="true" size={17} />Log out</SecondaryButton>
-      </>
-    );
+    if (error) {
+      setErrorMessage(error.message);
+      setIsStarting(false);
+    }
   }
 
   return (
@@ -28,10 +31,11 @@ export function LoginPreview() {
       <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-surface-muted text-brand"><LogIn aria-hidden="true" size={26} /></span>
       <h1 className="mt-6 font-script text-[3.25rem] leading-none text-brand">Sign in to TsokoLitaw</h1>
       <p className="mt-4 text-sm leading-6 text-muted-foreground">New and returning customers use Google to order, track campus pickups, and review completed orders.</p>
-      <PrimaryButton className="mt-8 w-full" type="button" disabled>Continue with Google</PrimaryButton>
-      <p className="mt-5 flex items-center justify-center gap-2 text-xs text-subtle-foreground"><ShieldCheck aria-hidden="true" size={15} />Google sign-in will be connected in the authentication phase.</p>
-      <SecondaryButton className="mt-6 w-full" onClick={() => { signInPreview(); router.push("/profile"); }}>Preview signed-in UI</SecondaryButton>
-      <p className="mt-3 text-xs leading-5 text-subtle-foreground">UI preview only. This does not create or authenticate an account.</p>
+      <PrimaryButton className="mt-8 w-full" type="button" onClick={signInWithGoogle} disabled={isStarting}>
+        {isStarting ? "Opening Google…" : "Continue with Google"}
+      </PrimaryButton>
+      {errorMessage ? <p role="alert" className="mt-5 rounded-control bg-danger-background p-3 text-sm text-danger-foreground">{errorMessage}</p> : null}
+      <Link className={`${secondaryButtonClassName} mt-6 w-full`} href="/">Return home</Link>
     </>
   );
 }

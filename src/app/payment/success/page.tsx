@@ -5,5 +5,5 @@ import { PaymentResultPage } from "@/components/customer/payment-result-page";
 export const metadata: Metadata = { title: "Payment Successful | TsokoLitaw" };
 
 export default function PaymentSuccessPage() {
-  return <PaymentResultPage title="Payment successful" description="Your mock payment is complete and the order is ready for confirmation. A receipt and pickup details would normally be sent by email." icon={CheckCircle2} tone="success" detailLabel="Order reference" detailValue="#ORD-008" primaryHref="/orders/ORD-008" primaryLabel="View Order" />;
+  return <PaymentResultPage title="Payment preview complete" description="This is only a UI preview. No payment was charged and no order was created." icon={CheckCircle2} tone="success" detailLabel="Connection status" detailValue="PayMongo not connected" primaryHref="/orders" primaryLabel="View order history" />;
 }

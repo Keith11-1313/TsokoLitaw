@@ -1,0 +1,10 @@
+{
+  "routes": ["/boneyard-preview"],
+  "breakpoints": [375, 768, 1280],
+  "out": "./src/bones",
+  "wait": 800,
+  "color": "#eadfce",
+  "animate": "shimmer",
+  "shimmerColor": "#f8f0e5",
+  "speed": "2s"
+}

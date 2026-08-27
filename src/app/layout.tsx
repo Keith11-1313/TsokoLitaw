@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, Italianno, Lato } from "next/font/google";
 import "./globals.css";
-import { AuthPreviewProvider } from "@/components/auth/auth-preview-provider";
+import "@/bones/registry";
 import { CartProvider } from "@/components/cart/cart-provider";
 
 const lato = Lato({
@@ -39,7 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to main content
         </a>
-        <AuthPreviewProvider><CartProvider>{children}</CartProvider></AuthPreviewProvider>
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );

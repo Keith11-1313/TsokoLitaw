@@ -95,3 +95,14 @@ textarea {
   background: var(--brand);
   color: var(--surface);
 }
+
+@keyframes reveal-route-loading {
+  to {
+    visibility: visible;
+  }
+}
+
+.delayed-route-loading {
+  visibility: hidden;
+  animation: reveal-route-loading 0s linear 500ms forwards;
+}
