@@ -61,7 +61,7 @@ Client Components are limited to interactions such as:
 - cart state and persistence
 - product configuration
 - custom dropdowns
-- authenticated account menu and logout
+- authenticated account menu and shared confirmation-based logout
 - admin mobile drawer
 - mock forms and dialogs
 - square-image validation and in-memory coating previews
@@ -100,7 +100,7 @@ Next.js server responsibilities:
 
 Customer routes are public under the main application. Account, checkout, order, and review routes require a verified Supabase session.
 
-Admin routes remain under `/admin` and require both a verified Supabase session and a server-loaded `profiles.role = 'admin'`. The planned `admin.tsokolitaw.com` host is deferred. Future host routing may map the subdomain to `/admin`, but must not replace server-side admin authorization.
+Admin routes remain under `/admin` and require both a verified Supabase session and a server-loaded `profiles.role = 'admin'`. Signed-in non-Admins receive the global Not Found boundary at the requested Admin URL, without a dedicated authorization redirect or disclosed administrator approval details. The planned `admin.tsokolitaw.com` host is deferred. Future host routing may map the subdomain to `/admin`, but must not replace server-side admin authorization.
 
 Legacy compatibility redirects:
 

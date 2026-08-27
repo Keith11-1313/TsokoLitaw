@@ -114,9 +114,10 @@ The account menu must reflect the verified session, while Admin visibility must 
 
 - signed-out visitors are sent to Login for protected customer routes
 - Google Sign-In creates or restores the Supabase session
-- Log out clears the Supabase session
+- every Log out action opens an accessible confirmation dialog; confirmation clears the Supabase session and returns to Home
 - authenticated customers can access Profile and the honest unconnected My Orders state
 - authenticated Admins receive an Admin dashboard shortcut, but `/admin` still performs its own server-side role check
+- a non-Admin opening an Admin route sees the global Not Found treatment at the requested URL rather than a dedicated authorization URL or administrator approval details
 
 ## 7. Customer Contact Information
 

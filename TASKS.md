@@ -156,9 +156,11 @@ Do not begin without explicit approval.
 - [x] Implement PKCE sign-in, callback handling, session refresh, and logout
 - [x] Create profiles from Auth identities and allow ownership-scoped profile updates
 - [x] Protect checkout, customer orders, profile, and eligible review routes server-side
-- [ ] Configure the initial approved Google identity and support four additions under the same admin role
+- [x] Configure the initial approved Google identity and support four additions under the same admin role
 - [x] Add a controlled server-only initial Admin bootstrap command and enforce the five-admin database limit
 - [x] Protect Admin routes with a server-side profile-role check
+- [x] Add confirmation to every logout action and return confirmed logout to Home
+- [x] Render the global Not Found boundary in place for non-Admin access to Admin routes
 - [x] Add redirect-safety unit tests and cross-customer/Admin pgTAP tests
 - [x] Add Profile danger zone with authenticated 90-day account-deletion scheduling and cancellation
 - [x] Add due-account anonymization and a secret-protected scheduled deletion handler

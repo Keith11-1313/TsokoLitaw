@@ -41,7 +41,9 @@ Phase 8 authentication foundation:
 - cookie refresh through the Next.js proxy
 - verified server-side guards for checkout, profile, orders, reviews, and Admin
 - ownership-scoped profile editing
-- controlled initial Admin bootstrap command and unauthorized Admin state
+- controlled initial Admin bootstrap command and in-place non-Admin Not Found state
+- confirmation-based logout that clears the session and returns to Home
+- in-place global Not Found treatment for signed-in customers who attempt to open Admin routes
 - Profile danger zone with cancellable 90-day account-deletion scheduling
 - secret-protected daily deletion processing that anonymizes retained commerce records before removing Auth identities
 
@@ -60,7 +62,7 @@ Customer Catalog and Checkout currently share their mock commerce and pickup con
 
 The Admin Catalog can temporarily add a coating preview with name, description, a 1:1 image, and additional-type price. The preview exists only in the current page session and is not published to Our Creations.
 
-Signed-out visitors are redirected to Login when opening checkout, Profile, My Orders, order details, or eligible review routes. A Google session creates a customer profile through the database trigger. Admin routes require both a verified session and the protected `admin` profile role.
+Signed-out visitors are redirected to Login when opening checkout, Profile, My Orders, order details, or eligible review routes. A Google session creates a customer profile through the database trigger. Admin routes require both a verified session and the protected `admin` profile role; signed-in customers who attempt to open them receive the global Not Found page while the requested Admin URL remains in the address bar. Logout always requires confirmation and returns to Home after the Supabase session is cleared.
 
 Customers may schedule account deletion from Profile. The request remains cancellable for 90 days, blocks new checkout, and cannot begin while orders or refunds are active. At the deadline, a trusted scheduled job rechecks eligibility, anonymizes retained commerce/contact snapshots, removes customer-scoped data, and deletes the Supabase Auth identity. The Google account itself is unaffected.
 

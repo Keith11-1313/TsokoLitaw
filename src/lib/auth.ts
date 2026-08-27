@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export interface AuthProfile {
@@ -53,6 +53,6 @@ export async function requireCustomer(nextPath: string) {
 export async function requireAdmin(nextPath = "/admin") {
   const profile = await getAuthProfile();
   if (!profile) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
-  if (profile.role !== "admin") redirect("/unauthorized");
+  if (profile.role !== "admin") notFound();
   return profile;
 }

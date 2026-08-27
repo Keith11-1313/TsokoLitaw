@@ -108,7 +108,7 @@ V1 authentication:
 - no guest checkout
 - one admin permission role supporting five approved Google accounts; one may be configured initially and four added later
 
-Signed-out Account opens `/login`. Signed-in Account opens a menu containing Profile, My Orders, and Log out. An authenticated Admin also receives an Admin dashboard shortcut; server-side role checks remain authoritative.
+Signed-out Account opens `/login`. Signed-in Account opens a menu containing Profile, My Orders, and Log out. Log out must open a confirmation dialog and, after confirmation, clear the Supabase session and return the user to Home. An authenticated Admin also receives an Admin dashboard shortcut; server-side role checks remain authoritative.
 
 Profile UI includes:
 
@@ -125,7 +125,7 @@ At the deadline, the trusted server process removes the Supabase Auth identity, 
 
 Authentication and authorization must never rely on frontend state alone.
 
-The five planned V1 admin accounts have the same permissions. One Google identity may bootstrap Admin initially, with four more added later through controlled backend data. Every protected page and mutation must verify the admin role server-side.
+The five planned V1 admin accounts have the same permissions. One Google identity may bootstrap Admin initially, with four more added later through controlled backend data. Every protected page and mutation must verify the admin role server-side. A signed-in customer who attempts to open an Admin route receives the existing global Not Found page without changing the requested Admin URL or exposing administrator approval-list or account details.
 
 Transactional order emails use Resend from server-only code. Initial events include order confirmation, ready-for-pickup, cancellation, and refund updates. Email delivery must not determine order or payment status, and failed sends must be retryable without duplicating messages.
 
