@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-The project is in **Phase 8: authentication and authorization**. Google OAuth, cookie sessions, protected customer routes, profile updates, and server-side Admin role checks are implemented. Commerce and Admin operations still use mock data until later phases.
+The project is in **Phase 9: server commerce**. Authentication and authorization are complete. The customer catalog and published pickup options now load from Supabase; server-authoritative checkout pricing, inventory reservation, order snapshots, and idempotent order creation are in progress. PayMongo and broad Admin CRUD remain deferred.
 
 Implemented with mock data:
 
@@ -49,18 +49,28 @@ Phase 8 authentication foundation:
 - secret-protected daily processing that permanently deactivates due profiles while preserving Auth identities and relational records
 - deleted-account login bounce that clears the new session and explains the disabled access
 
+Phase 9 server-commerce work completed so far:
+
+- active products, box variants, coatings, add-ons, and their current prices load from Supabase
+- box totals derive from the database product price per piece
+- additional coating types use their individual database-configured prices
+- Checkout uses the authenticated profile rather than mock customer details
+- Checkout lists only database-published pickup dates, windows, and locations and shows an honest unavailable state when none are published
+- untrusted cart IDs and counts are validated and repriced against the active catalog on the server
+- the canonical schema includes a service-only atomic pending-order writer for capacity checks, ready-stock reservation, immutable snapshots, Terms acceptance, and duplicate-submit protection
+
 Not yet implemented or externally configured:
 
 - initial Admin promotion and the remaining live authorization checks
-- runtime commerce data access through the linked Supabase project
+- server-authoritative cart validation, promotions, inventory reservation, order snapshots, and order creation
 - PayMongo
 - APIs, webhooks, email, or real CRUD other than the approved account-deletion lifecycle
 - server-authoritative pricing and inventory
 - admin authorization or admin subdomain routing
 
-All current customer, order, payment, account, and admin data is mock data. Disabled actions identify features that require future backend work.
+Customer identity, account state, catalog, and published pickup options are live Supabase data. Orders, payments, and Admin operational records remain mock or unconnected. Disabled actions identify features that require future backend work.
 
-Customer Catalog and Checkout currently share their mock commerce and pickup constants with the matching admin screens. This keeps the UI previews aligned, but admin controls do not persist changes until a database and server mutations are implemented.
+Our Creations and Checkout now read customer-safe commerce and pickup data from Supabase. Matching Admin screens remain non-persistent previews until Admin CRUD is implemented.
 
 The Admin Catalog can temporarily add a coating preview with name, description, a 1:1 image, and additional-type price. The preview exists only in the current page session and is not published to Our Creations.
 
@@ -153,7 +163,7 @@ Coatings:
 
 Mixed boxes allocate every piece to a coating. The allocated piece count must equal the selected box size.
 
-These browser values are previews. Future checkout pricing must be recalculated from database values on the server.
+These catalog values now come from Supabase, but browser totals remain estimates. Phase 9 must recalculate the final checkout price from current database values on the server.
 
 The ₱10 per-piece amount is approved as the provisional database seed. Authorized admins will manage the active base piece price, and each box total will be derived from its piece count. The ₱5 additional-coating charge is also only a seed and will come from the coating price configured in Admin. Completed orders preserve immutable price snapshots. Pickup locations, schedules, lead time, cutoff, capacity, and availability will likewise be admin-managed without rewriting existing paid-order pickup snapshots.
 

@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-The application is currently in **Phase 8: authentication and authorization**. Supabase Google OAuth, cookie sessions, protected customer routes, profile updates, and server-side Admin role checks are implemented. Commerce and Admin operational screens still use mock data until later integration phases.
+The application is currently in **Phase 9: server commerce**. Authentication and authorization are complete. Database-backed customer catalog and published pickup availability are connected; server-authoritative checkout pricing, inventory reservation, order snapshots, and idempotent order creation are the active implementation scope. Admin operational screens remain mock until Phase 11 unless a Phase 9 dependency requires a narrowly scoped server mutation.
 
 Allowed:
 
@@ -32,12 +32,15 @@ Allowed:
 - browser, server, and privileged Supabase client helpers
 - Google OAuth and authenticated profile access through Supabase
 - server-side guards for checkout, account/order, review, and Admin routes
+- runtime reads for active catalog, pickup availability, promotions, and inventory
+- server-only commerce validation, pricing, inventory reservation/release, Terms acceptance, and pending-order creation
 
 Do not implement unless the user explicitly starts a later phase:
 
 - PayMongo
-- APIs, webhooks, runtime database reads/writes, or transactional commerce logic, except the approved account-deletion lifecycle: authenticated profile deletion requests plus the secret-protected scheduled processor that rechecks eligibility and permanently deactivates due customer profiles without deleting their Auth identities or relational data
-- real CRUD or email
+- PayMongo checkout/payment APIs and payment webhooks
+- transactional email
+- broad Admin CRUD outside the narrowly scoped operations required by Phase 9 server commerce
 - admin subdomain or DNS configuration
 
 Never make mock UI look like secure authentication, verified payment, or persisted admin data.

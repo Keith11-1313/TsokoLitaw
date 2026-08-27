@@ -244,6 +244,7 @@ Optional coating and add-on availability may use separate dated inventory tables
 id uuid primary key
 order_number text unique
 user_id uuid references profiles(id)
+checkout_idempotency_key uuid nullable
 status text
 payment_status text
 customer_name text
@@ -290,6 +291,10 @@ REFUNDED
 ```
 
 Use database checks or controlled server transitions rather than unrestricted text updates.
+
+`(user_id, checkout_idempotency_key)` is unique when both values are present. The browser creates a UUID for one checkout attempt and reuses it on retries; the atomic writer returns the existing order instead of inserting a duplicate.
+
+The service-role-only `create_pending_order` function is the transaction boundary for Phase 9. Next.js first reloads the active catalog and calculates trusted snapshot values, then the function locks the customer and pickup window, rechecks account and pickup eligibility, enforces slot capacity, reserves ready stock when required, inserts the order and all item/coating/add-on snapshots, and records the current Terms version. Authenticated browser clients cannot execute this function directly.
 
 ## 9. Order Items and Coating Allocations
 

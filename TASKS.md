@@ -174,7 +174,7 @@ Do not begin without explicit approval.
 
 ## Phase 9 — Server Commerce
 
-- [ ] Load products, variants, coatings, add-ons, and availability from database
+- [x] Load products, variants, coatings, add-ons, and published pickup availability from database
 - [ ] Validate mixed-box allocations server-side
 - [ ] Recalculate PHP prices server-side
 - [ ] Implement configurable promotions

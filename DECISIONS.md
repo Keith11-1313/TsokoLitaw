@@ -22,34 +22,32 @@ The PNGs in `references/` are retained as early visual context. They are not pix
 
 ### Decision
 
-The current milestone is UI-only.
+The current milestone is Phase 9 server commerce.
 
 Allowed now:
 
 - React and Tailwind UI
-- mock data
+- database-backed customer catalog and published pickup availability
 - local component state
-- browser-local cart and account-preview state
+- browser-local cart state as a non-authoritative convenience
 - responsive and keyboard-accessible interaction
 - disabled or temporary mock admin controls
+- server-side cart validation, pricing, promotion evaluation, inventory reservation, Terms acceptance, immutable order snapshots, and idempotent pending-order creation
 
 Deferred until separately approved:
 
-- Supabase
-- Google authentication
 - PayMongo
-- APIs, server actions, webhooks, email, and real CRUD, except the approved account-deletion lifecycle: authenticated schedule/cancel requests and the secret-protected scheduled processor that rechecks eligibility and permanently deactivates due customer profiles without deleting Auth identities or relational data
-- database persistence
-- production authorization
+- payment webhooks and transactional email
+- broad Admin CRUD outside the Phase 9 commerce dependency surface
 - admin subdomain and DNS configuration
 
 ### Reason
 
-The customer workflow and operational model are still being refined. Connecting a backend before those decisions stabilize would create migrations, security policies, and integrations around incorrect assumptions.
+The customer workflow, authentication boundary, schema, and launch rules are approved enough to connect server commerce. Payments and broad operational CRUD remain separate phases so pricing, inventory, and order integrity can be verified before external side effects are introduced.
 
 ### UI consequence
 
-The UI may demonstrate state and navigation, but it must not pretend that accounts, payments, stock, or admin changes are real. Backend-dependent actions are disabled or explicitly labeled as mock behavior.
+Catalog and published pickup options are real database reads. Browser totals remain estimates until the server recalculates them. Payment and unconnected Admin actions stay disabled or explicitly labeled until their phases begin.
 
 ## 4. Mobile-First Experience
 
@@ -255,18 +253,18 @@ Submit identifiers, counts, and quantities—not trusted prices. The server vali
 
 V1 uses campus pickup only.
 
-Current mock choices:
+Current launch configuration:
 
 - UCC Congress — 3rd Floor
 - UCC Congress — Covered Court
 - operating window: Monday–Saturday, 7:00 AM–7:00 PM
-- published dates and time slots from shared pickup mock data
+- published dates, time slots, and allowed locations from Supabase
 - made-to-order by default, using Admin-controlled lead time and cutoff
 - same-day pickup only when Admin publishes ready stock brought to school
 - initial made-to-order seed: one-day lead time, 5:00 PM cutoff, hourly slots, and 20 boxes per slot
 - 15-minute grace period
 
-The future database treats locations, published dates, time windows, lead time, cutoff time, capacity, stock mode, and availability as admin-managed operational configuration. The operating window is a boundary, not a promise that each date or time will be offered. Existing paid orders preserve their selected pickup details as historical snapshots.
+The database treats locations, published dates, time windows, lead time, cutoff time, capacity, stock mode, and availability as operational configuration. Checkout shows only published records. The operating window is a boundary, not a promise that each date or time will be offered. Existing paid orders preserve their selected pickup details as historical snapshots.
 
 ### Reason
 
@@ -280,7 +278,7 @@ Checkout exposes date, time, and location dropdowns. Admin Pickup exists to publ
 
 ### Decision
 
-Customer Orders will show current orders and history after scoped server commerce is connected. During Phase 8, authenticated customer order surfaces must not display mock records as if they belong to the signed-in Google identity. My Orders shows an honest unconnected state, while dynamic order and review routes remain unavailable until ownership-scoped database reads exist. Future order detail explains fulfillment progress, pickup, payment summary, cancellation eligibility, and review eligibility.
+Customer Orders will show current orders and history after Phase 9 creates ownership-scoped order records. Until that write path is complete, authenticated customer order surfaces must not display mock records as if they belong to the signed-in Google identity. My Orders keeps its honest unconnected state, while dynamic order and review routes remain unavailable. Future order detail explains fulfillment progress, pickup, payment summary, cancellation eligibility, and review eligibility.
 
 Primary future order flow:
 

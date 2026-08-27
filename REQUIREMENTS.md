@@ -23,23 +23,24 @@ Workflow changes must be reflected together in:
 
 ## 2. Delivery Stages
 
-### Current: Phase 8 — Authentication and authorization
+### Current: Phase 9 — Server commerce
 
 - Next.js, React, TypeScript, and Tailwind UI
-- mock product, customer, order, and admin data
+- mock order/payment/Admin operational data remains where later phases have not connected persistence
 - temporary client-side component interactions
 - Google OAuth, cookie-backed sessions, protected customer routes, authenticated profile updates, and server-side Admin role checks
 - browser-local cart persistence
 - static payment and account previews
 - one reviewed production bootstrap schema, RLS policies, pgTAP tests, controlled seed data, and Supabase client helpers
 - the approved account-deletion lifecycle: authenticated scheduling/cancellation plus a server-only scheduled processor that rechecks eligibility and permanently deactivates due customer profiles while retaining their Auth identities and relational data
-- catalog, orders, payments, and Admin operations remain mock/non-persistent until later phases
+- active catalog and published pickup availability are loaded from Supabase
+- server-authoritative pricing, inventory reservation, immutable order snapshots, Terms acceptance, promotions, and duplicate-submit protection are being connected
+- payments and broad Admin operations remain mock/non-persistent until their later phases
 
 ### Deferred
 
 - PayMongo
-- APIs, webhooks, email, and real CRUD other than the approved account-deletion lifecycle
-- server authorization and validation
+- PayMongo APIs/webhooks, email, and broad Admin CRUD beyond Phase 9 commerce operations
 - admin subdomain configuration
 
 UI labels must clearly distinguish mock or unavailable backend actions.

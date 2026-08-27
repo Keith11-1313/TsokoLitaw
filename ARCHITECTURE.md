@@ -16,32 +16,36 @@ Architecture follows the workflows and rationale in `DECISIONS.md`. A UI decisio
 
 Update the architecture and proposed database whenever an approved UI decision changes one of these domain rules.
 
-## 2. Current UI Architecture
+## 2. Current Application Architecture
 
 ```text
 Next.js App Router
 ├── Server Components for static page composition
 ├── Client Components for interactive UI
 ├── Tailwind CSS design tokens
-├── Shared commerce and pickup mock-domain modules
-├── localStorage cart
+├── Supabase-backed customer catalog and pickup read models
+├── localStorage cart as an untrusted browser convenience
 ├── Supabase Google OAuth and cookie-backed sessions
 ├── Server-protected customer and Admin routes
 └── Local brand and product assets
 ```
 
-The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Catalog, orders, payments, inventory, and Admin operations remain mock data; there is still no PayMongo, webhook, or email integration.
+The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options now load from Supabase. Server checkout validation, inventory reservation, and order creation remain the active Phase 9 work; there is still no PayMongo, payment webhook, email, or broad Admin CRUD integration.
 
 Current customer/admin relationship:
 
 ```text
+Database commerce catalog
+└── Our Creations
+
 Shared mock commerce data
-├── Our Creations
 ├── Admin Catalog
 └── Admin coating session previews (not published)
 
+Database-published pickup data
+└── Checkout
+
 Shared mock pickup data
-├── Checkout
 ├── Admin Pickup
 └── Admin Settings defaults
 
@@ -54,7 +58,7 @@ Authenticated customer order surfaces
 └── Dynamic order/review routes unavailable until scoped database reads exist
 ```
 
-This relationship prevents UI drift. It does not make admin controls persistent or secure.
+Customer catalog and pickup reads now reflect the linked database. Admin previews remain non-persistent and cannot publish changes yet.
 
 Client Components are limited to interactions such as:
 
@@ -97,6 +101,8 @@ Next.js server responsibilities:
 - terms acceptance recording
 - admin mutations
 
+Phase 9 uses a two-layer checkout boundary. Next.js accepts only catalog identifiers, coating allocations, add-on counts, and quantities; it reloads current database prices and evaluates active promotion configuration. It then calls the service-role-only `create_pending_order` PostgreSQL function with the trusted snapshot projection. That function atomically locks the customer and pickup window, enforces capacity, reserves required ready stock, writes the order graph and Terms acceptance, and returns an existing order when the same customer idempotency key is retried. Browser clients receive no direct execute permission on the writer.
+
 ## 4. Routing
 
 Customer routes are public under the main application. Account, checkout, order, and review routes require a verified Supabase session.
@@ -125,13 +131,13 @@ src/
 │   ├── layout/          # Content containers
 │   ├── orders/          # Order list/detail UI
 │   └── ui/              # Shared controls and tokens
-├── lib/                 # Shared commerce, pickup, and order mock data
+├── lib/                 # Server commerce reads plus remaining mock domain data
 └── types/               # Explicit domain types
 ```
 
-Business rules should move out of presentation components as backend work begins.
+Commerce business rules belong in server modules and database functions rather than presentation components.
 
-Customer and admin previews must consume shared mock constants where they represent the same operational data. Admin Catalog and Our Creations share commerce constants; Admin Pickup and Checkout share pickup constants. This prevents UI drift but is not persistence or backend connectivity.
+Our Creations consumes the active database catalog, and Checkout consumes published database pickup options. Admin Catalog and Admin Pickup still use preview data until their CRUD phase; they must be clearly labeled and must not imply that preview changes have been published.
 
 The Admin coating form may create an in-memory preview containing name, description, a square image data URL, and an additional-type price. That object is deliberately page-session-only and must not be merged into the customer catalog. Future implementation replaces the data URL with a validated storage upload and publishes a database record through an authorized server mutation.
 
@@ -179,7 +185,7 @@ Profile + scoped session
 - Admin authorization is server-side role/identity validation.
 - UI route visibility is not authorization.
 - No guest checkout in V1.
-- Account deletion is the narrow Phase 8 runtime-data exception: an authenticated RPC schedules or cancels the request, then a secret-protected daily job rechecks eligibility and processes eligible requests after 90 days. It does not authorize runtime commerce, Admin operational CRUD, payment, or email APIs.
+- Account deletion remains an authenticated RPC plus secret-protected daily processor. Phase 9 separately authorizes server commerce reads and the narrowly scoped mutations required for validated checkout and inventory; it does not authorize broad Admin CRUD, payment, or email APIs.
 - The processor rechecks active orders/refunds and permanently flips the due profile to inactive without deleting Auth or relational records.
 - Accounts pending deletion may access Profile and order history but cannot begin a new checkout.
 - Inactive profiles fail RLS and server authorization checks. OAuth callback handling clears any newly exchanged session and redirects to the deleted-account screen.
