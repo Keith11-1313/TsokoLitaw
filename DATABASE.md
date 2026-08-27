@@ -357,6 +357,7 @@ id uuid primary key
 order_id uuid references orders(id)
 provider text default 'paymongo'
 provider_checkout_id text nullable
+provider_checkout_url text nullable
 provider_payment_id text nullable
 amount numeric(10,2)
 currency text default 'PHP'
@@ -366,6 +367,8 @@ refunded_at timestamptz nullable
 created_at timestamptz
 updated_at timestamptz
 ```
+
+Each order has at most one payment row. The service-only checkout initializer creates or returns that row, and the provider checkout ID/URL can be attached only once. PayMongo checkout creation uses the payment UUID as the stable idempotency source. A signed paid webhook must match the stored checkout ID, order UUID, kiosk order number, PHP currency, and exact server total before the payment and order transition atomically.
 
 Do not store card details or unnecessary raw sensitive payloads.
 
@@ -420,7 +423,7 @@ payload jsonb
 created_at timestamptz
 ```
 
-The unique provider event ID supports idempotent processing.
+The unique provider event key supports idempotent processing. For PayMongo Hosted Checkout paid events, the key is derived from the event type, checkout-session ID, and provider payment ID so it remains stable even when the current v2 webhook envelope does not expose a separate `evt_*` identifier. Only a reduced, non-billing event summary is retained; raw webhook payloads containing customer billing data are not stored.
 
 ### `notification_deliveries`
 

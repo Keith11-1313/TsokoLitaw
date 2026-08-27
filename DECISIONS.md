@@ -22,7 +22,7 @@ The PNGs in `references/` are retained as early visual context. They are not pix
 
 ### Decision
 
-The current milestone is Phase 9 server commerce.
+The current milestone is Phase 10 PayMongo Test Mode. Phase 9 server commerce is complete.
 
 Allowed now:
 
@@ -33,11 +33,12 @@ Allowed now:
 - responsive and keyboard-accessible interaction
 - disabled or temporary mock admin controls
 - server-side cart validation, pricing, promotion evaluation, inventory reservation, Terms acceptance, immutable order snapshots, and idempotent pending-order creation
+- PayMongo v2 test checkout sessions, signed/idempotent webhooks, and test payment/refund transitions
 
 Deferred until separately approved:
 
-- PayMongo
-- payment webhooks and transactional email
+- PayMongo live mode and live keys
+- transactional email
 - broad Admin CRUD outside the Phase 9 commerce dependency surface
 - admin subdomain and DNS configuration
 

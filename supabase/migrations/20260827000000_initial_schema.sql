@@ -238,6 +238,7 @@ create table public.payments (
   order_id uuid not null references public.orders(id) on delete restrict,
   provider text not null default 'paymongo',
   provider_checkout_id text,
+  provider_checkout_url text,
   provider_payment_id text,
   amount numeric(10,2) not null check (amount >= 0),
   currency text not null default 'PHP' check (currency = 'PHP'),
@@ -248,6 +249,7 @@ create table public.payments (
   updated_at timestamptz not null default now()
 );
 
+create unique index payments_order_key on public.payments (order_id);
 create unique index payments_provider_checkout_key
   on public.payments (provider, provider_checkout_id)
   where provider_checkout_id is not null;
@@ -1064,6 +1066,217 @@ begin
 end;
 $$;
 
+create or replace function public.prepare_paymongo_checkout(
+  target_order_id uuid,
+  target_user_id uuid
+)
+returns table (
+  prepared_payment_id uuid,
+  prepared_order_id uuid,
+  prepared_order_number text,
+  prepared_amount numeric,
+  prepared_customer_name text,
+  prepared_customer_email text,
+  prepared_customer_mobile text,
+  existing_checkout_url text
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_order public.orders%rowtype;
+  target_payment public.payments%rowtype;
+begin
+  perform public.expire_pending_orders();
+
+  select * into target_order
+  from public.orders
+  where id = target_order_id
+    and user_id = target_user_id
+  for update;
+
+  if target_order.id is null then
+    raise exception 'Pending order is unavailable';
+  end if;
+  if target_order.status <> 'PENDING_PAYMENT'
+    or target_order.payment_status <> 'PENDING'
+    or target_order.payment_expires_at is null
+    or target_order.payment_expires_at <= now()
+  then
+    raise exception 'Order is not eligible for payment';
+  end if;
+
+  insert into public.payments (order_id, amount)
+  values (target_order.id, target_order.total)
+  on conflict (order_id) do nothing;
+
+  select * into target_payment
+  from public.payments
+  where order_id = target_order.id
+  for update;
+
+  if target_payment.id is null
+    or target_payment.provider <> 'paymongo'
+    or target_payment.status <> 'PENDING'
+    or target_payment.currency <> 'PHP'
+    or target_payment.amount <> target_order.total
+  then
+    raise exception 'Payment record is inconsistent with the order';
+  end if;
+
+  return query select
+    target_payment.id,
+    target_order.id,
+    target_order.order_number,
+    target_order.total,
+    target_order.customer_name,
+    target_order.customer_email,
+    target_order.customer_mobile,
+    target_payment.provider_checkout_url;
+end;
+$$;
+
+create or replace function public.attach_paymongo_checkout(
+  target_payment_id uuid,
+  checkout_id text,
+  checkout_url text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_payment public.payments%rowtype;
+begin
+  if checkout_id !~ '^cs_[A-Za-z0-9_-]+$'
+    or checkout_url !~ '^https://checkout[.]paymongo[.]com/'
+  then
+    raise exception 'PayMongo checkout reference is invalid';
+  end if;
+
+  select * into target_payment
+  from public.payments
+  where id = target_payment_id
+  for update;
+
+  if target_payment.id is null or target_payment.status <> 'PENDING' then
+    raise exception 'Pending payment is unavailable';
+  end if;
+
+  if target_payment.provider_checkout_id is not null then
+    if target_payment.provider_checkout_id <> checkout_id
+      or target_payment.provider_checkout_url <> checkout_url
+    then
+      raise exception 'A different PayMongo checkout is already attached';
+    end if;
+    return false;
+  end if;
+
+  update public.payments
+  set provider_checkout_id = checkout_id,
+      provider_checkout_url = checkout_url,
+      updated_at = now()
+  where id = target_payment.id;
+
+  return true;
+end;
+$$;
+
+create or replace function public.process_paymongo_paid_event(
+  event_key text,
+  target_order_id uuid,
+  target_order_number text,
+  checkout_id text,
+  payment_id text,
+  paid_amount numeric,
+  event_summary jsonb
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  inserted_event_id uuid;
+  target_payment public.payments%rowtype;
+  target_order public.orders%rowtype;
+begin
+  if event_key is null or length(event_key) > 255
+    or checkout_id !~ '^cs_[A-Za-z0-9_-]+$'
+    or payment_id !~ '^pay_[A-Za-z0-9_-]+$'
+    or paid_amount <= 0
+  then
+    raise exception 'PayMongo payment event is invalid';
+  end if;
+
+  insert into public.payment_webhook_events (
+    provider,
+    provider_event_id,
+    event_type,
+    payload
+  ) values (
+    'paymongo',
+    event_key,
+    'checkout_session.payment.paid',
+    event_summary
+  )
+  on conflict (provider_event_id) do nothing
+  returning id into inserted_event_id;
+
+  if inserted_event_id is null then
+    return false;
+  end if;
+
+  select * into target_payment
+  from public.payments
+  where provider = 'paymongo'
+    and provider_checkout_id = checkout_id
+  for update;
+
+  if target_payment.id is null then
+    raise exception 'PayMongo checkout is not attached to a payment';
+  end if;
+
+  select * into target_order
+  from public.orders
+  where id = target_payment.order_id
+  for update;
+
+  if target_order.id is null
+    or target_order.id <> target_order_id
+    or target_order.order_number <> target_order_number
+    or target_order.status <> 'PENDING_PAYMENT'
+    or target_order.payment_status <> 'PENDING'
+    or target_payment.status <> 'PENDING'
+    or target_payment.amount <> paid_amount
+    or target_order.total <> paid_amount
+  then
+    raise exception 'PayMongo payment does not match an eligible pending order';
+  end if;
+
+  update public.payments
+  set provider_payment_id = payment_id,
+      status = 'PAID',
+      paid_at = now(),
+      updated_at = now()
+  where id = target_payment.id;
+
+  update public.orders
+  set payment_status = 'PAID',
+      status = 'CONFIRMED',
+      updated_at = now()
+  where id = target_order.id;
+
+  update public.payment_webhook_events
+  set processed_at = now()
+  where id = inserted_event_id;
+
+  return true;
+end;
+$$;
+
 do $$
 declare
   target_table text;
@@ -1129,6 +1342,11 @@ grant execute on function public.deactivate_due_account(uuid) to service_role;
 grant execute on function public.expire_pending_orders() to service_role;
 grant execute on function public.create_pending_order(
   uuid, uuid, uuid, uuid, text, text, text, jsonb, numeric, numeric, numeric, text
+) to service_role;
+grant execute on function public.prepare_paymongo_checkout(uuid, uuid) to service_role;
+grant execute on function public.attach_paymongo_checkout(uuid, text, text) to service_role;
+grant execute on function public.process_paymongo_paid_event(
+  text, uuid, text, text, text, numeric, jsonb
 ) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
@@ -1299,5 +1517,11 @@ comment on function public.expire_pending_orders() is
 comment on function public.create_pending_order(
   uuid, uuid, uuid, uuid, text, text, text, jsonb, numeric, numeric, numeric, text
 ) is 'Service-role-only atomic order writer. Next.js must reload and validate active catalog prices before calling it.';
+comment on function public.prepare_paymongo_checkout(uuid, uuid) is
+  'Service-role-only payment initializer that creates at most one pending PayMongo payment per eligible order.';
+comment on function public.attach_paymongo_checkout(uuid, text, text) is
+  'Service-role-only writer that immutably attaches one PayMongo checkout session to a pending payment.';
+comment on function public.process_paymongo_paid_event(text, uuid, text, text, text, numeric, jsonb) is
+  'Service-role-only idempotent transition for verified PayMongo checkout_session.payment.paid events.';
 comment on table public.manual_refund_destinations is
   'Restricted fallback data used only after an automatic PayMongo refund is unsupported or fails.';

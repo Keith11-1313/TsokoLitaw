@@ -30,7 +30,7 @@ Next.js App Router
 └── Local brand and product assets
 ```
 
-The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Customer and Admin self-checkout are validated against hosted development. There is still no PayMongo, payment webhook, email, or broad Admin CRUD integration.
+The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Customer and Admin self-checkout are validated against hosted development. Phase 10 now has a server-only PayMongo v2 test client with a stable idempotency-key contract; checkout redirection remains disabled until provider-reference persistence and signed webhook processing are connected. Email and broad Admin CRUD remain unconnected.
 
 Current customer/admin relationship:
 
@@ -221,7 +221,7 @@ Validated cart
 
 The browser success page is informational. Only verified server-side provider events may mark payment paid.
 
-Payment webhook events require a provider event ID uniqueness constraint and idempotent processing.
+PayMongo checkout creation is server-only and uses a stable idempotency key derived from the internal payment UUID. One payment row is allowed per order, and a checkout session can be attached to it only once. The webhook route verifies the timestamped test signature against the untouched request body before parsing. Its database transition deduplicates by checkout/payment event key and requires the provider checkout ID, payment ID, order UUID, kiosk order number, PHP amount, and pending states to match in one transaction. Redirect success is never treated as payment proof, and raw billing payloads are not retained.
 
 Standard cancellation is allowed only before `PREPARING`. Unpaid cancellations release reserved stock; paid cancellations create a full refund to the original payment method. Refund lifecycle is tracked separately from order cancellation, and only verified provider events may confirm completion. Prepared and no-show orders are non-refundable. A restricted manual destination is collected only after an unsupported or failed provider refund.
 

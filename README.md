@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-**Phase 9: server commerce is complete.** Authentication and authorization are complete. The customer catalog and published pickup options load from Supabase. Checkout performs server-authoritative pricing, promotion evaluation, inventory reservation/release, order snapshots, Terms acceptance, and idempotent pending-order creation. Hosted customer and Admin checkout proofs produced shared kiosk numbers `TL-0001` and `TL-0002`. PayMongo and broad Admin CRUD remain deferred until their approved phases.
+**Phase 10: PayMongo Test Mode is active.** Authentication, authorization, and Phase 9 server commerce are complete. Checkout performs server-authoritative pricing, promotion evaluation, inventory reservation/release, order snapshots, Terms acceptance, and idempotent pending-order creation. Hosted customer and Admin checkout proofs produced shared kiosk numbers `TL-0001` and `TL-0002`. The active payment scope uses PayMongo test credentials only; live charges, email, and broad Admin CRUD remain deferred.
 
 Implemented with mock data:
 
@@ -63,12 +63,22 @@ Phase 9 server-commerce work completed so far:
 - the controlled seed includes the current Terms version required for checkout acceptance snapshots
 - active Admin identities can place their own storefront orders, and new orders use a shared short number such as `TL-0001`
 
+Phase 10 payment foundation completed so far:
+
+- PayMongo test credentials are loaded only from local server environment variables
+- the server-only client targets PayMongo v2 Hosted Checkout and rejects live secret keys or live checkout responses
+- checkout requests carry a stable idempotency key so a safe retry cannot create a duplicate provider session
+- the canonical schema creates at most one payment per order and immutably stores its checkout and payment references
+- the test webhook verifies PayMongo's timestamped raw-body signature and atomically deduplicates exact paid-order transitions
+- local validation covers provider-reference persistence and paid-webhook processing; hosted deployment remains pending
+- no customer redirect or payment collection is enabled before the hosted schema and webhook secret are configured
+
 Not yet implemented or externally configured:
 
 - initial Admin promotion and the remaining live authorization checks
-- PayMongo test-mode integration
-- PayMongo
-- APIs, webhooks, email, or real CRUD other than the approved account-deletion lifecycle
+- hosted PayMongo schema deployment, webhook registration, and customer redirection
+- payment expiry coordination and refunds
+- email or real CRUD other than the approved account-deletion lifecycle
 - admin authorization or admin subdomain routing
 
 Customer identity, account state, catalog, published pickup options, and pending-order persistence are live Supabase data. Payments and Admin operational screens remain mock or unconnected. Disabled actions identify features that require future backend work.

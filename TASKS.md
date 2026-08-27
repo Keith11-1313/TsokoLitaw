@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Phase 9 server commerce is complete and validated against hosted development with customer and Admin self-checkout proofs. Phase 10 PayMongo Test Mode is the next milestone after explicit approval.
+Phase 9 server commerce is complete and validated against hosted development with customer and Admin self-checkout proofs. Phase 10 PayMongo Test Mode is active using test credentials only.
 
 ## Decision Baseline
 
@@ -188,13 +188,15 @@ Do not begin without explicit approval.
 
 ## Phase 10 — PayMongo Test Mode
 
-- [ ] Add test environment variables
-- [ ] Create server-only PayMongo helper
+- [x] Add local PayMongo test environment variables; defer Vercel Preview values until hosted payment testing
+- [x] Create and unit-test the server-only PayMongo v2 Hosted Checkout client and idempotent request contract
 - [x] Create pending payment orders through the Phase 9 atomic checkout writer
 - [ ] Create checkout/payment session
-- [ ] Add signed webhook endpoint
-- [ ] Store provider references
-- [ ] Enforce webhook idempotency
+- [x] Add the test-mode signed webhook endpoint and raw-body signature verification
+- [x] Add locally validated service-only payment initialization and immutable provider-reference persistence
+- [x] Enforce atomic webhook idempotency and exact order/reference/amount matching
+- [ ] Apply the Phase 10 payment schema upgrade to hosted development
+- [ ] Deploy and register the test webhook endpoint, then configure its signing secret
 - [ ] Handle success, failure, refund, and 15-minute expiry
 - [ ] Implement full original-method refunds and verified refund webhooks
 - [ ] Track refund state separately from order cancellation

@@ -23,7 +23,7 @@ Workflow changes must be reflected together in:
 
 ## 2. Delivery Stages
 
-### Current: Phase 9 — Server commerce
+### Current: Phase 10 — PayMongo Test Mode
 
 - Next.js, React, TypeScript, and Tailwind UI
 - mock order/payment/Admin operational data remains where later phases have not connected persistence
@@ -36,12 +36,13 @@ Workflow changes must be reflected together in:
 - active catalog and published pickup availability are loaded from Supabase
 - server-authoritative pricing, promotion evaluation, inventory reservation/release, immutable order snapshots, Terms acceptance, and duplicate-submit protection are implemented and validated against hosted development
 - active Admin identities may place their own customer-storefront orders, and all new orders use one shared kiosk-style number such as `TL-0001`
-- payments and broad Admin operations remain mock/non-persistent until their later phases
+- PayMongo v2 Hosted Checkout test sessions, signed webhooks, provider references, and test payment/refund transitions are the active integration scope
+- broad Admin operations remain mock/non-persistent until their later phases
 
 ### Deferred
 
-- PayMongo
-- PayMongo APIs/webhooks, email, and broad Admin CRUD beyond Phase 9 commerce operations
+- PayMongo live mode
+- email and broad Admin CRUD beyond Phase 10 payment operations
 - admin subdomain configuration
 
 UI labels must clearly distinguish mock or unavailable backend actions.

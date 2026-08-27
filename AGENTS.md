@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-The application is currently in **Phase 9: server commerce**. Authentication and authorization are complete. Database-backed customer catalog and published pickup availability are connected; server-authoritative checkout pricing, inventory reservation, order snapshots, and idempotent order creation are the active implementation scope. Admin operational screens remain mock until Phase 11 unless a Phase 9 dependency requires a narrowly scoped server mutation.
+The application is currently in **Phase 10: PayMongo Test Mode**. Authentication, authorization, and Phase 9 server commerce are complete. The active scope is server-only PayMongo v2 Hosted Checkout session creation, signed/idempotent webhook handling, provider-reference persistence, and test-mode payment/expiry/refund transitions. Admin operational screens remain mock until Phase 11 unless a Phase 10 payment dependency requires a narrowly scoped server mutation.
 
 Allowed:
 
@@ -34,13 +34,13 @@ Allowed:
 - server-side guards for checkout, account/order, review, and Admin routes
 - runtime reads for active catalog, pickup availability, promotions, and inventory
 - server-only commerce validation, pricing, inventory reservation/release, Terms acceptance, and pending-order creation
+- PayMongo test-mode API helpers, hosted checkout sessions, signed webhooks, and payment/refund persistence
 
 Do not implement unless the user explicitly starts a later phase:
 
-- PayMongo
-- PayMongo checkout/payment APIs and payment webhooks
+- PayMongo live-mode keys or charges
 - transactional email
-- broad Admin CRUD outside the narrowly scoped operations required by Phase 9 server commerce
+- broad Admin CRUD outside the narrowly scoped operations required by Phase 10 payments
 - admin subdomain or DNS configuration
 
 Never make mock UI look like secure authentication, verified payment, or persisted admin data.
