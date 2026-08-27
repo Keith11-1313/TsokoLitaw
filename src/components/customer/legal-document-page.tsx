@@ -11,21 +11,23 @@ interface LegalDocumentPageProps {
   title: string;
   introduction: string;
   sections: readonly LegalSection[];
+  documentNote?: string;
 }
 
 export function LegalDocumentPage({
   title,
   introduction,
   sections,
+  documentNote = "Static preview · Last updated October 14, 2025",
 }: LegalDocumentPageProps) {
   return (
     <CustomerPageShell>
       <SiteContainer className="py-16 sm:py-20">
         <div className="mx-auto max-w-3xl">
-          <CustomerPageHeading title={title} description={introduction} />
+          <CustomerPageHeading title={title} description={introduction} fullWidth />
           <article className="mt-10 rounded-card border border-border bg-surface p-6 sm:p-10">
             <p className="text-xs font-bold uppercase tracking-wide text-subtle-foreground">
-              Static preview · Last updated October 14, 2025
+              {documentNote}
             </p>
             <div className="mt-8 space-y-8">
               {sections.map((section) => (

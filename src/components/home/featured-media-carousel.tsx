@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/cn";
 
 const slideCount = 2;
 
@@ -81,7 +80,7 @@ export function FeaturedMediaCarousel() {
         <button
           type="button"
           onClick={() => showSlide(activeSlide - 1)}
-          className="absolute left-3 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-surface/95 text-brand shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          className="absolute left-3 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-surface drop-shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           aria-label="Show previous featured item"
         >
           <ChevronLeft aria-hidden="true" size={20} />
@@ -89,34 +88,17 @@ export function FeaturedMediaCarousel() {
         <button
           type="button"
           onClick={() => showSlide(activeSlide + 1)}
-          className="absolute right-3 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-surface/95 text-brand shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          className="absolute right-3 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center text-surface drop-shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           aria-label="Show next featured item"
         >
           <ChevronRight aria-hidden="true" size={20} />
         </button>
       </div>
 
-      <div className="mt-4 flex items-center justify-center gap-2" aria-label="Choose featured item">
-        {["Video", "Selection photo"].map((label, index) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => showSlide(index)}
-            className={cn(
-              "min-h-11 rounded-full px-4 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
-              activeSlide === index ? "bg-brand text-surface" : "bg-surface-muted text-brand",
-            )}
-            aria-current={activeSlide === index ? "true" : undefined}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <p className="mt-3 text-center text-sm leading-6 text-muted-foreground" aria-live="polite">
+      <p className="sr-only" aria-live="polite">
         {activeSlide === 0
-          ? "Freshly prepared TsokoLitaw boxes. The selection photo appears when the video ends."
-          : "Explore the current selection and build your preferred box."}
+          ? "Showing the featured TsokoLitaw video."
+          : "Showing the TsokoLitaw selection photo."}
       </p>
     </section>
   );
