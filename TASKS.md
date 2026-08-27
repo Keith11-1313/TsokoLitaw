@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-The project has completed the broad static UI phase. The next major phase is UI review and refinement, followed by backend planning and Supabase setup only after explicit approval.
+Phase 9 server commerce is complete and validated against hosted development with customer and Admin self-checkout proofs. Phase 10 PayMongo Test Mode is the next milestone after explicit approval.
 
 ## Decision Baseline
 
@@ -167,8 +167,9 @@ Do not begin without explicit approval.
 - [x] Add secret-protected due-account soft deactivation that preserves Auth and relational records
 - [x] Add inactive-profile checks to OAuth callback handling, RLS helpers, customer access, and Admin authorization
 - [x] Add the deleted-account login bounce screen
-- [ ] Apply the revised account-deactivation schema to the hosted development project; keep the production bootstrap schema squashed
-- [ ] Configure `CRON_SECRET` and the daily account-deletion schedule in Vercel
+- [x] Apply the revised account-deactivation schema to the hosted development project; keep the production bootstrap schema squashed
+- [x] Configure `CRON_SECRET` in Vercel and define the daily account-deletion schedule in `vercel.json`
+- [ ] Redeploy Production and verify one authorized Vercel cron invocation
 - [ ] Verify deletion request, checkout blocking, cancellation, due deactivation, retained relationships, access denial, and login bounce against the hosted project
 - [ ] Execute live Google OAuth, initial Admin bootstrap, logout, unauthorized Admin, and cross-customer pgTAP verification
 
@@ -189,7 +190,7 @@ Do not begin without explicit approval.
 
 - [ ] Add test environment variables
 - [ ] Create server-only PayMongo helper
-- [ ] Create pending payment orders
+- [x] Create pending payment orders through the Phase 9 atomic checkout writer
 - [ ] Create checkout/payment session
 - [ ] Add signed webhook endpoint
 - [ ] Store provider references
