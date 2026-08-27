@@ -24,8 +24,17 @@ create table public.profiles (
   email text not null,
   mobile_number text,
   role public.profile_role not null default 'customer',
+  deletion_requested_at timestamptz,
+  deletion_scheduled_for timestamptz,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint profiles_deletion_schedule_consistent check (
+    (deletion_requested_at is null and deletion_scheduled_for is null)
+    or (
+      deletion_requested_at is not null
+      and deletion_scheduled_for = deletion_requested_at + interval '90 days'
+    )
+  )
 );
 
 create unique index profiles_email_lower_key on public.profiles (lower(email));
@@ -148,7 +157,7 @@ create table public.inventory_adjustments (
 create table public.orders (
   id uuid primary key default gen_random_uuid(),
   order_number text not null unique,
-  user_id uuid not null references public.profiles(id) on delete restrict,
+  user_id uuid references public.profiles(id) on delete set null,
   status public.order_status not null default 'PENDING_PAYMENT',
   payment_status public.payment_status not null default 'PENDING',
   customer_name text not null,
@@ -300,7 +309,7 @@ create table public.notification_deliveries (
 
 create table public.reviews (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles(id) on delete restrict,
+  user_id uuid references public.profiles(id) on delete set null,
   order_id uuid not null unique references public.orders(id) on delete restrict,
   display_name_snapshot text not null,
   rating integer not null check (rating between 1 and 5),
@@ -394,6 +403,8 @@ create index addons_catalog_idx on public.addons (is_active);
 create index pickup_dates_open_idx on public.pickup_dates (pickup_date) where is_open;
 create index pickup_windows_date_idx on public.pickup_windows (pickup_date_id, is_open, sort_order);
 create index daily_inventory_availability_idx on public.daily_inventory (pickup_date, is_available);
+create index profiles_deletion_due_idx on public.profiles (deletion_scheduled_for)
+  where deletion_scheduled_for is not null;
 create index orders_user_created_idx on public.orders (user_id, created_at desc);
 create index orders_status_created_idx on public.orders (status, created_at desc);
 create index orders_pickup_date_idx on public.orders (pickup_date, status);
@@ -518,6 +529,152 @@ begin
 end;
 $$;
 
+create or replace function public.request_account_deletion()
+returns timestamptz
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  requesting_user_id uuid := (select auth.uid());
+  requested_at_value timestamptz := now();
+  scheduled_for_value timestamptz;
+begin
+  if requesting_user_id is null then
+    raise exception 'Authentication is required';
+  end if;
+
+  if exists (
+    select 1 from public.profiles
+    where id = requesting_user_id and role = 'admin'
+  ) then
+    raise exception 'Admin accounts require controlled removal';
+  end if;
+
+  if exists (
+    select 1 from public.orders
+    where user_id = requesting_user_id
+      and status in (
+        'PENDING_PAYMENT', 'PAID', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP'
+      )
+  ) or exists (
+    select 1
+    from public.refunds
+    join public.orders on orders.id = refunds.order_id
+    where orders.user_id = requesting_user_id
+      and refunds.status in ('REQUESTED', 'PROCESSING')
+  ) then
+    raise exception 'Account deletion is unavailable while orders or refunds are active';
+  end if;
+
+  update public.profiles
+  set deletion_requested_at = coalesce(deletion_requested_at, requested_at_value),
+      deletion_scheduled_for = coalesce(
+        deletion_scheduled_for,
+        requested_at_value + interval '90 days'
+      ),
+      updated_at = now()
+  where id = requesting_user_id
+  returning deletion_scheduled_for into scheduled_for_value;
+
+  if scheduled_for_value is null then
+    raise exception 'Authenticated profile was not found';
+  end if;
+
+  return scheduled_for_value;
+end;
+$$;
+
+create or replace function public.cancel_account_deletion()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  requesting_user_id uuid := (select auth.uid());
+begin
+  if requesting_user_id is null then
+    raise exception 'Authentication is required';
+  end if;
+
+  update public.profiles
+  set deletion_requested_at = null,
+      deletion_scheduled_for = null,
+      updated_at = now()
+  where id = requesting_user_id;
+
+  if not found then
+    raise exception 'Authenticated profile was not found';
+  end if;
+end;
+$$;
+
+create or replace function public.prepare_account_for_deletion(target_user_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_role public.profile_role;
+  target_due_at timestamptz;
+begin
+  select role, deletion_scheduled_for
+  into target_role, target_due_at
+  from public.profiles
+  where id = target_user_id
+  for update;
+
+  if target_role is null or target_role = 'admin'
+    or target_due_at is null or target_due_at > now() then
+    return false;
+  end if;
+
+  if exists (
+    select 1 from public.orders
+    where user_id = target_user_id
+      and status in (
+        'PENDING_PAYMENT', 'PAID', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP'
+      )
+  ) or exists (
+    select 1
+    from public.refunds
+    join public.orders on orders.id = refunds.order_id
+    where orders.user_id = target_user_id
+      and refunds.status in ('REQUESTED', 'PROCESSING')
+  ) then
+    return false;
+  end if;
+
+  delete from public.manual_refund_destinations
+  using public.refunds, public.orders
+  where manual_refund_destinations.refund_id = refunds.id
+    and refunds.order_id = orders.id
+    and orders.user_id = target_user_id;
+
+  delete from public.reviews where user_id = target_user_id;
+
+  update public.notification_deliveries
+  set user_id = null,
+      recipient_email = 'deleted-account@tsokolitaw.invalid',
+      last_error = null,
+      updated_at = now()
+  where user_id = target_user_id;
+
+  update public.orders
+  set user_id = null,
+      customer_name = 'Deleted customer',
+      customer_email = 'deleted-account@tsokolitaw.invalid',
+      customer_mobile = null,
+      customer_notes = null,
+      updated_at = now()
+  where user_id = target_user_id;
+
+  return true;
+end;
+$$;
+
 do $$
 declare
   target_table text;
@@ -576,6 +733,9 @@ alter default privileges for role postgres in schema public revoke all on functi
 grant usage on schema public to anon, authenticated;
 grant execute on function public.is_admin() to anon, authenticated;
 grant execute on function public.promote_admin_by_email(text) to service_role;
+grant execute on function public.request_account_deletion() to authenticated;
+grant execute on function public.cancel_account_deletion() to authenticated;
+grant execute on function public.prepare_account_for_deletion(uuid) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
   public.pickup_locations, public.pickup_dates, public.pickup_windows,
@@ -719,5 +879,11 @@ grant select on public.daily_inventory, public.inventory_adjustments,
 
 comment on function public.promote_admin_by_email(text) is
   'Service-role-only bootstrap. Call after the approved Google identity has signed in and created a profile.';
+comment on function public.request_account_deletion() is
+  'Schedules the authenticated customer account for deletion after a fixed 90-day grace period.';
+comment on function public.cancel_account_deletion() is
+  'Cancels the authenticated customer account deletion request during its grace period.';
+comment on function public.prepare_account_for_deletion(uuid) is
+  'Service-role-only processor that deletes restricted refund destinations and anonymizes retained commerce data before Auth user deletion.';
 comment on table public.manual_refund_destinations is
   'Restricted fallback data used only after an automatic PayMongo refund is unsupported or fails.';

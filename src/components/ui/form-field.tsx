@@ -10,6 +10,8 @@ import { cn } from "@/lib/cn";
 const controlClassName =
   "w-full rounded-control border border-transparent bg-surface-control px-4 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-subtle-foreground focus:border-focus focus:ring-2 focus:ring-focus/20 disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-danger-foreground aria-invalid:ring-2 aria-invalid:ring-danger-foreground/15";
 
+export const inputClassName = controlClassName;
+
 interface FieldPresentationProps {
   id: string;
   label: string;
