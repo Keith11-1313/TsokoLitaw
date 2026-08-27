@@ -1,6 +1,29 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
+set local role postgres;
+do $$
+declare
+  pgtap_schema text;
+begin
+  select pg_namespace.nspname into pgtap_schema
+  from pg_extension
+  join pg_namespace on pg_namespace.oid = pg_extension.extnamespace
+  where pg_extension.extname = 'pgtap';
+  execute format('grant usage on schema %I to %I', pgtap_schema, session_user);
+end;
+$$;
+set local role postgres;
+select set_config(
+  'search_path',
+  (
+    select quote_ident(pg_namespace.nspname) || ',public'
+    from pg_extension
+    join pg_namespace on pg_namespace.oid = pg_extension.extnamespace
+    where pg_extension.extname = 'pgtap'
+  ),
+  true
+);
 select plan(17);
 
 insert into auth.users (

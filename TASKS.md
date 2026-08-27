@@ -195,8 +195,8 @@ Do not begin without explicit approval.
 - [x] Add the test-mode signed webhook endpoint and raw-body signature verification
 - [x] Add locally validated service-only payment initialization and immutable provider-reference persistence
 - [x] Enforce atomic webhook idempotency and exact order/reference/amount matching
-- [ ] Apply the Phase 10 payment schema upgrade to hosted development
-- [ ] Deploy and register the test webhook endpoint, then configure its signing secret
+- [x] Apply and validate the Phase 10 payment schema upgrade on hosted development
+- [x] Deploy and register the test webhook endpoint, then configure its signing secret
 - [ ] Handle success, failure, refund, and 15-minute expiry
 - [ ] Implement full original-method refunds and verified refund webhooks
 - [ ] Track refund state separately from order cancellation
@@ -247,7 +247,9 @@ Do not begin without explicit approval.
 - [ ] Test login, callback, token refresh, logout, customer route protection, and Admin authorization on the production domain
 - [ ] Retain the default Supabase callback during migration until the branded callback is verified
 - [ ] Configure `admin.tsokolitaw.com` if approved
-- [ ] Configure production OAuth and PayMongo webhook URLs
+- [ ] Replace the temporary `tsokolitaw.vercel.app` PayMongo webhook with the canonical `https://tsokolitaw.com/api/webhooks/paymongo` endpoint after the custom domain is live
+- [ ] Configure the new custom-domain PayMongo signing secret in Vercel, redeploy, and verify a signed test delivery before disabling the Vercel-domain webhook
+- [ ] Configure production OAuth and remaining PayMongo URLs
 - [ ] Switch to live keys only after test-mode sign-off
 - [ ] Choose one canonical production origin (`https://tsokolitaw.com` or `https://www.tsokolitaw.com`) and permanently redirect every alternate HTTP/HTTPS host to it
 - [ ] Audit unique page titles, descriptions, canonical URLs, favicons, Open Graph images, and social-sharing metadata on every public route

@@ -1,6 +1,29 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
+set local role postgres;
+do $$
+declare
+  pgtap_schema text;
+begin
+  select pg_namespace.nspname into pgtap_schema
+  from pg_extension
+  join pg_namespace on pg_namespace.oid = pg_extension.extnamespace
+  where pg_extension.extname = 'pgtap';
+  execute format('grant usage on schema %I to %I', pgtap_schema, session_user);
+end;
+$$;
+set local role postgres;
+select set_config(
+  'search_path',
+  (
+    select quote_ident(pg_namespace.nspname) || ',public'
+    from pg_extension
+    join pg_namespace on pg_namespace.oid = pg_extension.extnamespace
+    where pg_extension.extname = 'pgtap'
+  ),
+  true
+);
 select plan(29);
 
 insert into auth.users (
@@ -87,7 +110,7 @@ select throws_ok(
   'customer with an active order cannot schedule deletion'
 );
 
-reset role;
+set local role postgres;
 select set_config('request.jwt.claim.sub', '91000000-0000-4000-8000-000000000004', true);
 set local role authenticated;
 
@@ -127,7 +150,7 @@ select is(
   'cancelling clears the deletion schedule'
 );
 
-reset role;
+set local role postgres;
 select is(
   (
     select was_created
@@ -286,12 +309,25 @@ select is(
   'inactive customer cannot read their retained profile'
 );
 
-reset role;
+set local role postgres;
 select set_config('request.jwt.claim.sub', '91000000-0000-4000-8000-000000000003', true);
 set local role authenticated;
 
 select ok(public.is_admin(), 'approved admin satisfies the server-side role check');
-select is((select count(*) from public.orders), 5::bigint, 'approved admin can read customer orders');
+select is(
+  (
+    select count(*)
+    from public.orders
+    where user_id in (
+      '91000000-0000-4000-8000-000000000001',
+      '91000000-0000-4000-8000-000000000002',
+      '91000000-0000-4000-8000-000000000003',
+      '91000000-0000-4000-8000-000000000004'
+    )
+  ),
+  5::bigint,
+  'approved admin can read customer orders'
+);
 select throws_ok(
   $$select public.request_account_deletion()$$,
   'P0001',
