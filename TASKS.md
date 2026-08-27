@@ -240,4 +240,16 @@ Do not begin without explicit approval.
 - [ ] Configure `admin.tsokolitaw.com` if approved
 - [ ] Configure production OAuth and PayMongo webhook URLs
 - [ ] Switch to live keys only after test-mode sign-off
+- [ ] Choose one canonical production origin (`https://tsokolitaw.com` or `https://www.tsokolitaw.com`) and permanently redirect every alternate HTTP/HTTPS host to it
+- [ ] Audit unique page titles, descriptions, canonical URLs, favicons, Open Graph images, and social-sharing metadata on every public route
+- [ ] Mark private and transactional routes such as Admin, Profile, Orders, Checkout, Auth, Payment, and API endpoints as non-indexable
+- [ ] Generate production `robots.txt` and a root `sitemap.xml` containing only canonical public URLs with absolute production links
+- [ ] Add truthful Organization or eligible Local Business structured data for TsokoLitaw and validate it with Google Rich Results Test
+- [ ] Run Lighthouse and production Core Web Vitals checks on Home, Our Creations, Journal, Terms, and Privacy before allowing indexing
+- [ ] Create and DNS-verify the `tsokolitaw.com` domain property in Google Search Console
+- [ ] Submit `https://tsokolitaw.com/sitemap.xml` in Google Search Console after the canonical domain is live
+- [ ] Inspect the Home, Our Creations, and Journal URLs in Search Console and request initial indexing after confirming they return public `200` responses
+- [ ] Check Search Console indexing, crawl, HTTPS, structured-data, Core Web Vitals, security, and manual-action reports after launch
+- [ ] Monitor search queries, indexed pages, sitemap status, and crawl errors during the first weeks, then correct metadata or technical SEO issues without keyword stuffing
+- [ ] Assess Google Business Profile eligibility separately; create one only if TsokoLitaw meets Google's real-world business/location requirements
 - [ ] Complete final smoke test and policy verification
