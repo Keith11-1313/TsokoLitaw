@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/admin-shell";
-import { AdminScopeNote } from "@/components/admin/admin-scope-note";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { OrderManagementTable } from "@/components/admin/order-management-table";
 import { AdminContent } from "@/components/layout/admin-content";
@@ -44,9 +43,7 @@ export default async function AdminOrdersPage() {
           </div>
         </header>
 
-        <div className="mt-6"><AdminScopeNote purpose="Review paid orders and move them through campus pickup fulfillment." customerImpact="Status changes appear in My Orders and determine when a completed order can be reviewed." currentConnection="Connected to real order snapshots. Fulfillment changes are saved, customer-visible, and audited." connected /></div>
-
-        <section className="mt-[1.9375rem] grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Order summary">
+        <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Order summary">
           {orderStats.map((stat) => (
             <AdminStatCard key={stat.label} compact {...stat} />
           ))}
