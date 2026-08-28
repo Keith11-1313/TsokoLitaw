@@ -139,7 +139,7 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
     id: coating.id,
     name: coating.name,
     description: coating.description,
-    imageSrc: coating.image_url ?? "/images/products/coatings/plain.jpeg",
+    imageSrc: coating.image_url ?? "/brand/logo.png",
     additionalTypePrice: asMoney(coating.additional_type_price),
     tone: coatingTones[coating.slug] ?? "plain",
   }));

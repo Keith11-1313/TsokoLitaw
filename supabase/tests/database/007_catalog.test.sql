@@ -24,7 +24,7 @@ select lives_ok($$select public.update_catalog_product('e2000000-0000-4000-8000-
 select is((select price_per_piece from public.products where id='10000000-0000-4000-8000-000000000001'),12.00::numeric,'product price persisted');
 select lives_ok($$select public.update_catalog_variant('e2000000-0000-4000-8000-000000000001','11000000-0000-4000-8000-000000000006',false)$$,'admin hides approved variant');
 select is((select is_active from public.product_variants where id='11000000-0000-4000-8000-000000000006'),false,'variant availability persisted');
-select lives_ok($$select public.upsert_catalog_coating('e2000000-0000-4000-8000-000000000001',null,'Toasted Coconut','A toasted coconut coating for the filled base.','/images/products/coatings/plain.jpeg',7,true,true,'Contains coconut.')$$,'admin creates coating');
+select lives_ok($$select public.upsert_catalog_coating('e2000000-0000-4000-8000-000000000001',null,'Toasted Coconut','A toasted coconut coating for the filled base.','https://example.test/coating.jpeg',7,true,true,'Contains coconut.')$$,'admin creates coating');
 select is((select additional_type_price from public.coatings where name='Toasted Coconut'),7.00::numeric,'coating price persisted');
 select lives_ok($$select public.update_catalog_addon('e2000000-0000-4000-8000-000000000001','13000000-0000-4000-8000-000000000001',20,true)$$,'admin updates add-on');
 select is((select count(*)::integer from public.admin_audit_logs where action like 'catalog.%'),4,'catalog mutations are audited');

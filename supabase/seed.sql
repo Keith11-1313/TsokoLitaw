@@ -55,13 +55,13 @@ insert into public.coatings (
   sort_order
 )
 values
-  ('12000000-0000-4000-8000-000000000001', 'Cocoa', 'cocoa', 'A rich cocoa coating over the chocolate-filled base.', '/images/products/coatings/cocoa.jpeg', 5.00, true, false, 'Contains chocolate ingredients.', 1),
-  ('12000000-0000-4000-8000-000000000002', 'Milk', 'milk', 'A creamy milk coating with a soft, mellow finish.', '/images/products/coatings/milk.jpeg', 5.00, true, true, 'Contains dairy.', 2),
-  ('12000000-0000-4000-8000-000000000003', 'Palitaw', 'palitaw', 'A combination of sugar, niyog, and sesame seeds.', '/images/products/coatings/palitaw.jpeg', 5.00, true, true, 'Contains coconut and sesame.', 3),
-  ('12000000-0000-4000-8000-000000000004', 'Crushed Nuts', 'crushed-nuts', 'A crunchy crushed-nut coating for added texture.', '/images/products/coatings/crushed-nuts.jpeg', 5.00, true, true, 'Contains peanuts or other nuts.', 4),
-  ('12000000-0000-4000-8000-000000000005', 'Plain', 'plain', 'The soft Litaw exterior with no additional coating.', '/images/products/coatings/plain.jpeg', 5.00, true, false, null, 5),
-  ('12000000-0000-4000-8000-000000000006', 'Sesame Seeds', 'sesame-seeds', 'A toasted sesame seed coating with a nutty aroma.', '/images/products/coatings/sesame-seeds.jpeg', 5.00, true, true, 'Contains sesame.', 6),
-  ('12000000-0000-4000-8000-000000000007', 'Cookies and Cream', 'cookies-and-cream', 'Crushed chocolate cookies blended with a creamy coating.', '/images/products/coatings/cookies-and-cream.jpeg', 5.00, true, true, 'Contains dairy and cookie ingredients.', 7)
+  ('12000000-0000-4000-8000-000000000001', 'Cocoa', 'cocoa', 'A rich cocoa coating over the chocolate-filled base.', null, 5.00, true, false, 'Contains chocolate ingredients.', 1),
+  ('12000000-0000-4000-8000-000000000002', 'Milk', 'milk', 'A creamy milk coating with a soft, mellow finish.', null, 5.00, true, true, 'Contains dairy.', 2),
+  ('12000000-0000-4000-8000-000000000003', 'Palitaw', 'palitaw', 'A combination of sugar, niyog, and sesame seeds.', null, 5.00, true, true, 'Contains coconut and sesame.', 3),
+  ('12000000-0000-4000-8000-000000000004', 'Crushed Nuts', 'crushed-nuts', 'A crunchy crushed-nut coating for added texture.', null, 5.00, true, true, 'Contains peanuts or other nuts.', 4),
+  ('12000000-0000-4000-8000-000000000005', 'Plain', 'plain', 'The soft Litaw exterior with no additional coating.', null, 5.00, true, false, null, 5),
+  ('12000000-0000-4000-8000-000000000006', 'Sesame Seeds', 'sesame-seeds', 'A toasted sesame seed coating with a nutty aroma.', null, 5.00, true, true, 'Contains sesame.', 6),
+  ('12000000-0000-4000-8000-000000000007', 'Cookies and Cream', 'cookies-and-cream', 'Crushed chocolate cookies blended with a creamy coating.', null, 5.00, true, true, 'Contains dairy and cookie ingredients.', 7)
 on conflict (id) do update set
   name = excluded.name,
   slug = excluded.slug,

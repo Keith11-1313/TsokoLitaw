@@ -100,7 +100,7 @@ Admin stays under `/admin` until subdomain configuration is explicitly authorize
 - Use Lucide React for missing simple icons.
 - Do not add another icon library without a strong reason.
 - Logo: `public/brand/logo.png`.
-- Coating photos: `public/images/products/coatings/`.
+- Coating photos: Supabase `catalog-media`, referenced by each coating's persisted `image_url`.
 - Home feature media: `public/images/home/` and `public/videos/home/`.
 - New coating images use a square 1:1 presentation and must be validated before future upload.
 - Use local placeholders only when a real asset is unavailable.

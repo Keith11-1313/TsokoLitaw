@@ -172,7 +172,7 @@ Every admin area should explain its purpose, customer impact, and current connec
 
 ## 6. Product Presentation
 
-Real coating photography lives in `public/images/products/coatings/`.
+Real coating photography lives in the Supabase `catalog-media` bucket and is selected through the persisted catalog.
 
 Product cards should:
 

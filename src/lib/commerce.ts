@@ -21,17 +21,7 @@ export function createBoxVariants(piecePrice: number): readonly BoxVariant[] {
 
 export const BOX_VARIANTS = createBoxVariants(INITIAL_PIECE_PRICE);
 
-export const COATINGS: readonly Coating[] = [
-  { id: "cocoa", name: "Cocoa", description: "A rich cocoa coating over the chocolate-filled base.", imageSrc: "/images/products/coatings/cocoa.jpeg", additionalTypePrice: 5, tone: "cocoa-coating" },
-  { id: "milk", name: "Milk", description: "A creamy milk coating with a soft, mellow finish.", imageSrc: "/images/products/coatings/milk.jpeg", additionalTypePrice: 5, tone: "milk" },
-  { id: "palitaw", name: "Palitaw", description: "A combination of sugar, niyog, and sesame seeds.", imageSrc: "/images/products/coatings/palitaw.jpeg", additionalTypePrice: 5, tone: "palitaw" },
-  { id: "crushed-nuts", name: "Crushed Nuts", description: "A crunchy crushed-nut coating for added texture.", imageSrc: "/images/products/coatings/crushed-nuts.jpeg", additionalTypePrice: 5, tone: "nuts" },
-  { id: "plain", name: "Plain", description: "The soft Litaw exterior with no additional coating.", imageSrc: "/images/products/coatings/plain.jpeg", additionalTypePrice: 5, tone: "plain" },
-  { id: "sesame", name: "Sesame Seeds", description: "A toasted sesame seed coating with a nutty aroma.", imageSrc: "/images/products/coatings/sesame-seeds.jpeg", additionalTypePrice: 5, tone: "sesame" },
-  { id: "cookies-cream", name: "Cookies and Cream", description: "Crushed chocolate cookies blended with a creamy coating.", imageSrc: "/images/products/coatings/cookies-and-cream.jpeg", additionalTypePrice: 5, tone: "cookies-cream" },
-];
-
-export const INITIAL_EXTRA_COATING_PRICE = COATINGS[0].additionalTypePrice;
+export const INITIAL_EXTRA_COATING_PRICE = 5;
 export const EXTRA_SAUCE_PRICE = 18;
 
 export function calculateExtraCoatingCharge(

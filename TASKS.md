@@ -260,6 +260,7 @@ Do not begin without explicit approval.
 - [ ] Switch the Vercel function region from `sin1` to `icn1` when the Seoul production Supabase project becomes active
 - [ ] Review provider timeouts and idempotent retry behavior before PayMongo live mode
 - [ ] Deploy production configuration to Vercel
+- [ ] Copy approved coating assets from the Dev `catalog-media` bucket to production Storage and update production coating `image_url` values
 - [ ] Connect `tsokolitaw.com`
 - [ ] Create a different production `CRON_SECRET` and configure the same value in Vercel Production and the production Supabase Vault
 - [ ] Store the canonical `https://tsokolitaw.com` origin as `tsokolitaw_site_url` in the production Supabase Vault

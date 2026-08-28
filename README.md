@@ -361,7 +361,7 @@ The PayMongo webhook endpoint must subscribe to `checkout_session.payment.paid`,
 ## Assets and References
 
 - The current logo is stored in `public/brand/logo.png` and is also used for the favicon.
-- Product photos are stored in `public/images/products/coatings/`.
+- Coating photos are stored in the Supabase `catalog-media` bucket and fetched through each coating's database `image_url`.
 - Supplied Home promotional media is stored in `public/images/home/` and `public/videos/home/`.
 - PNG files in `references/` are retained as early visual direction and project history.
 - References must not be embedded as pages and are no longer pixel-perfect implementation requirements.

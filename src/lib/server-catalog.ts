@@ -57,7 +57,7 @@ export async function getAdminCatalog() {
   };
   const coatings: AdminCatalogCoating[] = (coatingsResult.data ?? []).map((coating) => ({
     id: coating.id, name: coating.name, description: coating.description,
-    imageUrl: coating.image_url ?? "/images/products/coatings/plain.jpeg",
+    imageUrl: coating.image_url ?? "/brand/logo.png",
     additionalTypePrice: Number(coating.additional_type_price), isActive: coating.is_active,
     isAllergen: coating.is_allergen, allergenNote: coating.allergen_note ?? "", sortOrder: coating.sort_order,
   }));
