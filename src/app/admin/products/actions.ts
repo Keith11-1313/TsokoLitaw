@@ -4,7 +4,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { isUuid } from "@/lib/identifiers";
 import {
-  saveCatalogCoating, updateCatalogAddon, updateCatalogProduct,
+  saveCatalogAddon, saveCatalogCoating, updateCatalogProduct,
   updateCatalogVariant, uploadCatalogImage,
 } from "@/lib/server-catalog";
 import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
@@ -86,13 +86,15 @@ export async function saveCoatingAction(_state: CatalogActionState, formData: Fo
 
 export async function saveAddonAction(_state: CatalogActionState, formData: FormData): Promise<CatalogActionState> {
   const admin = await requireAdmin("/admin/products");
-  const addonId = String(formData.get("addonId") ?? "");
+  const addonIdValue = String(formData.get("addonId") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim();
   const price = Number(formData.get("price"));
-  if (!isUuid(addonId) || !Number.isFinite(price) || price < 0 || price > 10000) return { status: "error", message: "Enter a valid add-on price." };
+  if ((addonIdValue && !isUuid(addonIdValue)) || name.length < 2 || name.length > 80
+    || !Number.isFinite(price) || price < 0 || price > 10000) return { status: "error", message: "Enter a valid add-on name and price." };
   try {
     await guard(admin.id);
-    await updateCatalogAddon({ adminId: admin.id, addonId, price, isActive: formData.get("isActive") === "on" });
+    await saveCatalogAddon({ adminId: admin.id, addonId: addonIdValue || null, name, price, isActive: formData.get("isActive") === "on" });
     refreshCatalog();
-    return { status: "success", message: "Add-on pricing and availability saved." };
+    return { status: "success", message: "Add-on saved to the customer catalog." };
   } catch (error) { return failure(error, "Add-on settings could not be saved."); }
 }

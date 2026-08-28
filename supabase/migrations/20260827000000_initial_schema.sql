@@ -1902,32 +1902,51 @@ begin
 end;
 $$;
 
-create or replace function public.update_catalog_addon(
+drop function if exists public.update_catalog_addon(uuid, uuid, numeric, boolean);
+
+create or replace function public.upsert_catalog_addon(
   target_admin_id uuid,
   target_addon_id uuid,
+  name_value text,
   price_value numeric,
   active_value boolean
 )
-returns boolean
+returns uuid
 language plpgsql
 security definer
 set search_path = ''
 as $$
 declare
+  saved_id uuid := coalesce(target_addon_id, gen_random_uuid());
   target_addon public.addons%rowtype;
+  normalized_name text := trim(name_value);
+  generated_slug text;
+  audit_action text;
 begin
   if not exists (select 1 from public.profiles where id = target_admin_id and role = 'admin' and is_active) then
     raise exception 'Active administrator access is required';
   end if;
+  if length(normalized_name) < 2 or length(normalized_name) > 80 then raise exception 'Add-on name must contain between 2 and 80 characters'; end if;
   if price_value is null or price_value < 0 or price_value > 10000 then raise exception 'Add-on price is invalid'; end if;
-  select * into target_addon from public.addons where id = target_addon_id for update;
-  if target_addon.id is null then raise exception 'Add-on was not found'; end if;
-  update public.addons set price = price_value, is_active = active_value, updated_at = now() where id = target_addon_id;
+
+  if target_addon_id is null then
+    generated_slug := trim(both '-' from regexp_replace(lower(normalized_name), '[^a-z0-9]+', '-', 'g')) || '-' || left(saved_id::text, 8);
+    insert into public.addons (id, name, slug, price, is_active)
+    values (saved_id, normalized_name, generated_slug, price_value, active_value);
+    audit_action := 'catalog.addon_created';
+  else
+    select * into target_addon from public.addons where id = target_addon_id for update;
+    if target_addon.id is null then raise exception 'Add-on was not found'; end if;
+    update public.addons
+    set name = normalized_name, price = price_value, is_active = active_value, updated_at = now()
+    where id = target_addon_id;
+    audit_action := 'catalog.addon_updated';
+  end if;
+
   insert into public.admin_audit_logs (admin_id, action, entity_type, entity_id, metadata)
-  values (target_admin_id, 'catalog.addon_updated', 'addon', target_addon_id::text,
-    jsonb_build_object('previous_price', target_addon.price, 'price', price_value,
-      'previous_active', target_addon.is_active, 'active', active_value));
-  return true;
+  values (target_admin_id, audit_action, 'addon', saved_id::text,
+    jsonb_build_object('name', normalized_name, 'price', price_value, 'active', active_value));
+  return saved_id;
 end;
 $$;
 
@@ -2635,7 +2654,7 @@ grant execute on function public.update_catalog_variant(uuid, uuid, boolean) to 
 grant execute on function public.upsert_catalog_coating(
   uuid, uuid, text, text, text, numeric, boolean, boolean, text
 ) to service_role;
-grant execute on function public.update_catalog_addon(uuid, uuid, numeric, boolean) to service_role;
+grant execute on function public.upsert_catalog_addon(uuid, uuid, text, numeric, boolean) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
   public.pickup_locations, public.pickup_dates, public.pickup_windows,
@@ -2845,7 +2864,7 @@ comment on function public.update_catalog_variant(uuid, uuid, boolean) is
   'Service-role-only audited availability update for approved 4, 6, and 8 piece boxes.';
 comment on function public.upsert_catalog_coating(uuid, uuid, text, text, text, numeric, boolean, boolean, text) is
   'Service-role-only audited coating create or update used by the public builder and checkout.';
-comment on function public.update_catalog_addon(uuid, uuid, numeric, boolean) is
-  'Service-role-only audited add-on price and availability update.';
+comment on function public.upsert_catalog_addon(uuid, uuid, text, numeric, boolean) is
+  'Service-role-only audited add-on create or update used by the public builder and checkout.';
 comment on table public.manual_refund_destinations is
   'Restricted fallback data used only after an automatic PayMongo refund is unsupported or fails.';

@@ -95,9 +95,10 @@ export async function saveCatalogCoating(input: {
   if (error) throw new Error("Coating could not be saved.", { cause: error });
 }
 
-export async function updateCatalogAddon(input: { adminId: string; addonId: string; price: number; isActive: boolean }) {
-  const { error } = await createAdminSupabaseClient().rpc("update_catalog_addon", {
-    target_admin_id: input.adminId, target_addon_id: input.addonId, price_value: input.price, active_value: input.isActive,
+export async function saveCatalogAddon(input: { adminId: string; addonId: string | null; name: string; price: number; isActive: boolean }) {
+  const { error } = await createAdminSupabaseClient().rpc("upsert_catalog_addon", {
+    target_admin_id: input.adminId, target_addon_id: input.addonId, name_value: input.name,
+    price_value: input.price, active_value: input.isActive,
   });
   if (error) throw new Error("Add-on settings could not be saved.", { cause: error });
 }

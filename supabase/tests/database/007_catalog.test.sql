@@ -10,7 +10,7 @@ begin
 end;
 $$;
 select set_config('search_path', (select quote_ident(pg_namespace.nspname) || ',public' from pg_extension join pg_namespace on pg_namespace.oid = pg_extension.extnamespace where pg_extension.extname = 'pgtap'), true);
-select plan(12);
+select plan(13);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at) values
   ('e2000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','catalog-admin@example.test','{"provider":"google","providers":["google"]}','{"name":"Catalog Admin"}',now(),now()),
@@ -26,8 +26,9 @@ select lives_ok($$select public.update_catalog_variant('e2000000-0000-4000-8000-
 select is((select is_active from public.product_variants where id='11000000-0000-4000-8000-000000000006'),false,'variant availability persisted');
 select lives_ok($$select public.upsert_catalog_coating('e2000000-0000-4000-8000-000000000001',null,'Toasted Coconut','A toasted coconut coating for the filled base.','https://example.test/coating.jpeg',7,true,true,'Contains coconut.')$$,'admin creates coating');
 select is((select additional_type_price from public.coatings where name='Toasted Coconut'),7.00::numeric,'coating price persisted');
-select lives_ok($$select public.update_catalog_addon('e2000000-0000-4000-8000-000000000001','13000000-0000-4000-8000-000000000001',20,true)$$,'admin updates add-on');
-select is((select count(*)::integer from public.admin_audit_logs where action like 'catalog.%'),4,'catalog mutations are audited');
+select lives_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001','13000000-0000-4000-8000-000000000001','Extra sea salt cream',20,true)$$,'admin updates add-on');
+select lives_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001',null,'Gift note',3,true)$$,'admin creates add-on');
+select is((select count(*)::integer from public.admin_audit_logs where action like 'catalog.%'),5,'catalog mutations are audited');
 select ok((select public and file_size_limit=3145728 from storage.buckets where id='catalog-media'),'catalog media bucket is public and size-limited');
 
 select * from finish();
