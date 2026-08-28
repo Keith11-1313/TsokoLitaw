@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays, LoaderCircle, MapPin, PackageOpen } from "lucide-react";
+import { CalendarDays, MapPin, PackageOpen } from "lucide-react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/cn";
@@ -109,9 +109,9 @@ export function OrdersList({ orders }: { orders: CustomerOrderSummary[] }) {
                     }
                     setOpeningOrderId(order.id);
                   }}
-                  className="inline-flex min-h-11 min-w-32 items-center justify-center gap-2 rounded-full border border-brand px-5 text-sm font-bold text-brand transition-opacity aria-disabled:pointer-events-none aria-disabled:opacity-60"
+                  className="inline-flex min-h-11 min-w-32 items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand transition-opacity aria-disabled:pointer-events-none aria-disabled:opacity-60"
                 >
-                  {openingOrderId === order.id ? <><LoaderCircle aria-hidden="true" className="animate-spin" size={17} />Opening…</> : "View order"}
+                  {openingOrderId === order.id ? "Opening…" : "View order"}
                 </Link>
               </div>
             </li>
