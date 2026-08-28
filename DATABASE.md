@@ -573,6 +573,20 @@ Possible keys:
 
 Do not store provider secrets or the fixed TsokoLitaw brand identity here.
 
+### `mutation_rate_limit_buckets`
+
+```text
+bucket_key_hash text
+window_started_at timestamptz
+request_count integer
+updated_at timestamptz
+primary key (bucket_key_hash, window_started_at)
+```
+
+Expensive customer mutations use this table as a distributed fixed-window limiter shared by every Vercel instance. The application sends SHA-256 hashes for the authenticated user and request IP; raw user identifiers and IP addresses are never stored in the bucket. `consume_mutation_rate_limit` performs the increment and decision atomically and is executable only by `service_role`. RLS is enabled with no anonymous or authenticated table access. The daily trusted account-deletion job also invokes the service-only prune function to remove buckets older than two days.
+
+Rate limiting is backpressure, not an authorization boundary. Every mutation must still enforce authentication, ownership, valid state transitions, idempotency, and database constraints.
+
 ## 15. RLS and Authorization
 
 Customers may:

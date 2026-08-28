@@ -82,9 +82,20 @@ Phase 10 payment foundation completed so far:
 Phase 11 customer-order work started by product-owner request:
 
 - My Orders now loads only the authenticated profile's persisted order snapshots
+- My Orders loads at most 20 records through one RLS-scoped nested query and uses stable cursor pagination for older history
+- order detail loads its owned order graph and latest refund through one RLS-scoped nested query
 - All, Received, Preparing, Ready for pickup, and Completed filters organize real statuses without changing them in the browser
 - order details now load only the authenticated customer's immutable snapshots and show cancellation/refund eligibility
 - completed-order review mutations remain pending
+
+Performance and concurrency hardening implemented for the current storefront:
+
+- shared public catalog previews use a five-minute tagged cache, while published pickup definitions use a 30-second tagged cache
+- authoritative checkout continues to reload live prices, promotions, inventory, capacity, and pickup state
+- checkout, resume-payment, cancellation, and manual-refund mutations use atomic database-backed per-user and per-IP limits shared across Vercel instances
+- structured server timing reports slow commerce/order reads without logging contact details, cookies, tokens, or provider secrets
+- Vercel Fluid compute is enabled and the current linked Singapore development database is paired with the `sin1` function region
+- repeatable k6 smoke and staged 100-concurrent-user scenarios are available under `tests/performance/`; hosted baseline execution is still required
 
 Not yet implemented or externally configured:
 
@@ -266,6 +277,18 @@ npm test
 npm run build
 ```
 
+### Performance validation
+
+Install [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/) separately, deploy the candidate build to staging, and run:
+
+```bash
+$env:BASE_URL="https://your-staging-host.example"
+npm run load:smoke
+npm run load:100
+```
+
+The capacity profile ramps through 10, 25, 50, and 100 virtual users, holds 100 for 10 minutes, and checks for less than 1% unexpected failures and a read p95 below one second. It targets only this storefront; it must not be pointed at production or used to load-test Google, PayMongo, Resend, or another provider. Authenticated route coverage and full instructions are in [`tests/performance/README.md`](tests/performance/README.md).
+
 The route-level loading screen uses Boneyard. After changing its fixture layout while the dev server is running on port 3000, regenerate the responsive bones with:
 
 ```bash
@@ -312,7 +335,7 @@ The bootstrap command reads `INITIAL_ADMIN_EMAIL` and the Supabase secret key fr
 
 ### Account-deletion scheduler
 
-Account-deletion tables and functions are included in the canonical bootstrap schema. Set a strong server-only `CRON_SECRET` in Vercel; `vercel.json` invokes `/api/cron/account-deletions` daily. The endpoint rejects requests without the matching bearer token and deactivates at most 100 eligible due customer profiles per run without deleting their Auth or relational records.
+Account-deletion tables and functions are included in the canonical bootstrap schema. Set a strong server-only `CRON_SECRET` in Vercel; `vercel.json` invokes `/api/cron/account-deletions` daily. The endpoint rejects requests without the matching bearer token, deactivates at most 100 eligible due customer profiles per run without deleting their Auth or relational records, and prunes expired distributed rate-limit buckets.
 
 ### Payment-expiration scheduler
 
@@ -340,6 +363,8 @@ The PayMongo webhook endpoint must subscribe to `checkout_session.payment.paid`,
 ## Deployment
 
 The public GitHub repository can be connected to Vercel. Supabase URL and key values are now required for authenticated pages and must also be configured in Vercel before deployment.
+
+`vercel.json` currently enables Fluid compute and places dynamic functions in `sin1` because the linked development Supabase project is in Singapore. When the Seoul production Supabase project becomes the active database, change the region to `icn1` in the same deployment so dynamic requests do not make an unnecessary cross-region round trip.
 
 Production authentication will use `auth.tsokolitaw.com` through Supabase’s paid custom-domain add-on. The production checklist includes DNS and certificate verification, Google branding and callback updates, Vercel environment changes, and end-to-end authentication/authorization testing. Development continues to use the default Supabase project domain.
 

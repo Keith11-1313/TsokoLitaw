@@ -303,22 +303,15 @@ The default Supabase project domain is accepted for development OAuth. Productio
 
 The V1 target is to remain correct and responsive during a burst of at least 100 concurrent customer requests. Scaling the Vercel function alone is not sufficient: every browser request can fan out into several database requests, so the first priority is to reduce round trips and database work per request. Performance changes must preserve RLS, server-authoritative pricing, atomic inventory, payment verification, and idempotency.
 
-### Current hotspot and first optimization
+### Implemented hot-path optimization
 
-The current authenticated order pages perform multiple sequential Supabase calls after authentication:
+The authenticated customer order pages no longer perform a serial order/item/coating/refund fan-out:
 
-- My Orders loads the profile, orders, order items, and coatings separately.
-- Order detail additionally loads refund state separately.
-- These reads use the privileged client with an application-level `user_id` filter even though they are customer-owned data.
-
-Before broad Admin CRUD begins, replace each page's read fan-out with one ownership-scoped read model:
-
-1. Use the cookie-backed authenticated Supabase client so RLS remains the primary ownership boundary.
-2. Load orders, items, coatings, and the latest refund through one PostgREST nested relation query where practical.
-3. If the nested payload or query plan is inefficient, expose a narrowly scoped authenticated SQL function or a PostgreSQL 15+ `security_invoker` view. It must derive the customer from `(select auth.uid())`, never accept a trusted browser-supplied owner ID, and have pgTAP cross-user denial tests.
-4. Paginate My Orders with a stable `(created_at, id)` cursor and a default page size of 20. Never load an unlimited order history.
-5. Select only fields rendered by the page. Do not return provider payloads, encrypted refund destinations, internal notes, or unused snapshots.
-6. Parallelize only genuinely independent remaining reads. `Promise.all` is not a substitute for removing unnecessary network calls.
+1. My Orders uses the cookie-backed authenticated Supabase client and one RLS-scoped nested PostgREST query for orders, items, and coatings.
+2. Order detail uses one RLS-scoped nested query for its order graph and latest refund state.
+3. My Orders uses a stable `(created_at, id)` cursor with a page size of 20 instead of loading an unlimited history.
+4. Both queries select only rendered snapshot fields and exclude provider payloads, manual refund destinations, and unused internal fields.
+5. If measurement later shows the nested query plan is inefficient, replace it with a narrowly scoped authenticated SQL function or PostgreSQL 15+ `security_invoker` view. It must derive ownership from `(select auth.uid())`, never trust a browser-supplied owner ID, and retain cross-user denial tests.
 
 React `cache()` may continue to deduplicate authentication/profile work inside one server render, but it is request-scoped and is not a shared cache between customers or requests.
 
@@ -331,7 +324,7 @@ React `cache()` may continue to deduplicate authentication/profile work inside o
 | Remaining pickup capacity, ready stock, current prices used for checkout, and promotions used for totals | No authoritative cache | Browser display may be a preview. Every order mutation reloads and validates current database state inside the existing transactional boundary. |
 | Profile, My Orders, order detail, payment, refund, account-deletion state, and Admin data | No shared cache | These are user-specific or sensitive. Use RLS-scoped live reads and request-only memoization where useful. |
 
-Use Next.js `use cache`, `cacheLife`, and `cacheTag` only for deliberately shared read-mostly data. Use `revalidateTag(tag, "max")` when slightly stale public content is acceptable, and an immediate invalidation path when an Admin must read their own publication immediately. Cache keys and values must not contain secrets, payment data, refund destinations, or unnecessary PII. The checkout and webhook paths never trust cached payment, price, inventory, or order state.
+The current implementation uses tagged `unstable_cache` entries for deliberately shared read-mostly catalog previews and published pickup definitions because Cache Components are not enabled. Public catalog previews revalidate after five minutes and published pickup definitions after 30 seconds. Future Admin publication must invalidate the matching tag. If the application later enables Cache Components, these entries may move to `use cache`, `cacheLife`, and `cacheTag`. Cache keys and values must not contain secrets, payment data, refund destinations, or unnecessary PII. Checkout always reloads live catalog, price, inventory, and schedule state; webhook paths never trust cached payment or order state.
 
 ### Database query and index rules
 
@@ -354,6 +347,7 @@ Use Next.js `use cache`, `cacheLife`, and `cacheTag` only for deliberately share
 ### Deployment topology
 
 - Run Vercel Functions in the region closest to the Supabase project. Static assets may remain globally cached, but dynamic server-to-database distance directly affects every uncached request.
+- The linked development Supabase project is in Singapore (`ap-southeast-1`), so the current Vercel configuration uses `sin1`. The planned production Supabase project is in Seoul (`ap-northeast-2`); switch Vercel to `icn1` when that database becomes the active production target. Do not leave the application and database in different Asian regions by accident.
 - Keep the current Supabase Data API/PostgREST client for application reads unless measurement justifies a direct PostgreSQL driver.
 - If a future ORM or direct PostgreSQL client is introduced in Vercel Functions, use Supavisor transaction mode rather than opening unpooled direct connections from each serverless instance.
 - Enable and validate Vercel Fluid compute for the production Node.js deployment when available. It can reduce cold starts and let one instance handle concurrent I/O-bound requests, but it does not replace query optimization or database safeguards.
@@ -396,13 +390,13 @@ If a threshold fails, optimize in this order: remove request fan-out and N+1 wor
 
 ### Implementation sequence
 
-1. **Baseline:** add route/database timing and record warm/cold staging measurements.
-2. **Read consolidation:** convert My Orders and order detail to one RLS-scoped paginated read each.
-3. **Safe caching:** add tagged caching only to public catalog, Journal, legal, and published schedule definitions.
-4. **Runtime controls:** align regions, confirm Fluid compute, add distributed mutation rate limits and provider timeouts.
-5. **Load gate:** add repeatable k6 smoke, ramp, steady, and spike scenarios and enforce the thresholds above before production launch.
+1. **Instrumentation implemented:** structured duration logging wraps the consolidated commerce and order reads. Warm/cold staging measurements remain a release task.
+2. **Read consolidation implemented:** My Orders and order detail use one RLS-scoped nested read each, and order history is cursor-paginated.
+3. **Safe caching implemented:** public catalog previews and published schedule definitions use bounded tagged caches; authoritative checkout data remains live. Journal/legal caching waits for database-backed publication.
+4. **Runtime controls implemented for current scope:** Vercel Fluid compute and the current development region are configured, and expensive customer mutations use an atomic database-backed per-user/per-IP rate limiter. Provider timeout review remains required before live mode.
+5. **Load harness implemented:** repeatable k6 smoke, ramp, 100-user hold, and spike scenarios are in `tests/performance/`. The staging executions and recorded release comparison remain required before production launch.
 
-Research basis: [Next.js caching and tag invalidation](https://nextjs.org/docs/app/api-reference/directives/use-cache), [React request-scoped cache](https://react.dev/reference/react/cache), [Supabase nested relational reads](https://supabase.com/docs/guides/database/joins-and-nesting), [Supabase RLS performance rules](https://supabase.com/docs/guides/database/postgres/row-level-security), [Supabase query optimization](https://supabase.com/docs/guides/database/query-optimization), [Supabase serverless connection pooling](https://supabase.com/docs/guides/database/connecting-to-postgres), [Vercel function regions](https://vercel.com/docs/functions/configuring-functions/region), [Vercel Fluid compute](https://vercel.com/docs/fluid-compute), and [k6 website load-testing guidance](https://grafana.com/docs/k6/latest/testing-guides/load-testing-websites/).
+Research basis: [Next.js shared caching](https://nextjs.org/docs/app/api-reference/functions/unstable_cache), [React request-scoped cache](https://react.dev/reference/react/cache), [Supabase nested relational reads](https://supabase.com/docs/guides/database/joins-and-nesting), [Supabase RLS performance rules](https://supabase.com/docs/guides/database/postgres/row-level-security), [Supabase query optimization](https://supabase.com/docs/guides/database/query-optimization), [Supabase serverless connection pooling](https://supabase.com/docs/guides/database/connecting-to-postgres), [Vercel function regions](https://vercel.com/docs/functions/configuring-functions/region), [Vercel Fluid compute](https://vercel.com/docs/fluid-compute), and [k6 website load-testing guidance](https://grafana.com/docs/k6/latest/testing-guides/load-testing-websites/).
 
 ## 16. Principles
 

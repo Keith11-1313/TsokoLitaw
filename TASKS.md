@@ -238,7 +238,17 @@ Do not begin without explicit approval.
 - [ ] Review RLS and admin authorization
 - [ ] Test price, stock, order, and webhook tampering
 - [ ] Review secret exposure and logging
-- [ ] Add rate limiting where appropriate
+- [x] Consolidate My Orders and order detail into RLS-scoped nested reads
+- [x] Add cursor pagination to customer order history
+- [x] Add bounded tagged caching for public catalog previews and pickup definitions while keeping checkout authoritative reads live
+- [x] Add structured timing for performance-sensitive commerce and order reads
+- [x] Add an atomic service-only per-user/per-IP mutation rate limiter and daily bucket pruning
+- [x] Configure Vercel Fluid compute and align the current linked Singapore development database with `sin1`
+- [x] Add repeatable k6 smoke, ramp, 100-user hold, and spike scenarios
+- [ ] Apply the performance/rate-limit schema delta to the existing hosted development database before deploying the dependent application code
+- [ ] Run the k6 smoke and 100-user staging gates and record warm p50/p95/p99, errors, and database health
+- [ ] Switch the Vercel function region from `sin1` to `icn1` when the Seoul production Supabase project becomes active
+- [ ] Review provider timeouts and idempotent retry behavior before PayMongo live mode
 - [ ] Deploy production configuration to Vercel
 - [ ] Connect `tsokolitaw.com`
 - [ ] Upgrade the production Supabase project to a plan that supports the custom-domain add-on
