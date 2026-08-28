@@ -67,10 +67,10 @@ export async function getAdminCatalog() {
   return { product, coatings, addons };
 }
 
-export async function updateCatalogProduct(input: { adminId: string; productId: string; description: string; pricePerPiece: number; isActive: boolean }) {
+export async function updateCatalogProduct(input: { adminId: string; productId: string; description: string; pricePerPiece: number }) {
   const { error } = await createAdminSupabaseClient().rpc("update_catalog_product", {
     target_admin_id: input.adminId, target_product_id: input.productId,
-    description_value: input.description, price_per_piece_value: input.pricePerPiece, active_value: input.isActive,
+    description_value: input.description, price_per_piece_value: input.pricePerPiece, active_value: true,
   });
   if (error) throw new Error("Product settings could not be saved.", { cause: error });
 }

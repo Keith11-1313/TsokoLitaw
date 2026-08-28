@@ -141,7 +141,7 @@ src/
 
 Commerce business rules belong in server modules and database functions rather than presentation components.
 
-Our Creations consumes the active database catalog, and Checkout consumes published database pickup options. Admin Catalog writes that same catalog through controlled server actions; Admin Pickup remains a preview until its CRUD slice.
+Our Creations consumes the active database catalog, including the saved customer-facing product description, and Checkout consumes published database pickup options. Admin Catalog writes that same catalog through controlled server actions; the primary product remains active while sellability is controlled through box variants, coatings, and add-ons. Admin Pickup remains a preview until its CRUD slice.
 
 The Admin coating form validates a square 1:1 image in the browser, limits server uploads to approved image types and 3 MB, stores the public asset in `catalog-media`, and publishes the database record only through an active-Admin-checked service mutation.
 
@@ -149,7 +149,7 @@ The Admin coating form validates a square 1:1 image in the browser, limits serve
 
 The UI cart is exposed through `CartProvider` and persisted under a browser-local storage key.
 
-It supports add, remove, quantity, subtotal, and clear operations. It is deliberately non-authoritative and must not be treated as an order record.
+It supports add, remove, bounded numeric quantity editing, subtotal, and clear operations. Builder and Cart caps protect the client surface from extreme values but do not claim live stock knowledge. It is deliberately non-authoritative and must not be treated as an order record; checkout rechecks date-specific inventory and pickup capacity transactionally.
 
 Future checkout flow:
 

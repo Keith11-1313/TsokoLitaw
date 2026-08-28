@@ -39,9 +39,9 @@ export async function saveProductAction(_state: CatalogActionState, formData: Fo
   }
   try {
     await guard(admin.id);
-    await updateCatalogProduct({ adminId: admin.id, productId, description, pricePerPiece: price, isActive: formData.get("isActive") === "on" });
+    await updateCatalogProduct({ adminId: admin.id, productId, description, pricePerPiece: price });
     refreshCatalog();
-    return { status: "success", message: "Product pricing and availability saved." };
+    return { status: "success", message: "Product pricing and description saved." };
   } catch (error) { return failure(error, "Product settings could not be saved."); }
 }
 

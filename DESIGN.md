@@ -27,6 +27,8 @@ UI structure must communicate the real workflow rather than merely resemble a dr
 | Mobile builder appears before coatings | Customers need configuration context before scanning all choices |
 | Mixed-box counters are on coating cards | Allocation happens piece by piece against visible coating options |
 | Admin Catalog explains each derived box price | Box size multiplies the current admin-managed price per piece; it is not a permanent fixed amount |
+| Product description is customer-facing | Admin copy changes are visible at the top of Our Creations instead of being an unexplained internal field |
+| Quantities are numeric inputs | Builder and Cart use the same bounded direct-entry pattern; final date-specific stock is confirmed at Checkout |
 | Terms and Privacy are in Footer and Checkout | They remain accessible and appear where acceptance matters |
 | Reviews begin on completed order details | Review eligibility is tied to a specific fulfilled order |
 | New reviews await moderation | Customer submission does not imply immediate public publication; Admin visibility and featured actions are explicit |

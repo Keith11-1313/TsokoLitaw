@@ -203,6 +203,8 @@ The ₱10 per-piece amount is the approved initial database seed, not a permanen
 - allocated pieces must exactly equal the selected box size
 - extra sea salt cream is the initial optional add-on, temporarily ₱18 per cup
 - Admin-created active add-ons automatically appear in the customer builder; each configured box may select one add-on type and a quantity
+- the primary product has no redundant storefront availability checkbox; sellability is controlled through its box sizes and selectable catalog records, and its saved description appears on Our Creations
+- add-on and box quantities use bounded numeric inputs in both the builder and Cart; date-specific inventory and pickup capacity remain authoritative at checkout
 
 ### Reason
 

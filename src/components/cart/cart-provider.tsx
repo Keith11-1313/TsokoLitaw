@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { calculateCartLineTotal } from "@/lib/commerce";
+import { calculateCartLineTotal, MAX_CART_LINE_QUANTITY } from "@/lib/commerce";
 import type { CartLineItem } from "@/types/commerce";
 
 interface CartContextValue {
@@ -16,8 +16,6 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "tsokolitaw-cart-v2";
-export const MAX_CART_LINE_QUANTITY = 20;
-
 type StoredCartLine = Partial<CartLineItem> & {
   extraSauceAddonId?: string | null;
   extraSauceQuantity?: number;

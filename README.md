@@ -19,7 +19,7 @@ Implemented with mock data:
 - mobile-first Home carousel with supplied promotional photo, muted-autoplay video, sound control, and automatic image advancement
 - 4-, 6-, and 8-piece box configuration
 - single-coating and mixed-box selection
-- browser-local cart with quantity and totals
+- browser-local cart with bounded numeric quantity editing and totals
 - add-to-cart confirmation with a static cart icon, Continue shopping, and Check cart actions
 - static order, review, payment, and legal commerce screens
 - authenticated account, profile, and logout interfaces
@@ -117,7 +117,7 @@ Customer identity, account state, catalog, published pickup options, orders, tes
 
 Our Creations and Checkout now read customer-safe commerce and pickup data from Supabase. Matching Admin screens remain non-persistent previews until Admin CRUD is implemented.
 
-The Admin Catalog now persists the base per-piece price, product availability, approved box-size availability, coatings, square coating media, additional-type prices, and add-on pricing. Controlled service-role mutations recheck active Admin access, write audit records, and invalidate the public catalog cache; checkout still reloads live values.
+The Admin Catalog now persists the base per-piece price, customer-facing product description, approved box-size availability, coatings, square coating media, additional-type prices, and add-on pricing. The primary storefront product remains active; box variants and selectable records control what customers can buy. Controlled service-role mutations recheck active Admin access, write audit records, and invalidate the public catalog cache; checkout still reloads live values and enforces date-specific inventory and pickup capacity.
 
 Signed-out visitors are redirected to Login when opening checkout, Profile, My Orders, order details, or eligible review routes. A Google session creates a customer profile through the database trigger. Admin routes require both a verified session and the protected `admin` profile role; signed-in customers who attempt to open them receive the global Not Found page while the requested Admin URL remains in the address bar. Logout always requires confirmation and returns to Home after the Supabase session is cleared.
 

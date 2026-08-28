@@ -5,9 +5,10 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { AddToCartModal } from "@/components/creations/add-to-cart-modal";
-import { calculateConfiguredExtraCoatingCharge, calculateItemUnitTotal, formatPhp, hasCompleteCoatingAllocation } from "@/lib/commerce";
+import { calculateConfiguredExtraCoatingCharge, calculateItemUnitTotal, formatPhp, hasCompleteCoatingAllocation, MAX_ADDON_QUANTITY, MAX_CART_LINE_QUANTITY } from "@/lib/commerce";
 import { PrimaryButton } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { QuantityInput } from "@/components/ui/quantity-input";
 import { cn } from "@/lib/cn";
 import type { CommerceCatalog } from "@/types/commerce";
 
@@ -18,9 +19,9 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
   const [mode, setMode] = useState<"single" | "mixed">("single");
   const [singleCoating, setSingleCoating] = useState(coatings[0].id);
   const [counts, setCounts] = useState<Record<string, number>>({ [coatings[0].id]: variants[0].pieceCount });
-  const [quantity, setQuantity] = useState("1");
+  const [quantity, setQuantity] = useState(1);
   const [addonId, setAddonId] = useState("");
-  const [addonQuantity, setAddonQuantity] = useState("0");
+  const [addonQuantity, setAddonQuantity] = useState(0);
   const [addedItem, setAddedItem] = useState<{
     variantLabel: string;
     quantity: number;
@@ -35,7 +36,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
     coatings,
   );
   const selectedAddon = addons.find((addon) => addon.id === addonId) ?? null;
-  const unitTotal = calculateItemUnitTotal(variant.price, extraCoatingCharge, Number(addonQuantity), selectedAddon?.price ?? 0);
+  const unitTotal = calculateItemUnitTotal(variant.price, extraCoatingCharge, addonQuantity, selectedAddon?.price ?? 0);
   const remainingPieces = variant.pieceCount - mixedTotal;
   const hasValidAllocation = mode === "single" || hasCompleteCoatingAllocation(variant.pieceCount, counts);
   const error = !hasValidAllocation ? `Assign ${remainingPieces} more ${remainingPieces === 1 ? "piece" : "pieces"}.` : "";
@@ -62,7 +63,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
 
   function changeAddon(id: string) {
     setAddonId(id);
-    setAddonQuantity(id ? (addonQuantity === "0" ? "1" : addonQuantity) : "0");
+    setAddonQuantity(id ? (addonQuantity === 0 ? 1 : addonQuantity) : 0);
   }
 
   function adjust(id: string, delta: number) {
@@ -76,8 +77,8 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
   function submit() {
     if (error) return;
     const coatingCounts = mode === "single" ? { [singleCoating]: variant.pieceCount } : counts;
-    const selectedQuantity = Number(quantity);
-    addItem({ variantId: variant.id, pieceCount: variant.pieceCount, boxPrice: variant.price, coatingCounts, coatingNames, extraCoatingCharge, addonId: selectedAddon?.id ?? null, addonName: selectedAddon?.name ?? null, addonQuantity: Number(addonQuantity), addonPrice: selectedAddon?.price ?? 0, quantity: selectedQuantity });
+    const selectedQuantity = quantity;
+    addItem({ variantId: variant.id, pieceCount: variant.pieceCount, boxPrice: variant.price, coatingCounts, coatingNames, extraCoatingCharge, addonId: selectedAddon?.id ?? null, addonName: selectedAddon?.name ?? null, addonQuantity, addonPrice: selectedAddon?.price ?? 0, quantity: selectedQuantity });
     setAddedItem({
       variantLabel: variant.label,
       quantity: selectedQuantity,
@@ -128,10 +129,10 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
               {error ? <p className="mt-2 text-xs font-bold text-danger-foreground">{error}</p> : null}
             </div>
 
-            {addons.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"><CustomSelect label="Add-on" value={addonId} onChange={changeAddon} options={[{ value: "", label: "No add-on" }, ...addons.map((addon) => ({ value: addon.id, label: `${addon.name} — ${formatPhp(addon.price)}` }))]} /><CustomSelect label="Add-on quantity" value={addonQuantity} onChange={setAddonQuantity} options={(selectedAddon ? [1,2,3] : [0]).map((count) => ({ value: String(count), label: String(count) }))} /></div> : null}
-            <CustomSelect label="Box quantity" value={quantity} onChange={setQuantity} options={[1,2,3,4,5].map((count) => ({ value: String(count), label: String(count) }))} />
+            {addons.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"><CustomSelect label="Add-on" value={addonId} onChange={changeAddon} options={[{ value: "", label: "No add-on" }, ...addons.map((addon) => ({ value: addon.id, label: `${addon.name} — ${formatPhp(addon.price)}` }))]} /><QuantityInput label="Add-on quantity per box" value={addonQuantity} onChange={setAddonQuantity} min={selectedAddon ? 1 : 0} max={selectedAddon ? MAX_ADDON_QUANTITY : 0} disabled={!selectedAddon} /></div> : null}
+            <QuantityInput label="Box quantity" value={quantity} onChange={setQuantity} min={1} max={MAX_CART_LINE_QUANTITY} />
 
-            <div className="flex items-center justify-between border-t border-border pt-5"><span className="font-bold">Item total</span><strong className="font-display text-2xl">{formatPhp(unitTotal * Number(quantity))}</strong></div>
+            <div className="flex items-center justify-between border-t border-border pt-5"><span className="font-bold">Item total</span><strong className="font-display text-2xl">{formatPhp(unitTotal * quantity)}</strong></div>
             <PrimaryButton type="button" disabled={Boolean(error)} onClick={submit} className="w-full rounded-control! text-base"><ShoppingBag size={18} />Add to cart</PrimaryButton>
           </div>
         </section>

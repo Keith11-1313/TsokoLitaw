@@ -228,6 +228,7 @@ Do not begin without explicit approval.
 - [x] Implement Journal draft/publish editing with type, icon, date, content, cover image, and video-link support
 - [x] Implement product, approved box-size, coating media, and add-on administration
 - [ ] Implement inventory, pickup, promotion, customer, and settings administration
+- [ ] Replace provisional builder/cart quantity caps with remaining date-and-variant stock guidance when Inventory administration is connected; retain transactional checkout enforcement
 - [x] Add auditability for fulfillment, Catalog mutations, review moderation, and Journal publication actions
 
 ## Phase 12 — Loyalty and Notifications

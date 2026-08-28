@@ -23,6 +23,8 @@ export const BOX_VARIANTS = createBoxVariants(INITIAL_PIECE_PRICE);
 
 export const INITIAL_EXTRA_COATING_PRICE = 5;
 export const EXTRA_SAUCE_PRICE = 18;
+export const MAX_ADDON_QUANTITY = 10;
+export const MAX_CART_LINE_QUANTITY = 20;
 
 export function calculateExtraCoatingCharge(
   coatingCounts: Readonly<Record<string, number>>,
@@ -105,8 +107,8 @@ export function priceCheckoutCart(
   const lines = items.map((item) => {
     const variant = catalog.variants.find((entry) => entry.id === item.variantId);
     if (!variant) throw new CommerceValidationError("A selected box is no longer available.");
-    if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 20) {
-      throw new CommerceValidationError("Each box quantity must be between 1 and 20.");
+    if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > MAX_CART_LINE_QUANTITY) {
+      throw new CommerceValidationError(`Each box quantity must be between 1 and ${MAX_CART_LINE_QUANTITY}.`);
     }
     if (!hasCompleteCoatingAllocation(variant.pieceCount, item.coatingCounts)) {
       throw new CommerceValidationError(`Every piece in ${variant.label} must have a coating.`);
@@ -134,8 +136,8 @@ export function priceCheckoutCart(
       0,
     );
 
-    if (!Number.isInteger(item.addonQuantity) || item.addonQuantity < 0 || item.addonQuantity > 10) {
-      throw new CommerceValidationError("The add-on quantity must be between 0 and 10.");
+    if (!Number.isInteger(item.addonQuantity) || item.addonQuantity < 0 || item.addonQuantity > MAX_ADDON_QUANTITY) {
+      throw new CommerceValidationError(`The add-on quantity must be between 0 and ${MAX_ADDON_QUANTITY}.`);
     }
     const selectedAddon = item.addonQuantity > 0
       ? catalog.addons.find((addon) => addon.id === item.addonId)

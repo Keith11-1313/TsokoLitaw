@@ -169,7 +169,7 @@ Each coating catalog record requires:
 
 During the UI-only phase, Admin may add a temporary session preview of a coating. It must be labeled as unsaved and must not appear in the customer builder as though it were published.
 
-The temporary prices are approved as initial database seed values. Authorized admins may edit the active base price per piece plus each coating's additional-type charge, add-on pricing, and related pricing. Every active add-on created in Admin Catalog must appear in the customer box builder. A configured box may select one add-on type and its quantity; the cart keeps its name for display, while checkout submits its database ID and quantity for server-side availability and price validation. Box totals are derived from the selected variant's piece count and the current base piece price. The ₱5 additional-coating amount is not fixed: checkout must reload its current Admin-managed value and recalculate money on the server, while completed orders retain immutable price snapshots.
+The temporary prices are approved as initial database seed values. Authorized admins may edit the base price per piece plus each coating's additional-type charge, add-on pricing, and related pricing. The primary product remains customer-facing; availability is controlled at the sellable box-size, coating, and add-on levels rather than with a redundant whole-product switch. Its Admin-managed description is displayed on Our Creations. Every active add-on created in Admin Catalog must appear in the customer box builder. A configured box may select one add-on type and its quantity; the cart keeps its name for display, while checkout submits its database ID and quantity for server-side availability and price validation. Box totals are derived from the selected variant's piece count and the current base piece price. The ₱5 additional-coating amount is not fixed: checkout must reload its current Admin-managed value and recalculate money on the server, while completed orders retain immutable price snapshots.
 
 ## 7. Product Customization
 
@@ -180,8 +180,8 @@ Customer flow:
 3. For mixed boxes, allocate each piece to a coating.
 4. Require allocated pieces to exactly equal the selected box size.
 5. Charge the current Admin-configured additional-type price for each distinct coating type after the first; the provisional seed is ₱5.
-6. Optionally add extra sea salt cream.
-7. Select quantity.
+6. Optionally select any active add-on and enter its quantity per box.
+7. Enter the box quantity using a bounded numeric input.
 8. Add configuration to cart.
 
 Different configurations become separate cart line items. One order may contain multiple line items and must use one payment transaction.
@@ -193,14 +193,14 @@ Current frontend cart supports:
 - add item
 - successful-addition modal with a cart icon, Continue shopping dismissal, and Check cart action
 - remove item
-- update quantity
+- update quantity through the same bounded numeric input used by the builder
 - item count
 - coating summary
 - calculated subtotal
 - browser-local persistence
 - checkout navigation
 
-The browser cart is a UI convenience only. Future checkout must reject manipulated prices, discounts, stock, and payment values.
+The browser cart is a UI convenience only. Builder and cart quantities use provisional safety limits until inventory management is connected. Checkout remains authoritative: it must reject manipulated prices, discounts, quantities, stock, pickup capacity, and payment values using the selected pickup date and box variant.
 
 ## 9. Checkout and Pickup
 
