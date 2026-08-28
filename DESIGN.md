@@ -173,6 +173,8 @@ Reuse these before adding page-local alternatives. Do not abstract tiny one-use 
 
 Every admin area should explain its purpose, customer impact, and current connection state. Do not use “active,” “open,” or similar live-system language for behavior that is only a mock preview.
 
+Admin Inventory should lead with the selected pickup date and its operational controls. Avoid repeating instructional cards, helper captions, or arithmetic already communicated by clear labels. Inventory may record unusable pieces, but it must not expose a walk-in cash-sale workflow because every customer purchase uses website checkout and online payment.
+
 ## 6. Product Presentation
 
 Real coating photography lives in the Supabase `catalog-media` bucket and is selected through the persisted catalog.

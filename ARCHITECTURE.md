@@ -30,7 +30,7 @@ Next.js App Router
 └── Local brand and product assets
 ```
 
-The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Phase 11 Admin Orders reads the same persisted snapshots customers see and advances paid fulfillment through an atomic, audited database function. Completed-order owners submit one review from an order-detail modal; submissions remain non-public until audited moderation. Admin Journal & Reviews persists draft/published posts and featured reviews, and the public Journal reads only published posts plus visible featured reviews. Admin Catalog uses service-only audited mutations and public square-media storage. Admin Inventory publishes date-specific prepared-piece totals and records school sales or waste through audited server mutations; checkout consumes the shared piece balance atomically across all box sizes. Email and the remaining Admin CRUD areas remain unconnected.
+The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Phase 11 Admin Orders reads the same persisted snapshots customers see and advances paid fulfillment through an atomic, audited database function. Completed-order owners submit one review from an order-detail modal; submissions remain non-public until audited moderation. Admin Journal & Reviews persists draft/published posts and featured reviews, and the public Journal reads only published posts plus visible featured reviews. Admin Catalog uses service-only audited mutations and public square-media storage. Admin Inventory publishes date-specific prepared-piece totals and records unusable pieces through audited server mutations; checkout consumes the shared piece balance atomically across all box sizes. Email and the remaining Admin CRUD areas remain unconnected.
 
 Current customer/admin relationship:
 
@@ -237,7 +237,7 @@ V1 inventory:
 
 - prepared piece total by date and product, shared across every box size
 - online-committed piece quantity
-- walk-in/waste-consumed piece quantity
+- unusable/waste-consumed piece quantity
 - coating/add-on availability
 - atomic reservation and release operations
 
@@ -245,9 +245,9 @@ V1 inventory:
 available = stock_total - stock_reserved - stock_sold
 ```
 
-Checkout converts every requested box into pieces (`quantity × product_variants.piece_count`) before locking and updating the one daily product balance. Expired or cancelled unpaid orders reverse the same piece calculation. Admin may set the exact prepared total, pause online availability, and record walk-in sales or waste only through active-Admin-checked database functions. Every change writes both an inventory adjustment and an Admin audit entry. A saved total cannot be lower than already committed plus consumed pieces.
+Checkout converts every requested box into pieces (`quantity × product_variants.piece_count`) before locking and updating the one daily product balance. Expired or cancelled unpaid orders reverse the same piece calculation. Admin may set the exact prepared total, pause online availability, and record unusable pieces only through active-Admin-checked database functions. Every change writes both an inventory adjustment and an Admin audit entry. A saved total cannot be lower than already committed plus consumed pieces.
 
-Pickup locations, dates, time windows, lead days, cutoff time, capacity, and availability mode are admin-managed database records or settings. Made-to-order is the default; Admin can publish same-day ready-stock options when products are brought to school. Offline/walk-in stock changes must be recorded so checkout does not oversell. Checkout reads only published, currently eligible options. Paid orders preserve pickup snapshots so later admin edits do not rewrite existing commitments.
+Pickup locations, dates, time windows, lead days, cutoff time, capacity, and availability mode are admin-managed database records or settings. Made-to-order is the default; Admin can publish same-day ready-stock options when products are brought to school. Every customer sale in every mode still uses website checkout and online payment; the mode changes preparation and inventory behavior only. Waste must be recorded so checkout does not oversell. Checkout reads only published, currently eligible options. Paid orders preserve pickup snapshots so later admin edits do not rewrite existing commitments.
 
 ## 12. Orders, Reviews, and Journal
 

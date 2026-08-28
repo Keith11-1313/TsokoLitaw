@@ -75,15 +75,15 @@ select lives_ok(
   $$ select public.record_inventory_consumption(
     '99000000-0000-4000-8000-000000000001',
     (select id from public.daily_inventory where pickup_date = '2099-02-01'),
-    2, 'WALK_IN_SALE', 'school sale'
+    2, 'WASTE', 'damaged pieces'
   ) $$,
-  'an active Admin can record a walk-in sale'
+  'an active Admin can record unusable pieces'
 );
 
 select is(
   (select stock_sold from public.daily_inventory where pickup_date = '2099-02-01'),
   2,
-  'walk-in pieces become consumed'
+  'unusable pieces become consumed'
 );
 
 select is(

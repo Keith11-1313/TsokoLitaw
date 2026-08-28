@@ -501,7 +501,9 @@ The recipe/allergen disclosure and the professor-provided educational Terms & Co
 
 Ready stock is counted in individual prepared Palitaw pieces per pickup date and product, not as separate box inventories. All active box sizes consume the same balance using `box quantity × piece count`.
 
-Admin may publish the exact prepared total for a Ready stock or Hybrid date, pause online checkout for that balance, and record walk-in sales or waste. These operations use active-Admin-checked server mutations with inventory-adjustment and Admin-audit records.
+Admin may publish the exact prepared total for a Ready stock or Hybrid date, pause online checkout for that balance, and record damaged, spoiled, or otherwise unusable pieces. These operations use active-Admin-checked server mutations with inventory-adjustment and Admin-audit records.
+
+Made to order, Ready stock, and Hybrid all use the same website checkout and online payment flow. The modes control preparation timing and stock enforcement, not the payment channel. V1 does not accept cash or untracked walk-in sales.
 
 ### Reason
 

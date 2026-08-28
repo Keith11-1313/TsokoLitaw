@@ -82,7 +82,7 @@ export async function consumeInventoryAction(
   const notes = String(formData.get("notes") ?? "").trim();
 
   if (!isUuid(inventoryId) || !Number.isInteger(quantity) || quantity < 1 || quantity > 100000
-    || (reason !== "WALK_IN_SALE" && reason !== "WASTE") || notes.length > 240) {
+    || reason !== "WASTE" || notes.length > 240) {
     return { status: "error", message: "Check the piece quantity, reason, and notes." };
   }
 
@@ -98,7 +98,7 @@ export async function consumeInventoryAction(
     refreshInventory();
     return {
       status: "success",
-      message: reason === "WALK_IN_SALE" ? "Walk-in sale recorded." : "Waste recorded.",
+      message: "Unusable pieces recorded.",
     };
   } catch (error) {
     return failure(error, "Inventory consumption could not be recorded.");

@@ -122,7 +122,7 @@ export async function recordInventoryConsumption(input: {
   adminId: string;
   inventoryId: string;
   quantity: number;
-  reason: "WALK_IN_SALE" | "WASTE";
+  reason: "WASTE";
   notes: string;
 }) {
   const { error } = await createAdminSupabaseClient().rpc("record_inventory_consumption", {

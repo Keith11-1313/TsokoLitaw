@@ -229,6 +229,7 @@ Pickup locations, dates, time windows, lead time, cutoff time, capacity, and ava
 
 - operating window: Monday–Saturday, 7:00 AM–7:00 PM
 - Admin publishes only the dates and time slots the team can actually serve; the operating window does not promise that every slot is available
+- every customer sale, including Ready Stock and Hybrid pickup, must be ordered and paid through the website; V1 does not accept cash or untracked walk-in sales
 - made-to-order is the default and follows Admin-configured lead-time and cutoff rules
 - same-day pickup is available only when Admin publishes ready stock brought to school
 - provisional made-to-order setup: one-day lead time, 5:00 PM daily cutoff, hourly slots, and 20 boxes per slot
@@ -329,10 +330,10 @@ Cancellation and refund rules:
 Inventory supports:
 
 - daily prepared stock counted in individual Palitaw pieces per product, shared by all box sizes
-- online-committed, walk-in/waste-consumed, and available piece quantities
+- online-committed, unusable/waste-consumed, and available piece quantities
 - coating and add-on availability
 - pickup date availability
-- ready-stock availability for school selling days, with recorded walk-in sales or adjustments so online stock remains accurate
+- ready-stock availability for school selling days, with recorded waste adjustments so online stock remains accurate
 - sold-out UI
 - atomic reservation of `box quantity × piece count` during pending payment
 - release after expiry

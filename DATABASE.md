@@ -221,7 +221,7 @@ Available stock:
 stock_total - stock_reserved - stock_sold
 ```
 
-Stock is counted in individual prepared Palitaw pieces, not boxes. Every 4-, 6-, and 8-piece box draws from the same product balance for its pickup date. For example, 10 available pieces can fulfill two 4-piece boxes and leave 2 pieces. For a `READY_STOCK` or same-day `HYBRID` pickup date, checkout reserves `box quantity × variant piece count` atomically. Admin-recorded walk-in sales and waste reduce the same daily balance used by online checkout.
+Stock is counted in individual prepared Palitaw pieces, not boxes. Every 4-, 6-, and 8-piece box draws from the same product balance for its pickup date. For example, 10 available pieces can fulfill two 4-piece boxes and leave 2 pieces. For a `READY_STOCK` or same-day `HYBRID` pickup date, checkout reserves `box quantity × variant piece count` atomically. Admin-recorded waste reduces the same daily balance used by online checkout. All sales use website checkout and online payment.
 
 ### `inventory_adjustments`
 
@@ -229,12 +229,12 @@ Stock is counted in individual prepared Palitaw pieces, not boxes. Every 4-, 6-,
 id uuid primary key
 daily_inventory_id uuid references daily_inventory(id)
 quantity_delta integer check quantity_delta <> 0
-reason text check reason in ('RESTOCK', 'WALK_IN_SALE', 'WASTE', 'CORRECTION')
+reason text check reason in ('RESTOCK', 'WASTE', 'CORRECTION')
 created_by uuid references profiles(id)
 created_at timestamptz
 ```
 
-This audit trail keeps school walk-in sales, waste, restocks, and corrections from silently causing online overselling. Controlled Admin mutations reject a total below already committed or consumed pieces.
+This audit trail keeps waste, restocks, and corrections from silently causing online overselling. Controlled Admin mutations reject a total below already committed or consumed pieces.
 
 Optional coating and add-on availability may use separate dated inventory tables if operations need quantity-level tracking; otherwise active/available flags are sufficient for V1.
 

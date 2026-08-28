@@ -228,7 +228,7 @@ Do not begin without explicit approval.
 - [x] Implement Journal draft/publish editing with type, icon, date, content, cover image, and video-link support
 - [x] Implement product, approved box-size, coating media, and add-on administration
 - [x] Add persistent per-line Cart checkout selection and remove only purchased lines after verified payment
-- [x] Implement piece-based Inventory administration with exact ready-stock totals, online commitments, availability control, walk-in sales, waste, and audit records
+- [x] Implement piece-based Inventory administration with exact ready-stock totals, online commitments, availability control, unusable-piece recording, and audit records; all sales remain website-paid
 - [ ] Implement pickup, promotion, customer, and settings administration
 - [ ] Replace provisional builder/cart quantity caps with remaining date-specific piece-stock guidance; retain transactional checkout enforcement
 - [x] Add auditability for fulfillment, Catalog mutations, review moderation, and Journal publication actions

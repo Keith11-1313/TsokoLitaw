@@ -154,7 +154,7 @@ create table public.inventory_adjustments (
   id uuid primary key default gen_random_uuid(),
   daily_inventory_id uuid not null references public.daily_inventory(id) on delete restrict,
   quantity_delta integer not null check (quantity_delta <> 0),
-  reason text not null check (reason in ('RESTOCK', 'WALK_IN_SALE', 'WASTE', 'CORRECTION')),
+  reason text not null check (reason in ('RESTOCK', 'WASTE', 'CORRECTION')),
   notes text,
   created_by uuid not null references public.profiles(id) on delete restrict,
   created_at timestamptz not null default now()
@@ -2082,7 +2082,7 @@ begin
   if quantity_value is null or quantity_value < 1 or quantity_value > 100000 then
     raise exception 'Consumed piece quantity is invalid';
   end if;
-  if reason_value not in ('WALK_IN_SALE', 'WASTE') then
+  if reason_value is distinct from 'WASTE' then
     raise exception 'Inventory consumption reason is invalid';
   end if;
 
@@ -2115,8 +2115,7 @@ begin
     admin_id, action, entity_type, entity_id, metadata
   ) values (
     target_admin_id,
-    case when reason_value = 'WALK_IN_SALE'
-      then 'inventory.walk_in_sale' else 'inventory.waste_recorded' end,
+    'inventory.waste_recorded',
     'daily_inventory',
     target_inventory_id::text,
     jsonb_build_object(
@@ -3057,6 +3056,6 @@ comment on function public.upsert_catalog_addon(uuid, uuid, text, numeric, boole
 comment on function public.upsert_daily_inventory(uuid, date, uuid, integer, boolean, text) is
   'Service-role-only audited ready-stock writer. Stock is counted in individual product pieces shared by every box size.';
 comment on function public.record_inventory_consumption(uuid, uuid, integer, text, text) is
-  'Service-role-only audited walk-in sale or waste writer that consumes uncommitted individual pieces.';
+  'Service-role-only audited waste writer that removes unusable uncommitted pieces.';
 comment on table public.manual_refund_destinations is
   'Restricted fallback data used only after an automatic PayMongo refund is unsupported or fails.';

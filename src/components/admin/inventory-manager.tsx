@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { CalendarDays, PackageCheck } from "lucide-react";
+import { PackageCheck } from "lucide-react";
 import {
   consumeInventoryAction,
   saveInventoryAction,
@@ -66,11 +66,11 @@ function StockEditor({
           <h2 className="font-display text-2xl">
             {record ? "Stock settings" : "Publish stock for another date"}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {record
-              ? `Change the prepared-piece total for ${product.name}.`
-              : "Choose an eligible pickup date and enter the pieces prepared for it."}
-          </p>
+          {!record ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Choose an eligible pickup date and enter the pieces prepared for it.
+            </p>
+          ) : null}
         </div>
         {record ? (
           <span className={`w-fit rounded-lg px-2.5 py-1 text-xs font-bold ${
@@ -117,7 +117,11 @@ function StockEditor({
             defaultValue={record?.stockTotal ?? 0}
             className="min-h-12 w-full rounded-control bg-surface-control px-4 font-normal"
           />
-          {minimum > 0 ? <span className="block text-xs font-normal text-muted-foreground">Cannot go below {minimum} committed or consumed pieces.</span> : null}
+          {minimum > 0 ? (
+            <span className="block text-xs font-normal text-muted-foreground">
+              Minimum {minimum}: {record?.stockReserved ?? 0} committed to orders and {record?.stockConsumed ?? 0} already removed.
+            </span>
+          ) : null}
         </label>
 
         <label className="space-y-2 text-sm font-bold sm:col-span-2">
@@ -146,18 +150,12 @@ function ConsumptionForm({ record }: { record: AdminInventoryRecord }) {
   return (
     <form action={action} className="mt-5 border-t border-border pt-5">
       <input type="hidden" name="inventoryId" value={record.id} />
-      <h3 className="font-display text-xl">Record pieces leaving school stock</h3>
-      <p className="mt-1 text-xs leading-5 text-muted-foreground">Use this for products sold in person or pieces that can no longer be sold. Online orders are committed automatically.</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_1.4fr]">
+      <input type="hidden" name="reason" value="WASTE" />
+      <h3 className="font-display text-xl">Record unusable pieces</h3>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">Use this only for damaged, spoiled, or otherwise unsellable pieces. All customer sales are paid through the website.</p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1.4fr]">
         <label className="space-y-2 text-sm font-bold">
-          <span>Reason</span>
-          <select name="reason" className="min-h-12 w-full rounded-control bg-surface-control px-3 font-normal">
-            <option value="WALK_IN_SALE">Walk-in sale</option>
-            <option value="WASTE">Waste</option>
-          </select>
-        </label>
-        <label className="space-y-2 text-sm font-bold">
-          <span>Pieces</span>
+          <span>Unusable pieces</span>
           <input name="quantity" type="number" min={1} max={record.stockAvailable} step={1} required defaultValue={1} className="min-h-12 w-full rounded-control bg-surface-control px-3 font-normal" />
         </label>
         <label className="space-y-2 text-sm font-bold">
@@ -194,20 +192,8 @@ export function InventoryManager({
 
   return (
     <>
-      <section className="rounded-card border border-border bg-surface-muted p-5" aria-labelledby="inventory-period-title">
-        <div className="flex gap-3">
-          <CalendarDays aria-hidden="true" className="mt-0.5 shrink-0 text-brand" size={22} />
-          <div>
-            <h2 id="inventory-period-title" className="font-bold">Inventory is separate for every pickup date</h2>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-              The numbers below apply only to the selected date. They reset when you publish stock for a different date; this page does not combine stock from multiple days.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {selectedRecord ? (
-        <section className="mt-7 space-y-5" aria-labelledby="selected-stock-title">
+        <section className="space-y-5" aria-labelledby="selected-stock-title">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Viewing stock for</p>
@@ -219,7 +205,6 @@ export function InventoryManager({
                   </span>
                 ) : null}
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">{product.name} · stock counted in individual pieces</p>
             </div>
             {records.length > 1 ? (
               <label className="space-y-2 text-sm font-bold lg:min-w-72">
@@ -238,17 +223,10 @@ export function InventoryManager({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label={`Inventory summary for ${formatDate(selectedRecord.pickupDate)}`}>
-            <AdminStatCard compact label="Prepared" value={String(selectedRecord.stockTotal)} supportingText="Pieces entered by Admin" />
-            <AdminStatCard compact label="Online committed" value={String(selectedRecord.stockReserved)} supportingText="Held for online orders" accentClassName="text-info-foreground" />
-            <AdminStatCard compact label="Walk-in / waste" value={String(selectedRecord.stockConsumed)} supportingText="Recorded outside online orders" />
-            <AdminStatCard compact label="Available now" value={String(selectedRecord.stockAvailable)} supportingText="Still available to sell" accentClassName="text-success-foreground" />
-          </div>
-
-          <div className="flex flex-col gap-2 rounded-control border border-border bg-surface px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-            <span className="font-bold">How the available stock is calculated</span>
-            <span className="text-muted-foreground">
-              {selectedRecord.stockTotal} prepared − {selectedRecord.stockReserved} online − {selectedRecord.stockConsumed} walk-in/waste = <strong className="text-success-foreground">{selectedRecord.stockAvailable} available</strong>
-            </span>
+            <AdminStatCard compact label="Prepared" value={String(selectedRecord.stockTotal)} />
+            <AdminStatCard compact label="Online committed" value={String(selectedRecord.stockReserved)} accentClassName="text-info-foreground" />
+            <AdminStatCard compact label="Unusable" value={String(selectedRecord.stockConsumed)} />
+            <AdminStatCard compact label="Available now" value={String(selectedRecord.stockAvailable)} accentClassName="text-success-foreground" />
           </div>
 
           <article key={`${selectedRecord.id}-${selectedRecord.updatedAt}`}>
@@ -283,17 +261,6 @@ export function InventoryManager({
         </p>
       ) : null}
 
-      <section className="mt-7 rounded-card border border-border bg-surface-muted p-5 text-sm" aria-labelledby="shared-balance-title">
-        <div className="flex gap-3">
-          <PackageCheck aria-hidden="true" className="shrink-0 text-brand" size={20} />
-          <div>
-            <h2 id="shared-balance-title" className="font-bold">One piece balance per date</h2>
-            <p className="mt-1 leading-6 text-muted-foreground">
-              Box sizes do not have separate stock. A box of 4 uses 4 pieces, a box of 6 uses 6, and a box of 8 uses 8 from the selected date&apos;s available balance. Record walk-in sales and waste as soon as they happen.
-            </p>
-          </div>
-        </div>
-      </section>
     </>
   );
 }
