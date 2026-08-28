@@ -299,7 +299,112 @@ Use PayMongo test mode and non-production Supabase configuration before live rol
 
 The default Supabase project domain is accepted for development OAuth. Production custom-domain activation requires DNS verification and TLS readiness, the branded callback in Google Auth Platform, the custom Supabase URL in Vercel, and an end-to-end session/authorization smoke test. Keep the original Supabase callback configured until the branded flow is verified.
 
-## 15. Principles
+## 15. Performance and Concurrency
+
+The V1 target is to remain correct and responsive during a burst of at least 100 concurrent customer requests. Scaling the Vercel function alone is not sufficient: every browser request can fan out into several database requests, so the first priority is to reduce round trips and database work per request. Performance changes must preserve RLS, server-authoritative pricing, atomic inventory, payment verification, and idempotency.
+
+### Current hotspot and first optimization
+
+The current authenticated order pages perform multiple sequential Supabase calls after authentication:
+
+- My Orders loads the profile, orders, order items, and coatings separately.
+- Order detail additionally loads refund state separately.
+- These reads use the privileged client with an application-level `user_id` filter even though they are customer-owned data.
+
+Before broad Admin CRUD begins, replace each page's read fan-out with one ownership-scoped read model:
+
+1. Use the cookie-backed authenticated Supabase client so RLS remains the primary ownership boundary.
+2. Load orders, items, coatings, and the latest refund through one PostgREST nested relation query where practical.
+3. If the nested payload or query plan is inefficient, expose a narrowly scoped authenticated SQL function or a PostgreSQL 15+ `security_invoker` view. It must derive the customer from `(select auth.uid())`, never accept a trusted browser-supplied owner ID, and have pgTAP cross-user denial tests.
+4. Paginate My Orders with a stable `(created_at, id)` cursor and a default page size of 20. Never load an unlimited order history.
+5. Select only fields rendered by the page. Do not return provider payloads, encrypted refund destinations, internal notes, or unused snapshots.
+6. Parallelize only genuinely independent remaining reads. `Promise.all` is not a substitute for removing unnecessary network calls.
+
+React `cache()` may continue to deduplicate authentication/profile work inside one server render, but it is request-scoped and is not a shared cache between customers or requests.
+
+### Cache safety matrix
+
+| Data | Shared cache | Rule |
+| --- | --- | --- |
+| Active public catalog, coating descriptions, Journal posts, legal content | Yes | Use explicit Next.js cache lifetimes and tags. Future Admin publication invalidates the matching tag. |
+| Published pickup date/time/location definitions | Short-lived only | Tag and revalidate after Admin publication. A stale definition may be displayed briefly, but checkout must revalidate it live. |
+| Remaining pickup capacity, ready stock, current prices used for checkout, and promotions used for totals | No authoritative cache | Browser display may be a preview. Every order mutation reloads and validates current database state inside the existing transactional boundary. |
+| Profile, My Orders, order detail, payment, refund, account-deletion state, and Admin data | No shared cache | These are user-specific or sensitive. Use RLS-scoped live reads and request-only memoization where useful. |
+
+Use Next.js `use cache`, `cacheLife`, and `cacheTag` only for deliberately shared read-mostly data. Use `revalidateTag(tag, "max")` when slightly stale public content is acceptable, and an immediate invalidation path when an Admin must read their own publication immediately. Cache keys and values must not contain secrets, payment data, refund destinations, or unnecessary PII. The checkout and webhook paths never trust cached payment, price, inventory, or order state.
+
+### Database query and index rules
+
+- Index every ownership, foreign-key, status, sort, and RLS filter used by a hot query. RLS filters such as `user_id = (select auth.uid())` require `user_id` to be the leading column of a usable index.
+- Keep the existing order ownership/sort index and verify whether the load-test query plans need `(user_id, created_at desc, id desc)`, order-item ordering, or latest-refund indexes before adding them. Do not add speculative indexes; every index also increases write cost.
+- Wrap stable RLS helpers such as `auth.uid()` in `select` so PostgreSQL can evaluate them once per statement rather than once per candidate row.
+- Inspect hot reads with `EXPLAIN (ANALYZE, BUFFERS)` on local or staging data and review `pg_stat_statements`/Supabase database reports. Use plain `EXPLAIN` for production or any mutation that must not execute.
+- Avoid N+1 queries, unbounded result sets, `select *`, row-by-row server loops that SQL can aggregate, and repeated count queries on every render.
+- Keep checkout, cancellation, refund, webhook, expiry, and inventory transitions in bounded atomic database functions with the smallest practical lock scope. Never weaken locking to gain speed.
+
+### Concurrency, backpressure, and failure handling
+
+- Preserve idempotency keys for checkout creation, cancellation, refunds, webhooks, and scheduled jobs. A retry must return or advance the same operation, not create a second one.
+- Apply a distributed per-user and per-IP rate limit to expensive mutations before public launch. In-memory counters are forbidden because Vercel instances do not share state. Return `429` with a retry hint instead of allowing an unlimited queue.
+- Bound cart quantity, page size, filter complexity, upload size, and batch size at the server boundary.
+- Add explicit timeouts to external provider calls. Retry only safe reads or idempotent operations with the same idempotency key and capped exponential backoff; never blindly retry an ambiguous write.
+- Keep payment/refund provider work outside long-held database locks. Record a durable intent, call the provider, then apply an idempotent verified transition.
+- Do not use loading skeletons, artificial delays, or optimistic status labels to hide slow server work. They improve perceived continuity only and are not a capacity solution.
+
+### Deployment topology
+
+- Run Vercel Functions in the region closest to the Supabase project. Static assets may remain globally cached, but dynamic server-to-database distance directly affects every uncached request.
+- Keep the current Supabase Data API/PostgREST client for application reads unless measurement justifies a direct PostgreSQL driver.
+- If a future ORM or direct PostgreSQL client is introduced in Vercel Functions, use Supavisor transaction mode rather than opening unpooled direct connections from each serverless instance.
+- Enable and validate Vercel Fluid compute for the production Node.js deployment when available. It can reduce cold starts and let one instance handle concurrent I/O-bound requests, but it does not replace query optimization or database safeguards.
+- Do not add Redis or another cache service for V1 without evidence that tagged Next.js caching and query consolidation are insufficient. A new network dependency can increase both latency and operational risk.
+
+### Observability
+
+Every performance-sensitive route must be diagnosable without logging customer secrets:
+
+- attach a request/correlation ID to server logs and provider operations
+- record structured duration fields for authentication, profile lookup, database read/RPC, provider call, and total server time
+- monitor Vercel invocation count, p50/p95/p99 duration, cold starts, and 4xx/5xx rate by route
+- monitor Supabase slow/frequent queries, active connections, CPU, memory, cache hit rate, lock waits, and database errors
+- redact access tokens, cookies, PayMongo signatures, customer contact data, and refund destinations
+- alert on sustained p95 regression, error rate above the release threshold, connection saturation, webhook failures, or reservation-expiry backlog
+
+### 100-concurrent-request validation gate
+
+Run load tests against a staging deployment and staging/test database, not the developer laptop or live payment environment. Use protocol-level k6 scenarios for server capacity and a small separate browser test for user-perceived navigation. Do not load-test Google, PayMongo, Resend, or another third party without permission; replace those calls with test fixtures or exercise them separately at a safe rate.
+
+Validation sequence:
+
+1. Smoke test with 1–5 virtual users and verify response contents and ownership isolation.
+2. Ramp through 10, 25, 50, and 100 concurrent users with realistic pacing.
+3. Hold 100 concurrent users for 10 minutes across public browse, authenticated My Orders, order detail, and checkout reads.
+4. Run a short 100-user spike to check cold-start/recovery behavior.
+5. Run a small mutation scenario using unique seeded users and idempotency keys to prove no duplicate orders, overselling, double refunds, or cross-user reads.
+6. Repeat after query, index, cache, region, or runtime changes and store the comparison with the release notes.
+
+Initial release thresholds under the 100-user staging workload:
+
+- less than 1% unexpected HTTP failures
+- warm p95 server response below 1 second for public/authenticated reads
+- warm p95 below 2 seconds for internal checkout/order mutations, excluding customer time on a hosted provider page
+- zero cross-user disclosure, duplicate order, oversell, duplicate payment transition, or double refund
+- no exhausted database connections, sustained lock backlog, or stuck inventory reservations
+- latency and error rate return to baseline after the spike
+
+If a threshold fails, optimize in this order: remove request fan-out and N+1 work, fix query plans/indexes, cache safe public reads, align deployment regions, add backpressure, and only then increase paid compute. Capacity upgrades without a before/after load test are not considered a completed optimization.
+
+### Implementation sequence
+
+1. **Baseline:** add route/database timing and record warm/cold staging measurements.
+2. **Read consolidation:** convert My Orders and order detail to one RLS-scoped paginated read each.
+3. **Safe caching:** add tagged caching only to public catalog, Journal, legal, and published schedule definitions.
+4. **Runtime controls:** align regions, confirm Fluid compute, add distributed mutation rate limits and provider timeouts.
+5. **Load gate:** add repeatable k6 smoke, ramp, steady, and spike scenarios and enforce the thresholds above before production launch.
+
+Research basis: [Next.js caching and tag invalidation](https://nextjs.org/docs/app/api-reference/directives/use-cache), [React request-scoped cache](https://react.dev/reference/react/cache), [Supabase nested relational reads](https://supabase.com/docs/guides/database/joins-and-nesting), [Supabase RLS performance rules](https://supabase.com/docs/guides/database/postgres/row-level-security), [Supabase query optimization](https://supabase.com/docs/guides/database/query-optimization), [Supabase serverless connection pooling](https://supabase.com/docs/guides/database/connecting-to-postgres), [Vercel function regions](https://vercel.com/docs/functions/configuring-functions/region), [Vercel Fluid compute](https://vercel.com/docs/fluid-compute), and [k6 website load-testing guidance](https://grafana.com/docs/k6/latest/testing-guides/load-testing-websites/).
+
+## 16. Principles
 
 1. One codebase for V1.
 2. Server-authoritative money, stock, permissions, and payment state.
@@ -309,3 +414,5 @@ The default Supabase project domain is accepted for development OAuth. Productio
 6. Minimal dependencies.
 7. Accessible, mobile-first UI.
 8. Explicit mock/deferred behavior during the UI phase.
+9. Measure before scaling; reduce work per request before buying more compute.
+10. Shared caches contain only deliberately public, non-authoritative data.
