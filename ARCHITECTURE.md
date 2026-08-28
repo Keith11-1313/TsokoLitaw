@@ -105,6 +105,8 @@ Phase 9 uses a two-layer checkout boundary. Next.js accepts only catalog identif
 
 Phase 10 creates one PayMongo checkout for the order's unique payment row and stores its immutable provider ID and URL. A return to `/payment/success` reloads the owned order and may display `PAID` only after the signed webhook has completed the atomic database transition. The protected payment-expiration job lists overdue provider-bound checkouts, expires each session through PayMongo first, and only then invokes the database transition that marks the payment `FAILED`, marks the order `EXPIRED`, and releases ready stock. Provider failures remain pending and reserved for retry.
 
+Supabase Cron is the single scheduler for trusted maintenance HTTP jobs. It calls payment expiration every five minutes and account deletion daily using the same bearer secret stored independently in Supabase Vault and the Vercel `CRON_SECRET` environment variable. Vercel Hobby cron is not used because it permits only daily, imprecise execution; keeping one scheduler also avoids duplicate maintenance invocations.
+
 ## 4. Routing
 
 Customer routes are public under the main application. Account, checkout, order, and review routes require a verified Supabase session.

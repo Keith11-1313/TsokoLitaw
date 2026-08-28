@@ -335,11 +335,11 @@ The bootstrap command reads `INITIAL_ADMIN_EMAIL` and the Supabase secret key fr
 
 ### Account-deletion scheduler
 
-Account-deletion tables and functions are included in the canonical bootstrap schema. Set a strong server-only `CRON_SECRET` in Vercel; `vercel.json` invokes `/api/cron/account-deletions` daily. The endpoint rejects requests without the matching bearer token, deactivates at most 100 eligible due customer profiles per run without deleting their Auth or relational records, and prunes expired distributed rate-limit buckets.
+Account-deletion tables and functions are included in the canonical bootstrap schema. A Supabase Cron HTTP job invokes `/api/cron/account-deletions` daily at 3:00 AM Manila (`0 19 * * *` in UTC). The endpoint requires the same `CRON_SECRET` bearer value stored in Vercel and Supabase Vault, deactivates at most 100 eligible due customer profiles per run without deleting their Auth or relational records, and prunes expired distributed rate-limit buckets. The earlier Vercel Hobby cron was removed so there is only one scheduler.
 
 ### Payment-expiration scheduler
 
-`/api/cron/payment-expirations` uses the same `CRON_SECRET` bearer protection. It must run frequently enough to close overdue PayMongo checkouts near the configured 15-minute payment deadline. Vercel Hobby cron supports only daily schedules, so the repository deliberately does not add an incompatible frequent entry to `vercel.json`; use a trusted external scheduler or a Vercel plan that supports per-minute jobs. The processor expires PayMongo first and releases stock only after the exact database transition succeeds.
+`/api/cron/payment-expirations` uses the same `CRON_SECRET` bearer protection. A Supabase Cron HTTP job invokes it every five minutes (`*/5 * * * *`) so overdue PayMongo checkouts are closed near the configured 15-minute payment deadline. Vercel Hobby cron supports only daily schedules, so `vercel.json` deliberately contains no cron entries. The processor expires PayMongo first and releases stock only after the exact database transition succeeds.
 
 ### Refund security and webhooks
 

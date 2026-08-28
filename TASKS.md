@@ -168,8 +168,9 @@ Do not begin without explicit approval.
 - [x] Add inactive-profile checks to OAuth callback handling, RLS helpers, customer access, and Admin authorization
 - [x] Add the deleted-account login bounce screen
 - [x] Apply the revised account-deactivation schema to the hosted development project; keep the production bootstrap schema squashed
-- [x] Configure `CRON_SECRET` in Vercel and define the daily account-deletion schedule in `vercel.json`
-- [ ] Redeploy Production and verify one authorized Vercel cron invocation
+- [x] Configure `CRON_SECRET` in Vercel and protect the account-deletion endpoint
+- [ ] Create the daily Supabase Cron account-deletion HTTP job using the matching secret from Supabase Vault
+- [ ] Redeploy Production without the removed Vercel cron and verify one authorized Supabase Cron invocation
 - [ ] Verify deletion request, checkout blocking, cancellation, due deactivation, retained relationships, access denial, and login bounce against the hosted project
 - [ ] Execute live Google OAuth, initial Admin bootstrap, logout, unauthorized Admin, and cross-customer pgTAP verification
 
@@ -199,7 +200,7 @@ Do not begin without explicit approval.
 - [x] Deploy and register the test webhook endpoint, then configure its signing secret
 - [x] Make payment return/cancellation states honest and never infer payment success from a browser redirect
 - [x] Add provider-first, database-second 15-minute checkout expiry coordination and a protected processor endpoint
-- [ ] Schedule `/api/cron/payment-expirations` at a frequent cadence supported by the deployment scheduler
+- [ ] Schedule `/api/cron/payment-expirations` every five minutes through Supabase Cron and verify its HTTP response
 - [x] Apply and validate the coordinated-expiry schema upgrade on hosted development
 - [ ] Complete the hosted test payment, paid-webhook, cancellation, and expiry smoke tests
 - [x] Implement full original-method refunds and verified refund webhooks
@@ -251,6 +252,10 @@ Do not begin without explicit approval.
 - [ ] Review provider timeouts and idempotent retry behavior before PayMongo live mode
 - [ ] Deploy production configuration to Vercel
 - [ ] Connect `tsokolitaw.com`
+- [ ] Create a different production `CRON_SECRET` and configure the same value in Vercel Production and the production Supabase Vault
+- [ ] Store the canonical `https://tsokolitaw.com` origin as `tsokolitaw_site_url` in the production Supabase Vault
+- [ ] Create the five-minute payment-expiration and daily account-deletion jobs in production Supabase Cron
+- [ ] Verify both production Cron jobs return authorized HTTP `200` responses before launch
 - [ ] Upgrade the production Supabase project to a plan that supports the custom-domain add-on
 - [ ] Create the `auth.tsokolitaw.com` CNAME pointing to the Supabase project domain
 - [ ] Register `auth.tsokolitaw.com` with Supabase and publish the required domain-verification TXT records
