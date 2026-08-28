@@ -201,7 +201,8 @@ The ₱10 per-piece amount is the approved initial database seed, not a permanen
 - each additional distinct coating type uses its Admin-configured additional-type charge; the temporary seed is ₱5
 - a mixed box allocates every piece to a coating
 - allocated pieces must exactly equal the selected box size
-- extra sea salt cream is a separate optional add-on, temporarily ₱18 per cup
+- extra sea salt cream is the initial optional add-on, temporarily ₱18 per cup
+- Admin-created active add-ons automatically appear in the customer builder; each configured box may select one add-on type and a quantity
 
 ### Reason
 

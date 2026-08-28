@@ -46,9 +46,10 @@ export interface CartLineItem {
   coatingCounts: Record<string, number>;
   coatingNames: Record<string, string>;
   extraCoatingCharge: number;
-  extraSauceAddonId: string | null;
-  extraSauceQuantity: number;
-  extraSaucePrice: number;
+  addonId: string | null;
+  addonName: string | null;
+  addonQuantity: number;
+  addonPrice: number;
   quantity: number;
 }
 

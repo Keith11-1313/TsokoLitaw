@@ -169,7 +169,7 @@ Each coating catalog record requires:
 
 During the UI-only phase, Admin may add a temporary session preview of a coating. It must be labeled as unsaved and must not appear in the customer builder as though it were published.
 
-The temporary prices are approved as initial database seed values. Authorized admins may edit the active base price per piece plus each coating's additional-type charge, add-on pricing, and related pricing. Box totals are derived from the selected variant's piece count and the current base piece price. The ₱5 additional-coating amount is not fixed: checkout must reload its current Admin-managed value and recalculate money on the server, while completed orders retain immutable price snapshots.
+The temporary prices are approved as initial database seed values. Authorized admins may edit the active base price per piece plus each coating's additional-type charge, add-on pricing, and related pricing. Every active add-on created in Admin Catalog must appear in the customer box builder. A configured box may select one add-on type and its quantity; the cart keeps its name for display, while checkout submits its database ID and quantity for server-side availability and price validation. Box totals are derived from the selected variant's piece count and the current base piece price. The ₱5 additional-coating amount is not fixed: checkout must reload its current Admin-managed value and recalculate money on the server, while completed orders retain immutable price snapshots.
 
 ## 7. Product Customization
 

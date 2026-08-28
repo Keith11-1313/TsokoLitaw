@@ -61,8 +61,8 @@ describe("configuration calculations", () => {
     expect(calculateCartLineTotal({
       boxPrice: 50,
       extraCoatingCharge: 5,
-      extraSauceQuantity: 1,
-      extraSaucePrice: 18,
+      addonQuantity: 1,
+      addonPrice: 18,
       quantity: 3,
     })).toBe(219);
   });

@@ -18,6 +18,12 @@ const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "tsokolitaw-cart-v2";
 export const MAX_CART_LINE_QUANTITY = 20;
 
+type StoredCartLine = Partial<CartLineItem> & {
+  extraSauceAddonId?: string | null;
+  extraSauceQuantity?: number;
+  extraSaucePrice?: number;
+};
+
 function normalizeQuantity(quantity: number) {
   if (!Number.isFinite(quantity)) return 1;
   return Math.min(MAX_CART_LINE_QUANTITY, Math.max(1, Math.trunc(quantity)));
@@ -33,10 +39,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const stored = window.localStorage.getItem(STORAGE_KEY);
       const parsed = stored ? JSON.parse(stored) as unknown : [];
       const restored = Array.isArray(parsed)
-        ? (parsed as CartLineItem[]).map((item) => ({
+        ? (parsed as StoredCartLine[]).map((item) => ({
           ...item,
-          quantity: normalizeQuantity(item.quantity),
-        }))
+          addonId: item.addonId ?? item.extraSauceAddonId ?? null,
+          addonName: item.addonName ?? ((item.extraSauceQuantity ?? 0) > 0 ? "Extra sea salt cream" : null),
+          addonQuantity: item.addonQuantity ?? item.extraSauceQuantity ?? 0,
+          addonPrice: item.addonPrice ?? item.extraSaucePrice ?? 0,
+          quantity: normalizeQuantity(item.quantity ?? 1),
+        } as CartLineItem))
         : [];
       queueMicrotask(() => {
         if (active) {

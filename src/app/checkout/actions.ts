@@ -37,7 +37,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 function isValidCartItem(item: CheckoutCartInput) {
   if (!UUID_PATTERN.test(item.variantId)) return false;
   if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 20) return false;
-  if (!Number.isInteger(item.addonQuantity) || item.addonQuantity < 0 || item.addonQuantity > 20) return false;
+  if (!Number.isInteger(item.addonQuantity) || item.addonQuantity < 0 || item.addonQuantity > 10) return false;
   if (item.addonId !== null && !UUID_PATTERN.test(item.addonId)) return false;
   if (!item.coatingCounts || typeof item.coatingCounts !== "object") return false;
 

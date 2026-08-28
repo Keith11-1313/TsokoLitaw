@@ -69,8 +69,8 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
         items: items.map((item) => ({
           variantId: item.variantId,
           coatingCounts: item.coatingCounts,
-          addonId: item.extraSauceAddonId,
-          addonQuantity: item.extraSauceQuantity,
+          addonId: item.addonId,
+          addonQuantity: item.addonQuantity,
           quantity: item.quantity,
         })),
       });

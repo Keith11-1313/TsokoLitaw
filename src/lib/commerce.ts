@@ -67,23 +67,23 @@ export function formatPhp(value: number) {
 export function calculateItemUnitTotal(
   boxPrice: number,
   extraCoatingCharge: number,
-  extraSauceQuantity: number,
-  extraSaucePrice: number = EXTRA_SAUCE_PRICE,
+  addonQuantity: number,
+  addonPrice: number = EXTRA_SAUCE_PRICE,
 ) {
-  return boxPrice + extraCoatingCharge + extraSauceQuantity * extraSaucePrice;
+  return boxPrice + extraCoatingCharge + addonQuantity * addonPrice;
 }
 
 type PricedCartLine = Pick<
   CartLineItem,
-  "boxPrice" | "extraCoatingCharge" | "extraSauceQuantity" | "extraSaucePrice" | "quantity"
+  "boxPrice" | "extraCoatingCharge" | "addonQuantity" | "addonPrice" | "quantity"
 >;
 
 export function calculateCartLineTotal(item: PricedCartLine) {
   return calculateItemUnitTotal(
     item.boxPrice,
     item.extraCoatingCharge,
-    item.extraSauceQuantity,
-    item.extraSaucePrice,
+    item.addonQuantity,
+    item.addonPrice,
   ) * item.quantity;
 }
 
