@@ -22,7 +22,7 @@ The PNGs in `references/` are retained as early visual context. They are not pix
 
 ### Decision
 
-The current milestone is Phase 10 PayMongo Test Mode. Phase 9 server commerce is complete.
+The current milestone is Phase 11 Orders, Reviews, Journal, and Admin CRUD. Phase 10 PayMongo Test Mode implementation is complete, with hosted provider smoke checks retained as release follow-ups.
 
 Allowed now:
 
@@ -34,21 +34,22 @@ Allowed now:
 - disabled or temporary mock admin controls
 - server-side cart validation, pricing, promotion evaluation, inventory reservation, Terms acceptance, immutable order snapshots, and idempotent pending-order creation
 - PayMongo v2 test checkout sessions, signed/idempotent webhooks, and test payment/refund transitions
+- real Admin order reads and audited, forward-only paid fulfillment transitions
 
 Deferred until separately approved:
 
 - PayMongo live mode and live keys
 - transactional email
-- broad Admin CRUD outside the Phase 9 commerce dependency surface
+- Admin CRUD areas not yet reached by the current Phase 11 slice
 - admin subdomain and DNS configuration
 
 ### Reason
 
-The customer workflow, authentication boundary, schema, and launch rules are approved enough to connect server commerce. Payments and broad operational CRUD remain separate phases so pricing, inventory, and order integrity can be verified before external side effects are introduced.
+The customer workflow, authentication boundary, server commerce, and test payment lifecycle are connected. Phase 11 now joins customer order tracking to operational Admin fulfillment one bounded management area at a time, preserving server authorization and auditability.
 
 ### UI consequence
 
-Catalog and published pickup options are real database reads. Browser totals remain estimates until the server recalculates them. Payment and unconnected Admin actions stay disabled or explicitly labeled until their phases begin.
+Catalog, published pickup options, customer orders, and Admin fulfillment orders are real database reads. Browser totals remain estimates until the server recalculates them. Unconnected Admin actions stay disabled or explicitly labeled until their Phase 11 slice begins.
 
 ## 4. Mobile-First Experience
 
@@ -415,7 +416,7 @@ Currently shared:
 - operating days and hours
 - ready-stock versus made-to-order availability
 
-Admin mock orders remain an explicitly operational preview and are not exposed as authenticated customer history.
+Admin Orders and the dashboard order summary now read the same persisted order snapshots available through the protected customer workflow. Other shared operational previews remain explicitly non-persistent until connected.
 
 ### Reason
 
@@ -423,7 +424,7 @@ Duplicated page-local mock data caused Admin and Customer to show different prod
 
 ### Boundary
 
-Shared frontend constants prevent UI drift; they are not database persistence. Admin edits remain disabled until real server mutations exist.
+Shared frontend constants prevent UI drift; they are not database persistence. Admin fulfillment is the first connected mutation surface; other Admin edits remain disabled until their server mutation slice exists.
 
 ## 17. Admin Hosting and Security
 

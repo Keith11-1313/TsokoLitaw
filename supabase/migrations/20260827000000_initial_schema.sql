@@ -1471,6 +1471,86 @@ begin
 end;
 $$;
 
+create or replace function public.transition_order_status(
+  target_admin_id uuid,
+  target_order_id uuid,
+  expected_status public.order_status,
+  next_status public.order_status
+)
+returns public.order_status
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_order public.orders%rowtype;
+begin
+  if not exists (
+    select 1
+    from public.profiles
+    where id = target_admin_id
+      and role = 'admin'
+      and is_active
+  ) then
+    raise exception 'Active administrator access is required';
+  end if;
+
+  select * into target_order
+  from public.orders
+  where id = target_order_id
+  for update;
+
+  if target_order.id is null then
+    raise exception 'Order was not found';
+  end if;
+
+  if target_order.status is distinct from expected_status then
+    raise exception 'Order status changed before this update';
+  end if;
+
+  if target_order.payment_status <> 'PAID' then
+    raise exception 'Only paid orders can enter fulfillment';
+  end if;
+
+  if not (
+    (expected_status = 'CONFIRMED' and next_status = 'PREPARING')
+    or (expected_status = 'PREPARING' and next_status = 'READY_FOR_PICKUP')
+    or (expected_status = 'READY_FOR_PICKUP' and next_status = 'COMPLETED')
+  ) then
+    raise exception 'That order status transition is not allowed';
+  end if;
+
+  update public.orders
+  set status = next_status,
+      completed_at = case
+        when next_status = 'COMPLETED' then now()
+        else completed_at
+      end,
+      updated_at = now()
+  where id = target_order.id;
+
+  insert into public.admin_audit_logs (
+    admin_id,
+    action,
+    entity_type,
+    entity_id,
+    metadata
+  ) values (
+    target_admin_id,
+    'order.status_changed',
+    'order',
+    target_order.id::text,
+    jsonb_build_object(
+      'order_number', target_order.order_number,
+      'from_status', expected_status,
+      'to_status', next_status
+    )
+  );
+
+  return next_status;
+end;
+$$;
+
 create or replace function public.create_pending_order(
   target_user_id uuid,
   checkout_key uuid,
@@ -2078,6 +2158,9 @@ grant execute on function public.process_paymongo_refund_event(
 grant execute on function public.request_manual_refund_fallback(
   uuid, uuid, text, text, text
 ) to service_role;
+grant execute on function public.transition_order_status(
+  uuid, uuid, public.order_status, public.order_status
+) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
   public.pickup_locations, public.pickup_dates, public.pickup_windows,
@@ -2248,6 +2331,10 @@ comment on function public.list_due_paymongo_checkouts(integer) is
   'Lists overdue provider-bound payments for trusted PayMongo expiry coordination.';
 comment on function public.expire_paymongo_order(uuid, text) is
   'Finalizes an overdue order only after trusted server code expires the exact PayMongo checkout.';
+comment on function public.transition_order_status(
+  uuid, uuid, public.order_status, public.order_status
+) is
+  'Service-role-only fulfillment transition with active-Admin validation, optimistic status matching, and audit logging.';
 comment on function public.create_pending_order(
   uuid, uuid, uuid, uuid, text, text, text, jsonb, numeric, numeric, numeric, text
 ) is 'Service-role-only atomic order writer. Next.js must reload and validate active catalog prices before calling it.';

@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { OrderStatus } from "@/components/ui/status-badge";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { measureServerOperation } from "@/lib/server-observability";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -46,6 +47,12 @@ export interface CustomerOrderDetail extends CustomerOrderSummary {
     failureMessage: string | null;
   };
   canCancel: boolean;
+}
+
+export interface AdminOrderSummary extends CustomerOrderSummary {
+  customerName: string;
+  customerEmail: string;
+  boxQuantity: number;
 }
 
 interface CoatingRow {
@@ -284,4 +291,80 @@ export async function getCustomerOrderDetail(
     } : null,
     canCancel: ["PENDING_PAYMENT", "PAID", "CONFIRMED"].includes(order.status),
   };
+}
+
+export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await measureServerOperation("admin.orders.list", () => supabase
+    .from("orders")
+    .select(`
+      id,
+      order_number,
+      status,
+      payment_status,
+      total,
+      created_at,
+      pickup_date,
+      pickup_window_snapshot,
+      pickup_location_snapshot,
+      customer_name,
+      customer_email,
+      order_items (
+        id,
+        order_id,
+        variant_name_snapshot,
+        quantity,
+        order_item_coatings (
+          order_item_id,
+          coating_name_snapshot,
+          piece_count
+        )
+      )
+    `)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .order("created_at", { referencedTable: "order_items", ascending: true })
+    .limit(100));
+
+  if (error) throw new Error("Admin orders could not be loaded.", { cause: error });
+
+  return ((data ?? []) as unknown as Array<CustomerOrderRow & {
+    customer_name: string;
+    customer_email: string;
+  }>).map((order) => ({
+    ...toOrderSummary(order),
+    customerName: order.customer_name,
+    customerEmail: order.customer_email,
+    boxQuantity: (order.order_items ?? []).reduce((total, item) => total + item.quantity, 0),
+  }));
+}
+
+export async function transitionAdminOrderStatus(input: {
+  adminId: string;
+  orderId: string;
+  expectedStatus: OrderStatus;
+  nextStatus: OrderStatus;
+}) {
+  const admin = createAdminSupabaseClient();
+  const { data, error } = await admin.rpc("transition_order_status", {
+    target_admin_id: input.adminId,
+    target_order_id: input.orderId,
+    expected_status: input.expectedStatus,
+    next_status: input.nextStatus,
+  });
+
+  if (error) {
+    if (error.message.includes("status changed")) {
+      throw new Error("This order was updated elsewhere. Refresh and try again.");
+    }
+    if (error.message.includes("not allowed")) {
+      throw new Error("That fulfillment update is no longer allowed.");
+    }
+    if (error.message.includes("paid orders")) {
+      throw new Error("Payment must be verified before fulfillment can begin.");
+    }
+    throw new Error("The order status could not be updated.", { cause: error });
+  }
+
+  return data as OrderStatus;
 }

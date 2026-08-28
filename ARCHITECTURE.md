@@ -30,7 +30,7 @@ Next.js App Router
 └── Local brand and product assets
 ```
 
-The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Customer and Admin self-checkout are validated against hosted development. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Email and broad Admin CRUD remain unconnected.
+The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Phase 11 Admin Orders reads the same persisted snapshots customers see and advances paid fulfillment through an atomic, audited database function. Email and the remaining Admin CRUD areas remain unconnected.
 
 Current customer/admin relationship:
 
@@ -49,9 +49,9 @@ Shared mock pickup data
 ├── Admin Pickup
 └── Admin Settings defaults
 
-Admin-only mock orders
-├── Admin Orders
-└── Dashboard summaries
+Admin order operations
+├── Admin Orders real snapshot list and fulfillment transitions
+└── Dashboard real recent-order summaries
 
 Authenticated customer order surfaces
 ├── My Orders ownership-scoped database list and status filters

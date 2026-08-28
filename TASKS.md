@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Phase 9 server commerce is complete and validated against hosted development with customer and Admin self-checkout proofs. Phase 10 PayMongo Test Mode is active using test credentials only.
+Phase 11 Orders, Reviews, Journal, and Admin CRUD is active. Phase 10 PayMongo Test Mode implementation is complete using test credentials only; its remaining hosted provider-expiry and cancellation/refund smoke checks stay visible as release follow-ups.
 
 ## Decision Baseline
 
@@ -200,9 +200,11 @@ Do not begin without explicit approval.
 - [x] Deploy and register the test webhook endpoint, then configure its signing secret
 - [x] Make payment return/cancellation states honest and never infer payment success from a browser redirect
 - [x] Add provider-first, database-second 15-minute checkout expiry coordination and a protected processor endpoint
-- [ ] Schedule `/api/cron/payment-expirations` every five minutes through Supabase Cron and verify its HTTP response
+- [x] Schedule `/api/cron/payment-expirations` every five minutes through Supabase Cron and verify its authorized HTTP `200` response
 - [x] Apply and validate the coordinated-expiry schema upgrade on hosted development
-- [ ] Complete the hosted test payment, paid-webhook, cancellation, and expiry smoke tests
+- [x] Complete the hosted test payment and signed paid-webhook smoke test
+- [ ] Complete a clean hosted provider-expiry smoke test after the development-order reset
+- [ ] Complete the hosted paid-cancellation and full-refund smoke test
 - [x] Implement full original-method refunds and verified refund webhooks
 - [x] Track refund state separately from order cancellation
 - [x] Never infer payment success from browser redirects
@@ -211,7 +213,9 @@ Do not begin without explicit approval.
 
 - [x] Connect the authenticated customer order list with real order snapshots and status filters
 - [x] Connect customer order details
-- [ ] Enforce order status transitions
+- [x] Connect Admin Orders to real order snapshots with search and status filtering
+- [x] Enforce the one-way paid fulfillment path from `CONFIRMED` through `COMPLETED`
+- [x] Record Admin fulfillment transitions in the audit log
 - [x] Implement cancellation eligibility
 - [x] Close customer cancellation at `PREPARING` and enforce no-show non-refund policy
 - [x] Add encrypted, restricted manual-refund fallback after provider failure

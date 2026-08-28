@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-The application is currently in **Phase 10: PayMongo Test Mode**. Authentication, authorization, and Phase 9 server commerce are complete. The active scope is server-only PayMongo v2 Hosted Checkout session creation, signed/idempotent webhook handling, provider-reference persistence, and test-mode payment/expiry/refund transitions. Admin operational screens remain mock until Phase 11 unless a Phase 10 payment dependency requires a narrowly scoped server mutation.
+The application is currently in **Phase 11: Orders, Reviews, Journal, and Admin CRUD**. Authentication, authorization, Phase 9 server commerce, and the Phase 10 PayMongo test-mode implementation are complete. The active slice connects real Admin orders and enforces forward-only, audited fulfillment transitions. Other Admin areas remain mock until their Phase 11 slice is explicitly started.
 
 Allowed:
 
@@ -35,12 +35,13 @@ Allowed:
 - runtime reads for active catalog, pickup availability, promotions, and inventory
 - server-only commerce validation, pricing, inventory reservation/release, Terms acceptance, and pending-order creation
 - PayMongo test-mode API helpers, hosted checkout sessions, signed webhooks, and payment/refund persistence
+- authenticated Admin reads and server-validated order fulfillment mutations
 
 Do not implement unless the user explicitly starts a later phase:
 
 - PayMongo live-mode keys or charges
 - transactional email
-- broad Admin CRUD outside the narrowly scoped operations required by Phase 10 payments
+- Admin CRUD outside the currently approved Phase 11 slice
 - admin subdomain or DNS configuration
 
 Never make mock UI look like secure authentication, verified payment, or persisted admin data.

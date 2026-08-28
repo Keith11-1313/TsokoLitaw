@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-**Phase 10: PayMongo Test Mode is active.** Authentication, authorization, and Phase 9 server commerce are complete. Checkout performs server-authoritative pricing, promotion evaluation, inventory reservation/release, order snapshots, Terms acceptance, and idempotent pending-order creation. Hosted customer and Admin checkout proofs produced shared kiosk numbers `TL-0001` and `TL-0002`. The active payment scope uses PayMongo test credentials only; live charges, email, and broad Admin CRUD remain deferred.
+**Phase 11: Orders, Reviews, Journal, and Admin CRUD is active.** Authentication, server commerce, and the PayMongo test-mode implementation are complete. Admin Orders now reads real order snapshots and advances paid orders through a forward-only, audited fulfillment workflow. PayMongo remains test-only; live charges and transactional email remain deferred.
 
 Implemented with mock data:
 
@@ -86,6 +86,9 @@ Phase 11 customer-order work started by product-owner request:
 - order detail loads its owned order graph and latest refund through one RLS-scoped nested query
 - All, Received, Preparing, Ready for pickup, and Completed filters organize real statuses without changing them in the browser
 - order details now load only the authenticated customer's immutable snapshots and show cancellation/refund eligibility
+- Admin Orders loads recent real order snapshots with local search and status filtering
+- active Admins can advance `CONFIRMED → PREPARING → READY_FOR_PICKUP → COMPLETED` through an atomic service-only database function
+- every successful fulfillment transition records the acting Admin, order, previous status, and next status in `admin_audit_logs`
 - completed-order review mutations remain pending
 
 Performance and concurrency hardening implemented for the current storefront:
@@ -105,7 +108,7 @@ Not yet implemented or externally configured:
 - email or real CRUD other than the approved account-deletion lifecycle
 - admin authorization or admin subdomain routing
 
-Customer identity, account state, catalog, published pickup options, and pending-order persistence are live Supabase data. Payments and Admin operational screens remain mock or unconnected. Disabled actions identify features that require future backend work.
+Customer identity, account state, catalog, published pickup options, orders, test payments, and Admin fulfillment are live Supabase data. Admin management areas outside the current fulfillment slice remain mock or unconnected, and disabled actions identify features that require future backend work.
 
 Our Creations and Checkout now read customer-safe commerce and pickup data from Supabase. Matching Admin screens remain non-persistent previews until Admin CRUD is implemented.
 

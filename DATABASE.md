@@ -24,6 +24,7 @@ The proposed schema follows `DECISIONS.md` and the current workflow:
 | Reviews require completed orders | unique review per order plus ownership/status validation |
 | Journal supports multiple content types | `journal_posts.content_type`, publication state, and optional media |
 | Admin mirrors customer operations | admin mutations update the same catalog, pickup, order, review, and Journal records customers consume |
+| Fulfillment is forward-only | `transition_order_status` locks the order, requires an active Admin and paid order, permits only `CONFIRMED → PREPARING → READY_FOR_PICKUP → COMPLETED`, and writes an audit record |
 | Resend sends transactional email | store idempotency keys, provider message IDs, delivery status, and retry metadata without storing provider secrets |
 
 Do not change the bootstrap schema directly from rough reference content. Reconfirm the decision log and business-policy items first, then fold an approved schema refinement into the canonical file.

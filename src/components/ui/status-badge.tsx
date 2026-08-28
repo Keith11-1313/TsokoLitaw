@@ -24,7 +24,7 @@ const statusStyles: Record<OrderStatus, string> = {
 const statusLabels: Record<OrderStatus, string> = {
   PENDING_PAYMENT: "Pending payment",
   PAID: "Paid",
-  CONFIRMED: "Confirmed",
+  CONFIRMED: "Received",
   PREPARING: "Preparing",
   READY_FOR_PICKUP: "Ready for pickup",
   COMPLETED: "Completed",
