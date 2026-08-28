@@ -495,7 +495,23 @@ They must be easy to find and acknowledged at checkout without competing with pr
 
 The recipe/allergen disclosure and the professor-provided educational Terms & Conditions baseline are approved. The Terms adapt the supplied demonstration clauses to the real physical-food, live-payment, campus-pickup, cancellation, refund, and no-show decisions; they must not describe accepted orders as digital-only consumption. Final Privacy wording still requires business approval before production.
 
-## 20. Git Workflow
+## 20. Inventory Unit and Admin Control
+
+### Decision
+
+Ready stock is counted in individual prepared Palitaw pieces per pickup date and product, not as separate box inventories. All active box sizes consume the same balance using `box quantity × piece count`.
+
+Admin may publish the exact prepared total for a Ready stock or Hybrid date, pause online checkout for that balance, and record walk-in sales or waste. These operations use active-Admin-checked server mutations with inventory-adjustment and Admin-audit records.
+
+### Reason
+
+The kitchen prepares individual Palitaw balls before they are packed into 4-, 6-, or 8-piece boxes. Separate box balances would incorrectly strand pieces in one box size and could oversell the real shared supply. A ten-piece balance must allow two boxes of four and leave two pieces.
+
+### Boundary
+
+Catalog availability controls whether a box size, coating, or add-on is offered at all. Daily Inventory controls only date-specific prepared product pieces. Coating and add-on quantity tracking remains optional for V1; their active flags remain the current availability control.
+
+## 21. Git Workflow
 
 ### Decision
 

@@ -25,7 +25,7 @@ select set_config(
   true
 );
 
-select plan(39);
+select plan(42);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -36,6 +36,7 @@ select has_table('public', 'mutation_rate_limit_buckets', 'distributed mutation 
 select has_column('public', 'profiles', 'is_active', 'profiles track whether account access is active');
 select has_column('public', 'profiles', 'deactivated_at', 'profiles record when access was deactivated');
 select has_column('public', 'orders', 'checkout_idempotency_key', 'orders store a customer checkout idempotency key');
+select has_column('public', 'daily_inventory', 'product_id', 'daily inventory tracks shared product pieces');
 select has_sequence('public', 'order_number_sequence', 'orders use a concurrency-safe kiosk number sequence');
 
 select ok(
@@ -165,6 +166,22 @@ select ok(
     'EXECUTE'
   ),
   'service role can invoke the atomic order writer'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.upsert_daily_inventory(uuid,date,uuid,integer,boolean,text)',
+    'EXECUTE'
+  ),
+  'authenticated users cannot write inventory directly'
+);
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.upsert_daily_inventory(uuid,date,uuid,integer,boolean,text)',
+    'EXECUTE'
+  ),
+  'service role can invoke controlled inventory updates'
 );
 
 select * from finish();

@@ -203,7 +203,7 @@ Current frontend cart supports:
 - browser-local persistence
 - checkout navigation
 
-The browser cart is a UI convenience only. Builder and cart quantities use provisional safety limits until inventory management is connected. Checkout remains authoritative: it must reject manipulated prices, discounts, quantities, stock, pickup capacity, and payment values using the selected pickup date and box variant.
+The browser cart is a UI convenience only. Builder and cart quantities use provisional safety limits until date-specific stock guidance is exposed in the customer UI. Checkout remains authoritative: it must reject manipulated prices, discounts, quantities, stock, pickup capacity, and payment values using the selected pickup date and each variant's piece count.
 
 ## 9. Checkout and Pickup
 
@@ -326,15 +326,15 @@ Cancellation and refund rules:
 
 ## 13. Inventory
 
-Future inventory supports:
+Inventory supports:
 
-- daily stock by box variant
-- reserved, sold, and available quantities
+- daily prepared stock counted in individual Palitaw pieces per product, shared by all box sizes
+- online-committed, walk-in/waste-consumed, and available piece quantities
 - coating and add-on availability
 - pickup date availability
 - ready-stock availability for school selling days, with recorded walk-in sales or adjustments so online stock remains accurate
 - sold-out UI
-- reservation during pending payment
+- atomic reservation of `box quantity × piece count` during pending payment
 - release after expiry
 - atomic updates to prevent overselling
 

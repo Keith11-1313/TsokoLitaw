@@ -139,7 +139,7 @@ create table public.pickup_window_locations (
 create table public.daily_inventory (
   id uuid primary key default gen_random_uuid(),
   pickup_date date not null references public.pickup_dates(pickup_date) on delete cascade,
-  product_variant_id uuid not null references public.product_variants(id) on delete restrict,
+  product_id uuid not null references public.products(id) on delete restrict,
   stock_total integer not null check (stock_total >= 0),
   stock_reserved integer not null default 0 check (stock_reserved >= 0),
   stock_sold integer not null default 0 check (stock_sold >= 0),
@@ -147,7 +147,7 @@ create table public.daily_inventory (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check (stock_reserved + stock_sold <= stock_total),
-  unique (pickup_date, product_variant_id)
+  unique (pickup_date, product_id)
 );
 
 create table public.inventory_adjustments (
@@ -878,19 +878,20 @@ begin
       )
     then
       update public.daily_inventory
-      set stock_reserved = greatest(stock_reserved - reserved_items.quantity, 0),
+      set stock_reserved = greatest(stock_reserved - reserved_items.piece_count, 0),
           updated_at = now()
       from (
         select
-          order_items.variant_id,
-          sum(order_items.quantity)::integer as quantity
+          product_variants.product_id,
+          sum(order_items.quantity * product_variants.piece_count)::integer as piece_count
         from public.order_items
+        join public.product_variants on product_variants.id = order_items.variant_id
         where order_items.order_id = expired_order.id
           and order_items.variant_id is not null
-        group by order_items.variant_id
+        group by product_variants.product_id
       ) reserved_items
       where daily_inventory.pickup_date = expired_order.pickup_date
-        and daily_inventory.product_variant_id = reserved_items.variant_id;
+        and daily_inventory.product_id = reserved_items.product_id;
     end if;
 
     update public.orders
@@ -991,19 +992,20 @@ begin
     )
   then
     update public.daily_inventory
-    set stock_reserved = greatest(stock_reserved - reserved_items.quantity, 0),
+    set stock_reserved = greatest(stock_reserved - reserved_items.piece_count, 0),
         updated_at = now()
     from (
       select
-        order_items.variant_id,
-        sum(order_items.quantity)::integer as quantity
+        product_variants.product_id,
+        sum(order_items.quantity * product_variants.piece_count)::integer as piece_count
       from public.order_items
+      join public.product_variants on product_variants.id = order_items.variant_id
       where order_items.order_id = target_order.id
         and order_items.variant_id is not null
-      group by order_items.variant_id
+      group by product_variants.product_id
     ) reserved_items
     where daily_inventory.pickup_date = pickup_date_value
-      and daily_inventory.product_variant_id = reserved_items.variant_id;
+      and daily_inventory.product_id = reserved_items.product_id;
   end if;
 
   update public.payments
@@ -1173,17 +1175,20 @@ begin
     )
   then
     update public.daily_inventory
-    set stock_reserved = greatest(stock_reserved - reserved_items.quantity, 0),
+    set stock_reserved = greatest(stock_reserved - reserved_items.piece_count, 0),
         updated_at = now()
     from (
-      select order_items.variant_id, sum(order_items.quantity)::integer as quantity
+      select
+        product_variants.product_id,
+        sum(order_items.quantity * product_variants.piece_count)::integer as piece_count
       from public.order_items
+      join public.product_variants on product_variants.id = order_items.variant_id
       where order_items.order_id = target_order.id
         and order_items.variant_id is not null
-      group by order_items.variant_id
+      group by product_variants.product_id
     ) reserved_items
     where daily_inventory.pickup_date = pickup_date_value
-      and daily_inventory.product_variant_id = reserved_items.variant_id;
+      and daily_inventory.product_id = reserved_items.product_id;
   end if;
 
   update public.payments
@@ -1950,6 +1955,181 @@ begin
 end;
 $$;
 
+create or replace function public.upsert_daily_inventory(
+  target_admin_id uuid,
+  target_pickup_date date,
+  target_product_id uuid,
+  stock_total_value integer,
+  available_value boolean,
+  notes_value text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_inventory public.daily_inventory%rowtype;
+  saved_id uuid := gen_random_uuid();
+  previous_total integer := 0;
+  inventory_delta integer;
+  audit_action text;
+begin
+  if not exists (
+    select 1 from public.profiles
+    where id = target_admin_id and role = 'admin' and is_active
+  ) then
+    raise exception 'Active administrator access is required';
+  end if;
+  if stock_total_value is null or stock_total_value < 0 or stock_total_value > 100000 then
+    raise exception 'Piece stock total is invalid';
+  end if;
+  if not exists (
+    select 1 from public.products where id = target_product_id
+  ) then
+    raise exception 'Product was not found';
+  end if;
+  if not exists (
+    select 1 from public.pickup_dates
+    where pickup_date = target_pickup_date
+      and availability_mode in ('READY_STOCK', 'HYBRID')
+  ) then
+    raise exception 'Inventory requires a ready-stock or hybrid pickup date';
+  end if;
+
+  select * into target_inventory
+  from public.daily_inventory
+  where pickup_date = target_pickup_date and product_id = target_product_id
+  for update;
+
+  if target_inventory.id is null then
+    insert into public.daily_inventory (
+      id, pickup_date, product_id, stock_total, is_available
+    ) values (
+      saved_id, target_pickup_date, target_product_id, stock_total_value, available_value
+    );
+    inventory_delta := stock_total_value;
+    audit_action := 'inventory.created';
+  else
+    if stock_total_value < target_inventory.stock_reserved + target_inventory.stock_sold then
+      raise exception 'Total stock cannot be lower than committed and consumed pieces';
+    end if;
+    saved_id := target_inventory.id;
+    previous_total := target_inventory.stock_total;
+    inventory_delta := stock_total_value - previous_total;
+    update public.daily_inventory
+    set stock_total = stock_total_value,
+        is_available = available_value,
+        updated_at = now()
+    where id = saved_id;
+    audit_action := 'inventory.updated';
+  end if;
+
+  if inventory_delta <> 0 then
+    insert into public.inventory_adjustments (
+      daily_inventory_id, quantity_delta, reason, notes, created_by
+    ) values (
+      saved_id,
+      inventory_delta,
+      case when target_inventory.id is null then 'RESTOCK' else 'CORRECTION' end,
+      nullif(trim(notes_value), ''),
+      target_admin_id
+    );
+  end if;
+
+  insert into public.admin_audit_logs (
+    admin_id, action, entity_type, entity_id, metadata
+  ) values (
+    target_admin_id,
+    audit_action,
+    'daily_inventory',
+    saved_id::text,
+    jsonb_build_object(
+      'pickup_date', target_pickup_date,
+      'product_id', target_product_id,
+      'previous_total', previous_total,
+      'stock_total', stock_total_value,
+      'is_available', available_value
+    )
+  );
+
+  return saved_id;
+end;
+$$;
+
+create or replace function public.record_inventory_consumption(
+  target_admin_id uuid,
+  target_inventory_id uuid,
+  quantity_value integer,
+  reason_value text,
+  notes_value text
+)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_inventory public.daily_inventory%rowtype;
+  remaining_pieces integer;
+begin
+  if not exists (
+    select 1 from public.profiles
+    where id = target_admin_id and role = 'admin' and is_active
+  ) then
+    raise exception 'Active administrator access is required';
+  end if;
+  if quantity_value is null or quantity_value < 1 or quantity_value > 100000 then
+    raise exception 'Consumed piece quantity is invalid';
+  end if;
+  if reason_value not in ('WALK_IN_SALE', 'WASTE') then
+    raise exception 'Inventory consumption reason is invalid';
+  end if;
+
+  select * into target_inventory
+  from public.daily_inventory
+  where id = target_inventory_id
+  for update;
+
+  if target_inventory.id is null then
+    raise exception 'Inventory record was not found';
+  end if;
+  if target_inventory.stock_total - target_inventory.stock_reserved - target_inventory.stock_sold < quantity_value then
+    raise exception 'Not enough uncommitted pieces remain';
+  end if;
+
+  update public.daily_inventory
+  set stock_sold = stock_sold + quantity_value,
+      updated_at = now()
+  where id = target_inventory_id
+  returning stock_total - stock_reserved - stock_sold into remaining_pieces;
+
+  insert into public.inventory_adjustments (
+    daily_inventory_id, quantity_delta, reason, notes, created_by
+  ) values (
+    target_inventory_id, -quantity_value, reason_value,
+    nullif(trim(notes_value), ''), target_admin_id
+  );
+
+  insert into public.admin_audit_logs (
+    admin_id, action, entity_type, entity_id, metadata
+  ) values (
+    target_admin_id,
+    case when reason_value = 'WALK_IN_SALE'
+      then 'inventory.walk_in_sale' else 'inventory.waste_recorded' end,
+    'daily_inventory',
+    target_inventory_id::text,
+    jsonb_build_object(
+      'quantity', quantity_value,
+      'reason', reason_value,
+      'remaining_pieces', remaining_pieces
+    )
+  );
+
+  return remaining_pieces;
+end;
+$$;
+
 create or replace function public.transition_order_status(
   target_admin_id uuid,
   target_order_id uuid,
@@ -2074,7 +2254,7 @@ declare
   coating jsonb;
   addon jsonb;
   inserted_order_item_id uuid;
-  requested_variant record;
+  requested_product record;
 begin
   perform public.expire_pending_orders();
 
@@ -2194,23 +2374,25 @@ begin
       and pickup_date_value = (current_timestamp at time zone 'Asia/Manila')::date
     )
   then
-    for requested_variant in
+    for requested_product in
       select
-        (entry ->> 'variant_id')::uuid as variant_id,
-        sum((entry ->> 'quantity')::integer)::integer as quantity
+        product_variants.product_id,
+        sum((entry ->> 'quantity')::integer * product_variants.piece_count)::integer as piece_count
       from jsonb_array_elements(priced_lines) entry
-      group by (entry ->> 'variant_id')::uuid
+      join public.product_variants
+        on product_variants.id = (entry ->> 'variant_id')::uuid
+      group by product_variants.product_id
     loop
       update public.daily_inventory
-      set stock_reserved = stock_reserved + requested_variant.quantity,
+      set stock_reserved = stock_reserved + requested_product.piece_count,
           updated_at = now()
       where pickup_date = pickup_date_value
-        and product_variant_id = requested_variant.variant_id
+        and product_id = requested_product.product_id
         and is_available
-        and stock_total - stock_reserved - stock_sold >= requested_variant.quantity;
+        and stock_total - stock_reserved - stock_sold >= requested_product.piece_count;
 
       if not found then
-        raise exception 'Ready stock is no longer available for a selected box';
+        raise exception 'Ready stock does not have enough pieces for the selected boxes';
       end if;
     end loop;
   end if;
@@ -2655,6 +2837,12 @@ grant execute on function public.upsert_catalog_coating(
   uuid, uuid, text, text, text, numeric, boolean, boolean, text
 ) to service_role;
 grant execute on function public.upsert_catalog_addon(uuid, uuid, text, numeric, boolean) to service_role;
+grant execute on function public.upsert_daily_inventory(
+  uuid, date, uuid, integer, boolean, text
+) to service_role;
+grant execute on function public.record_inventory_consumption(
+  uuid, uuid, integer, text, text
+) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
   public.pickup_locations, public.pickup_dates, public.pickup_windows,
@@ -2866,5 +3054,9 @@ comment on function public.upsert_catalog_coating(uuid, uuid, text, text, text, 
   'Service-role-only audited coating create or update used by the public builder and checkout.';
 comment on function public.upsert_catalog_addon(uuid, uuid, text, numeric, boolean) is
   'Service-role-only audited add-on create or update used by the public builder and checkout.';
+comment on function public.upsert_daily_inventory(uuid, date, uuid, integer, boolean, text) is
+  'Service-role-only audited ready-stock writer. Stock is counted in individual product pieces shared by every box size.';
+comment on function public.record_inventory_consumption(uuid, uuid, integer, text, text) is
+  'Service-role-only audited walk-in sale or waste writer that consumes uncommitted individual pieces.';
 comment on table public.manual_refund_destinations is
   'Restricted fallback data used only after an automatic PayMongo refund is unsupported or fails.';

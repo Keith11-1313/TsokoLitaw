@@ -205,14 +205,14 @@ This join lets Admin offer one window at one or both campus pickup locations wit
 ```text
 id uuid primary key
 pickup_date date
-product_variant_id uuid references product_variants(id)
+product_id uuid references products(id)
 stock_total integer check stock_total >= 0
 stock_reserved integer default 0 check stock_reserved >= 0
 stock_sold integer default 0 check stock_sold >= 0
 is_available boolean default true
 created_at timestamptz
 updated_at timestamptz
-unique(pickup_date, product_variant_id)
+unique(pickup_date, product_id)
 ```
 
 Available stock:
@@ -221,7 +221,7 @@ Available stock:
 stock_total - stock_reserved - stock_sold
 ```
 
-For a `READY_STOCK` or `HYBRID` pickup date, same-day checkout is available only while the corresponding on-hand stock remains available. Admin-recorded walk-in sales must reduce the same daily inventory balance used by online checkout.
+Stock is counted in individual prepared Palitaw pieces, not boxes. Every 4-, 6-, and 8-piece box draws from the same product balance for its pickup date. For example, 10 available pieces can fulfill two 4-piece boxes and leave 2 pieces. For a `READY_STOCK` or same-day `HYBRID` pickup date, checkout reserves `box quantity × variant piece count` atomically. Admin-recorded walk-in sales and waste reduce the same daily balance used by online checkout.
 
 ### `inventory_adjustments`
 
@@ -234,7 +234,7 @@ created_by uuid references profiles(id)
 created_at timestamptz
 ```
 
-This audit trail keeps school walk-in sales and corrections from silently causing online overselling.
+This audit trail keeps school walk-in sales, waste, restocks, and corrections from silently causing online overselling. Controlled Admin mutations reject a total below already committed or consumed pieces.
 
 Optional coating and add-on availability may use separate dated inventory tables if operations need quantity-level tracking; otherwise active/available flags are sufficient for V1.
 

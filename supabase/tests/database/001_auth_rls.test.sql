@@ -65,15 +65,15 @@ values ('rls-test-v1', 'Test terms', now() - interval '1 day', true);
 
 insert into public.daily_inventory (
   pickup_date,
-  product_variant_id,
+  product_id,
   stock_total,
   stock_reserved,
   stock_sold
 )
 values (
   '2099-01-01',
-  '11000000-0000-4000-8000-000000000004',
-  10,
+  '10000000-0000-4000-8000-000000000001',
+  40,
   0,
   0
 );
@@ -202,10 +202,10 @@ select is(
     select stock_reserved
     from public.daily_inventory
     where pickup_date = '2099-01-01'
-      and product_variant_id = '11000000-0000-4000-8000-000000000004'
+      and product_id = '10000000-0000-4000-8000-000000000001'
   ),
-  1,
-  'pending ready-stock checkout reserves inventory'
+  4,
+  'pending ready-stock checkout reserves individual pieces'
 );
 
 update public.orders
@@ -231,7 +231,7 @@ select is(
     select stock_reserved
     from public.daily_inventory
     where pickup_date = '2099-01-01'
-      and product_variant_id = '11000000-0000-4000-8000-000000000004'
+      and product_id = '10000000-0000-4000-8000-000000000001'
   ),
   0,
   'expiration releases ready-stock inventory'
