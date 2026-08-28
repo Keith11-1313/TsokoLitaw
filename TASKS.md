@@ -208,7 +208,8 @@ Do not begin without explicit approval.
 
 ## Phase 11 — Orders, Reviews, Journal, and Admin CRUD
 
-- [ ] Connect customer order list and details
+- [x] Connect the authenticated customer order list with real order snapshots and status filters
+- [ ] Connect customer order details
 - [ ] Enforce order status transitions
 - [ ] Implement cancellation eligibility
 - [ ] Close customer cancellation at `PREPARING` and enforce no-show non-refund policy

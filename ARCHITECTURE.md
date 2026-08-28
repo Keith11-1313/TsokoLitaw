@@ -54,8 +54,8 @@ Admin-only mock orders
 └── Dashboard summaries
 
 Authenticated customer order surfaces
-├── My Orders honest unconnected state
-└── Dynamic order/review routes unavailable until scoped database reads exist
+├── My Orders ownership-scoped database list and status filters
+└── Dynamic order/review routes unavailable until their scoped detail reads and mutations exist
 ```
 
 Customer catalog and pickup reads now reflect the linked database. Admin previews remain non-persistent and cannot publish changes yet.

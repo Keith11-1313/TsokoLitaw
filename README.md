@@ -75,6 +75,12 @@ Phase 10 payment foundation completed so far:
 - overdue provider-bound orders close the PayMongo checkout before the database releases reserved stock
 - local and hosted validation cover provider-reference persistence, paid-webhook processing, and coordinated expiry; the end-to-end hosted payment smoke test remains pending
 
+Phase 11 customer-order work started by product-owner request:
+
+- My Orders now loads only the authenticated profile's persisted order snapshots
+- All, Received, Preparing, Ready for pickup, and Completed filters organize real statuses without changing them in the browser
+- order-detail and completed-order review mutations remain pending
+
 Not yet implemented or externally configured:
 
 - initial Admin promotion and the remaining live authorization checks
