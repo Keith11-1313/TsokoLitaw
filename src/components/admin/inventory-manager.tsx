@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
-import { PackageCheck, ShoppingBasket, Trash2 } from "lucide-react";
+import { useActionState, useState } from "react";
+import { CalendarDays, PackageCheck } from "lucide-react";
 import {
   consumeInventoryAction,
   saveInventoryAction,
@@ -64,10 +64,12 @@ function StockEditor({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-display text-2xl">
-            {record ? formatDate(record.pickupDate) : "Publish ready stock"}
+            {record ? "Stock settings" : "Publish stock for another date"}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {product.name} · counted as individual pieces
+            {record
+              ? `Change the prepared-piece total for ${product.name}.`
+              : "Choose an eligible pickup date and enter the pieces prepared for it."}
           </p>
         </div>
         {record ? (
@@ -182,52 +184,115 @@ export function InventoryManager({
   dates: AdminInventoryDate[];
   records: AdminInventoryRecord[];
 }) {
-  const total = records.reduce((sum, record) => sum + record.stockTotal, 0);
-  const reserved = records.reduce((sum, record) => sum + record.stockReserved, 0);
-  const available = records.reduce((sum, record) => sum + record.stockAvailable, 0);
+  const [selectedInventoryId, setSelectedInventoryId] = useState(records[0]?.id ?? "");
+  const selectedRecord = records.find((record) => record.id === selectedInventoryId) ?? records[0];
+  const selectedDate = selectedRecord
+    ? dates.find((date) => date.pickupDate === selectedRecord.pickupDate)
+    : undefined;
   const configuredDates = new Set(records.map((record) => record.pickupDate));
   const unconfiguredDates = dates.filter((date) => !configuredDates.has(date.pickupDate));
 
   return (
     <>
-      <section className="grid gap-4 sm:grid-cols-3" aria-label="Inventory summary">
-        <AdminStatCard compact label="Prepared pieces" value={String(total)} />
-        <AdminStatCard compact label="Online committed" value={String(reserved)} accentClassName="text-info-foreground" />
-        <AdminStatCard compact label="Available pieces" value={String(available)} accentClassName="text-success-foreground" />
-      </section>
-
-      <section className="mt-7" aria-labelledby="inventory-rules-title">
-        <div className="grid gap-4 rounded-card border border-border bg-surface-muted p-5 text-sm md:grid-cols-3">
-          <div className="flex gap-3"><PackageCheck aria-hidden="true" className="shrink-0 text-brand" size={20} /><div><h2 id="inventory-rules-title" className="font-bold">One shared piece balance</h2><p className="mt-1 leading-6 text-muted-foreground">All 4-, 6-, and 8-piece boxes draw from the same prepared Palitaw pieces for that date.</p></div></div>
-          <div className="flex gap-3"><ShoppingBasket aria-hidden="true" className="shrink-0 text-brand" size={20} /><div><h2 className="font-bold">Walk-in sales</h2><p className="mt-1 leading-6 text-muted-foreground">Record school sales immediately so checkout cannot sell those pieces online.</p></div></div>
-          <div className="flex gap-3"><Trash2 aria-hidden="true" className="shrink-0 text-brand" size={20} /><div><h2 className="font-bold">Waste</h2><p className="mt-1 leading-6 text-muted-foreground">Damaged or unusable pieces reduce availability while preserving an audit trail.</p></div></div>
+      <section className="rounded-card border border-border bg-surface-muted p-5" aria-labelledby="inventory-period-title">
+        <div className="flex gap-3">
+          <CalendarDays aria-hidden="true" className="mt-0.5 shrink-0 text-brand" size={22} />
+          <div>
+            <h2 id="inventory-period-title" className="font-bold">Inventory is separate for every pickup date</h2>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
+              The numbers below apply only to the selected date. They reset when you publish stock for a different date; this page does not combine stock from multiple days.
+            </p>
+          </div>
         </div>
       </section>
 
+      {selectedRecord ? (
+        <section className="mt-7 space-y-5" aria-labelledby="selected-stock-title">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Viewing stock for</p>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <h2 id="selected-stock-title" className="font-display text-3xl">{formatDate(selectedRecord.pickupDate)}</h2>
+                {selectedDate ? (
+                  <span className="rounded-lg bg-surface-muted px-2.5 py-1 text-xs font-bold text-brand">
+                    {modeLabel(selectedDate.availabilityMode)}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">{product.name} · stock counted in individual pieces</p>
+            </div>
+            {records.length > 1 ? (
+              <label className="space-y-2 text-sm font-bold lg:min-w-72">
+                <span>Change pickup date</span>
+                <select
+                  value={selectedRecord.id}
+                  onChange={(event) => setSelectedInventoryId(event.target.value)}
+                  className="min-h-12 w-full rounded-control bg-surface-control px-4 font-normal"
+                >
+                  {records.map((record) => (
+                    <option key={record.id} value={record.id}>{formatDate(record.pickupDate)}</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label={`Inventory summary for ${formatDate(selectedRecord.pickupDate)}`}>
+            <AdminStatCard compact label="Prepared" value={String(selectedRecord.stockTotal)} supportingText="Pieces entered by Admin" />
+            <AdminStatCard compact label="Online committed" value={String(selectedRecord.stockReserved)} supportingText="Held for online orders" accentClassName="text-info-foreground" />
+            <AdminStatCard compact label="Walk-in / waste" value={String(selectedRecord.stockConsumed)} supportingText="Recorded outside online orders" />
+            <AdminStatCard compact label="Available now" value={String(selectedRecord.stockAvailable)} supportingText="Still available to sell" accentClassName="text-success-foreground" />
+          </div>
+
+          <div className="flex flex-col gap-2 rounded-control border border-border bg-surface px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <span className="font-bold">How the available stock is calculated</span>
+            <span className="text-muted-foreground">
+              {selectedRecord.stockTotal} prepared − {selectedRecord.stockReserved} online − {selectedRecord.stockConsumed} walk-in/waste = <strong className="text-success-foreground">{selectedRecord.stockAvailable} available</strong>
+            </span>
+          </div>
+
+          <article key={`${selectedRecord.id}-${selectedRecord.updatedAt}`}>
+            <StockEditor product={product} dates={dates} record={selectedRecord} />
+            <div className="-mt-1 rounded-b-card border border-t-0 border-border bg-surface px-5 pb-6 sm:px-6">
+              <ConsumptionForm record={selectedRecord} />
+            </div>
+          </article>
+        </section>
+      ) : (
+        <section className="mt-7 rounded-card border border-border bg-surface p-6" aria-labelledby="empty-inventory-title">
+          <div className="flex gap-3">
+            <PackageCheck aria-hidden="true" className="shrink-0 text-brand" size={22} />
+            <div>
+              <h2 id="empty-inventory-title" className="font-display text-2xl">No stock published yet</h2>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Publish the number of prepared pieces for an upcoming Ready stock or Hybrid pickup date.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {unconfiguredDates.length > 0 ? (
         <section className="mt-7" aria-labelledby="publish-stock-title">
-          <h2 id="publish-stock-title" className="sr-only">Publish stock</h2>
+          <h2 id="publish-stock-title" className="sr-only">Publish stock for another date</h2>
           <StockEditor product={product} dates={unconfiguredDates} />
         </section>
       ) : dates.length === 0 ? (
-        <p className="mt-7 rounded-card border border-warning-border bg-warning-background p-5 text-sm leading-6 text-warning-foreground">Create an upcoming Ready stock or Hybrid pickup date before publishing inventory.</p>
+        <p className="mt-7 rounded-card border border-warning-border bg-warning-background p-5 text-sm leading-6 text-warning-foreground">
+          No eligible pickup date exists. Create an upcoming Ready stock or Hybrid date in Pickup before publishing prepared pieces.
+        </p>
       ) : null}
 
-      <section className="mt-7 space-y-5" aria-labelledby="daily-stock-title">
-        <div><h2 id="daily-stock-title" className="font-display text-2xl">Daily piece stock</h2><p className="mt-1 text-sm text-muted-foreground">Exact totals and every consumption change are validated and audited on the server.</p></div>
-        {records.length ? records.map((record) => (
-          <article key={`${record.id}-${record.updatedAt}`}>
-            <StockEditor product={product} dates={dates} record={record} />
-            <div className="-mt-1 rounded-b-card border border-t-0 border-border bg-surface px-5 pb-6 sm:px-6">
-              <dl className="grid gap-3 rounded-control bg-surface-muted p-4 text-sm sm:grid-cols-3">
-                <div><dt className="text-muted-foreground">Online committed</dt><dd className="mt-1 font-bold">{record.stockReserved} pieces</dd></div>
-                <div><dt className="text-muted-foreground">Walk-in / waste</dt><dd className="mt-1 font-bold">{record.stockConsumed} pieces</dd></div>
-                <div><dt className="text-muted-foreground">Available now</dt><dd className="mt-1 font-bold">{record.stockAvailable} pieces</dd></div>
-              </dl>
-              <ConsumptionForm record={record} />
-            </div>
-          </article>
-        )) : <p className="rounded-card border border-border bg-surface p-6 text-sm text-muted-foreground">No ready-stock inventory has been published yet.</p>}
+      <section className="mt-7 rounded-card border border-border bg-surface-muted p-5 text-sm" aria-labelledby="shared-balance-title">
+        <div className="flex gap-3">
+          <PackageCheck aria-hidden="true" className="shrink-0 text-brand" size={20} />
+          <div>
+            <h2 id="shared-balance-title" className="font-bold">One piece balance per date</h2>
+            <p className="mt-1 leading-6 text-muted-foreground">
+              Box sizes do not have separate stock. A box of 4 uses 4 pieces, a box of 6 uses 6, and a box of 8 uses 8 from the selected date&apos;s available balance. Record walk-in sales and waste as soon as they happen.
+            </p>
+          </div>
+        </div>
       </section>
     </>
   );

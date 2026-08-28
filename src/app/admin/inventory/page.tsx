@@ -17,7 +17,7 @@ export default async function AdminInventoryPage() {
         <header>
           <h1 className="font-display text-[2.25rem] leading-tight text-foreground">Inventory</h1>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-            Publish prepared Palitaw pieces for ready-stock dates, track online commitments, and record school sales or waste.
+            Manage the prepared pieces available for each Ready stock or Hybrid pickup date.
           </p>
         </header>
         <div className="mt-8"><InventoryManager {...inventory} /></div>
