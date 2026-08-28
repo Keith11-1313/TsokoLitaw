@@ -365,7 +365,7 @@ Admin pages:
 
 Admin may eventually manage boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, promotions, loyalty, orders, reviews, Journal posts, and operational settings.
 
-The Admin Catalog coating form must collect name, description, a validated 1:1 image, and the coating's additional-type price. Future publication requires authenticated server-side persistence and media storage; the current form is only a browser-session preview.
+The Admin Catalog coating form collects name, description, a validated 1:1 image, allergen information, availability, and the coating's additional-type price. Publication uses authenticated server-side persistence, controlled public media storage, cache invalidation, and Admin audit logging.
 
 The TsokoLitaw brand/store name is fixed and must not appear as an editable setting. Never expose infrastructure secrets in admin UI.
 

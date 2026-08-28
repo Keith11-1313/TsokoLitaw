@@ -117,7 +117,7 @@ Customer identity, account state, catalog, published pickup options, orders, tes
 
 Our Creations and Checkout now read customer-safe commerce and pickup data from Supabase. Matching Admin screens remain non-persistent previews until Admin CRUD is implemented.
 
-The Admin Catalog can temporarily add a coating preview with name, description, a 1:1 image, and additional-type price. The preview exists only in the current page session and is not published to Our Creations.
+The Admin Catalog now persists the base per-piece price, product availability, approved box-size availability, coatings, square coating media, additional-type prices, and add-on pricing. Controlled service-role mutations recheck active Admin access, write audit records, and invalidate the public catalog cache; checkout still reloads live values.
 
 Signed-out visitors are redirected to Login when opening checkout, Profile, My Orders, order details, or eligible review routes. A Google session creates a customer profile through the database trigger. Admin routes require both a verified session and the protected `admin` profile role; signed-in customers who attempt to open them receive the global Not Found page while the requested Admin URL remains in the address bar. Logout always requires confirmation and returns to Home after the Supabase session is cleared.
 

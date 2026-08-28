@@ -366,6 +366,24 @@ on conflict (id) do update set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
+insert into storage.buckets (
+  id,
+  name,
+  public,
+  file_size_limit,
+  allowed_mime_types
+) values (
+  'catalog-media',
+  'catalog-media',
+  true,
+  3145728,
+  array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
 create table public.promotions (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -1755,6 +1773,164 @@ begin
 end;
 $$;
 
+create or replace function public.update_catalog_product(
+  target_admin_id uuid,
+  target_product_id uuid,
+  description_value text,
+  price_per_piece_value numeric,
+  active_value boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_product public.products%rowtype;
+begin
+  if not exists (select 1 from public.profiles where id = target_admin_id and role = 'admin' and is_active) then
+    raise exception 'Active administrator access is required';
+  end if;
+  if length(trim(description_value)) < 10 or length(trim(description_value)) > 500 then
+    raise exception 'Product description must contain between 10 and 500 characters';
+  end if;
+  if price_per_piece_value is null or price_per_piece_value < 0 or price_per_piece_value > 10000 then
+    raise exception 'Product price is invalid';
+  end if;
+
+  select * into target_product from public.products where id = target_product_id for update;
+  if target_product.id is null then raise exception 'Product was not found'; end if;
+
+  update public.products
+  set description = trim(description_value), price_per_piece = price_per_piece_value,
+      is_active = active_value, updated_at = now()
+  where id = target_product_id;
+
+  insert into public.admin_audit_logs (admin_id, action, entity_type, entity_id, metadata)
+  values (target_admin_id, 'catalog.product_updated', 'product', target_product_id::text,
+    jsonb_build_object('previous_price', target_product.price_per_piece, 'price', price_per_piece_value,
+      'previous_active', target_product.is_active, 'active', active_value));
+  return true;
+end;
+$$;
+
+create or replace function public.update_catalog_variant(
+  target_admin_id uuid,
+  target_variant_id uuid,
+  active_value boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_variant public.product_variants%rowtype;
+begin
+  if not exists (select 1 from public.profiles where id = target_admin_id and role = 'admin' and is_active) then
+    raise exception 'Active administrator access is required';
+  end if;
+  select * into target_variant from public.product_variants where id = target_variant_id for update;
+  if target_variant.id is null then raise exception 'Product variant was not found'; end if;
+  if target_variant.piece_count not in (4, 6, 8) then raise exception 'Unsupported box size'; end if;
+
+  update public.product_variants set is_active = active_value, updated_at = now() where id = target_variant_id;
+  insert into public.admin_audit_logs (admin_id, action, entity_type, entity_id, metadata)
+  values (target_admin_id, 'catalog.variant_updated', 'product_variant', target_variant_id::text,
+    jsonb_build_object('piece_count', target_variant.piece_count, 'previous_active', target_variant.is_active, 'active', active_value));
+  return true;
+end;
+$$;
+
+create or replace function public.upsert_catalog_coating(
+  target_admin_id uuid,
+  target_coating_id uuid,
+  name_value text,
+  description_value text,
+  image_url_value text,
+  additional_type_price_value numeric,
+  active_value boolean,
+  allergen_value boolean,
+  allergen_note_value text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_id uuid := coalesce(target_coating_id, gen_random_uuid());
+  target_coating public.coatings%rowtype;
+  normalized_name text := trim(name_value);
+  normalized_description text := trim(description_value);
+  normalized_image text := trim(image_url_value);
+  generated_slug text;
+  next_sort integer;
+  audit_action text;
+begin
+  if not exists (select 1 from public.profiles where id = target_admin_id and role = 'admin' and is_active) then
+    raise exception 'Active administrator access is required';
+  end if;
+  if length(normalized_name) < 2 or length(normalized_name) > 80 then raise exception 'Coating name must contain between 2 and 80 characters'; end if;
+  if length(normalized_description) < 10 or length(normalized_description) > 300 then raise exception 'Coating description must contain between 10 and 300 characters'; end if;
+  if normalized_image = '' or length(normalized_image) > 1000 then raise exception 'Coating image is required'; end if;
+  if additional_type_price_value is null or additional_type_price_value < 0 or additional_type_price_value > 10000 then raise exception 'Coating price is invalid'; end if;
+  if allergen_value and nullif(trim(allergen_note_value), '') is null then raise exception 'Allergen note is required'; end if;
+
+  if target_coating_id is null then
+    generated_slug := trim(both '-' from regexp_replace(lower(normalized_name), '[^a-z0-9]+', '-', 'g')) || '-' || left(saved_id::text, 8);
+    select coalesce(max(sort_order), 0) + 1 into next_sort from public.coatings;
+    insert into public.coatings (id, name, slug, description, image_url, additional_type_price, is_active, is_allergen, allergen_note, sort_order)
+    values (saved_id, normalized_name, generated_slug, normalized_description, normalized_image,
+      additional_type_price_value, active_value, allergen_value, nullif(trim(allergen_note_value), ''), next_sort);
+    audit_action := 'catalog.coating_created';
+  else
+    select * into target_coating from public.coatings where id = target_coating_id for update;
+    if target_coating.id is null then raise exception 'Coating was not found'; end if;
+    update public.coatings set name = normalized_name, description = normalized_description,
+      image_url = normalized_image, additional_type_price = additional_type_price_value,
+      is_active = active_value, is_allergen = allergen_value,
+      allergen_note = nullif(trim(allergen_note_value), ''), updated_at = now()
+    where id = target_coating_id;
+    audit_action := 'catalog.coating_updated';
+  end if;
+
+  insert into public.admin_audit_logs (admin_id, action, entity_type, entity_id, metadata)
+  values (target_admin_id, audit_action, 'coating', saved_id::text,
+    jsonb_build_object('name', normalized_name, 'price', additional_type_price_value, 'active', active_value));
+  return saved_id;
+end;
+$$;
+
+create or replace function public.update_catalog_addon(
+  target_admin_id uuid,
+  target_addon_id uuid,
+  price_value numeric,
+  active_value boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_addon public.addons%rowtype;
+begin
+  if not exists (select 1 from public.profiles where id = target_admin_id and role = 'admin' and is_active) then
+    raise exception 'Active administrator access is required';
+  end if;
+  if price_value is null or price_value < 0 or price_value > 10000 then raise exception 'Add-on price is invalid'; end if;
+  select * into target_addon from public.addons where id = target_addon_id for update;
+  if target_addon.id is null then raise exception 'Add-on was not found'; end if;
+  update public.addons set price = price_value, is_active = active_value, updated_at = now() where id = target_addon_id;
+  insert into public.admin_audit_logs (admin_id, action, entity_type, entity_id, metadata)
+  values (target_admin_id, 'catalog.addon_updated', 'addon', target_addon_id::text,
+    jsonb_build_object('previous_price', target_addon.price, 'price', price_value,
+      'previous_active', target_addon.is_active, 'active', active_value));
+  return true;
+end;
+$$;
+
 create or replace function public.transition_order_status(
   target_admin_id uuid,
   target_order_id uuid,
@@ -2454,6 +2630,12 @@ grant execute on function public.moderate_order_review(
 grant execute on function public.upsert_journal_post(
   uuid, uuid, text, text, text, text, text, date, text, text, public.journal_status
 ) to service_role;
+grant execute on function public.update_catalog_product(uuid, uuid, text, numeric, boolean) to service_role;
+grant execute on function public.update_catalog_variant(uuid, uuid, boolean) to service_role;
+grant execute on function public.upsert_catalog_coating(
+  uuid, uuid, text, text, text, numeric, boolean, boolean, text
+) to service_role;
+grant execute on function public.update_catalog_addon(uuid, uuid, numeric, boolean) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
   public.pickup_locations, public.pickup_dates, public.pickup_windows,
@@ -2657,5 +2839,13 @@ comment on function public.process_paymongo_refund_event(text, text, text, numer
   'Idempotently applies a signed PayMongo refund event to the exact payment and refund.';
 comment on function public.request_manual_refund_fallback(uuid, uuid, text, text, text) is
   'Stores an encrypted customer refund destination only after original-method refund failure.';
+comment on function public.update_catalog_product(uuid, uuid, text, numeric, boolean) is
+  'Service-role-only audited product price, description, and availability update.';
+comment on function public.update_catalog_variant(uuid, uuid, boolean) is
+  'Service-role-only audited availability update for approved 4, 6, and 8 piece boxes.';
+comment on function public.upsert_catalog_coating(uuid, uuid, text, text, text, numeric, boolean, boolean, text) is
+  'Service-role-only audited coating create or update used by the public builder and checkout.';
+comment on function public.update_catalog_addon(uuid, uuid, numeric, boolean) is
+  'Service-role-only audited add-on price and availability update.';
 comment on table public.manual_refund_destinations is
   'Restricted fallback data used only after an automatic PayMongo refund is unsupported or fails.';

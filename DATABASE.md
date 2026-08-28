@@ -129,7 +129,7 @@ Pricing rule: one distinct coating type is included; additional distinct coating
 
 The initial `additional_type_price` is ₱5. It is an Admin-managed seed rather than a fixed business rule, and checkout reloads the active value before calculating the order.
 
-The application must validate coating media before upload. Customer catalog images use a square 1:1 presentation; future storage should retain image dimensions and reject unsupported or unsafe file types. Database `image_url` stores only the resulting approved asset location, never a browser data URL.
+The application validates coating media before upload. Customer catalog images use a square 1:1 presentation; `catalog-media` accepts only JPG, PNG, or WebP files up to 3 MB, while the Admin client rejects non-square dimensions before submission. Database `image_url` stores only the resulting approved asset location, never a browser data URL.
 
 ## 5. Add-ons
 

@@ -100,7 +100,7 @@ Phase 11 Orders, Reviews, Journal, and Admin CRUD is active. Phase 10 PayMongo T
 - [x] Add purpose, customer-impact, and connection guidance to every admin area
 - [x] Share customer/admin mock commerce and pickup constants
 - [x] Add frontend-only coating-entry preview with name, description, 1:1 image validation, and additional-type price
-- [ ] Connect coating creation, media upload, and publication during authorized Admin CRUD work
+- [x] Connect Admin Catalog pricing, box availability, coating CRUD, square media upload, add-on availability, cache invalidation, and audit logging
 - [x] Review dense admin screens at small tablet widths
 
 ## Phase 5 — UI Quality Assurance
@@ -226,8 +226,9 @@ Do not begin without explicit approval.
 - [x] Merge Reviews into Admin Journal and retain `/admin/reviews` as a compatibility redirect
 - [x] Replace the separate customer review screen with an order-detail modal and strict comment counter
 - [x] Implement Journal draft/publish editing with type, icon, date, content, cover image, and video-link support
-- [ ] Implement product, coating, add-on, inventory, pickup, promotion, customer, and settings administration
-- [x] Add auditability for fulfillment, review moderation, and Journal publication actions
+- [x] Implement product, approved box-size, coating media, and add-on administration
+- [ ] Implement inventory, pickup, promotion, customer, and settings administration
+- [x] Add auditability for fulfillment, Catalog mutations, review moderation, and Journal publication actions
 
 ## Phase 12 — Loyalty and Notifications
 

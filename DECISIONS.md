@@ -471,7 +471,7 @@ The Home feature media uses one mobile-first carousel rather than two competing 
 
 ### Admin coating-entry decision
 
-Admin Catalog previews collect a coating name, customer-facing description, square 1:1 image, and additional-type price. The price represents the charge when that coating is used as an additional distinct type; the first coating type in a box remains included.
+Admin Catalog persists a coating name, customer-facing description, square 1:1 image, allergen information, availability, and additional-type price through controlled audited mutations. The price represents the charge when that coating is used as an additional distinct type; the first coating type in a box remains included.
 
 The current interaction adds the entry only to in-memory page state. It is intentionally marked as a session preview because publishing it to Our Creations requires authenticated server CRUD, durable storage, and server-authoritative pricing.
 
