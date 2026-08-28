@@ -61,7 +61,7 @@ function StockEditor({
   return (
     <form action={action} className="rounded-card border border-border bg-surface p-5 sm:p-6">
       <input type="hidden" name="productId" value={product.id} />
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+      <div>
         <div>
           <h2 className="font-display text-2xl">
             {record ? "Stock settings" : "Publish stock for another date"}
@@ -72,15 +72,6 @@ function StockEditor({
             </p>
           ) : null}
         </div>
-        {record ? (
-          <span className={`w-fit rounded-lg px-2.5 py-1 text-xs font-bold ${
-            record.isAvailable
-              ? "bg-success-background text-success-foreground"
-              : "bg-surface-muted text-muted-foreground"
-          }`}>
-            {record.isAvailable ? "Accepting orders" : "Paused"}
-          </span>
-        ) : null}
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -106,7 +97,7 @@ function StockEditor({
         </label>
 
         <label className="space-y-2 text-sm font-bold">
-          <span>Total prepared pieces</span>
+          <span>Total prepared pieces for this date</span>
           <input
             name="stockTotal"
             type="number"
@@ -119,7 +110,7 @@ function StockEditor({
           />
           {minimum > 0 ? (
             <span className="block text-xs font-normal text-muted-foreground">
-              Minimum {minimum}: {record?.stockReserved ?? 0} committed to orders and {record?.stockConsumed ?? 0} already removed.
+              {minimum} pieces are already committed or removed. Use another pickup date to start a new independent stock limit.
             </span>
           ) : null}
         </label>
@@ -129,10 +120,6 @@ function StockEditor({
           <input name="notes" maxLength={240} placeholder="Example: Morning batch added" className="min-h-12 w-full rounded-control bg-surface-control px-4 font-normal" />
         </label>
 
-        <label className="flex min-h-12 items-center gap-3 rounded-control bg-surface-control px-4 text-sm font-bold sm:col-span-2">
-          <input name="isAvailable" type="checkbox" defaultChecked={record?.isAvailable ?? true} className="size-4 accent-brand" />
-          Available for online checkout
-        </label>
       </div>
 
       <div className="mt-5 space-y-3">

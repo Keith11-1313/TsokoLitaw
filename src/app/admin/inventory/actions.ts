@@ -61,7 +61,7 @@ export async function saveInventoryAction(
       pickupDate,
       productId,
       stockTotal,
-      isAvailable: formData.get("isAvailable") === "on",
+      isAvailable: true,
       notes,
     });
     refreshInventory();
