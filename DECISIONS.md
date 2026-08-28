@@ -279,7 +279,7 @@ Delivery addresses and delivery-hour UI did not match the actual operating model
 
 ### UI consequence
 
-Checkout exposes date, time, and location dropdowns. Admin Pickup exists to publish those customer-facing options and explain the operational rules.
+Checkout exposes date, time, and location dropdowns. Admin Pickup owns and publishes those customer-facing options, including the availability mode, and explains the operational rules. Admin Inventory only receives existing upcoming Ready Stock and Hybrid dates; it does not create schedules. Until Pickup persistence is connected, another development pickup date requires temporary controlled SQL.
 
 ## 12. Orders and Status Workflow
 
@@ -477,7 +477,7 @@ The Home feature media uses one mobile-first carousel rather than two competing 
 
 Admin Catalog persists a coating name, customer-facing description, square 1:1 image, allergen information, availability, and additional-type price through controlled audited mutations. The price represents the charge when that coating is used as an additional distinct type; the first coating type in a box remains included.
 
-The current interaction adds the entry only to in-memory page state. It is intentionally marked as a session preview because publishing it to Our Creations requires authenticated server CRUD, durable storage, and server-authoritative pricing.
+The connected interaction previews the selected image before upload, then publishes only through authenticated server CRUD, durable storage, cache invalidation, audit logging, and server-authoritative pricing. The obsolete session-only coating preview must not be restored.
 
 ### Reason
 
@@ -505,9 +505,13 @@ Admin may publish the exact prepared total for a Ready stock or Hybrid date and 
 
 Made to order, Ready stock, and Hybrid all use the same website checkout and online payment flow. The modes control preparation timing and stock enforcement, not the payment channel. V1 does not accept cash or untracked walk-in sales.
 
+Every mode requires an explicitly published pickup date. Made to order uses that date's lead-time and cutoff rules without prepared inventory. Ready Stock requires an exact prepared-piece upper limit for that date. Hybrid consumes prepared pieces for same-day checkout and uses made-to-order rules for eligible advance orders.
+
 ### Reason
 
 The kitchen prepares individual Palitaw balls before they are packed into 4-, 6-, or 8-piece boxes. Separate box balances would incorrectly strand pieces in one box size and could oversell the real shared supply. A ten-piece balance must allow two boxes of four and leave two pieces.
+
+The published total is a lifetime cap for that pickup-date inventory record, not a rolling daily or all-time dashboard number. It cannot be reduced below pieces already committed to orders or removed as waste because that would make the balance negative. A newly published date starts its own independent total.
 
 ### Boundary
 

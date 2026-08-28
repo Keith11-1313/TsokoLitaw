@@ -229,7 +229,10 @@ Do not begin without explicit approval.
 - [x] Implement product, approved box-size, coating media, and add-on administration
 - [x] Add persistent per-line Cart checkout selection and remove only purchased lines after verified payment
 - [x] Implement piece-based Inventory administration with exact ready-stock totals, online commitments, unusable-piece recording, and audit records; pickup publication and remaining stock control website-paid sales
-- [ ] Implement pickup, promotion, customer, and settings administration
+- [x] Clarify selected-date Inventory UI, shared piece limits, accounted-piece lower bounds, and removal of redundant online-availability/cash-sale controls
+- [ ] Connect Admin Pickup CRUD so Admin can create, publish, close, and edit dates, modes, windows, locations, lead time, cutoff, and capacity without SQL
+- [ ] Make newly published Ready Stock and Hybrid dates appear automatically in Admin Inventory; Made to order dates must not request prepared stock
+- [ ] Implement promotion, customer, and settings administration
 - [ ] Replace provisional builder/cart quantity caps with remaining date-specific piece-stock guidance; retain transactional checkout enforcement
 - [x] Add auditability for fulfillment, Catalog mutations, review moderation, and Journal publication actions
 

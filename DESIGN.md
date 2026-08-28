@@ -175,6 +175,8 @@ Every admin area should explain its purpose, customer impact, and current connec
 
 Admin Inventory should lead with the selected pickup date and its operational controls. Avoid repeating instructional cards, helper captions, or arithmetic already communicated by clear labels. Inventory may record unusable pieces, but it must not expose a walk-in cash-sale workflow because every customer purchase uses website checkout and online payment. Do not add a separate online-availability checkbox; pickup publication and remaining stock determine checkout availability.
 
+The selected date must be visibly associated with its mode and independent balance. The prepared-piece field represents the upper limit for that date across every box size. When commitments or waste create a non-zero lower bound, explain that those pieces are already accounted for and direct Admin to another pickup date for a new independent limit. If multiple eligible dates exist, expose a simple date selector. Creation of dates belongs in Admin Pickup, not Inventory.
+
 ## 6. Product Presentation
 
 Real coating photography lives in the Supabase `catalog-media` bucket and is selected through the persisted catalog.
@@ -194,7 +196,7 @@ Admin coating entry should:
 - require and preview a square 1:1 image
 - explain that the first coating remains included
 - present ₱5 as an editable seed for the additional-type charge, not permanent pricing
-- distinguish a browser-session preview from a customer-visible published record
+- distinguish a local image preview from a successfully persisted customer-visible record
 
 Placeholders remain acceptable only when an actual asset is unavailable.
 
@@ -270,7 +272,7 @@ Checkout now opens PayMongo Hosted Checkout after the server creates or reloads 
 
 Order references use the short shared kiosk format `TL-0001`. Customer and Admin views must display the same stored order number so it can be spoken and matched quickly at pickup.
 
-Pickup UI must distinguish made-to-order availability from ready stock. The Monday–Saturday, 7:00 AM–7:00 PM operating window is guidance only; checkout shows only dates and slots published by Admin, and same-day pickup appears only for available ready stock.
+Pickup UI must distinguish Made to order, Ready stock, and Hybrid. The Monday–Saturday, 7:00 AM–7:00 PM operating window is guidance only; checkout shows only dates and slots explicitly published by Admin, and no mode appears automatically every day. All three modes use website checkout and online payment. Admin Pickup creates the schedule; Ready Stock and Hybrid dates then become selectable in Admin Inventory.
 
 Cancellation confirmation must explain whether the action only releases an unpaid reservation or starts a full refund to the original payment method. Do not ask for a GCash, Maya, or bank destination during the normal PayMongo refund flow; show a restricted fallback form only after the automatic refund is unavailable or has failed.
 

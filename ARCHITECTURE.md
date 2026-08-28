@@ -36,11 +36,8 @@ Current customer/admin relationship:
 
 ```text
 Database commerce catalog
-└── Our Creations
-
-Shared mock commerce data
-├── Admin Catalog
-└── Admin coating session previews (not published)
+├── Our Creations
+└── Admin Catalog controlled persistence
 
 Database-published pickup data
 └── Checkout
@@ -141,7 +138,7 @@ src/
 
 Commerce business rules belong in server modules and database functions rather than presentation components.
 
-Our Creations consumes the active database catalog, including the saved customer-facing product description, and Checkout consumes published database pickup options. Admin Catalog writes that same catalog through controlled server actions; the primary product remains active while sellability is controlled through box variants, coatings, and add-ons. Admin Pickup remains a preview until its CRUD slice.
+Our Creations consumes the active database catalog, including the saved customer-facing product description, and Checkout consumes published database pickup options. Admin Catalog writes that same catalog through controlled server actions; the primary product remains active while sellability is controlled through box variants, coatings, and add-ons. Admin Pickup remains a preview until its CRUD slice, so Inventory can manage only eligible dates already present in `pickup_dates`; temporary controlled SQL is still required to add another hosted-development date.
 
 The Admin coating form validates a square 1:1 image in the browser, limits server uploads to approved image types and 3 MB, stores the public asset in `catalog-media`, and publishes the database record only through an active-Admin-checked service mutation.
 
@@ -248,6 +245,22 @@ available = stock_total - stock_reserved - stock_sold
 Checkout converts every requested box into pieces (`quantity × product_variants.piece_count`) before locking and updating the one daily product balance. Expired or cancelled unpaid orders reverse the same piece calculation. Admin may set the exact prepared total and record unusable pieces only through active-Admin-checked database functions. Every change writes both an inventory adjustment and an Admin audit entry. A saved total cannot be lower than already committed plus consumed pieces. Checkout availability follows the published pickup date and remaining stock; Inventory does not expose a second manual availability control.
 
 Pickup locations, dates, time windows, lead days, cutoff time, capacity, and availability mode are admin-managed database records or settings. Made-to-order is the default; Admin can publish same-day ready-stock options when products are brought to school. Every customer sale in every mode still uses website checkout and online payment; the mode changes preparation and inventory behavior only. Waste must be recorded so checkout does not oversell. Checkout reads only published, currently eligible options. Paid orders preserve pickup snapshots so later admin edits do not rewrite existing commitments.
+
+Responsibility and data flow:
+
+```text
+Admin Pickup
+→ creates one explicit pickup date
+→ assigns mode, windows, locations, cutoff, lead time, and capacity
+→ publishes or closes the date
+
+Ready Stock or Hybrid date
+→ appears in Admin Inventory
+→ receives one independent prepared-piece upper limit
+→ checkout atomically commits pieces from that date only
+```
+
+`MADE_TO_ORDER` dates never require a `daily_inventory` row. `READY_STOCK` dates require remaining pieces. `HYBRID` uses prepared pieces for same-day checkout and made-to-order rules for eligible future checkout. The Admin Inventory summary is selected-date state, not an aggregation across future dates or an all-time count.
 
 ## 12. Orders, Reviews, and Journal
 

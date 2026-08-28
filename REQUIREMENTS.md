@@ -167,7 +167,7 @@ Each coating catalog record requires:
 - square 1:1 image
 - configurable additional-type price
 
-During the UI-only phase, Admin may add a temporary session preview of a coating. It must be labeled as unsaved and must not appear in the customer builder as though it were published.
+Admin coating creation validates and previews the square image before submitting the connected audited Catalog mutation. A coating appears in the customer builder only after successful persistence and cache invalidation; failed or incomplete submissions must never look published.
 
 The temporary prices are approved as initial database seed values. Authorized admins may edit the base price per piece plus each coating's additional-type charge, add-on pricing, and related pricing. The primary product remains customer-facing; availability is controlled at the sellable box-size, coating, and add-on levels rather than with a redundant whole-product switch. Its Admin-managed description is displayed on Our Creations. Every active add-on created in Admin Catalog must appear in the customer box builder. A configured box may select one add-on type and its quantity; the cart keeps its name for display, while checkout submits its database ID and quantity for server-side availability and price validation. Box totals are derived from the selected variant's piece count and the current base piece price. The ₱5 additional-coating amount is not fixed: checkout must reload its current Admin-managed value and recalculate money on the server, while completed orders retain immutable price snapshots.
 
@@ -236,6 +236,14 @@ Pickup locations, dates, time windows, lead time, cutoff time, capacity, and ava
 - pickup grace period: 15 minutes
 - ready-stock availability closes when its configured on-hand stock is exhausted
 - no automatic refund for no-show
+
+Availability modes always operate on an explicitly published pickup date:
+
+- `MADE_TO_ORDER`: customers order and pay online before the configured cutoff; the kitchen prepares the paid quantity for that published pickup date, so no prepared-piece balance is required.
+- `READY_STOCK`: Admin first publishes the pickup date, then publishes the exact number of already prepared pieces in Inventory. That number is the date's upper online-sales limit across all box sizes.
+- `HYBRID`: same-day checkout consumes the published prepared-piece balance while eligible advance orders follow the made-to-order rules.
+
+Admin Pickup owns creation and publication of dates, time windows, locations, mode, cutoff, lead time, and capacity. Admin Inventory cannot invent another pickup date; it lists existing upcoming Ready Stock and Hybrid dates and assigns an independent prepared-piece balance to each. Until the Admin Pickup CRUD slice is connected, creating another hosted-development date requires temporary controlled SQL.
 
 Admin changes affect future checkout availability and must not rewrite the pickup snapshot of an existing paid order.
 
@@ -338,6 +346,8 @@ Inventory supports:
 - atomic reservation of `box quantity × piece count` during pending payment
 - release after expiry
 - atomic updates to prevent overselling
+
+The published prepared total is the maximum number of pieces checkout may allocate for that product and pickup date. For example, publishing 50 permits no more than 50 pieces across every 4-, 6-, and 8-piece box combination. Each date has an independent balance. Once pieces are committed to orders or removed as waste, Admin may not reduce the total below that already-accounted quantity; a new pickup date starts a new limit. Inventory does not expose a separate online-availability checkbox: an open published pickup date with sufficient remaining pieces is available, and a closed date or exhausted balance is unavailable.
 
 ## 14. Promotions and Loyalty
 

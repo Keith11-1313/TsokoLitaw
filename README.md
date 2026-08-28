@@ -12,7 +12,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 **Phase 11: Orders, Reviews, Journal, and Admin CRUD is active.** Authentication, server commerce, and the PayMongo test-mode implementation are complete. Admin Orders now reads real order snapshots and advances paid orders through a forward-only, audited fulfillment workflow. PayMongo remains test-only; live charges and transactional email remain deferred.
 
-Implemented with mock data:
+Implemented customer and Admin interface:
 
 - responsive customer and admin interfaces
 - product catalog with real coating photography
@@ -26,7 +26,7 @@ Implemented with mock data:
 - Journal for announcements, stories, product features, and community highlights
 - responsive admin dashboard and management screens
 - admin purpose/customer-impact/connection guidance on every management area
-- Admin coating-entry session preview with square-image validation and PHP additional-type pricing
+- connected Admin Catalog with square-image validation, Supabase media, and PHP additional-type pricing
 
 Phase 7 backend foundation (deployed and verified):
 
@@ -115,11 +115,13 @@ Not yet implemented or externally configured:
 
 Customer identity, account state, catalog, published pickup options, orders, test payments, and Admin fulfillment are live Supabase data. Admin management areas outside the current fulfillment slice remain mock or unconnected, and disabled actions identify features that require future backend work.
 
-Our Creations and Checkout now read customer-safe commerce and pickup data from Supabase. Matching Admin screens remain non-persistent previews until Admin CRUD is implemented.
+Our Creations and Checkout now read customer-safe commerce and pickup data from Supabase. Admin Catalog and Inventory are connected; Admin Pickup and the remaining unfinished management areas stay non-persistent until their Phase 11 CRUD slices.
 
 The Admin Catalog now persists the base per-piece price, customer-facing product description, approved box-size availability, coatings, square coating media, additional-type prices, and add-on pricing. The primary storefront product remains active; box variants and selectable records control what customers can buy. Controlled service-role mutations recheck active Admin access, write audit records, and invalidate the public catalog cache; checkout still reloads live values and enforces date-specific inventory and pickup capacity.
 
 Admin Inventory now persists ready stock as individual prepared Palitaw pieces per pickup date, shared by the 4-, 6-, and 8-piece boxes. Admin can publish an exact total and record unusable pieces. Checkout atomically commits `box quantity × piece count`; expiry and unpaid cancellation release the same number of pieces. Pickup publication and remaining stock determine whether checkout is available. Inventory mutations require an active Admin, enforce non-negative available stock, and write adjustment plus Admin audit records. Made to order, Ready stock, and Hybrid all require website checkout and online payment; V1 does not accept cash or untracked walk-in sales.
+
+The prepared total is the upper limit for one product on one pickup date, not a daily automatic or all-time total. Each newly published Ready Stock or Hybrid date starts a separate balance. An existing total cannot be reduced below pieces already committed to orders or removed as waste. Admin Inventory intentionally has no separate online-availability checkbox: close the pickup date in Pickup or allow the balance to sell out. At present, Admin Pickup is still a preview, so adding another hosted-development pickup date requires temporary controlled SQL; the pending Pickup CRUD slice will own that workflow and feed eligible dates into Inventory automatically.
 
 Signed-out visitors are redirected to Login when opening checkout, Profile, My Orders, order details, or eligible review routes. A Google session creates a customer profile through the database trigger. Admin routes require both a verified session and the protected `admin` profile role; signed-in customers who attempt to open them receive the global Not Found page while the requested Admin URL remains in the address bar. Logout always requires confirmation and returns to Home after the Supabase session is cleared.
 
@@ -213,7 +215,7 @@ These catalog values now come from Supabase, but browser totals remain estimates
 
 The ₱10 per-piece amount is approved as the provisional database seed. Authorized admins will manage the active base piece price, and each box total will be derived from its piece count. The ₱5 additional-coating charge is also only a seed and will come from the coating price configured in Admin. Completed orders preserve immutable price snapshots. Pickup locations, schedules, lead time, cutoff, capacity, and availability will likewise be admin-managed without rewriting existing paid-order pickup snapshots.
 
-Pickup is centered at UCC Congress: 3rd Floor and Covered Court. Monday–Saturday, 7:00 AM–7:00 PM is the operating window, but Admin publishes the actual dates and slots. Most orders are made to order; when products are brought to school, Admin can publish ready stock for same-day pickup until it is sold out.
+Pickup is centered at UCC Congress: 3rd Floor and Covered Court. Monday–Saturday, 7:00 AM–7:00 PM is the operating window, but Admin publishes every actual date and slot; nothing is made available automatically each day. Made to order uses a published schedule plus lead-time/cutoff rules without prepared inventory. Ready stock uses a published date plus a prepared-piece upper limit. Hybrid consumes prepared pieces for same-day checkout while allowing eligible advance made-to-order checkout. Every mode uses the website and online payment.
 
 The provisional made-to-order defaults are one day of lead time, a 5:00 PM daily cutoff, hourly slots, and 20 boxes per slot. These are operational Admin settings, not permanent storefront rules.
 

@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-The application is currently in **Phase 11: Orders, Reviews, Journal, and Admin CRUD**. Authentication, authorization, Phase 9 server commerce, and the Phase 10 PayMongo test-mode implementation are complete. Real Admin fulfillment, completed-order reviews, featured public reviews, Journal draft/publication, and Catalog management are connected with controlled, audited server mutations. Other Admin areas remain mock until their Phase 11 slice is explicitly started.
+The application is currently in **Phase 11: Orders, Reviews, Journal, and Admin CRUD**. Authentication, authorization, Phase 9 server commerce, and the Phase 10 PayMongo test-mode implementation are complete. Real Admin fulfillment, completed-order reviews, featured public reviews, Journal draft/publication, Catalog management, and date-specific prepared-piece Inventory are connected with controlled, audited server mutations. Admin Pickup is still a non-persistent preview; it must be connected before administrators can create additional pickup dates without temporary Supabase SQL. Other Admin areas remain mock until their Phase 11 slice is explicitly started.
 
 Allowed:
 
@@ -38,6 +38,7 @@ Allowed:
 - authenticated Admin reads and server-validated order fulfillment mutations
 - completed-order review submission and Admin visibility/featured moderation
 - Admin Journal draft/publication management and optional cover media
+- Admin Inventory publication and unusable-piece adjustments for existing eligible pickup dates
 
 Do not implement unless the user explicitly starts a later phase:
 
@@ -72,6 +73,13 @@ Use this priority:
 - Each additional coating type currently adds ₱5 in mock UI.
 - Mixed boxes allocate every piece and must total the selected box size.
 - Campus pickup only.
+- Made to order, Ready stock, and Hybrid all require website checkout and online payment; V1 has no cash or untracked walk-in sales.
+- Every sellable pickup option is an explicitly Admin-published date, time window, and location; no mode makes the storefront automatically available every day.
+- Made to order uses published schedules and cutoff/lead-time rules without prepared-stock enforcement.
+- Ready stock uses an Admin-published prepared-piece upper limit for its pickup date; Hybrid applies prepared stock to same-day orders while allowing eligible advance made-to-order checkout.
+- Prepared stock is counted in individual Palitaw pieces per pickup date and shared across 4-, 6-, and 8-piece boxes.
+- Admin Inventory edits stock for dates created by Admin Pickup; it must not create pickup dates or expose a separate “Available for online checkout” switch.
+- A prepared total cannot be lowered below pieces already committed to orders or removed as waste. A different date starts an independent balance.
 - Browser pricing is never authoritative for future real checkout.
 
 ## 5. Navigation Decisions
@@ -124,7 +132,8 @@ Admin stays under `/admin` until subdomain configuration is explicitly authorize
 - Reuse existing components before adding variants.
 - Use shared mock/domain constants when customer and admin UI represent the same data; do not maintain contradictory page-local copies.
 - Every admin feature must have a clear operational purpose and customer impact. Mark unconnected controls as mock UI.
-- Admin coating previews collect name, description, square image, and additional-type price. Until backend CRUD exists, additions may live only in component state and must not imply publication to Customer.
+- Keep Pickup scheduling and Inventory responsibility separate: Pickup creates/publishes dates, windows, locations, modes, cutoffs, and capacity; Inventory assigns prepared pieces only to existing Ready Stock or Hybrid dates.
+- Admin coating creation collects name, description, square image, allergen information, and additional-type price, then persists through the connected audited Catalog mutation. Do not restore the obsolete session-only preview workflow.
 - When an approved product decision changes workflow or domain meaning, update `DECISIONS.md` and every affected root specification in the same task.
 - Mobile-first responsive behavior.
 - Semantic HTML, labels, keyboard support, visible focus, and meaningful alt text.

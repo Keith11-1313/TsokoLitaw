@@ -198,6 +198,8 @@ primary key(pickup_window_id, pickup_location_id)
 
 This join lets Admin offer one window at one or both campus pickup locations without duplicating the window record.
 
+`pickup_dates` is the source of truth for whether a date exists and whether it is published. Every mode requires a row plus at least one eligible window/location combination. Admin Pickup owns these records. Admin Inventory must not create them; it may attach prepared stock only to an upcoming `READY_STOCK` or `HYBRID` date. `MADE_TO_ORDER` needs no `daily_inventory` record.
+
 ## 7. Inventory
 
 ### `daily_inventory`
@@ -222,6 +224,10 @@ stock_total - stock_reserved - stock_sold
 ```
 
 Stock is counted in individual prepared Palitaw pieces, not boxes. Every 4-, 6-, and 8-piece box draws from the same product balance for its pickup date. For example, 10 available pieces can fulfill two 4-piece boxes and leave 2 pieces. For a `READY_STOCK` or same-day `HYBRID` pickup date, checkout reserves `box quantity × variant piece count` atomically. Admin-recorded waste reduces the same daily balance used by online checkout. All sales use website checkout and online payment.
+
+`stock_total` is the exact prepared-piece upper limit for that date and product. It is not a global total and is never carried into another date. The database constraint `stock_reserved + stock_sold <= stock_total` explains why Admin cannot lower a total below pieces already committed or removed. For example, 84 reserved plus 8 removed means the existing record's lowest valid total is 92; publishing 50 belongs on a different pickup date with a new independent inventory row.
+
+`is_available` remains an internal reservation guard for compatibility, defaults to true, and is not presented as an independent Admin Inventory checkbox. Customer availability is governed operationally by the pickup date/window publication state and sufficient remaining pieces.
 
 ### `inventory_adjustments`
 
