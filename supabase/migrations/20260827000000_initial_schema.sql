@@ -336,6 +336,8 @@ create table public.journal_posts (
   excerpt text,
   content text not null,
   content_type text not null check (content_type in ('announcement', 'story', 'product_feature', 'video')),
+  icon_key text not null default 'megaphone' check (icon_key in ('megaphone', 'sparkles', 'file_text', 'video')),
+  display_date date not null default current_date,
   cover_image_url text,
   video_url text,
   status public.journal_status not null default 'draft',
@@ -345,6 +347,24 @@ create table public.journal_posts (
   updated_at timestamptz not null default now(),
   check ((status = 'draft') or (published_at is not null))
 );
+
+insert into storage.buckets (
+  id,
+  name,
+  public,
+  file_size_limit,
+  allowed_mime_types
+) values (
+  'journal-media',
+  'journal-media',
+  true,
+  3145728,
+  array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 create table public.promotions (
   id uuid primary key default gen_random_uuid(),
@@ -1611,6 +1631,130 @@ begin
 end;
 $$;
 
+create or replace function public.upsert_journal_post(
+  target_admin_id uuid,
+  target_post_id uuid,
+  title_value text,
+  excerpt_value text,
+  content_value text,
+  content_type_value text,
+  icon_key_value text,
+  display_date_value date,
+  cover_image_url_value text,
+  video_url_value text,
+  status_value public.journal_status
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_post_id uuid := coalesce(target_post_id, gen_random_uuid());
+  target_post public.journal_posts%rowtype;
+  normalized_title text := trim(title_value);
+  normalized_excerpt text := nullif(trim(excerpt_value), '');
+  normalized_content text := trim(content_value);
+  generated_slug text;
+  audit_action text;
+begin
+  if not exists (
+    select 1 from public.profiles
+    where id = target_admin_id
+      and role = 'admin'
+      and is_active
+  ) then
+    raise exception 'Active administrator access is required';
+  end if;
+
+  if length(normalized_title) < 3 or length(normalized_title) > 120 then
+    raise exception 'Journal title must contain between 3 and 120 characters';
+  end if;
+
+  if normalized_excerpt is not null and length(normalized_excerpt) > 240 then
+    raise exception 'Journal excerpt cannot exceed 240 characters';
+  end if;
+
+  if length(normalized_content) < 10 or length(normalized_content) > 5000 then
+    raise exception 'Journal content must contain between 10 and 5000 characters';
+  end if;
+
+  if content_type_value not in ('announcement', 'story', 'product_feature', 'video') then
+    raise exception 'Journal content type is invalid';
+  end if;
+
+  if icon_key_value not in ('megaphone', 'sparkles', 'file_text', 'video') then
+    raise exception 'Journal icon is invalid';
+  end if;
+
+  if display_date_value is null then
+    raise exception 'Journal display date is required';
+  end if;
+
+  if target_post_id is null then
+    generated_slug := trim(both '-' from regexp_replace(lower(normalized_title), '[^a-z0-9]+', '-', 'g'))
+      || '-' || left(saved_post_id::text, 8);
+
+    insert into public.journal_posts (
+      id, title, slug, excerpt, content, content_type, icon_key, display_date,
+      cover_image_url, video_url, status, published_at, author_id
+    ) values (
+      saved_post_id, normalized_title, generated_slug, normalized_excerpt,
+      normalized_content, content_type_value, icon_key_value, display_date_value,
+      nullif(trim(cover_image_url_value), ''), nullif(trim(video_url_value), ''),
+      status_value, case when status_value = 'published' then now() else null end,
+      target_admin_id
+    );
+    audit_action := 'journal.created';
+  else
+    select * into target_post
+    from public.journal_posts
+    where id = target_post_id
+    for update;
+
+    if target_post.id is null then
+      raise exception 'Journal post was not found';
+    end if;
+
+    update public.journal_posts
+    set title = normalized_title,
+        excerpt = normalized_excerpt,
+        content = normalized_content,
+        content_type = content_type_value,
+        icon_key = icon_key_value,
+        display_date = display_date_value,
+        cover_image_url = nullif(trim(cover_image_url_value), ''),
+        video_url = nullif(trim(video_url_value), ''),
+        status = status_value,
+        published_at = case
+          when status_value = 'draft' then null
+          else coalesce(target_post.published_at, now())
+        end,
+        updated_at = now()
+    where id = target_post_id;
+    audit_action := 'journal.updated';
+  end if;
+
+  insert into public.admin_audit_logs (
+    admin_id, action, entity_type, entity_id, metadata
+  ) values (
+    target_admin_id,
+    audit_action,
+    'journal_post',
+    saved_post_id::text,
+    jsonb_build_object(
+      'title', normalized_title,
+      'content_type', content_type_value,
+      'icon_key', icon_key_value,
+      'display_date', display_date_value,
+      'status', status_value
+    )
+  );
+
+  return saved_post_id;
+end;
+$$;
+
 create or replace function public.transition_order_status(
   target_admin_id uuid,
   target_order_id uuid,
@@ -2307,6 +2451,9 @@ grant execute on function public.submit_order_review(
 grant execute on function public.moderate_order_review(
   uuid, uuid, boolean, boolean
 ) to service_role;
+grant execute on function public.upsert_journal_post(
+  uuid, uuid, text, text, text, text, text, date, text, text, public.journal_status
+) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
   public.pickup_locations, public.pickup_dates, public.pickup_windows,
@@ -2485,6 +2632,10 @@ comment on function public.submit_order_review(uuid, uuid, integer, text) is
   'Service-role-only customer review writer that enforces active ownership, completed fulfillment, and one review per order.';
 comment on function public.moderate_order_review(uuid, uuid, boolean, boolean) is
   'Service-role-only review moderation with active-Admin validation and audit logging.';
+comment on function public.upsert_journal_post(
+  uuid, uuid, text, text, text, text, text, date, text, text, public.journal_status
+) is
+  'Service-role-only Journal draft/publication writer with active-Admin validation and audit logging.';
 comment on function public.create_pending_order(
   uuid, uuid, uuid, uuid, text, text, text, jsonb, numeric, numeric, numeric, text
 ) is 'Service-role-only atomic order writer. Next.js must reload and validate active catalog prices before calling it.';
