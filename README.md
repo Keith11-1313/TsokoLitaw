@@ -232,8 +232,7 @@ TASKS.md
 public/
 ├── brand/
 ├── images/
-│   ├── home/
-│   └── products/coatings/
+│   └── home/
 └── videos/home/
 
 src/
@@ -362,7 +361,7 @@ The PayMongo webhook endpoint must subscribe to `checkout_session.payment.paid`,
 
 - The current logo is stored in `public/brand/logo.png` and is also used for the favicon.
 - Coating photos are stored in the Supabase `catalog-media` bucket and fetched through each coating's database `image_url`.
-- Supplied Home promotional media is stored in `public/images/home/` and `public/videos/home/`.
+- Supplied Home promotional media is stored in `public/images/home/` and `public/videos/home/`. The folder includes the Home hero, ratio-specific fallback artwork, the featured selection, and the featured video.
 - PNG files in `references/` are retained as early visual direction and project history.
 - References must not be embedded as pages and are no longer pixel-perfect implementation requirements.
 - The implemented design system and approved product decisions take precedence over rough reference details.

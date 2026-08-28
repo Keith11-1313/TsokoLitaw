@@ -1,7 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import { SiteContainer } from "@/components/layout/site-container";
 import { primaryButtonClassName } from "@/components/ui/button";
-import { DessertPlaceholder } from "@/components/home/dessert-placeholder";
 import { cn } from "@/lib/cn";
 
 interface HomeHeroProps {
@@ -50,10 +50,16 @@ export function HomeHero({
             </div>
           </div>
 
-          <DessertPlaceholder
-            className="w-full lg:mr-8 lg:max-w-[32.5rem] lg:justify-self-end"
-            variant="hero"
-          />
+          <div className="relative aspect-[6/5] w-full overflow-hidden rounded-card bg-surface-muted lg:mr-8 lg:max-w-[32.5rem] lg:justify-self-end">
+            <Image
+              src="/images/home/hero-image.png"
+              alt="TsokoLitaw Mode switched on beside a chocolate-filled Palitaw dessert"
+              fill
+              priority
+              sizes="(min-width: 1024px) 32.5rem, calc(100vw - 2rem)"
+              className="object-cover"
+            />
+          </div>
         </div>
       </SiteContainer>
     </section>
