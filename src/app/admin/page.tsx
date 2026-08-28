@@ -64,7 +64,7 @@ export default async function AdminDashboardPage() {
           </span>
         </header>
 
-        <div className="mt-6"><AdminScopeNote purpose="Surface the operational areas that need attention in one place." customerImpact="Summarizes the orders, fulfillment, and catalog data behind the customer experience." /></div>
+        <div className="mt-6"><AdminScopeNote purpose="Surface the operational areas that need attention in one place." customerImpact="Summarizes the orders and fulfillment data behind the customer experience." currentConnection="Order summaries are live. Operational tools outside order fulfillment remain preview-only." connected /></div>
 
         <section className="mt-[1.6875rem] grid gap-5 sm:grid-cols-2 xl:grid-cols-4" aria-label="Dashboard summary">
           {dashboardStats.map((stat) => (

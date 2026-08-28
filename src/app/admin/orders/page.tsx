@@ -44,7 +44,7 @@ export default async function AdminOrdersPage() {
           </div>
         </header>
 
-        <div className="mt-6"><AdminScopeNote purpose="Review paid orders and move them through campus pickup fulfillment." customerImpact="Status changes will appear in My Orders and determine when a completed order can be reviewed." /></div>
+        <div className="mt-6"><AdminScopeNote purpose="Review paid orders and move them through campus pickup fulfillment." customerImpact="Status changes appear in My Orders and determine when a completed order can be reviewed." currentConnection="Connected to real order snapshots. Fulfillment changes are saved, customer-visible, and audited." connected /></div>
 
         <section className="mt-[1.9375rem] grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Order summary">
           {orderStats.map((stat) => (

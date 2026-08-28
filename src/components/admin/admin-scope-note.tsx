@@ -1,15 +1,22 @@
-import { CircleHelp, Link2Off, Store } from "lucide-react";
+import { CircleHelp, Link2, Link2Off, Store } from "lucide-react";
 
 interface AdminScopeNoteProps {
   purpose: string;
   customerImpact: string;
+  currentConnection?: string;
+  connected?: boolean;
 }
 
-export function AdminScopeNote({ purpose, customerImpact }: AdminScopeNoteProps) {
+export function AdminScopeNote({
+  purpose,
+  customerImpact,
+  currentConnection = "Mock UI only. Changes are not saved or shown to customers yet.",
+  connected = false,
+}: AdminScopeNoteProps) {
   const items = [
     { label: "Purpose", value: purpose, icon: CircleHelp },
     { label: "Customer impact", value: customerImpact, icon: Store },
-    { label: "Current connection", value: "Mock UI only. Changes are not saved or shown to customers yet.", icon: Link2Off },
+    { label: "Current connection", value: currentConnection, icon: connected ? Link2 : Link2Off },
   ] as const;
 
   return (
