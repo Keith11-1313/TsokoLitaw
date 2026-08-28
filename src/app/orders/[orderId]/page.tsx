@@ -3,12 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, MapPin } from "lucide-react";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
+import { OrderReviewModal } from "@/components/feedback/order-review-modal";
 import { SiteContainer } from "@/components/layout/site-container";
 import { OrderActions } from "@/components/orders/order-actions";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { requireCustomer } from "@/lib/auth";
 import { formatPhp } from "@/lib/commerce";
 import { getCustomerOrderDetail } from "@/lib/server-orders";
+import { getCustomerReviewContext } from "@/lib/server-reviews";
 
 export const metadata: Metadata = { title: "Order Detail | TsokoLitaw" };
 
@@ -17,6 +19,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
   const profile = await requireCustomer(`/orders/${orderId}`);
   const order = await getCustomerOrderDetail(profile.id, orderId);
   if (!order) notFound();
+  const reviewContext = order.status === "COMPLETED"
+    ? await getCustomerReviewContext(profile.id, orderId)
+    : null;
 
   const pickupDate = new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", year: "numeric", month: "long", day: "numeric" }).format(new Date(`${order.pickupDate}T00:00:00+08:00`));
   const refundLabels = { REQUESTED: "Refund requested", PROCESSING: "Refund processing", REFUNDED: "Refunded", FAILED: "Refund needs attention" } as const;
@@ -41,7 +46,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
 
           <aside className="space-y-5">
             <section className="rounded-card border border-border bg-surface p-6"><h2 className="font-display text-2xl">Payment & refund</h2><dl className="mt-4 space-y-3 text-sm"><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Payment</dt><dd className="font-bold">{order.paymentStatus.toLowerCase()}</dd></div>{order.refund ? <><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Refund</dt><dd className="text-right font-bold">{refundLabels[order.refund.status]}</dd></div><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Amount</dt><dd className="font-bold">{formatPhp(order.refund.amount)}</dd></div></> : null}</dl>{order.refund?.failureMessage ? <p className="mt-4 rounded-control bg-warning-background p-3 text-xs leading-5 text-warning-foreground">{order.refund.failureMessage}</p> : null}</section>
-            {order.status === "COMPLETED" ? <section className="rounded-card border border-border bg-surface p-6"><h2 className="font-display text-2xl">Share your experience</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Each completed order can receive one customer review.</p><Link href={`/orders/${order.id}/review`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-bold text-surface">Review this order</Link></section> : null}
+            {reviewContext ? <section className="rounded-card border border-border bg-surface p-6"><h2 className="font-display text-2xl">Share your experience</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Each completed order can receive one customer review.</p><OrderReviewModal orderId={reviewContext.orderId} orderNumber={reviewContext.orderNumber} itemSummary={reviewContext.itemSummary} existingReview={reviewContext.existingReview} /></section> : null}
             {order.canCancel ? <section className="rounded-card border border-danger-foreground/30 bg-surface p-6"><h2 className="font-display text-2xl text-danger-foreground">Cancel order</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Cancellation is available until preparation begins.</p><div className="mt-5"><OrderActions orderId={order.id} orderNumber={order.orderNumber} paymentStatus={order.paymentStatus} refund={order.refund} /></div></section> : order.refund?.status === "FAILED" ? <OrderActions orderId={order.id} orderNumber={order.orderNumber} paymentStatus={order.paymentStatus} refund={order.refund} allowCancellation={false} /> : null}
           </aside>
         </div>

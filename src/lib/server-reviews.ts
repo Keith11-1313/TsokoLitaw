@@ -27,6 +27,13 @@ export interface AdminReviewSummary {
   createdAt: string;
 }
 
+export interface PublicFeaturedReview {
+  id: string;
+  customerName: string;
+  rating: number;
+  comment: string;
+}
+
 interface ReviewContextRow {
   id: string;
   order_number: string;
@@ -34,6 +41,10 @@ interface ReviewContextRow {
   order_items: Array<{
     variant_name_snapshot: string;
     quantity: number;
+    order_item_coatings: Array<{
+      coating_name_snapshot: string;
+      piece_count: number;
+    }> | null;
   }> | null;
   reviews: Array<{
     id: string;
@@ -56,7 +67,11 @@ export async function getCustomerReviewContext(
       status,
       order_items (
         variant_name_snapshot,
-        quantity
+        quantity,
+        order_item_coatings (
+          coating_name_snapshot,
+          piece_count
+        )
       ),
       reviews (
         id,
@@ -79,8 +94,13 @@ export async function getCustomerReviewContext(
     orderId: order.id,
     orderNumber: order.order_number,
     itemSummary: (order.order_items ?? [])
-      .map((item) => `${item.variant_name_snapshot} × ${item.quantity}`)
-      .join(", "),
+      .map((item) => {
+        const coatings = (item.order_item_coatings ?? [])
+          .map((coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`)
+          .join(", ");
+        return `${item.variant_name_snapshot} × ${item.quantity}${coatings ? ` · ${coatings}` : ""}`;
+      })
+      .join("; "),
     existingReview: existingReview ? {
       id: existingReview.id,
       rating: existingReview.rating,
@@ -150,6 +170,25 @@ export async function getAdminReviews(): Promise<AdminReviewSummary[]> {
       createdAt: review.created_at,
     };
   });
+}
+
+export async function getPublicFeaturedReviews(): Promise<PublicFeaturedReview[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("id, display_name_snapshot, rating, comment")
+    .eq("is_featured", true)
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  if (error) throw new Error("Featured reviews could not be loaded.", { cause: error });
+
+  return (data ?? []).map((review) => ({
+    id: review.id,
+    customerName: review.display_name_snapshot,
+    rating: review.rating,
+    comment: review.comment,
+  }));
 }
 
 export async function moderateAdminReview(input: {

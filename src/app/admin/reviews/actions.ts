@@ -19,7 +19,7 @@ export async function moderateReviewAction(input: {
   isVisible: boolean;
   isFeatured: boolean;
 }): Promise<ReviewModerationResult> {
-  const admin = await requireAdmin("/admin/reviews");
+  const admin = await requireAdmin("/admin/journal");
   if (!isUuid(input.reviewId) || (input.isFeatured && !input.isVisible)) {
     return { status: "error", message: "That moderation update is invalid." };
   }
@@ -32,7 +32,7 @@ export async function moderateReviewAction(input: {
       windowSeconds: 300,
     });
     await moderateAdminReview({ adminId: admin.id, ...input });
-    revalidatePath("/admin/reviews");
+    revalidatePath("/admin/journal");
     revalidatePath("/journal");
     return { status: "success", message: "Review moderation saved." };
   } catch (error) {

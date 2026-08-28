@@ -44,7 +44,7 @@ export async function submitReviewAction(
     revalidatePath("/orders");
     revalidatePath(`/orders/${orderId}`);
     revalidatePath(`/orders/${orderId}/review`);
-    revalidatePath("/admin/reviews");
+    revalidatePath("/admin/journal");
     return { status: "success", message: "Thank you. Your review has been submitted." };
   } catch (error) {
     return {

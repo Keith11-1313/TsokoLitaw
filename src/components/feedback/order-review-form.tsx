@@ -15,6 +15,7 @@ const initialState: ReviewActionState = { status: "idle", message: "" };
 interface OrderReviewFormProps {
   orderId: string;
   orderNumber: string;
+  itemSummary: string;
   existingReview: null | {
     rating: number;
     comment: string;
@@ -40,14 +41,15 @@ function ReviewStars({ rating }: { rating: number }) {
   );
 }
 
-export function OrderReviewForm({ orderId, orderNumber, existingReview }: OrderReviewFormProps) {
+export function OrderReviewForm({ orderId, orderNumber, itemSummary, existingReview }: OrderReviewFormProps) {
   const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
   const [state, formAction, pending] = useActionState(submitReviewAction, initialState);
 
   if (existingReview || state.status === "success") {
     const savedRating = existingReview?.rating ?? rating;
     return (
-      <section className="rounded-card border border-border bg-surface p-8 text-center">
+      <section className="text-center">
         <ReviewStars rating={savedRating} />
         <h2 className="mt-4 font-display text-2xl">Thank you for reviewing {orderNumber}</h2>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
@@ -59,13 +61,17 @@ export function OrderReviewForm({ orderId, orderNumber, existingReview }: OrderR
   }
 
   return (
-    <form action={formAction} className="rounded-card border border-border bg-surface p-6 sm:p-8">
+    <form action={formAction}>
       <input type="hidden" name="orderId" value={orderId} />
       <input type="hidden" name="rating" value={rating || ""} />
-      <p className="text-sm font-bold">Rating for {orderNumber}</p>
+      <div className="rounded-control bg-surface-muted p-4 text-sm">
+        <p className="font-bold">Your order</p>
+        <p className="mt-1 leading-6 text-muted-foreground">{itemSummary}</p>
+      </div>
+      <p className="mt-6 text-center text-sm font-bold">Rating for {orderNumber}</p>
       <fieldset className="mt-5">
         <legend className="sr-only">Choose a rating</legend>
-        <div className="flex gap-2">
+        <div className="flex justify-center gap-2">
           {[1, 2, 3, 4, 5].map((value) => (
             <button
               key={value}
@@ -91,14 +97,19 @@ export function OrderReviewForm({ orderId, orderNumber, existingReview }: OrderR
           minLength: 10,
           maxLength: 1000,
           placeholder: "What did you enjoy?",
+          value: comment,
+          onChange: (event) => setComment(event.currentTarget.value.slice(0, 1000)),
         }}
       />
+      <p className={`mt-2 text-right text-xs font-bold ${comment.length < 10 ? "text-danger-foreground" : "text-muted-foreground"}`} aria-live="polite">
+        {comment.length}/1000
+      </p>
       {state.status === "error" ? (
         <p role="alert" className="mt-5 rounded-control bg-danger-background p-4 text-sm text-danger-foreground">
           {state.message}
         </p>
       ) : null}
-      <PrimaryButton className="mt-6 w-full" type="submit" disabled={!rating || pending}>
+      <PrimaryButton className="mt-6 w-full" type="submit" disabled={!rating || comment.trim().length < 10 || pending}>
         {pending ? "Submitting review…" : "Submit review"}
       </PrimaryButton>
     </form>
