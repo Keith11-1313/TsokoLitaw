@@ -25,13 +25,14 @@ select set_config(
   true
 );
 
-select plan(29);
+select plan(39);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
 select has_table('public', 'orders', 'orders table exists');
 select has_table('public', 'refunds', 'refunds table exists');
 select has_table('public', 'inventory_adjustments', 'inventory adjustments table exists');
+select has_table('public', 'mutation_rate_limit_buckets', 'distributed mutation rate-limit table exists');
 select has_column('public', 'profiles', 'is_active', 'profiles track whether account access is active');
 select has_column('public', 'profiles', 'deactivated_at', 'profiles record when access was deactivated');
 select has_column('public', 'orders', 'checkout_idempotency_key', 'orders store a customer checkout idempotency key');
@@ -53,12 +54,17 @@ select ok(
   (select relrowsecurity from pg_class where oid = 'public.manual_refund_destinations'::regclass),
   'manual refund destinations have RLS enabled'
 );
+select ok(
+  (select relrowsecurity from pg_class where oid = 'public.mutation_rate_limit_buckets'::regclass),
+  'mutation rate-limit buckets have RLS enabled'
+);
 
 select ok(has_table_privilege('anon', 'public.products', 'SELECT'), 'anon can read public products');
 select ok(not has_table_privilege('anon', 'public.orders', 'SELECT'), 'anon cannot read orders');
 select ok(not has_table_privilege('anon', 'public.profiles', 'SELECT'), 'anon cannot read profiles');
 select ok(not has_table_privilege('authenticated', 'public.payment_webhook_events', 'INSERT'), 'authenticated clients cannot insert webhook events');
 select ok(not has_table_privilege('authenticated', 'public.business_settings', 'UPDATE'), 'authenticated clients cannot update settings directly');
+select ok(not has_table_privilege('authenticated', 'public.mutation_rate_limit_buckets', 'SELECT'), 'authenticated clients cannot read rate-limit buckets');
 
 select ok(
   has_column_privilege('authenticated', 'public.profiles', 'full_name', 'UPDATE'),
@@ -88,6 +94,53 @@ select ok(
 select ok(
   has_function_privilege('service_role', 'public.deactivate_due_account(uuid)', 'EXECUTE'),
   'service role can invoke due-account deactivation'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.consume_mutation_rate_limit(text[],integer,integer)',
+    'EXECUTE'
+  ),
+  'authenticated users cannot invoke distributed mutation rate limiting'
+);
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.consume_mutation_rate_limit(text[],integer,integer)',
+    'EXECUTE'
+  ),
+  'service role can invoke distributed mutation rate limiting'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.prune_mutation_rate_limit_buckets()',
+    'EXECUTE'
+  ),
+  'authenticated users cannot prune distributed rate-limit buckets'
+);
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.prune_mutation_rate_limit_buckets()',
+    'EXECUTE'
+  ),
+  'service role can prune distributed rate-limit buckets'
+);
+select is(
+  (select allowed from public.consume_mutation_rate_limit(array[repeat('a', 64)], 2, 3600)),
+  true,
+  'the first request is allowed by the distributed rate limiter'
+);
+select is(
+  (select remaining_requests from public.consume_mutation_rate_limit(array[repeat('a', 64)], 2, 3600)),
+  0,
+  'the second request consumes the final available request'
+);
+select is(
+  (select allowed from public.consume_mutation_rate_limit(array[repeat('a', 64)], 2, 3600)),
+  false,
+  'the distributed rate limiter rejects requests above the configured maximum'
 );
 select ok(
   not has_function_privilege('authenticated', 'public.expire_pending_orders()', 'EXECUTE'),

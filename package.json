@@ -9,6 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "load:smoke": "k6 run -e PROFILE=smoke tests/performance/storefront.js",
+    "load:100": "k6 run -e PROFILE=capacity tests/performance/storefront.js",
     "skeleton:build": "boneyard-js build http://localhost:3000/boneyard-preview",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
