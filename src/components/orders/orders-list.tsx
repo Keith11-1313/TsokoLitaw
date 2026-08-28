@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays, MapPin, PackageOpen } from "lucide-react";
+import { CalendarDays, LoaderCircle, MapPin, PackageOpen } from "lucide-react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/cn";
@@ -38,6 +38,7 @@ function formatDate(value: string, includeTime = false) {
 
 export function OrdersList({ orders }: { orders: CustomerOrderSummary[] }) {
   const [filter, setFilter] = useState<OrderFilter>("all");
+  const [openingOrderId, setOpeningOrderId] = useState<string | null>(null);
   const visibleOrders = useMemo(() => orders.filter((order) => matchesFilter(order, filter)), [filter, orders]);
 
   if (!orders.length) {
@@ -96,7 +97,23 @@ export function OrdersList({ orders }: { orders: CustomerOrderSummary[] }) {
                 <p className="flex items-start gap-2"><MapPin aria-hidden="true" className="mt-0.5 shrink-0" size={17} />{order.pickupLocation}</p>
               </div>
               <p className="mt-4 text-sm leading-6">{order.itemSummary || "Order items unavailable"}</p>
-              <div className="mt-5 flex justify-end"><Link href={`/orders/${order.id}`} className="inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand">View order</Link></div>
+              <div className="mt-5 flex justify-end">
+                <Link
+                  href={`/orders/${order.id}`}
+                  aria-busy={openingOrderId === order.id}
+                  aria-disabled={openingOrderId !== null}
+                  onClick={(event) => {
+                    if (openingOrderId !== null) {
+                      event.preventDefault();
+                      return;
+                    }
+                    setOpeningOrderId(order.id);
+                  }}
+                  className="inline-flex min-h-11 min-w-32 items-center justify-center gap-2 rounded-full border border-brand px-5 text-sm font-bold text-brand transition-opacity aria-disabled:pointer-events-none aria-disabled:opacity-60"
+                >
+                  {openingOrderId === order.id ? <><LoaderCircle aria-hidden="true" className="animate-spin" size={17} />Opening…</> : "View order"}
+                </Link>
+              </div>
             </li>
           ))}
         </ul>

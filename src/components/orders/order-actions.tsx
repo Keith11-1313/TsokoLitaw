@@ -86,7 +86,7 @@ export function OrderActions({
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-foreground/40 p-4" onPointerDown={() => setOpen(false)}>
           <section role="dialog" aria-modal="true" aria-labelledby="cancel-order-title" onPointerDown={(event) => event.stopPropagation()} className="w-full max-w-lg rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8">
             <div className="flex items-start justify-between gap-5">
-              <div><p className="font-script text-2xl text-brand">Confirm cancellation</p><h2 id="cancel-order-title" className="mt-1 font-display text-3xl">Cancel {orderNumber}?</h2></div>
+              <h2 id="cancel-order-title" className="font-display text-3xl">Cancel {orderNumber}?</h2>
               <button type="button" aria-label="Close cancellation dialog" onClick={() => setOpen(false)} className="flex size-11 shrink-0 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" size={20} /></button>
             </div>
             <p className="mt-5 text-sm leading-6 text-muted-foreground">{paymentStatus === "PAID" ? "The order will be cancelled immediately and a full refund will be requested through PayMongo to the original payment method. Refund completion may take time." : "The unpaid order and its reserved pickup capacity will be released. No refund is needed because no payment was collected."}</p>
