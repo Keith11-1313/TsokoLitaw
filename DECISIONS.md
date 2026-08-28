@@ -318,6 +318,8 @@ Customers may request cancellation through `CONFIRMED`. If the order is unpaid, 
 
 Order cancellation and refund settlement are separate facts. An order may already be `CANCELLED` while its refund is `REQUESTED` or `PROCESSING`; only a verified PayMongo response or webhook may move the refund to `REFUNDED`. A manual transfer destination is collected only as a restricted fallback when the provider refund is unsupported or fails.
 
+PayMongo checkout sessions must be closed at the provider before an overdue provider-bound order becomes `EXPIRED` and releases ready-stock reservations. The browser return URL never performs this transition. A secret-protected server job coordinates provider expiry first and the atomic database transition second; a provider error leaves the order pending and its stock reserved for a later retry.
+
 ## 13. Reviews Instead of Public Feedback
 
 ### Decision

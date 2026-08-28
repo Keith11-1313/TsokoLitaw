@@ -284,6 +284,7 @@ Checkout
 ```
 
 - initial payment expiry: 15 minutes, configurable
+- provider-bound orders release reserved stock only after the corresponding PayMongo checkout session has been expired successfully
 - success redirect is not proof of payment
 - never store card details
 - webhook handling must be idempotent

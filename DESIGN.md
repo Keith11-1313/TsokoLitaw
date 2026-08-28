@@ -254,7 +254,7 @@ Future data-connected work must add consistent states for:
 
 Current backend-dependent actions should remain disabled or clearly identified as mock behavior.
 
-Until PayMongo is connected, a successful Phase 9 checkout submission must state that a real pending order and reservation were created but no payment was collected. It must show the server-confirmed order number and total without presenting payment success.
+Checkout now opens PayMongo Hosted Checkout after the server creates or reloads the idempotent pending order. The return screen must say that payment is being verified unless the owned database order already records `payment_status = PAID`; the redirect itself never displays an unverified success claim. A confirmed paid return clears the matching browser cart.
 
 Order references use the short shared kiosk format `TL-0001`. Customer and Admin views must display the same stored order number so it can be spoken and matched quickly at pickup.
 

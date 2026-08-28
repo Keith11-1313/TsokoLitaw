@@ -30,7 +30,7 @@ Next.js App Router
 └── Local brand and product assets
 ```
 
-The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Customer and Admin self-checkout are validated against hosted development. Phase 10 now has a server-only PayMongo v2 test client with a stable idempotency-key contract; checkout redirection remains disabled until provider-reference persistence and signed webhook processing are connected. Email and broad Admin CRUD remain unconnected.
+The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Customer and Admin self-checkout are validated against hosted development. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Email and broad Admin CRUD remain unconnected.
 
 Current customer/admin relationship:
 
@@ -102,6 +102,8 @@ Next.js server responsibilities:
 - admin mutations
 
 Phase 9 uses a two-layer checkout boundary. Next.js accepts only catalog identifiers, coating allocations, add-on counts, and quantities; it reloads current database prices and evaluates active promotion configuration. It then calls the service-role-only `create_pending_order` PostgreSQL function with the trusted snapshot projection. That function first expires overdue unpaid orders, releases any corresponding ready-stock reservations, then atomically locks the customer and pickup window, enforces capacity, reserves required ready stock, writes the order graph and Terms acceptance, and returns an existing order when the same customer idempotency key is retried. Browser clients receive no direct execute permission on either commerce writer.
+
+Phase 10 creates one PayMongo checkout for the order's unique payment row and stores its immutable provider ID and URL. A return to `/payment/success` reloads the owned order and may display `PAID` only after the signed webhook has completed the atomic database transition. The protected payment-expiration job lists overdue provider-bound checkouts, expires each session through PayMongo first, and only then invokes the database transition that marks the payment `FAILED`, marks the order `EXPIRED`, and releases ready stock. Provider failures remain pending and reserved for retry.
 
 ## 4. Routing
 

@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useRef, useState, useTransition, type FormEvent } from "react";
-import { CheckCircle2 } from "lucide-react";
-import { submitPendingOrderAction, type CheckoutSubmissionResult } from "@/app/checkout/actions";
+import {
+  resumePendingPaymentAction,
+  submitPendingOrderAction,
+  type CheckoutSubmissionResult,
+} from "@/app/checkout/actions";
 import { useCart } from "@/components/cart/cart-provider";
 import { PrimaryButton } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -15,9 +18,10 @@ import type { CheckoutAvailability } from "@/types/pickup";
 interface CheckoutContentProps {
   availability: CheckoutAvailability;
   profile: AuthProfile;
+  resumeOrderId: string | null;
 }
 
-export function CheckoutContent({ availability, profile }: CheckoutContentProps) {
+export function CheckoutContent({ availability, profile, resumeOrderId }: CheckoutContentProps) {
   const { items, subtotal } = useCart();
   const checkoutKeyRef = useRef<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -71,7 +75,43 @@ export function CheckoutContent({ availability, profile }: CheckoutContentProps)
         })),
       });
       setSubmission(result);
+      if (result.status === "success") {
+        window.location.assign(result.checkoutUrl);
+      }
     });
+  }
+
+  function resumePayment() {
+    if (!resumeOrderId || isPending) return;
+    startTransition(async () => {
+      const result = await resumePendingPaymentAction(resumeOrderId);
+      setSubmission(result);
+      if (result.status === "success") {
+        window.location.assign(result.checkoutUrl);
+      }
+    });
+  }
+
+  if (resumeOrderId) {
+    return (
+      <section className="mx-auto max-w-2xl rounded-card border border-border bg-surface p-7 text-center sm:p-10">
+        <h2 className="font-display text-3xl">Payment was cancelled</h2>
+        <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
+          No payment was confirmed. Reopen the same pending order below so another order and stock reservation are not created.
+        </p>
+        {submission?.status === "error" ? (
+          <p role="alert" className="mt-5 rounded-control bg-danger-background p-4 text-sm font-bold text-danger-foreground">{submission.message}</p>
+        ) : null}
+        <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+          <PrimaryButton type="button" onClick={resumePayment} disabled={isPending}>
+            {isPending ? "Reopening secure payment…" : "Return to secure payment"}
+          </PrimaryButton>
+          <Link href="/" className="inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-6 text-sm font-bold text-brand">
+            Return home
+          </Link>
+        </div>
+      </section>
+    );
   }
 
   if (!items.length) {
@@ -125,21 +165,10 @@ export function CheckoutContent({ availability, profile }: CheckoutContentProps)
         {submission?.status === "error" ? (
           <p role="alert" className="rounded-control bg-danger-background p-4 text-sm font-bold text-danger-foreground">{submission.message}</p>
         ) : null}
-        {submission?.status === "success" ? (
-          <section role="status" className="rounded-card border border-success-foreground/25 bg-success-background p-5 text-success-foreground">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={22} />
-              <div>
-                <h2 className="font-bold">Pending order {submission.orderNumber} created</h2>
-                <p className="mt-1 text-sm leading-6">The server confirmed a total of {formatPhp(submission.total)}. No payment was collected. Payment checkout will be connected in Phase 10.</p>
-              </div>
-            </div>
-          </section>
-        ) : null}
         <PrimaryButton type="submit" disabled={!hasPickupAvailability || !termsAccepted || isPending || submission?.status === "success"} className="w-full rounded-control!">
-          {!hasPickupAvailability ? "Pickup unavailable" : isPending ? "Preparing order…" : submission?.status === "success" ? "Pending order created" : "Create pending order"}
+          {!hasPickupAvailability ? "Pickup unavailable" : isPending ? "Opening secure payment…" : submission?.status === "success" ? "Opening PayMongo…" : "Continue to secure payment"}
         </PrimaryButton>
-        <p className="text-center text-xs leading-5 text-muted-foreground">Phase 9 validation only: this creates a real pending order and reservation, but it does not collect payment.</p>
+        <p className="text-center text-xs leading-5 text-muted-foreground">You’ll complete payment on PayMongo’s secure test checkout. Your order is confirmed only after TsokoLitaw receives PayMongo’s signed payment notification.</p>
       </form>
 
       <aside className="min-w-0 rounded-card border border-border bg-surface p-6 lg:sticky lg:top-6">

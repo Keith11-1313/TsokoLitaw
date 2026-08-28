@@ -191,16 +191,20 @@ Do not begin without explicit approval.
 - [x] Add local PayMongo test environment variables; defer Vercel Preview values until hosted payment testing
 - [x] Create and unit-test the server-only PayMongo v2 Hosted Checkout client and idempotent request contract
 - [x] Create pending payment orders through the Phase 9 atomic checkout writer
-- [ ] Create checkout/payment session
+- [x] Create checkout/payment session and redirect customers to PayMongo test Hosted Checkout
 - [x] Add the test-mode signed webhook endpoint and raw-body signature verification
 - [x] Add locally validated service-only payment initialization and immutable provider-reference persistence
 - [x] Enforce atomic webhook idempotency and exact order/reference/amount matching
 - [x] Apply and validate the Phase 10 payment schema upgrade on hosted development
 - [x] Deploy and register the test webhook endpoint, then configure its signing secret
-- [ ] Handle success, failure, refund, and 15-minute expiry
+- [x] Make payment return/cancellation states honest and never infer payment success from a browser redirect
+- [x] Add provider-first, database-second 15-minute checkout expiry coordination and a protected processor endpoint
+- [ ] Schedule `/api/cron/payment-expirations` at a frequent cadence supported by the deployment scheduler
+- [x] Apply and validate the coordinated-expiry schema upgrade on hosted development
+- [ ] Complete the hosted test payment, paid-webhook, cancellation, and expiry smoke tests
 - [ ] Implement full original-method refunds and verified refund webhooks
 - [ ] Track refund state separately from order cancellation
-- [ ] Never infer payment success from browser redirects
+- [x] Never infer payment success from browser redirects
 
 ## Phase 11 — Orders, Reviews, Journal, and Admin CRUD
 

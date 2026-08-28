@@ -24,7 +24,7 @@ select set_config(
   ),
   true
 );
-select plan(17);
+select plan(27);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -86,6 +86,22 @@ select ok(
     'EXECUTE'
   ),
   'service role can process provider webhooks'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.list_due_paymongo_checkouts(integer)', 'EXECUTE'),
+  'authenticated users cannot list overdue provider checkouts'
+);
+select ok(
+  has_function_privilege('service_role', 'public.list_due_paymongo_checkouts(integer)', 'EXECUTE'),
+  'service role can list overdue provider checkouts'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.expire_paymongo_order(uuid,text)', 'EXECUTE'),
+  'authenticated users cannot finalize provider checkout expiry'
+);
+select ok(
+  has_function_privilege('service_role', 'public.expire_paymongo_order(uuid,text)', 'EXECUTE'),
+  'service role can finalize provider checkout expiry'
 );
 
 select is(
@@ -182,6 +198,65 @@ select is(
   (select count(*) from public.payment_webhook_events),
   1::bigint,
   'only one webhook event record is retained for duplicate delivery'
+);
+
+insert into public.orders (
+  id, order_number, user_id, customer_name, customer_email, pickup_date,
+  pickup_window_id, pickup_location_id, pickup_window_snapshot,
+  pickup_location_snapshot, subtotal, total, terms_version, terms_accepted_at,
+  payment_expires_at
+)
+values (
+  'a5000000-0000-4000-8000-000000000002', 'TL-9002',
+  'a1000000-0000-4000-8000-000000000001', 'Payment Owner',
+  'payment-owner@example.test', '2099-02-01',
+  'a4000000-0000-4000-8000-000000000001',
+  'a2000000-0000-4000-8000-000000000001', '9:00 AM–10:00 AM',
+  'Payment test location', 40, 40, 'payment-test', now(), now() - interval '1 minute'
+);
+insert into public.payments (
+  id, order_id, provider_checkout_id, provider_checkout_url, amount
+)
+values (
+  'a6000000-0000-4000-8000-000000000002',
+  'a5000000-0000-4000-8000-000000000002',
+  'cs_test_9002', 'https://checkout.paymongo.com/cs_test_9002', 40
+);
+
+select is(
+  public.expire_pending_orders(),
+  0,
+  'generic expiry does not release an order with an active provider checkout'
+);
+select is(
+  (select count(*) from public.list_due_paymongo_checkouts(100)),
+  1::bigint,
+  'the provider-bound overdue order is listed for coordinated expiry'
+);
+select ok(
+  public.expire_paymongo_order(
+    'a6000000-0000-4000-8000-000000000002',
+    'cs_test_9002'
+  ),
+  'provider-confirmed expiry finalizes the overdue order'
+);
+select is(
+  (select status from public.orders where id = 'a5000000-0000-4000-8000-000000000002'),
+  'EXPIRED'::public.order_status,
+  'the coordinated expiry marks the order expired'
+);
+select is(
+  (select status from public.payments where id = 'a6000000-0000-4000-8000-000000000002'),
+  'FAILED'::public.payment_status,
+  'the coordinated expiry marks the unpaid payment failed'
+);
+select is(
+  public.expire_paymongo_order(
+    'a6000000-0000-4000-8000-000000000002',
+    'cs_test_9002'
+  ),
+  false,
+  'coordinated expiry is idempotent after the first transition'
 );
 
 select * from finish();

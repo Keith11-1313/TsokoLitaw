@@ -296,7 +296,7 @@ Use database checks or controlled server transitions rather than unrestricted te
 
 `order_number_sequence` generates a short, concurrency-safe kiosk number such as `TL-0001`. The same stored value is shown to the customer and to Admin operations; it is never generated separately in either UI.
 
-The service-role-only `create_pending_order` function is the transaction boundary for Phase 9. Next.js first reloads the active catalog and calculates trusted snapshot values, then the function expires overdue unpaid orders, locks the signed-in profile and pickup window, rechecks account and pickup eligibility, enforces slot capacity, reserves ready stock when required, inserts the order and all item/coating/add-on snapshots, and records the current Terms version. Active admins may place their own storefront orders because the server action always binds `target_user_id` to the authenticated profile; it cannot submit for an arbitrary customer. The service-role-only `expire_pending_orders` function marks overdue unpaid orders `EXPIRED` and releases their ready-stock reservations. Authenticated browser clients cannot execute either function directly.
+The service-role-only `create_pending_order` function is the transaction boundary for Phase 9. Next.js first reloads the active catalog and calculates trusted snapshot values, then the function expires overdue unpaid orders, locks the signed-in profile and pickup window, rechecks account and pickup eligibility, enforces slot capacity, reserves ready stock when required, inserts the order and all item/coating/add-on snapshots, and records the current Terms version. Active admins may place their own storefront orders because the server action always binds `target_user_id` to the authenticated profile; it cannot submit for an arbitrary customer. The service-role-only `expire_pending_orders` function directly expires only overdue orders that do not have an attached active provider checkout. Provider-bound orders use the coordinated PayMongo expiry functions described below. Authenticated browser clients cannot execute these functions directly.
 
 ## 9. Order Items and Coating Allocations
 
@@ -369,6 +369,8 @@ updated_at timestamptz
 ```
 
 Each order has at most one payment row. The service-only checkout initializer creates or returns that row, and the provider checkout ID/URL can be attached only once. PayMongo checkout creation uses the payment UUID as the stable idempotency source. A signed paid webhook must match the stored checkout ID, order UUID, kiosk order number, PHP currency, and exact server total before the payment and order transition atomically.
+
+`list_due_paymongo_checkouts` exposes only overdue pending provider references to trusted server code. After the server successfully expires a checkout through PayMongo, `expire_paymongo_order` locks and rechecks the exact payment/order pair before marking the payment `FAILED`, the order `EXPIRED`, and releasing applicable ready-stock reservations. If provider expiry fails or a paid webhook wins the race, the expiry transition does not release stock.
 
 Do not store card details or unnecessary raw sensitive payloads.
 

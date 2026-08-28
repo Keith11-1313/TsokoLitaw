@@ -9,6 +9,7 @@ import {
 } from "@/lib/paymongo-contract";
 
 const PAYMONGO_CHECKOUT_URL = "https://api.paymongo.com/v2/checkout_sessions";
+const PAYMONGO_LEGACY_CHECKOUT_URL = "https://api.paymongo.com/v1/checkout_sessions";
 
 interface PayMongoErrorDocument {
   errors?: Array<{
@@ -36,6 +37,10 @@ function getPayMongoSecretKey() {
   return key;
 }
 
+function getAuthorizationHeader(secretKey: string) {
+  return `Basic ${Buffer.from(`${secretKey}:`).toString("base64")}`;
+}
+
 async function readPayMongoError(response: Response) {
   try {
     const document = await response.json() as PayMongoErrorDocument;
@@ -59,7 +64,7 @@ export async function createPayMongoCheckoutSession(
     method: "POST",
     headers: {
       Accept: "application/json",
-      Authorization: `Basic ${Buffer.from(`${secretKey}:`).toString("base64")}`,
+      Authorization: getAuthorizationHeader(secretKey),
       "Content-Type": "application/json",
       "Idempotency-Key": requirePayMongoIdempotencyKey(input.idempotencyKey),
     },
@@ -74,4 +79,31 @@ export async function createPayMongoCheckoutSession(
   }
 
   return parsePayMongoCheckoutSession(await response.json());
+}
+
+export async function expirePayMongoCheckoutSession(checkoutId: string): Promise<void> {
+  if (!/^cs_[A-Za-z0-9_-]+$/.test(checkoutId)) {
+    throw new Error("A valid PayMongo checkout ID is required.");
+  }
+
+  const secretKey = getPayMongoSecretKey();
+  const response = await fetch(
+    `${PAYMONGO_LEGACY_CHECKOUT_URL}/${encodeURIComponent(checkoutId)}/expire`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: getAuthorizationHeader(secretKey),
+        "Content-Type": "application/json",
+        "Idempotency-Key": requirePayMongoIdempotencyKey(`expire:${checkoutId}`),
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
+
+  if (!response.ok) {
+    const error = await readPayMongoError(response);
+    throw new PayMongoApiError(error.detail, response.status, error.code);
+  }
 }

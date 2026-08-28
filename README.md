@@ -70,8 +70,10 @@ Phase 10 payment foundation completed so far:
 - checkout requests carry a stable idempotency key so a safe retry cannot create a duplicate provider session
 - the canonical schema creates at most one payment per order and immutably stores its checkout and payment references
 - the test webhook verifies PayMongo's timestamped raw-body signature and atomically deduplicates exact paid-order transitions
-- local validation covers provider-reference persistence and paid-webhook processing; hosted deployment remains pending
-- no customer redirect or payment collection is enabled before the hosted schema and webhook secret are configured
+- Checkout creates or reloads one idempotent PayMongo test session and redirects to Hosted Checkout
+- the success return reloads the owned order and never treats the browser redirect as payment proof
+- overdue provider-bound orders close the PayMongo checkout before the database releases reserved stock
+- local and hosted validation cover provider-reference persistence, paid-webhook processing, and coordinated expiry; the end-to-end hosted payment smoke test remains pending
 
 Not yet implemented or externally configured:
 
@@ -300,6 +302,10 @@ The bootstrap command reads `INITIAL_ADMIN_EMAIL` and the Supabase secret key fr
 ### Account-deletion scheduler
 
 Account-deletion tables and functions are included in the canonical bootstrap schema. Set a strong server-only `CRON_SECRET` in Vercel; `vercel.json` invokes `/api/cron/account-deletions` daily. The endpoint rejects requests without the matching bearer token and deactivates at most 100 eligible due customer profiles per run without deleting their Auth or relational records.
+
+### Payment-expiration scheduler
+
+`/api/cron/payment-expirations` uses the same `CRON_SECRET` bearer protection. It must run frequently enough to close overdue PayMongo checkouts near the configured 15-minute payment deadline. Vercel Hobby cron supports only daily schedules, so the repository deliberately does not add an incompatible frequent entry to `vercel.json`; use a trusted external scheduler or a Vercel plan that supports per-minute jobs. The processor expires PayMongo first and releases stock only after the exact database transition succeeds.
 
 ## Assets and References
 

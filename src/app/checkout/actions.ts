@@ -2,6 +2,8 @@
 
 import { requireCustomer } from "@/lib/auth";
 import { createPendingOrder } from "@/lib/server-checkout";
+import { getOrCreatePayMongoCheckout } from "@/lib/server-payment";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { CheckoutCartInput } from "@/types/commerce";
 
 export interface CheckoutSubmissionInput {
@@ -16,7 +18,14 @@ export interface CheckoutSubmissionInput {
 }
 
 export type CheckoutSubmissionResult =
-  | { status: "success"; orderId: string; orderNumber: string; total: number; created: boolean }
+  | {
+    status: "success";
+    orderId: string;
+    orderNumber: string;
+    total: number;
+    created: boolean;
+    checkoutUrl: string;
+  }
   | { status: "error"; message: string };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -75,16 +84,63 @@ export async function submitPendingOrderAction(
   const validationMessage = getValidationMessage(input);
   if (validationMessage) return { status: "error", message: validationMessage };
 
+  let result;
   try {
-    const result = await createPendingOrder({
+    result = await createPendingOrder({
       ...input,
       userId: profile.id,
       customerName: input.customerName.trim(),
       customerMobile: input.customerMobile.trim(),
       customerNotes: input.customerNotes.trim(),
     });
-    return { status: "success", ...result };
   } catch (error) {
     return { status: "error", message: getCheckoutErrorMessage(error) };
+  }
+
+  try {
+    const checkoutUrl = await getOrCreatePayMongoCheckout(result.orderId, profile.id);
+    return { status: "success", ...result, checkoutUrl };
+  } catch {
+    return {
+      status: "error",
+      message: `Pending order ${result.orderNumber} was saved, but secure payment could not be opened. No payment was collected. Please try again.`,
+    };
+  }
+}
+
+export async function resumePendingPaymentAction(
+  orderId: string,
+): Promise<CheckoutSubmissionResult> {
+  const profile = await requireCustomer("/checkout");
+  if (!UUID_PATTERN.test(orderId)) {
+    return { status: "error", message: "That pending order could not be reopened." };
+  }
+
+  const supabase = createAdminSupabaseClient();
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("id, order_number, total")
+    .eq("id", orderId)
+    .eq("user_id", profile.id)
+    .maybeSingle();
+  if (error || !order) {
+    return { status: "error", message: "That pending order could not be reopened." };
+  }
+
+  try {
+    const checkoutUrl = await getOrCreatePayMongoCheckout(order.id, profile.id);
+    return {
+      status: "success",
+      orderId: order.id,
+      orderNumber: order.order_number,
+      total: Number(order.total),
+      created: false,
+      checkoutUrl,
+    };
+  } catch {
+    return {
+      status: "error",
+      message: `Secure payment for order ${order.order_number} could not be reopened. No payment was collected. Please try again.`,
+    };
   }
 }

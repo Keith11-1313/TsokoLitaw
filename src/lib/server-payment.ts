@@ -1,6 +1,9 @@
 import "server-only";
 
-import { createPayMongoCheckoutSession } from "@/lib/paymongo";
+import {
+  createPayMongoCheckoutSession,
+  expirePayMongoCheckoutSession,
+} from "@/lib/paymongo";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 interface PreparedCheckoutRow {
@@ -12,6 +15,12 @@ interface PreparedCheckoutRow {
   prepared_customer_email: string;
   prepared_customer_mobile: string | null;
   existing_checkout_url: string | null;
+}
+
+interface DueCheckoutRow {
+  due_payment_id: string;
+  due_order_id: string;
+  due_checkout_id: string;
 }
 
 function getSiteUrl() {
@@ -54,9 +63,59 @@ export async function getOrCreatePayMongoCheckout(orderId: string, userId: strin
     checkout_url: session.checkoutUrl,
   });
   if (attachError) {
+    try {
+      await expirePayMongoCheckoutSession(session.id);
+    } catch (expirationError) {
+      console.error("[paymongo] Unable to close an unattached checkout session", {
+        checkoutId: session.id,
+        error: expirationError,
+      });
+    }
     throw new Error("The PayMongo checkout reference could not be retained.", {
       cause: attachError,
     });
   }
   return session.checkoutUrl;
+}
+
+export async function expireDuePayMongoCheckouts(batchLimit = 100) {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase.rpc("list_due_paymongo_checkouts", {
+    batch_limit: Math.min(Math.max(Math.trunc(batchLimit), 1), 100),
+  });
+  if (error) throw new Error("Due PayMongo checkouts could not be loaded.", { cause: error });
+
+  let expired = 0;
+  let deferred = 0;
+  const failures: string[] = [];
+
+  for (const row of (data ?? []) as DueCheckoutRow[]) {
+    try {
+      await expirePayMongoCheckoutSession(row.due_checkout_id);
+      const { data: orderExpired, error: expirationError } = await supabase.rpc(
+        "expire_paymongo_order",
+        {
+          target_payment_id: row.due_payment_id,
+          checkout_id: row.due_checkout_id,
+        },
+      );
+      if (expirationError) throw expirationError;
+      if (orderExpired) expired += 1;
+      else deferred += 1;
+    } catch (expirationError) {
+      console.error("[paymongo-expirations] Checkout expiration failed", {
+        orderId: row.due_order_id,
+        checkoutId: row.due_checkout_id,
+        error: expirationError,
+      });
+      failures.push(row.due_order_id);
+    }
+  }
+
+  return {
+    examined: (data ?? []).length,
+    expired,
+    deferred,
+    failures,
+  };
 }
