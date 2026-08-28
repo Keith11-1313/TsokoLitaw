@@ -323,7 +323,7 @@ create table public.reviews (
   display_name_snapshot text not null,
   rating integer not null check (rating between 1 and 5),
   comment text not null check (length(trim(comment)) > 0),
-  is_visible boolean not null default true,
+  is_visible boolean not null default false,
   is_featured boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -1471,6 +1471,146 @@ begin
 end;
 $$;
 
+create or replace function public.submit_order_review(
+  target_user_id uuid,
+  target_order_id uuid,
+  rating_value integer,
+  comment_value text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  customer_profile public.profiles%rowtype;
+  target_order public.orders%rowtype;
+  created_review_id uuid;
+  normalized_comment text := trim(comment_value);
+begin
+  select * into customer_profile
+  from public.profiles
+  where id = target_user_id
+    and is_active;
+
+  if customer_profile.id is null then
+    raise exception 'Active customer access is required';
+  end if;
+
+  if rating_value < 1 or rating_value > 5 then
+    raise exception 'Rating must be between one and five';
+  end if;
+
+  if normalized_comment is null
+    or length(normalized_comment) < 10
+    or length(normalized_comment) > 1000
+  then
+    raise exception 'Review comment must contain between 10 and 1000 characters';
+  end if;
+
+  select * into target_order
+  from public.orders
+  where id = target_order_id
+    and user_id = target_user_id
+  for update;
+
+  if target_order.id is null then
+    raise exception 'Completed order was not found';
+  end if;
+
+  if target_order.status <> 'COMPLETED' then
+    raise exception 'Only completed orders can be reviewed';
+  end if;
+
+  if exists (select 1 from public.reviews where order_id = target_order.id) then
+    raise exception 'This order already has a review';
+  end if;
+
+  insert into public.reviews (
+    user_id,
+    order_id,
+    display_name_snapshot,
+    rating,
+    comment,
+    is_visible,
+    is_featured
+  ) values (
+    target_user_id,
+    target_order.id,
+    customer_profile.full_name,
+    rating_value,
+    normalized_comment,
+    false,
+    false
+  )
+  returning id into created_review_id;
+
+  return created_review_id;
+end;
+$$;
+
+create or replace function public.moderate_order_review(
+  target_admin_id uuid,
+  target_review_id uuid,
+  visible_value boolean,
+  featured_value boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_review public.reviews%rowtype;
+begin
+  if not exists (
+    select 1 from public.profiles
+    where id = target_admin_id
+      and role = 'admin'
+      and is_active
+  ) then
+    raise exception 'Active administrator access is required';
+  end if;
+
+  if featured_value and not visible_value then
+    raise exception 'Featured reviews must remain visible';
+  end if;
+
+  select * into target_review
+  from public.reviews
+  where id = target_review_id
+  for update;
+
+  if target_review.id is null then
+    raise exception 'Review was not found';
+  end if;
+
+  update public.reviews
+  set is_visible = visible_value,
+      is_featured = featured_value,
+      updated_at = now()
+  where id = target_review.id;
+
+  insert into public.admin_audit_logs (
+    admin_id, action, entity_type, entity_id, metadata
+  ) values (
+    target_admin_id,
+    'review.moderated',
+    'review',
+    target_review.id::text,
+    jsonb_build_object(
+      'order_id', target_review.order_id,
+      'previous_visible', target_review.is_visible,
+      'previous_featured', target_review.is_featured,
+      'visible', visible_value,
+      'featured', featured_value
+    )
+  );
+
+  return true;
+end;
+$$;
+
 create or replace function public.transition_order_status(
   target_admin_id uuid,
   target_order_id uuid,
@@ -2161,6 +2301,12 @@ grant execute on function public.request_manual_refund_fallback(
 grant execute on function public.transition_order_status(
   uuid, uuid, public.order_status, public.order_status
 ) to service_role;
+grant execute on function public.submit_order_review(
+  uuid, uuid, integer, text
+) to service_role;
+grant execute on function public.moderate_order_review(
+  uuid, uuid, boolean, boolean
+) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
   public.pickup_locations, public.pickup_dates, public.pickup_windows,
@@ -2335,6 +2481,10 @@ comment on function public.transition_order_status(
   uuid, uuid, public.order_status, public.order_status
 ) is
   'Service-role-only fulfillment transition with active-Admin validation, optimistic status matching, and audit logging.';
+comment on function public.submit_order_review(uuid, uuid, integer, text) is
+  'Service-role-only customer review writer that enforces active ownership, completed fulfillment, and one review per order.';
+comment on function public.moderate_order_review(uuid, uuid, boolean, boolean) is
+  'Service-role-only review moderation with active-Admin validation and audit logging.';
 comment on function public.create_pending_order(
   uuid, uuid, uuid, uuid, text, text, text, jsonb, numeric, numeric, numeric, text
 ) is 'Service-role-only atomic order writer. Next.js must reload and validate active catalog prices before calling it.';

@@ -29,6 +29,7 @@ UI structure must communicate the real workflow rather than merely resemble a dr
 | Admin Catalog explains each derived box price | Box size multiplies the current admin-managed price per piece; it is not a permanent fixed amount |
 | Terms and Privacy are in Footer and Checkout | They remain accessible and appear where acceptance matters |
 | Reviews begin on completed order details | Review eligibility is tied to a specific fulfilled order |
+| New reviews await moderation | Customer submission does not imply immediate public publication; Admin visibility and featured actions are explicit |
 | Journal replaces Vlog | Announcements and stories are not always videos |
 | Admin pages show purpose and connection | Mock controls must not imply a live customer change |
 | Admin fulfillment uses explicit confirmations | Real status changes are irreversible in the UI, customer-visible, and recorded for audit |

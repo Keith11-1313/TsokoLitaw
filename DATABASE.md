@@ -22,6 +22,7 @@ The proposed schema follows `DECISIONS.md` and the current workflow:
 | Five admins share one role | bootstrap one approved Google-backed admin now and add up to four later; all authorization remains server-side |
 | Cancellation closes at preparation | cancel through `CONFIRMED`; paid cancellation creates a separately tracked refund; prepared/no-show orders are non-refundable |
 | Reviews require completed orders | unique review per order plus ownership/status validation |
+| Review publication is moderated | new reviews are hidden by default; service-only Admin moderation controls visibility/featured state and creates audit records |
 | Journal supports multiple content types | `journal_posts.content_type`, publication state, and optional media |
 | Admin mirrors customer operations | admin mutations update the same catalog, pickup, order, review, and Journal records customers consume |
 | Fulfillment is forward-only | `transition_order_status` locks the order, requires an active Admin and paid order, permits only `CONFIRMED → PREPARING → READY_FOR_PICKUP → COMPLETED`, and writes an audit record |

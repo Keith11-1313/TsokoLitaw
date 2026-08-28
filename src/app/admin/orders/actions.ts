@@ -3,14 +3,13 @@
 import { revalidatePath } from "next/cache";
 import type { OrderStatus } from "@/components/ui/status-badge";
 import { requireAdmin } from "@/lib/auth";
+import { isUuid } from "@/lib/identifiers";
 import { isAllowedFulfillmentTransition } from "@/lib/order-status";
 import { transitionAdminOrderStatus } from "@/lib/server-orders";
 import {
   enforceMutationRateLimit,
   MutationRateLimitError,
 } from "@/lib/server-rate-limit";
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type AdminOrderActionResult = {
   status: "success" | "error";
@@ -24,7 +23,7 @@ export async function transitionOrderStatusAction(input: {
 }): Promise<AdminOrderActionResult> {
   const admin = await requireAdmin("/admin/orders");
 
-  if (!UUID_PATTERN.test(input.orderId)
+  if (!isUuid(input.orderId)
     || !isAllowedFulfillmentTransition(input.expectedStatus, input.nextStatus)) {
     return { status: "error", message: "That fulfillment update is invalid." };
   }

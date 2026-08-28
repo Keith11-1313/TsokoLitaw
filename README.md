@@ -89,7 +89,9 @@ Phase 11 customer-order work started by product-owner request:
 - Admin Orders loads recent real order snapshots with local search and status filtering
 - active Admins can advance `CONFIRMED → PREPARING → READY_FOR_PICKUP → COMPLETED` through an atomic service-only database function
 - every successful fulfillment transition records the acting Admin, order, previous status, and next status in `admin_audit_logs`
-- completed-order review mutations remain pending
+- completed-order owners can submit one persisted 1–5 star review with a validated comment
+- new reviews remain hidden from public reads until an Admin explicitly shows or features them
+- Admin Reviews loads real submissions and audits visibility/featured moderation changes
 
 Performance and concurrency hardening implemented for the current storefront:
 

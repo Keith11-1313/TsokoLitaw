@@ -9,6 +9,8 @@ interface AdminPageLayoutProps {
   description: string;
   purpose: string;
   customerImpact: string;
+  currentConnection?: string;
+  connected?: boolean;
   actions?: ReactNode;
   children: ReactNode;
 }
@@ -19,6 +21,8 @@ export function AdminPageLayout({
   description,
   purpose,
   customerImpact,
+  currentConnection,
+  connected,
   actions,
   children,
 }: AdminPageLayoutProps) {
@@ -34,7 +38,7 @@ export function AdminPageLayout({
           </div>
           {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
         </header>
-        <div className="mt-6"><AdminScopeNote purpose={purpose} customerImpact={customerImpact} /></div>
+        <div className="mt-6"><AdminScopeNote purpose={purpose} customerImpact={customerImpact} currentConnection={currentConnection} connected={connected} /></div>
         <div className="mt-8">{children}</div>
       </AdminContent>
     </AdminShell>

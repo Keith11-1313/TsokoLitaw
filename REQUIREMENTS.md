@@ -38,6 +38,8 @@ Workflow changes must be reflected together in:
 - active Admin identities may place their own customer-storefront orders, and all new orders use one shared kiosk-style number such as `TL-0001`
 - PayMongo v2 Hosted Checkout test sessions, signed webhooks, provider references, and test payment/refund transitions are the active integration scope
 - Admin Orders reads real order snapshots and advances paid fulfillment through validated, audited server-side transitions
+- completed-order owners can submit one persisted review; new reviews remain non-public until Admin moderation
+- Admin Reviews reads real submissions and saves audited visibility/featured decisions
 - remaining Admin management areas stay mock/non-persistent until their Phase 11 slices are connected
 
 ### Deferred

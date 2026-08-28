@@ -219,7 +219,9 @@ Do not begin without explicit approval.
 - [x] Implement cancellation eligibility
 - [x] Close customer cancellation at `PREPARING` and enforce no-show non-refund policy
 - [x] Add encrypted, restricted manual-refund fallback after provider failure
-- [ ] Enforce completed-order review eligibility and uniqueness
+- [x] Enforce completed-order review eligibility, ownership, and uniqueness
+- [x] Persist one customer review per completed order through a controlled server mutation
+- [x] Connect Admin review reads, visibility/featured moderation, and audit records
 - [ ] Connect public selected reviews
 - [ ] Implement Journal draft/publish workflow
 - [ ] Implement product, coating, add-on, inventory, pickup, promotion, customer, review, Journal, and settings administration

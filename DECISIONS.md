@@ -35,6 +35,7 @@ Allowed now:
 - server-side cart validation, pricing, promotion evaluation, inventory reservation, Terms acceptance, immutable order snapshots, and idempotent pending-order creation
 - PayMongo v2 test checkout sessions, signed/idempotent webhooks, and test payment/refund transitions
 - real Admin order reads and audited, forward-only paid fulfillment transitions
+- one persisted review per completed order, initially non-public until Admin moderation
 
 Deferred until separately approved:
 

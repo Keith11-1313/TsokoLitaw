@@ -1,11 +1,38 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
-import { Star } from "lucide-react";
 import { AdminPageLayout } from "@/components/admin/admin-page-layout";
-import { AdminDataTable, type AdminTableColumn } from "@/components/admin/admin-data-table";
+import { ReviewManagementTable } from "@/components/admin/review-management-table";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
+import { requireAdmin } from "@/lib/auth";
+import { getAdminReviews } from "@/lib/server-reviews";
 
-export const metadata: Metadata = { title: "Review Management | TsokoLitaw Admin" };
-const columns: readonly AdminTableColumn[] = [{ key: "customer", label: "Customer" }, { key: "order", label: "Completed Order" }, { key: "rating", label: "Rating" }, { key: "comment", label: "Review" }, { key: "visibility", label: "Public" }, { key: "action", label: "Action" }];
-const rows: readonly Record<string, ReactNode>[] = [["Maria Santos", "#ORD-004", "5", "Soft, warm, and perfect for sharing.", "Featured"], ["Juan Dela Cruz", "#ORD-003", "4", "Loved the mixed coatings.", "Visible"], ["Sophia Lim", "#ORD-001", "3", "Pickup instructions could be clearer.", "Hidden"]].map((item) => ({ customer: <strong className="text-foreground">{item[0]}</strong>, order: item[1], rating: <span className="inline-flex items-center gap-1 font-bold text-foreground"><Star className="fill-warning-foreground text-warning-foreground" size={15} />{item[2]}</span>, comment: item[3], visibility: item[4], action: <button type="button" disabled title="Moderation persistence requires backend setup" className="min-h-11 rounded-full border border-border px-3 text-xs font-bold opacity-60">Manage</button> }));
-export default function AdminReviewsPage() { return <AdminPageLayout activePath="/admin/reviews" title="Review Management" description="Order-linked customer reviews and public visibility." purpose="Moderate reviews and choose which customer comments may be highlighted." customerImpact="Customers can review only completed orders; selected comments can appear in Journal."><section className="mb-6 grid gap-4 sm:grid-cols-3"><AdminStatCard compact label="Average Rating" value="4.6" /><AdminStatCard compact label="Visible" value="47" /><AdminStatCard compact label="Featured" value="2" /></section><AdminDataTable caption="Customer reviews" columns={columns} rows={rows} minimumWidth="52rem" /></AdminPageLayout>; }
+export const metadata: Metadata = {
+  title: "Review Management | TsokoLitaw Admin",
+  description: "Moderate verified completed-order reviews.",
+};
+
+export default async function AdminReviewsPage() {
+  await requireAdmin("/admin/reviews");
+  const reviews = await getAdminReviews();
+  const average = reviews.length
+    ? (reviews.reduce((total, review) => total + review.rating, 0) / reviews.length).toFixed(1)
+    : "—";
+
+  return (
+    <AdminPageLayout
+      activePath="/admin/reviews"
+      title="Review Management"
+      description="Verified reviews submitted from completed customer orders."
+      purpose="Moderate reviews and choose which customer comments may later be highlighted."
+      customerImpact="Customers can review each completed order once. Hidden reviews are excluded from public reads."
+      currentConnection="Connected to real completed-order reviews. Visibility and featured state are saved and audited."
+      connected
+    >
+      <section className="mb-6 grid gap-4 sm:grid-cols-3">
+        <AdminStatCard compact label="Average Rating" value={average} />
+        <AdminStatCard compact label="Visible" value={String(reviews.filter((review) => review.isVisible).length)} />
+        <AdminStatCard compact label="Featured" value={String(reviews.filter((review) => review.isFeatured).length)} />
+      </section>
+      <ReviewManagementTable reviews={reviews} />
+    </AdminPageLayout>
+  );
+}
