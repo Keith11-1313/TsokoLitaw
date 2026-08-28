@@ -195,6 +195,8 @@ Placeholders remain acceptable only when an actual asset is unavailable.
 
 Approved Home feature media uses a single stable portrait carousel frame so switching slides does not shift surrounding content. The video autoplays muted, uses `playsInline`, includes native controls plus a clear sound toggle, and advances to the promotional image when complete. The image remains uncropped and links to the relevant customer route. Carousel controls must remain touch-friendly and keyboard accessible. The Journal button is centered below this media block.
 
+The Home hero fills at least the first viewport below the fixed-height customer header. Its content stays vertically centered, and the following Featured section must not peek into the initial desktop screen.
+
 ## 7. Forms and Dropdowns
 
 Controls use cream surfaces, chocolate text, visible borders, rounded corners, and visible focus rings.

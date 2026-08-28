@@ -18,8 +18,11 @@ export function HomeHero({
   description,
 }: HomeHeroProps) {
   return (
-    <section className="bg-background py-10 sm:py-14 lg:py-20" aria-labelledby="home-heading">
-      <SiteContainer>
+    <section
+      className="flex min-h-[calc(100vh-5.5rem)] items-center bg-background py-10 sm:min-h-[calc(100svh-5.5rem)] sm:py-14 lg:py-16"
+      aria-labelledby="home-heading"
+    >
+      <SiteContainer className="w-full">
         <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
           <div className="max-w-2xl lg:translate-y-1">
             <p className="inline-block origin-left scale-x-[1.3] font-script text-5xl leading-none text-brand sm:text-6xl">
