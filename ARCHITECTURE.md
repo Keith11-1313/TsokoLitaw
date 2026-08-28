@@ -227,6 +227,8 @@ PayMongo checkout creation is server-only and uses a stable idempotency key deri
 
 Standard cancellation is allowed only before `PREPARING`. Unpaid cancellations release reserved stock; paid cancellations create a full refund to the original payment method. Refund lifecycle is tracked separately from order cancellation, and only verified provider events may confirm completion. Prepared and no-show orders are non-refundable. A restricted manual destination is collected only after an unsupported or failed provider refund.
 
+The order-detail server action first asks the database for the locked cancellation kind. For an unpaid provider-bound order it expires the exact PayMongo checkout before the database changes order/payment state or releases inventory. For a paid order the database records `CANCELLED` plus a separate full refund request, after which the server creates the idempotent PayMongo refund using the stored payment ID. An authenticated API response or signed refund webhook updates that refund; browser navigation never does. Manual destination values use a dedicated server-only encryption key and remain in the Admin-readable restricted table.
+
 ## 11. Inventory
 
 Recommended V1 inventory:

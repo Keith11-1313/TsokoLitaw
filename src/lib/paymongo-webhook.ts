@@ -25,6 +25,23 @@ export interface PayMongoPaidEvent {
   };
 }
 
+export interface PayMongoRefundEvent {
+  eventKey: string;
+  refundId: string;
+  paymentId: string;
+  amountPhp: number;
+  status: "pending" | "processing" | "succeeded" | "failed";
+  summary: {
+    livemode: false;
+    event_type: string;
+    refund_id: string;
+    payment_id: string;
+    amount: number;
+    currency: "PHP";
+    status: "pending" | "processing" | "succeeded" | "failed";
+  };
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -134,6 +151,83 @@ export function parsePayMongoPaidEvent(payload: unknown): PayMongoPaidEvent | nu
       reference_number: orderNumber,
       amount: amountPhp,
       currency: "PHP",
+    },
+  };
+}
+
+export function parsePayMongoRefundEvent(payload: unknown): PayMongoRefundEvent | null {
+  const envelope = asRecord(payload as PayMongoWebhookEnvelope);
+  if (!envelope) return null;
+  const envelopeData = asRecord(envelope.data);
+  const event = envelope.event_type === "send.webhook"
+    ? envelopeData
+    : envelopeData?.type === "event"
+      ? asRecord(envelopeData.attributes)
+      : null;
+  if (!event) return null;
+
+  const eventType = event.type;
+  if (!["payment.refunded", "payment.refund.updated", "refund.succeeded"].includes(String(eventType))) {
+    return null;
+  }
+  if (event.livemode !== false) throw new Error("Live PayMongo events are not accepted in test mode.");
+
+  const resource = asRecord(event.data);
+  const resourceAttributes = asRecord(resource?.attributes);
+  let refund = resource;
+  let refundAttributes = resourceAttributes;
+  let paymentId: unknown = resourceAttributes?.payment_id;
+
+  if (resource?.type === "payment") {
+    paymentId = resource.id;
+    const refunds = Array.isArray(resourceAttributes?.refunds) ? resourceAttributes.refunds : [];
+    const refundRecords = refunds.map(asRecord);
+    refund = refundRecords.find((candidate) => candidate?.type === "refund")
+      ?? refundRecords.find((candidate) => candidate !== null)
+      ?? null;
+    refundAttributes = asRecord(refund?.attributes);
+  }
+
+  const refundId = refund?.id;
+  paymentId = refundAttributes?.payment_id ?? paymentId;
+  const amountCentavos = refundAttributes?.amount;
+  const currency = refundAttributes?.currency;
+  const rawStatus = eventType === "payment.refunded" || eventType === "refund.succeeded"
+    ? "succeeded"
+    : refundAttributes?.status;
+  const eventId = envelopeData?.id;
+
+  if (typeof refundId !== "string" || !/^ref_[A-Za-z0-9_-]+$/.test(refundId)) {
+    throw new Error("PayMongo refund ID is invalid.");
+  }
+  if (typeof paymentId !== "string" || !/^pay_[A-Za-z0-9_-]+$/.test(paymentId)) {
+    throw new Error("PayMongo refunded payment ID is invalid.");
+  }
+  if (!Number.isSafeInteger(amountCentavos) || Number(amountCentavos) <= 0 || currency !== "PHP") {
+    throw new Error("PayMongo refund amount is invalid.");
+  }
+  if (!["pending", "processing", "succeeded", "failed"].includes(String(rawStatus))) {
+    throw new Error("PayMongo refund status is invalid.");
+  }
+
+  const amountPhp = Number(amountCentavos) / 100;
+  const status = rawStatus as PayMongoRefundEvent["status"];
+  return {
+    eventKey: typeof eventId === "string"
+      ? `${String(eventType)}:${eventId}`
+      : `${String(eventType)}:${refundId}:${status}`,
+    refundId,
+    paymentId,
+    amountPhp,
+    status,
+    summary: {
+      livemode: false,
+      event_type: String(eventType),
+      refund_id: refundId,
+      payment_id: paymentId,
+      amount: amountPhp,
+      currency: "PHP",
+      status,
     },
   };
 }

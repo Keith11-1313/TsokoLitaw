@@ -29,6 +29,17 @@ export interface PayMongoCheckoutSession {
   livemode: false;
 }
 
+export type PayMongoRefundStatus = "pending" | "processing" | "succeeded" | "failed";
+
+export interface PayMongoRefund {
+  id: string;
+  paymentId: string;
+  amountPhp: number;
+  currency: "PHP";
+  status: PayMongoRefundStatus;
+  livemode: false;
+}
+
 interface PayMongoCheckoutResponse {
   data?: {
     id?: unknown;
@@ -124,4 +135,67 @@ export function parsePayMongoCheckoutSession(
     throw new Error("PayMongo test mode was expected but a live resource was returned.");
   }
   return { id, checkoutUrl, livemode };
+}
+
+export function buildPayMongoRefundPayload(input: {
+  paymentId: string;
+  amountPhp: number;
+  orderNumber: string;
+}) {
+  if (!/^pay_[A-Za-z0-9_-]+$/.test(input.paymentId)) {
+    throw new Error("A valid PayMongo payment ID is required.");
+  }
+  if (!/^TL-[0-9]{4,}$/.test(input.orderNumber)) {
+    throw new Error("A valid TsokoLitaw order number is required.");
+  }
+  return {
+    data: {
+      attributes: {
+        amount: phpToCentavos(input.amountPhp),
+        payment_id: input.paymentId,
+        reason: "requested_by_customer",
+        notes: `Customer cancellation for ${input.orderNumber}`,
+      },
+    },
+  };
+}
+
+export function parsePayMongoRefund(response: unknown): PayMongoRefund {
+  const document = response as {
+    data?: {
+      id?: unknown;
+      type?: unknown;
+      attributes?: Record<string, unknown>;
+    };
+  };
+  const id = document.data?.id;
+  const attributes = document.data?.attributes;
+  const paymentId = attributes?.payment_id;
+  const amount = attributes?.amount;
+  const currency = attributes?.currency;
+  const status = attributes?.status;
+  const livemode = attributes?.livemode;
+  if (typeof id !== "string" || !/^ref_[A-Za-z0-9_-]+$/.test(id)) {
+    throw new Error("PayMongo did not return a valid refund ID.");
+  }
+  if (typeof paymentId !== "string" || !/^pay_[A-Za-z0-9_-]+$/.test(paymentId)) {
+    throw new Error("PayMongo did not return the refunded payment ID.");
+  }
+  if (!Number.isSafeInteger(amount) || Number(amount) <= 0 || currency !== "PHP") {
+    throw new Error("PayMongo returned an invalid refund amount.");
+  }
+  if (!["pending", "processing", "succeeded", "failed"].includes(String(status))) {
+    throw new Error("PayMongo returned an invalid refund status.");
+  }
+  if (livemode !== false) {
+    throw new Error("PayMongo test mode was expected but a live refund was returned.");
+  }
+  return {
+    id,
+    paymentId,
+    amountPhp: Number(amount) / 100,
+    currency: "PHP",
+    status: status as PayMongoRefundStatus,
+    livemode,
+  };
 }

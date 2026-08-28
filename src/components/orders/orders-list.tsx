@@ -96,6 +96,7 @@ export function OrdersList({ orders }: { orders: CustomerOrderSummary[] }) {
                 <p className="flex items-start gap-2"><MapPin aria-hidden="true" className="mt-0.5 shrink-0" size={17} />{order.pickupLocation}</p>
               </div>
               <p className="mt-4 text-sm leading-6">{order.itemSummary || "Order items unavailable"}</p>
+              <div className="mt-5 flex justify-end"><Link href={`/orders/${order.id}`} className="inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand">View order</Link></div>
             </li>
           ))}
         </ul>

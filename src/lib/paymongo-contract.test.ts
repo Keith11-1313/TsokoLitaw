@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPayMongoCheckoutPayload,
+  buildPayMongoRefundPayload,
   parsePayMongoCheckoutSession,
+  parsePayMongoRefund,
   phpToCentavos,
   requirePayMongoIdempotencyKey,
 } from "./paymongo-contract";
@@ -80,5 +82,36 @@ describe("PayMongo checkout contract", () => {
         },
       },
     })).toThrow("test mode");
+  });
+
+  it("builds and validates a full original-method refund", () => {
+    expect(buildPayMongoRefundPayload({
+      paymentId: "pay_test_payment",
+      amountPhp: 60,
+      orderNumber: "TL-0012",
+    })).toEqual({ data: { attributes: {
+      amount: 6000,
+      payment_id: "pay_test_payment",
+      reason: "requested_by_customer",
+      notes: "Customer cancellation for TL-0012",
+    } } });
+    expect(parsePayMongoRefund({ data: {
+      id: "ref_test_refund",
+      type: "refund",
+      attributes: {
+        amount: 6000,
+        currency: "PHP",
+        livemode: false,
+        payment_id: "pay_test_payment",
+        status: "processing",
+      },
+    } })).toEqual({
+      id: "ref_test_refund",
+      paymentId: "pay_test_payment",
+      amountPhp: 60,
+      currency: "PHP",
+      status: "processing",
+      livemode: false,
+    });
   });
 });

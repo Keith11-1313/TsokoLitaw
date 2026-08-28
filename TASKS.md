@@ -202,18 +202,18 @@ Do not begin without explicit approval.
 - [ ] Schedule `/api/cron/payment-expirations` at a frequent cadence supported by the deployment scheduler
 - [x] Apply and validate the coordinated-expiry schema upgrade on hosted development
 - [ ] Complete the hosted test payment, paid-webhook, cancellation, and expiry smoke tests
-- [ ] Implement full original-method refunds and verified refund webhooks
-- [ ] Track refund state separately from order cancellation
+- [x] Implement full original-method refunds and verified refund webhooks
+- [x] Track refund state separately from order cancellation
 - [x] Never infer payment success from browser redirects
 
 ## Phase 11 — Orders, Reviews, Journal, and Admin CRUD
 
 - [x] Connect the authenticated customer order list with real order snapshots and status filters
-- [ ] Connect customer order details
+- [x] Connect customer order details
 - [ ] Enforce order status transitions
-- [ ] Implement cancellation eligibility
-- [ ] Close customer cancellation at `PREPARING` and enforce no-show non-refund policy
-- [ ] Add restricted manual-refund fallback after provider failure
+- [x] Implement cancellation eligibility
+- [x] Close customer cancellation at `PREPARING` and enforce no-show non-refund policy
+- [x] Add encrypted, restricted manual-refund fallback after provider failure
 - [ ] Enforce completed-order review eligibility and uniqueness
 - [ ] Connect public selected reviews
 - [ ] Implement Journal draft/publish workflow

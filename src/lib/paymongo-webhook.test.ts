@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   parsePayMongoPaidEvent,
+  parsePayMongoRefundEvent,
   verifyPayMongoTestWebhookSignature,
 } from "./paymongo-webhook";
 
@@ -103,5 +104,43 @@ describe("PayMongo webhook verification", () => {
     live.data.livemode = true;
     expect(() => parsePayMongoPaidEvent(live)).toThrow("Live PayMongo events");
     expect(() => parsePayMongoPaidEvent(paidPayload(0))).toThrow("payment amount");
+  });
+
+  it("extracts a signed refund lifecycle event without trusting order metadata", () => {
+    expect(parsePayMongoRefundEvent({
+      data: {
+        id: "evt_test_refund",
+        type: "event",
+        attributes: {
+          type: "payment.refund.updated",
+          livemode: false,
+          data: {
+            id: "ref_test_refund",
+            type: "refund",
+            attributes: {
+              amount: 4000,
+              currency: "PHP",
+              payment_id: "pay_test_payment",
+              status: "succeeded",
+            },
+          },
+        },
+      },
+    })).toEqual({
+      eventKey: "payment.refund.updated:evt_test_refund",
+      refundId: "ref_test_refund",
+      paymentId: "pay_test_payment",
+      amountPhp: 40,
+      status: "succeeded",
+      summary: {
+        livemode: false,
+        event_type: "payment.refund.updated",
+        refund_id: "ref_test_refund",
+        payment_id: "pay_test_payment",
+        amount: 40,
+        currency: "PHP",
+        status: "succeeded",
+      },
+    });
   });
 });

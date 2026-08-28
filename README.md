@@ -73,19 +73,24 @@ Phase 10 payment foundation completed so far:
 - Checkout creates or reloads one idempotent PayMongo test session and redirects to Hosted Checkout
 - the success return reloads the owned order and never treats the browser redirect as payment proof
 - overdue provider-bound orders close the PayMongo checkout before the database releases reserved stock
+- eligible order details support server-validated cancellation through `CONFIRMED`; unpaid checkouts expire before reservation release
+- paid cancellations create a separately tracked, idempotent full PayMongo refund to the stored original payment
+- authenticated PayMongo responses and signed refund webhooks drive requested, processing, refunded, and failed states
+- failed automatic refunds expose an AES-256-GCM-encrypted manual destination fallback with restricted database access
 - local and hosted validation cover provider-reference persistence, paid-webhook processing, and coordinated expiry; the end-to-end hosted payment smoke test remains pending
 
 Phase 11 customer-order work started by product-owner request:
 
 - My Orders now loads only the authenticated profile's persisted order snapshots
 - All, Received, Preparing, Ready for pickup, and Completed filters organize real statuses without changing them in the browser
-- order-detail and completed-order review mutations remain pending
+- order details now load only the authenticated customer's immutable snapshots and show cancellation/refund eligibility
+- completed-order review mutations remain pending
 
 Not yet implemented or externally configured:
 
 - initial Admin promotion and the remaining live authorization checks
 - hosted PayMongo schema deployment, webhook registration, and customer redirection
-- payment expiry coordination and refunds
+- frequent production scheduling for payment expiry and hosted refund smoke testing
 - email or real CRUD other than the approved account-deletion lifecycle
 - admin authorization or admin subdomain routing
 
@@ -312,6 +317,16 @@ Account-deletion tables and functions are included in the canonical bootstrap sc
 ### Payment-expiration scheduler
 
 `/api/cron/payment-expirations` uses the same `CRON_SECRET` bearer protection. It must run frequently enough to close overdue PayMongo checkouts near the configured 15-minute payment deadline. Vercel Hobby cron supports only daily schedules, so the repository deliberately does not add an incompatible frequent entry to `vercel.json`; use a trusted external scheduler or a Vercel plan that supports per-minute jobs. The processor expires PayMongo first and releases stock only after the exact database transition succeeds.
+
+### Refund security and webhooks
+
+Generate a different 32-byte encryption key for each environment and store its base64 value as the server-only `REFUND_DESTINATION_ENCRYPTION_KEY` in `.env.local` and Vercel. Never expose it with a `NEXT_PUBLIC_` prefix:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+The PayMongo webhook endpoint must subscribe to `checkout_session.payment.paid`, `payment.refunded`, and `payment.refund.updated`. The handler also understands PayMongo's newer `refund.succeeded` event shape when the dashboard makes that event available. Test and live webhook secrets are separate; keep the project in Test Mode until the hosted cancellation/refund smoke test is complete.
 
 ## Assets and References
 

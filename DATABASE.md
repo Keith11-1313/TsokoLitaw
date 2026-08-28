@@ -398,6 +398,8 @@ updated_at timestamptz
 
 An eligible paid cancellation creates a full refund to the original payment method. The order may already be `CANCELLED` while the refund remains pending. Only a verified provider result may set `REFUNDED`. Manual fallback destination details are collected only after an unsupported or failed PayMongo refund, stored separately with restricted access, and masked in Admin UI.
 
+Service-only cancellation functions lock and recheck ownership, fulfillment state, payment state, and provider references. An attached unpaid checkout must be expired through PayMongo before `cancel_unpaid_order` releases its reservation. A paid cancellation atomically sets the order to `CANCELLED` and creates one full `REQUESTED` refund while leaving payment state `PAID`. The authenticated PayMongo create-refund response or an idempotently processed signed refund webhook may advance the refund to `PROCESSING`, `REFUNDED`, or `FAILED`; terminal success also changes the payment and order payment snapshot to `REFUNDED`.
+
 ### `manual_refund_destinations`
 
 ```text
@@ -411,7 +413,7 @@ created_at timestamptz
 deleted_at timestamptz nullable
 ```
 
-The account reference must be encrypted by server-only code and is never customer-readable through RLS.
+The account reference is encrypted with AES-256-GCM by server-only code and is never customer-readable through RLS. The fallback writer accepts a destination only for an owned, cancelled order whose original-method refund has already failed.
 
 ### `payment_webhook_events`
 

@@ -261,3 +261,5 @@ Order references use the short shared kiosk format `TL-0001`. Customer and Admin
 Pickup UI must distinguish made-to-order availability from ready stock. The Monday–Saturday, 7:00 AM–7:00 PM operating window is guidance only; checkout shows only dates and slots published by Admin, and same-day pickup appears only for available ready stock.
 
 Cancellation confirmation must explain whether the action only releases an unpaid reservation or starts a full refund to the original payment method. Do not ask for a GCash, Maya, or bank destination during the normal PayMongo refund flow; show a restricted fallback form only after the automatic refund is unavailable or has failed.
+
+The connected order detail displays the immutable item and pickup snapshots, payment state, and separately labelled refund state. Eligible orders expose one confirmation-based cancellation action. After cancellation, requested or processing refunds remain visibly unsettled; failed automatic refunds reveal the encrypted manual destination form, while successful refunds display the confirmed amount without asking for destination details.

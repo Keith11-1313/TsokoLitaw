@@ -757,7 +757,9 @@ begin
     end if;
 
     update public.orders
-    set status = 'EXPIRED'
+    set status = 'EXPIRED',
+        payment_status = 'FAILED',
+        updated_at = now()
     where id = expired_order.id;
 
     update public.payments
@@ -873,8 +875,498 @@ begin
   where id = target_payment.id;
 
   update public.orders
-  set status = 'EXPIRED'
+  set status = 'EXPIRED',
+      payment_status = 'FAILED',
+      updated_at = now()
   where id = target_order.id;
+
+  return true;
+end;
+$$;
+
+create or replace function public.prepare_order_cancellation(
+  target_order_id uuid,
+  target_user_id uuid
+)
+returns table (
+  cancellation_kind text,
+  cancellation_payment_id uuid,
+  cancellation_checkout_id text,
+  cancellation_provider_payment_id text,
+  cancellation_amount numeric,
+  existing_refund_id uuid,
+  existing_refund_status public.refund_status
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_order public.orders%rowtype;
+  target_payment public.payments%rowtype;
+  target_refund public.refunds%rowtype;
+begin
+  select * into target_order
+  from public.orders
+  where id = target_order_id
+    and user_id = target_user_id
+  for update;
+
+  if target_order.id is null then
+    raise exception 'Order is unavailable';
+  end if;
+
+  select * into target_payment
+  from public.payments
+  where order_id = target_order.id
+  for update;
+
+  select * into target_refund
+  from public.refunds
+  where order_id = target_order.id
+  order by created_at desc
+  limit 1;
+
+  if target_order.status = 'CANCELLED' and target_refund.id is not null then
+    return query select
+      'PAID_REFUND'::text,
+      target_payment.id,
+      target_payment.provider_checkout_id,
+      target_payment.provider_payment_id,
+      target_payment.amount,
+      target_refund.id,
+      target_refund.status;
+    return;
+  end if;
+
+  if target_order.status = 'PENDING_PAYMENT'
+    and target_order.payment_status = 'PENDING'
+    and (target_payment.id is null or target_payment.status = 'PENDING')
+  then
+    return query select
+      'UNPAID'::text,
+      target_payment.id,
+      target_payment.provider_checkout_id,
+      target_payment.provider_payment_id,
+      coalesce(target_payment.amount, target_order.total),
+      null::uuid,
+      null::public.refund_status;
+    return;
+  end if;
+
+  if target_order.status in ('PAID', 'CONFIRMED')
+    and target_order.payment_status = 'PAID'
+    and target_payment.status = 'PAID'
+    and target_payment.provider = 'paymongo'
+    and target_payment.provider_payment_id is not null
+  then
+    return query select
+      'PAID_REFUND'::text,
+      target_payment.id,
+      target_payment.provider_checkout_id,
+      target_payment.provider_payment_id,
+      target_payment.amount,
+      target_refund.id,
+      target_refund.status;
+    return;
+  end if;
+
+  raise exception 'Order is no longer eligible for cancellation';
+end;
+$$;
+
+create or replace function public.cancel_unpaid_order(
+  target_order_id uuid,
+  target_user_id uuid,
+  expired_checkout_id text default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_order public.orders%rowtype;
+  target_payment public.payments%rowtype;
+  pickup_date_value date;
+  pickup_mode public.pickup_availability_mode;
+begin
+  select * into target_order
+  from public.orders
+  where id = target_order_id
+    and user_id = target_user_id
+  for update;
+
+  if target_order.id is null then
+    raise exception 'Order is unavailable';
+  end if;
+  if target_order.status = 'CANCELLED' and target_order.payment_status = 'FAILED' then
+    return false;
+  end if;
+  if target_order.status <> 'PENDING_PAYMENT' or target_order.payment_status <> 'PENDING' then
+    raise exception 'Order is no longer eligible for unpaid cancellation';
+  end if;
+
+  select * into target_payment
+  from public.payments
+  where order_id = target_order.id
+  for update;
+
+  if target_payment.id is not null then
+    if target_payment.status <> 'PENDING' then
+      raise exception 'Payment is no longer pending';
+    end if;
+    if target_payment.provider_checkout_id is not null
+      and target_payment.provider_checkout_id is distinct from expired_checkout_id
+    then
+      raise exception 'Attached PayMongo checkout must be expired first';
+    end if;
+  end if;
+
+  select pickup_dates.pickup_date, pickup_dates.availability_mode
+  into pickup_date_value, pickup_mode
+  from public.pickup_windows
+  join public.pickup_dates on pickup_dates.id = pickup_windows.pickup_date_id
+  where pickup_windows.id = target_order.pickup_window_id;
+
+  if pickup_mode = 'READY_STOCK'
+    or (
+      pickup_mode = 'HYBRID'
+      and pickup_date_value = (current_timestamp at time zone 'Asia/Manila')::date
+    )
+  then
+    update public.daily_inventory
+    set stock_reserved = greatest(stock_reserved - reserved_items.quantity, 0),
+        updated_at = now()
+    from (
+      select order_items.variant_id, sum(order_items.quantity)::integer as quantity
+      from public.order_items
+      where order_items.order_id = target_order.id
+        and order_items.variant_id is not null
+      group by order_items.variant_id
+    ) reserved_items
+    where daily_inventory.pickup_date = pickup_date_value
+      and daily_inventory.product_variant_id = reserved_items.variant_id;
+  end if;
+
+  update public.payments
+  set status = 'FAILED', updated_at = now()
+  where id = target_payment.id;
+
+  update public.orders
+  set status = 'CANCELLED',
+      payment_status = 'FAILED',
+      cancelled_at = now(),
+      updated_at = now()
+  where id = target_order.id;
+
+  return true;
+end;
+$$;
+
+create or replace function public.request_paid_order_refund(
+  target_order_id uuid,
+  target_user_id uuid
+)
+returns table (
+  requested_refund_id uuid,
+  requested_payment_id uuid,
+  provider_payment_id text,
+  refund_amount numeric,
+  refund_status_value public.refund_status
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_order public.orders%rowtype;
+  target_payment public.payments%rowtype;
+  target_refund public.refunds%rowtype;
+begin
+  select * into target_order
+  from public.orders
+  where id = target_order_id
+    and user_id = target_user_id
+  for update;
+
+  if target_order.id is null then
+    raise exception 'Order is unavailable';
+  end if;
+
+  select * into target_payment
+  from public.payments
+  where order_id = target_order.id
+  for update;
+
+  select * into target_refund
+  from public.refunds
+  where order_id = target_order.id
+  order by created_at desc
+  limit 1
+  for update;
+
+  if target_order.status = 'CANCELLED' and target_refund.id is not null then
+    return query select
+      target_refund.id, target_payment.id, target_payment.provider_payment_id,
+      target_refund.amount, target_refund.status;
+    return;
+  end if;
+
+  if target_order.status not in ('PAID', 'CONFIRMED')
+    or target_order.payment_status <> 'PAID'
+    or target_payment.id is null
+    or target_payment.status <> 'PAID'
+    or target_payment.provider <> 'paymongo'
+    or target_payment.provider_payment_id is null
+    or target_payment.amount <> target_order.total
+  then
+    raise exception 'Order is no longer eligible for a paid cancellation';
+  end if;
+
+  insert into public.refunds (
+    order_id, payment_id, amount, reason
+  ) values (
+    target_order.id, target_payment.id, target_payment.amount,
+    'Customer cancelled before preparation'
+  )
+  returning * into target_refund;
+
+  update public.orders
+  set status = 'CANCELLED',
+      cancelled_at = now(),
+      updated_at = now()
+  where id = target_order.id;
+
+  return query select
+    target_refund.id, target_payment.id, target_payment.provider_payment_id,
+    target_refund.amount, target_refund.status;
+end;
+$$;
+
+create or replace function public.record_paymongo_refund_result(
+  target_refund_id uuid,
+  provider_refund_id_value text,
+  provider_status_value text,
+  failure_code_value text default null,
+  failure_message_value text default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_refund public.refunds%rowtype;
+  next_status public.refund_status;
+begin
+  if provider_refund_id_value !~ '^ref_[A-Za-z0-9_-]+$'
+    or provider_status_value not in ('pending', 'processing', 'succeeded', 'failed')
+  then
+    raise exception 'PayMongo refund result is invalid';
+  end if;
+
+  select * into target_refund
+  from public.refunds
+  where id = target_refund_id
+  for update;
+
+  if target_refund.id is null or target_refund.method <> 'ORIGINAL_PAYMENT_METHOD' then
+    raise exception 'Refund is unavailable';
+  end if;
+  if target_refund.provider_refund_id is not null
+    and target_refund.provider_refund_id <> provider_refund_id_value
+  then
+    raise exception 'A different PayMongo refund is already attached';
+  end if;
+
+  next_status := case provider_status_value
+    when 'succeeded' then 'REFUNDED'::public.refund_status
+    when 'failed' then 'FAILED'::public.refund_status
+    else 'PROCESSING'::public.refund_status
+  end;
+
+  if target_refund.status = 'REFUNDED' then
+    if next_status = 'REFUNDED' and target_refund.provider_refund_id = provider_refund_id_value then
+      return false;
+    end if;
+    raise exception 'A completed refund cannot move backward';
+  end if;
+  if target_refund.status = 'FAILED' and next_status <> 'FAILED' then
+    raise exception 'A failed refund requires a new controlled fallback';
+  end if;
+
+  update public.refunds
+  set provider_refund_id = provider_refund_id_value,
+      status = next_status,
+      failure_code = case when next_status = 'FAILED' then failure_code_value else null end,
+      failure_message = case when next_status = 'FAILED' then failure_message_value else null end,
+      processed_at = case when next_status in ('REFUNDED', 'FAILED') then now() else processed_at end,
+      refunded_at = case when next_status = 'REFUNDED' then now() else refunded_at end,
+      updated_at = now()
+  where id = target_refund.id;
+
+  if next_status = 'REFUNDED' then
+    update public.payments
+    set status = 'REFUNDED', refunded_at = now(), updated_at = now()
+    where id = target_refund.payment_id and status = 'PAID';
+
+    update public.orders
+    set payment_status = 'REFUNDED', updated_at = now()
+    where id = target_refund.order_id and status = 'CANCELLED';
+  end if;
+
+  return true;
+end;
+$$;
+
+create or replace function public.fail_paymongo_refund_request(
+  target_refund_id uuid,
+  failure_code_value text,
+  failure_message_value text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  update public.refunds
+  set status = 'FAILED',
+      failure_code = left(coalesce(failure_code_value, 'provider_error'), 100),
+      failure_message = left(coalesce(failure_message_value, 'PayMongo rejected the refund request.'), 500),
+      processed_at = now(),
+      updated_at = now()
+  where id = target_refund_id
+    and method = 'ORIGINAL_PAYMENT_METHOD'
+    and status in ('REQUESTED', 'PROCESSING');
+  return found;
+end;
+$$;
+
+create or replace function public.process_paymongo_refund_event(
+  event_key text,
+  provider_refund_id_value text,
+  provider_payment_id_value text,
+  refund_amount_value numeric,
+  provider_status_value text,
+  event_summary jsonb
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  inserted_event_id uuid;
+  target_refund public.refunds%rowtype;
+  target_payment public.payments%rowtype;
+begin
+  if event_key is null or length(event_key) > 255
+    or provider_refund_id_value !~ '^ref_[A-Za-z0-9_-]+$'
+    or provider_payment_id_value !~ '^pay_[A-Za-z0-9_-]+$'
+    or refund_amount_value <= 0
+    or provider_status_value not in ('pending', 'processing', 'succeeded', 'failed')
+  then
+    raise exception 'PayMongo refund event is invalid';
+  end if;
+
+  insert into public.payment_webhook_events (
+    provider, provider_event_id, event_type, payload
+  ) values (
+    'paymongo', event_key, 'payment.refund.updated', event_summary
+  )
+  on conflict (provider_event_id) do nothing
+  returning id into inserted_event_id;
+
+  if inserted_event_id is null then return false; end if;
+
+  select * into target_payment
+  from public.payments
+  where provider = 'paymongo'
+    and provider_payment_id = provider_payment_id_value
+  for update;
+
+  select * into target_refund
+  from public.refunds
+  where payment_id = target_payment.id
+    and (provider_refund_id is null or provider_refund_id = provider_refund_id_value)
+  order by created_at desc
+  limit 1
+  for update;
+
+  if target_payment.id is null
+    or target_refund.id is null
+    or target_refund.amount <> refund_amount_value
+    or target_refund.currency <> 'PHP'
+  then
+    raise exception 'PayMongo refund does not match a requested refund';
+  end if;
+
+  perform public.record_paymongo_refund_result(
+    target_refund.id, provider_refund_id_value, provider_status_value,
+    case when provider_status_value = 'failed' then 'provider_failed' else null end,
+    case when provider_status_value = 'failed' then 'PayMongo reported that the refund failed.' else null end
+  );
+
+  update public.payment_webhook_events set processed_at = now() where id = inserted_event_id;
+  return true;
+end;
+$$;
+
+create or replace function public.request_manual_refund_fallback(
+  target_refund_id uuid,
+  target_user_id uuid,
+  destination_type_value text,
+  account_name_value text,
+  encrypted_reference_value text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_refund public.refunds%rowtype;
+begin
+  if destination_type_value not in ('GCASH', 'MAYA', 'BANK')
+    or length(trim(account_name_value)) not between 2 and 100
+    or encrypted_reference_value !~ '^v1[.]'
+    or length(encrypted_reference_value) > 1000
+  then
+    raise exception 'Manual refund destination is invalid';
+  end if;
+
+  select refunds.* into target_refund
+  from public.refunds
+  join public.orders on orders.id = refunds.order_id
+  where refunds.id = target_refund_id
+    and orders.user_id = target_user_id
+    and orders.status = 'CANCELLED'
+  for update of refunds;
+
+  if target_refund.id is null
+    or target_refund.status <> 'FAILED'
+    or target_refund.method <> 'ORIGINAL_PAYMENT_METHOD'
+  then
+    raise exception 'Manual refund fallback is unavailable';
+  end if;
+
+  insert into public.manual_refund_destinations (
+    refund_id, destination_type, account_name,
+    account_reference_encrypted, collected_by
+  ) values (
+    target_refund.id, destination_type_value, trim(account_name_value),
+    encrypted_reference_value, target_user_id
+  );
+
+  update public.refunds
+  set method = 'MANUAL_FALLBACK',
+      status = 'REQUESTED',
+      requested_at = now(),
+      processed_at = null,
+      updated_at = now()
+  where id = target_refund.id;
 
   return true;
 end;
@@ -1470,6 +1962,19 @@ grant execute on function public.attach_paymongo_checkout(uuid, text, text) to s
 grant execute on function public.process_paymongo_paid_event(
   text, uuid, text, text, text, numeric, jsonb
 ) to service_role;
+grant execute on function public.prepare_order_cancellation(uuid, uuid) to service_role;
+grant execute on function public.cancel_unpaid_order(uuid, uuid, text) to service_role;
+grant execute on function public.request_paid_order_refund(uuid, uuid) to service_role;
+grant execute on function public.record_paymongo_refund_result(
+  uuid, text, text, text, text
+) to service_role;
+grant execute on function public.fail_paymongo_refund_request(uuid, text, text) to service_role;
+grant execute on function public.process_paymongo_refund_event(
+  text, text, text, numeric, text, jsonb
+) to service_role;
+grant execute on function public.request_manual_refund_fallback(
+  uuid, uuid, text, text, text
+) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
   public.pickup_locations, public.pickup_dates, public.pickup_windows,
@@ -1649,5 +2154,17 @@ comment on function public.attach_paymongo_checkout(uuid, text, text) is
   'Service-role-only writer that immutably attaches one PayMongo checkout session to a pending payment.';
 comment on function public.process_paymongo_paid_event(text, uuid, text, text, text, numeric, jsonb) is
   'Service-role-only idempotent transition for verified PayMongo checkout_session.payment.paid events.';
+comment on function public.prepare_order_cancellation(uuid, uuid) is
+  'Service-role-only ownership and eligibility check for customer cancellation.';
+comment on function public.cancel_unpaid_order(uuid, uuid, text) is
+  'Service-role-only unpaid cancellation. An attached checkout must be expired through PayMongo first.';
+comment on function public.request_paid_order_refund(uuid, uuid) is
+  'Service-role-only paid cancellation that records a separately tracked full refund request.';
+comment on function public.record_paymongo_refund_result(uuid, text, text, text, text) is
+  'Records an authenticated PayMongo refund API result and settles payment state only after success.';
+comment on function public.process_paymongo_refund_event(text, text, text, numeric, text, jsonb) is
+  'Idempotently applies a signed PayMongo refund event to the exact payment and refund.';
+comment on function public.request_manual_refund_fallback(uuid, uuid, text, text, text) is
+  'Stores an encrypted customer refund destination only after original-method refund failure.';
 comment on table public.manual_refund_destinations is
   'Restricted fallback data used only after an automatic PayMongo refund is unsupported or fails.';
