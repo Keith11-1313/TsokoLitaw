@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CatalogManager } from "@/components/admin/catalog-manager";
-import { AdminPageLayout } from "@/components/admin/admin-page-layout";
+import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminContent } from "@/components/layout/admin-content";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminCatalog } from "@/lib/server-catalog";
 
@@ -10,15 +11,14 @@ export default async function AdminProductsPage() {
   await requireAdmin("/admin/products");
   const catalog = await getAdminCatalog();
   return (
-    <AdminPageLayout
-      activePath="/admin/products"
-      title="Catalog"
-      description="Boxes, coatings, add-ons, images, and PHP prices used by Our Creations."
-      purpose="Define everything a customer can configure and its displayed price."
-      customerImpact="Changes feed Our Creations and server-authoritative checkout pricing. Existing orders keep their historical snapshots."
-      connected
-    >
-      <CatalogManager {...catalog} />
-    </AdminPageLayout>
+    <AdminShell activePath="/admin/products">
+      <AdminContent>
+        <header>
+          <h1 className="font-display text-[2.25rem] leading-tight text-foreground">Catalog</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Manage the boxes, coatings, add-ons, images, and PHP prices used by Our Creations and checkout.</p>
+        </header>
+        <div className="mt-8"><CatalogManager {...catalog} /></div>
+      </AdminContent>
+    </AdminShell>
   );
 }
