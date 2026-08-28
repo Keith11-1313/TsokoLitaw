@@ -30,7 +30,9 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid payment event." }, { status: 400 });
   }
-  if (!event) return NextResponse.json({ received: true, ignored: true });
+  if (!event) {
+    return NextResponse.json({ error: "Unsupported webhook payload." }, { status: 400 });
+  }
 
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase.rpc("process_paymongo_paid_event", {

@@ -69,13 +69,26 @@ export function verifyPayMongoTestWebhookSignature(
 
 export function parsePayMongoPaidEvent(payload: unknown): PayMongoPaidEvent | null {
   const envelope = asRecord(payload as PayMongoWebhookEnvelope);
-  if (!envelope || envelope.event_type !== "send.webhook") return null;
-  const event = asRecord(envelope.data);
-  if (!event || event.type !== "checkout_session.payment.paid") return null;
-  if (event.livemode !== false) throw new Error("Live PayMongo events are not accepted in test mode.");
+  if (!envelope) return null;
 
-  const session = asRecord(event.data);
+  const envelopeData = asRecord(envelope.data);
+  const event = envelope.event_type === "send.webhook"
+    ? envelopeData
+    : envelopeData?.type === "event"
+      ? asRecord(envelopeData.attributes)
+      : null;
+  const isDirectCheckout = typeof envelope.id === "string"
+    && envelope.id.startsWith("cs_")
+    && (envelope.type === "checkout_session" || envelope.type === "checkout_session.payment.paid");
+
+  if (event && event.type !== "checkout_session.payment.paid") return null;
+  if (!event && !isDirectCheckout) return null;
+
+  const session = isDirectCheckout ? envelope : asRecord(event?.data);
   const attributes = asRecord(session?.attributes);
+  const livemode = event?.livemode ?? attributes?.livemode;
+  if (livemode !== false) throw new Error("Live PayMongo events are not accepted in test mode.");
+
   const metadata = asRecord(attributes?.metadata);
   const payments = Array.isArray(attributes?.payments) ? attributes.payments : [];
   const paidPayment = payments

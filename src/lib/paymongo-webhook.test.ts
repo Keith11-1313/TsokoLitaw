@@ -37,6 +37,29 @@ function paidPayload(amount = 4000) {
   };
 }
 
+function standardEventPayload(amount = 4000) {
+  const payload = paidPayload(amount);
+  return {
+    data: {
+      id: "evt_test_paid_checkout",
+      type: "event",
+      attributes: payload.data,
+    },
+  };
+}
+
+function directCheckoutPayload(amount = 4000) {
+  const payload = paidPayload(amount);
+  return {
+    ...payload.data.data,
+    type: "checkout_session",
+    attributes: {
+      ...payload.data.data.attributes,
+      livemode: false,
+    },
+  };
+}
+
 describe("PayMongo webhook verification", () => {
   it("verifies the timestamped test signature against the untouched body", () => {
     const body = JSON.stringify(paidPayload());
@@ -52,7 +75,7 @@ describe("PayMongo webhook verification", () => {
   });
 
   it("extracts only the trusted payment identifiers and amount", () => {
-    expect(parsePayMongoPaidEvent(paidPayload())).toEqual({
+    const expected = {
       eventKey: "checkout_session.payment.paid:cs_test_checkout:pay_test_payment",
       orderId: "550e8400-e29b-41d4-a716-446655440000",
       orderNumber: "TL-0003",
@@ -67,7 +90,11 @@ describe("PayMongo webhook verification", () => {
         amount: 40,
         currency: "PHP",
       },
-    });
+    };
+
+    expect(parsePayMongoPaidEvent(paidPayload())).toEqual(expected);
+    expect(parsePayMongoPaidEvent(standardEventPayload())).toEqual(expected);
+    expect(parsePayMongoPaidEvent(directCheckoutPayload())).toEqual(expected);
   });
 
   it("ignores unrelated events and rejects live or malformed paid events", () => {

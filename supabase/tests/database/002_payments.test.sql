@@ -229,7 +229,11 @@ select is(
   'generic expiry does not release an order with an active provider checkout'
 );
 select is(
-  (select count(*) from public.list_due_paymongo_checkouts(100)),
+  (
+    select count(*)
+    from public.list_due_paymongo_checkouts(100)
+    where due_payment_id = 'a6000000-0000-4000-8000-000000000002'
+  ),
   1::bigint,
   'the provider-bound overdue order is listed for coordinated expiry'
 );

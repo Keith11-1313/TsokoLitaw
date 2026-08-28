@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CheckCircle2, Clock3 } from "lucide-react";
 import { PaymentResultPage } from "@/components/customer/payment-result-page";
 import { ClearPaidCart } from "@/components/checkout/clear-paid-cart";
+import { PaymentVerificationPoller } from "@/components/checkout/payment-verification-poller";
 import { requireCustomer } from "@/lib/auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -26,7 +27,7 @@ export default async function PaymentSuccessPage({
 
   return (
     <>
-      {isPaid ? <ClearPaidCart /> : null}
+      {isPaid ? <ClearPaidCart /> : <PaymentVerificationPoller />}
       <PaymentResultPage
       title={isPaid ? "Payment confirmed" : "Payment is being verified"}
       description={isPaid
