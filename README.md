@@ -19,7 +19,7 @@ Implemented with mock data:
 - mobile-first Home carousel with supplied promotional photo, muted-autoplay video, sound control, and automatic image advancement
 - 4-, 6-, and 8-piece box configuration
 - single-coating and mixed-box selection
-- browser-local cart with bounded numeric quantity editing and totals
+- browser-local cart with bounded numeric quantity editing, per-line checkout selection, and selected totals
 - add-to-cart confirmation with a static cart icon, Continue shopping, and Check cart actions
 - static order, review, payment, and legal commerce screens
 - authenticated account, profile, and logout interfaces

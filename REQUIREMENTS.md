@@ -194,6 +194,9 @@ Current frontend cart supports:
 - successful-addition modal with a cart icon, Continue shopping dismissal, and Check cart action
 - remove item
 - update quantity through the same bounded numeric input used by the builder
+- select individual cart lines or select all lines for checkout
+- calculate the checkout estimate from selected lines only
+- retain unchecked lines after verified payment removes the purchased selection
 - item count
 - coating summary
 - calculated subtotal

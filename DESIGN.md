@@ -23,6 +23,7 @@ UI structure must communicate the real workflow rather than merely resemble a dr
 | --- | --- |
 | Our Creations is the shopping entry | It owns product discovery and box configuration |
 | Cart is a separate header action | It owns line-item editing and the transition to Checkout |
+| Cart lines are selectable | Customers can pay for a subset without losing unchecked configurations after payment |
 | My Orders is inside Account | It is private customer activity, not public navigation |
 | Mobile builder appears before coatings | Customers need configuration context before scanning all choices |
 | Mixed-box counters are on coating cards | Allocation happens piece by piece against visible coating options |

@@ -22,7 +22,7 @@ interface CheckoutContentProps {
 }
 
 export function CheckoutContent({ availability, profile, resumeOrderId }: CheckoutContentProps) {
-  const { items, subtotal } = useCart();
+  const { selectedItems, selectedSubtotal, markSelectedItemsPendingCheckout } = useCart();
   const checkoutKeyRef = useRef<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [customerName, setCustomerName] = useState(profile.fullName);
@@ -66,7 +66,7 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
         customerMobile,
         customerNotes,
         termsAccepted,
-        items: items.map((item) => ({
+        items: selectedItems.map((item) => ({
           variantId: item.variantId,
           coatingCounts: item.coatingCounts,
           addonId: item.addonId,
@@ -76,6 +76,7 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
       });
       setSubmission(result);
       if (result.status === "success") {
+        markSelectedItemsPendingCheckout();
         window.location.assign(result.checkoutUrl);
       }
     });
@@ -114,12 +115,12 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
     );
   }
 
-  if (!items.length) {
+  if (!selectedItems.length) {
     return (
       <section className="rounded-card border border-border bg-surface p-8 text-center">
         <h2 className="font-display text-2xl">Nothing to check out yet</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Add a configured box to your cart first.</p>
-        <Link href="/our-creations" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-brand px-6 font-bold text-surface">Build a box</Link>
+        <p className="mt-2 text-sm text-muted-foreground">Select at least one cart item before continuing.</p>
+        <Link href="/cart" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-brand px-6 font-bold text-surface">Return to cart</Link>
       </section>
     );
   }
@@ -174,7 +175,7 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
       <aside className="min-w-0 rounded-card border border-border bg-surface p-6 lg:sticky lg:top-6">
         <h2 className="font-display text-2xl">Order summary</h2>
         <ul className="mt-5 divide-y divide-border">
-          {items.map((item) => (
+          {selectedItems.map((item) => (
             <li key={item.id} className="py-4 first:pt-0">
               <div className="flex justify-between gap-3">
                 <span className="font-bold">Box of {item.pieceCount} × {item.quantity}</span>
@@ -191,7 +192,7 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
         </ul>
         <div className="mt-4 flex justify-between border-t border-border pt-4 text-lg font-bold">
           <span>Browser estimate</span>
-          <span>{formatPhp(subtotal)}</span>
+          <span>{formatPhp(selectedSubtotal)}</span>
         </div>
         <p className="mt-2 text-xs leading-5 text-muted-foreground">Final prices and availability will be recalculated by the server before an order is created.</p>
         <div className="mt-6 space-y-2 rounded-control bg-warning-background p-4 text-xs leading-5 text-warning-foreground">

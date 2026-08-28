@@ -149,7 +149,7 @@ The Admin coating form validates a square 1:1 image in the browser, limits serve
 
 The UI cart is exposed through `CartProvider` and persisted under a browser-local storage key.
 
-It supports add, remove, bounded numeric quantity editing, subtotal, and clear operations. Builder and Cart caps protect the client surface from extreme values but do not claim live stock knowledge. It is deliberately non-authoritative and must not be treated as an order record; checkout rechecks date-specific inventory and pickup capacity transactionally.
+It supports add, remove, bounded numeric quantity editing, per-line checkout selection, subtotal, and clear operations. Cart lines and their selected IDs persist under separate browser-local keys. When hosted checkout starts, the selected line IDs are snapshotted under a pending-checkout key; verified payment removes only that snapshot so unchecked lines remain in Cart. Builder and Cart caps protect the client surface from extreme values but do not claim live stock knowledge. The cart is deliberately non-authoritative and must not be treated as an order record; checkout rechecks date-specific inventory and pickup capacity transactionally.
 
 Future checkout flow:
 
