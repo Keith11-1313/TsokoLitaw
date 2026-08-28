@@ -16,6 +16,12 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "tsokolitaw-cart-v2";
+export const MAX_CART_LINE_QUANTITY = 20;
+
+function normalizeQuantity(quantity: number) {
+  if (!Number.isFinite(quantity)) return 1;
+  return Math.min(MAX_CART_LINE_QUANTITY, Math.max(1, Math.trunc(quantity)));
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartLineItem[]>([]);
@@ -25,7 +31,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     let active = true;
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
-      const restored = stored ? JSON.parse(stored) as CartLineItem[] : [];
+      const parsed = stored ? JSON.parse(stored) as unknown : [];
+      const restored = Array.isArray(parsed)
+        ? (parsed as CartLineItem[]).map((item) => ({
+          ...item,
+          quantity: normalizeQuantity(item.quantity),
+        }))
+        : [];
       queueMicrotask(() => {
         if (active) {
           setItems(restored);
@@ -47,8 +59,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     items,
     itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
     subtotal: items.reduce((sum, item) => sum + calculateCartLineTotal(item), 0),
-    addItem: (item) => setItems((current) => [...current, { ...item, id: crypto.randomUUID() }]),
-    updateQuantity: (id, quantity) => setItems((current) => current.map((item) => item.id === id ? { ...item, quantity: Math.max(1, quantity) } : item)),
+    addItem: (item) => setItems((current) => [...current, {
+      ...item,
+      id: crypto.randomUUID(),
+      quantity: normalizeQuantity(item.quantity),
+    }]),
+    updateQuantity: (id, quantity) => setItems((current) => current.map((item) => item.id === id ? { ...item, quantity: normalizeQuantity(quantity) } : item)),
     removeItem: (id) => setItems((current) => current.filter((item) => item.id !== id)),
     clearCart: () => setItems([]),
   }), [items]);
