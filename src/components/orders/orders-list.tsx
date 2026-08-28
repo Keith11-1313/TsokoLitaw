@@ -36,7 +36,15 @@ function formatDate(value: string, includeTime = false) {
   }).format(new Date(includeTime ? value : `${value}T00:00:00+08:00`));
 }
 
-export function OrdersList({ orders }: { orders: CustomerOrderSummary[] }) {
+export function OrdersList({
+  orders,
+  nextCursor,
+  showingOlderPage,
+}: {
+  orders: CustomerOrderSummary[];
+  nextCursor: string | null;
+  showingOlderPage: boolean;
+}) {
   const [filter, setFilter] = useState<OrderFilter>("all");
   const [openingOrderId, setOpeningOrderId] = useState<string | null>(null);
   const visibleOrders = useMemo(() => orders.filter((order) => matchesFilter(order, filter)), [filter, orders]);
@@ -45,9 +53,20 @@ export function OrdersList({ orders }: { orders: CustomerOrderSummary[] }) {
     return (
       <section className="py-14 text-center" aria-labelledby="order-history-status">
         <PackageOpen className="mx-auto text-brand" aria-hidden="true" size={36} />
-        <h2 id="order-history-status" className="mt-5 font-display text-3xl text-foreground">No online orders yet</h2>
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Your TsokoLitaw orders will appear here after checkout.</p>
-        <Link href="/our-creations" className="mt-7 inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-6 text-sm font-bold text-brand">Explore our creations</Link>
+        <h2 id="order-history-status" className="mt-5 font-display text-3xl text-foreground">
+          {showingOlderPage ? "No older orders" : "No online orders yet"}
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+          {showingOlderPage
+            ? "You have reached the end of your order history."
+            : "Your TsokoLitaw orders will appear here after checkout."}
+        </p>
+        <Link
+          href={showingOlderPage ? "/orders" : "/our-creations"}
+          className="mt-7 inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-6 text-sm font-bold text-brand"
+        >
+          {showingOlderPage ? "Return to newest orders" : "Explore our creations"}
+        </Link>
       </section>
     );
   }
@@ -123,6 +142,27 @@ export function OrdersList({ orders }: { orders: CustomerOrderSummary[] }) {
           <p className="mt-4 font-bold">No orders in this category</p>
         </div>
       )}
+
+      {showingOlderPage || nextCursor ? (
+        <nav className="mt-7 flex flex-wrap justify-center gap-3" aria-label="Order history pages">
+          {showingOlderPage ? (
+            <Link
+              href="/orders"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand"
+            >
+              Newest orders
+            </Link>
+          ) : null}
+          {nextCursor ? (
+            <Link
+              href={`/orders?cursor=${encodeURIComponent(nextCursor)}`}
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-5 text-sm font-bold text-surface"
+            >
+              Older orders
+            </Link>
+          ) : null}
+        </nav>
+      ) : null}
     </section>
   );
 }

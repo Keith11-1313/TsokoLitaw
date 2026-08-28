@@ -3,6 +3,10 @@
 import { requireCustomer } from "@/lib/auth";
 import { createPendingOrder } from "@/lib/server-checkout";
 import { getOrCreatePayMongoCheckout } from "@/lib/server-payment";
+import {
+  enforceMutationRateLimit,
+  MutationRateLimitError,
+} from "@/lib/server-rate-limit";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { CheckoutCartInput } from "@/types/commerce";
 
@@ -84,6 +88,22 @@ export async function submitPendingOrderAction(
   const validationMessage = getValidationMessage(input);
   if (validationMessage) return { status: "error", message: validationMessage };
 
+  try {
+    await enforceMutationRateLimit({
+      scope: "checkout-create",
+      userId: profile.id,
+      maximumRequests: 6,
+      windowSeconds: 60,
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      message: error instanceof MutationRateLimitError
+        ? `Too many checkout attempts. Try again in about ${error.retryAfterSeconds} seconds.`
+        : "Checkout protection is temporarily unavailable. Please try again.",
+    };
+  }
+
   let result;
   try {
     result = await createPendingOrder({
@@ -114,6 +134,22 @@ export async function resumePendingPaymentAction(
   const profile = await requireCustomer("/checkout");
   if (!UUID_PATTERN.test(orderId)) {
     return { status: "error", message: "That pending order could not be reopened." };
+  }
+
+  try {
+    await enforceMutationRateLimit({
+      scope: "checkout-resume",
+      userId: profile.id,
+      maximumRequests: 10,
+      windowSeconds: 60,
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      message: error instanceof MutationRateLimitError
+        ? `Too many payment requests. Try again in about ${error.retryAfterSeconds} seconds.`
+        : "Payment protection is temporarily unavailable. Please try again.",
+    };
   }
 
   const supabase = createAdminSupabaseClient();

@@ -34,12 +34,6 @@ export async function createPendingOrder(
   const pricedCart = priceCheckoutCart(input.items, catalog);
   const supabase = createAdminSupabaseClient();
   const now = new Date().toISOString();
-  const { error: expirationError } = await supabase.rpc("expire_pending_orders");
-  if (expirationError) {
-    throw new Error("Expired order reservations could not be released.", {
-      cause: expirationError,
-    });
-  }
   const [termsResult, promotionsResult] = await Promise.all([
     supabase
       .from("terms_versions")

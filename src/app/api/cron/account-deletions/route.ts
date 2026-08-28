@@ -60,10 +60,19 @@ export async function GET(request: Request) {
     deactivated += 1;
   }
 
+  const { data: prunedRateLimitBuckets, error: rateLimitPruneError } = await supabase.rpc(
+    "prune_mutation_rate_limit_buckets",
+  );
+
+  if (rateLimitPruneError) {
+    console.error("[account-deletions] Unable to prune expired rate-limit buckets", rateLimitPruneError);
+  }
+
   return NextResponse.json({
     examined: dueProfiles?.length ?? 0,
     deactivated,
     deferred,
     failures,
+    prunedRateLimitBuckets: prunedRateLimitBuckets ?? 0,
   });
 }

@@ -11,9 +11,11 @@ export const metadata: Metadata = {
   description: "View current TsokoLitaw orders and pickup history.",
 };
 
-export default async function OrdersPage() {
+export default async function OrdersPage({ searchParams }: PageProps<"/orders">) {
   const profile = await requireCustomer("/orders");
-  const orders = await getCustomerOrders(profile.id);
+  const { cursor } = await searchParams;
+  const cursorValue = typeof cursor === "string" ? cursor : undefined;
+  const ordersPage = await getCustomerOrders(profile.id, cursorValue);
 
   return (
     <CustomerPageShell activePath="/orders">
@@ -25,7 +27,11 @@ export default async function OrdersPage() {
           </div>
           <Link href="/our-creations" className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-6 text-sm font-bold text-surface">Build a box</Link>
         </div>
-        <OrdersList orders={orders} />
+        <OrdersList
+          orders={ordersPage.orders}
+          nextCursor={ordersPage.nextCursor}
+          showingOlderPage={Boolean(cursorValue)}
+        />
       </SiteContainer>
     </CustomerPageShell>
   );

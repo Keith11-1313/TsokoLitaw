@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { requireCustomer } from "@/lib/auth";
 import { cancelCustomerOrder, submitManualRefundDestination } from "@/lib/server-refunds";
+import {
+  enforceMutationRateLimit,
+  MutationRateLimitError,
+} from "@/lib/server-rate-limit";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -14,6 +18,12 @@ export async function cancelOrderAction(orderId: string, orderNumber: string): P
     return { status: "error", message: "That order could not be cancelled." };
   }
   try {
+    await enforceMutationRateLimit({
+      scope: "order-cancel",
+      userId: profile.id,
+      maximumRequests: 6,
+      windowSeconds: 300,
+    });
     const result = await cancelCustomerOrder(orderId, profile.id, orderNumber);
     revalidatePath("/orders");
     revalidatePath(`/orders/${orderId}`);
@@ -21,7 +31,9 @@ export async function cancelOrderAction(orderId: string, orderNumber: string): P
   } catch (error) {
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "That order could not be cancelled.",
+      message: error instanceof MutationRateLimitError
+        ? `Too many cancellation attempts. Try again in about ${error.retryAfterSeconds} seconds.`
+        : error instanceof Error ? error.message : "That order could not be cancelled.",
     };
   }
 }
@@ -46,6 +58,12 @@ export async function manualRefundFallbackAction(input: {
     return { status: "error", message: "Enter a valid account name and account number." };
   }
   try {
+    await enforceMutationRateLimit({
+      scope: "refund-destination",
+      userId: profile.id,
+      maximumRequests: 4,
+      windowSeconds: 600,
+    });
     await submitManualRefundDestination({
       refundId: input.refundId,
       userId: profile.id,
@@ -55,7 +73,12 @@ export async function manualRefundFallbackAction(input: {
     });
     revalidatePath(`/orders/${input.orderId}`);
     return { status: "success", message: "Manual refund details submitted securely for Admin processing." };
-  } catch {
-    return { status: "error", message: "Manual refund details could not be saved. Please try again." };
+  } catch (error) {
+    return {
+      status: "error",
+      message: error instanceof MutationRateLimitError
+        ? `Too many refund-detail attempts. Try again in about ${error.retryAfterSeconds} seconds.`
+        : "Manual refund details could not be saved. Please try again.",
+    };
   }
 }

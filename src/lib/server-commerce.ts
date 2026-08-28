@@ -1,10 +1,14 @@
 import "server-only";
 
 import { cache } from "react";
-import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { measureServerOperation } from "@/lib/server-observability";
+import { createPublicSupabaseClient } from "@/lib/supabase/public";
 import type { CommerceCatalog, Coating } from "@/types/commerce";
 import type { CheckoutAvailability } from "@/types/pickup";
+
+const PUBLIC_CATALOG_REVALIDATE_SECONDS = 300;
+const PICKUP_DEFINITIONS_REVALIDATE_SECONDS = 30;
 
 const coatingTones: Record<string, Coating["tone"]> = {
   cocoa: "cocoa-coating",
@@ -16,6 +20,43 @@ const coatingTones: Record<string, Coating["tone"]> = {
   "cookies-and-cream": "cookies-cream",
 };
 
+interface CatalogProductRow {
+  id: string;
+  name: string;
+  description: string;
+  price_per_piece: number | string;
+  product_variants: Array<{
+    id: string;
+    name: string;
+    piece_count: number;
+    sort_order: number;
+  }> | null;
+}
+
+interface PickupLocationRow {
+  id: string;
+  name: string;
+  sort_order: number;
+}
+
+interface PickupDateRow {
+  id: string;
+  pickup_date: string;
+  availability_mode: "MADE_TO_ORDER" | "READY_STOCK" | "HYBRID";
+  pickup_windows: Array<{
+    id: string;
+    pickup_date_id: string;
+    start_time: string;
+    end_time: string;
+    capacity: number | null;
+    sort_order: number;
+    pickup_window_locations: Array<{
+      capacity_override: number | null;
+      pickup_locations: PickupLocationRow | null;
+    }> | null;
+  }> | null;
+}
+
 function asMoney(value: number | string) {
   const amount = Number(value);
   if (!Number.isFinite(amount) || amount < 0) {
@@ -24,60 +65,76 @@ function asMoney(value: number | string) {
   return amount;
 }
 
-export const getCommerceCatalog = cache(async (): Promise<CommerceCatalog> => {
-  const supabase = await createServerSupabaseClient();
-  const { data: product, error: productError } = await supabase
-    .from("products")
-    .select("id, name, description, price_per_piece")
-    .eq("is_active", true)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+function isSupportedPieceCount(value: number): value is 4 | 6 | 8 {
+  return value === 4 || value === 6 || value === 8;
+}
 
-  if (productError || !product) {
+async function loadCommerceCatalog(): Promise<CommerceCatalog> {
+  const supabase = createPublicSupabaseClient();
+  const [productResult, coatingsResult, addonsResult] = await measureServerOperation(
+    "commerce.catalog",
+    () => Promise.all([
+      supabase
+        .from("products")
+        .select(`
+          id,
+          name,
+          description,
+          price_per_piece,
+          product_variants (
+            id,
+            name,
+            piece_count,
+            sort_order
+          )
+        `)
+        .eq("is_active", true)
+        .eq("product_variants.is_active", true)
+        .order("created_at", { ascending: true })
+        .order("sort_order", { referencedTable: "product_variants", ascending: true })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("coatings")
+        .select("id, name, slug, description, image_url, additional_type_price")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("addons")
+        .select("id, name, slug, price")
+        .eq("is_active", true)
+        .order("created_at", { ascending: true }),
+    ]),
+  );
+
+  if (productResult.error || !productResult.data) {
     throw new Error("The active TsokoLitaw product could not be loaded.", {
-      cause: productError,
+      cause: productResult.error,
     });
   }
-
-  const [variantsResult, coatingsResult, addonsResult] = await Promise.all([
-    supabase
-      .from("product_variants")
-      .select("id, name, piece_count")
-      .eq("product_id", product.id)
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("coatings")
-      .select("id, name, slug, description, image_url, additional_type_price")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("addons")
-      .select("id, name, slug, price")
-      .eq("is_active", true)
-      .order("created_at", { ascending: true }),
-  ]);
-
-  if (variantsResult.error || coatingsResult.error || addonsResult.error) {
+  if (coatingsResult.error || addonsResult.error) {
     throw new Error("The active commerce catalog could not be loaded.", {
-      cause: variantsResult.error ?? coatingsResult.error ?? addonsResult.error,
+      cause: coatingsResult.error ?? addonsResult.error,
     });
   }
 
+  const product = productResult.data as unknown as CatalogProductRow;
   const piecePrice = asMoney(product.price_per_piece);
-  const variants = (variantsResult.data ?? []).flatMap((variant) => {
-    if (variant.piece_count !== 4 && variant.piece_count !== 6 && variant.piece_count !== 8) {
-      return [];
-    }
+  const variants = (product.product_variants ?? [])
+    .sort((left, right) => left.sort_order - right.sort_order)
+    .flatMap((variant): CommerceCatalog["variants"][number][] => {
+      const pieceCount = variant.piece_count;
+      if (!isSupportedPieceCount(pieceCount)) {
+        return [];
+      }
 
-    return [{
-      id: variant.id,
-      label: variant.name,
-      pieceCount: variant.piece_count,
-      price: variant.piece_count * piecePrice,
-    }];
-  });
+      return [{
+        id: variant.id,
+        label: variant.name,
+        pieceCount,
+        price: pieceCount * piecePrice,
+      }];
+    });
   const coatings = (coatingsResult.data ?? []).map((coating) => ({
     id: coating.id,
     name: coating.name,
@@ -106,7 +163,20 @@ export const getCommerceCatalog = cache(async (): Promise<CommerceCatalog> => {
     coatings,
     addons,
   };
-});
+}
+
+// Checkout calls this request-scoped version so prices are always reloaded.
+export const getCommerceCatalog = cache(loadCommerceCatalog);
+
+// Public browsing can safely reuse a tagged snapshot between requests.
+export const getPublicCommerceCatalog = unstable_cache(
+  loadCommerceCatalog,
+  ["public-commerce-catalog-v1"],
+  {
+    revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS,
+    tags: ["commerce-catalog"],
+  },
+);
 
 function getManilaDate() {
   const parts = new Intl.DateTimeFormat("en", {
@@ -136,100 +206,58 @@ function formatPickupTime(value: string) {
   return `${hour}:${String(minuteValue).padStart(2, "0")} ${period}`;
 }
 
-export const getCheckoutAvailability = cache(async (): Promise<CheckoutAvailability> => {
-  const supabase = createAdminSupabaseClient();
-  const { data: dates, error: datesError } = await supabase
+async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
+  const supabase = createPublicSupabaseClient();
+  const { data, error } = await measureServerOperation("commerce.pickup-definitions", () => supabase
     .from("pickup_dates")
-    .select("id, pickup_date, availability_mode")
+    .select(`
+      id,
+      pickup_date,
+      availability_mode,
+      pickup_windows (
+        id,
+        pickup_date_id,
+        start_time,
+        end_time,
+        capacity,
+        sort_order,
+        pickup_window_locations (
+          capacity_override,
+          pickup_locations (
+            id,
+            name,
+            sort_order
+          )
+        )
+      )
+    `)
     .eq("is_open", true)
     .gte("pickup_date", getManilaDate())
-    .order("pickup_date", { ascending: true });
+    .order("pickup_date", { ascending: true })
+    .order("sort_order", { referencedTable: "pickup_windows", ascending: true }));
 
-  if (datesError) {
-    throw new Error("Pickup dates could not be loaded.", { cause: datesError });
+  if (error) {
+    throw new Error("Pickup availability could not be loaded.", { cause: error });
   }
 
-  const dateIds = (dates ?? []).map((date) => date.id);
-  if (!dateIds.length) {
-    return {
-      dates: [],
-      graceMinutes: 15,
-      operatingDays: "Monday–Saturday",
-      operatingHours: "7:00 AM–7:00 PM",
-    };
-  }
-
-  const { data: windows, error: windowsError } = await supabase
-    .from("pickup_windows")
-    .select("id, pickup_date_id, start_time, end_time, capacity")
-    .in("pickup_date_id", dateIds)
-    .eq("is_open", true)
-    .or("capacity.is.null,capacity.gt.0")
-    .order("sort_order", { ascending: true });
-
-  if (windowsError) {
-    throw new Error("Pickup windows could not be loaded.", { cause: windowsError });
-  }
-
-  const windowIds = (windows ?? []).map((window) => window.id);
-  const junctionResult = windowIds.length
-    ? await supabase
-      .from("pickup_window_locations")
-      .select("pickup_window_id, pickup_location_id, capacity_override")
-      .in("pickup_window_id", windowIds)
-      .eq("is_open", true)
-      .or("capacity_override.is.null,capacity_override.gt.0")
-    : { data: [], error: null };
-
-  if (junctionResult.error) {
-    throw new Error("Pickup locations could not be loaded.", {
-      cause: junctionResult.error,
-    });
-  }
-
-  const locationIds = [...new Set(
-    (junctionResult.data ?? []).map((entry) => entry.pickup_location_id),
-  )];
-  const locationsResult = locationIds.length
-    ? await supabase
-      .from("pickup_locations")
-      .select("id, name, sort_order")
-      .in("id", locationIds)
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true })
-    : { data: [], error: null };
-
-  if (locationsResult.error) {
-    throw new Error("Pickup locations could not be loaded.", {
-      cause: locationsResult.error,
-    });
-  }
-
-  const locationsById = new Map(
-    (locationsResult.data ?? []).map((location) => [location.id, location]),
-  );
-  const junctionsByWindow = new Map<string, typeof junctionResult.data>();
-  for (const junction of junctionResult.data ?? []) {
-    const entries = junctionsByWindow.get(junction.pickup_window_id) ?? [];
-    entries.push(junction);
-    junctionsByWindow.set(junction.pickup_window_id, entries);
-  }
-
-  const checkoutDates = (dates ?? []).flatMap((date) => {
-    const checkoutWindows = (windows ?? [])
-      .filter((window) => window.pickup_date_id === date.id)
+  const dates = (data ?? []) as unknown as PickupDateRow[];
+  const checkoutDates = dates.flatMap((date) => {
+    const checkoutWindows = (date.pickup_windows ?? [])
+      .filter((window) => window.capacity === null || window.capacity > 0)
+      .sort((left, right) => left.sort_order - right.sort_order)
       .flatMap((window) => {
-        const availableLocations = (junctionsByWindow.get(window.id) ?? [])
-          .map((entry) => locationsById.get(entry.pickup_location_id))
-          .filter((location): location is NonNullable<typeof location> => Boolean(location))
+        const locations = (window.pickup_window_locations ?? [])
+          .filter((entry) => entry.capacity_override === null || entry.capacity_override > 0)
+          .flatMap((entry) => entry.pickup_locations ? [entry.pickup_locations] : [])
+          .sort((left, right) => left.sort_order - right.sort_order)
           .map((location) => ({ id: location.id, name: location.name }));
 
-        if (!availableLocations.length) return [];
+        if (!locations.length) return [];
         return [{
           id: window.id,
           dateId: date.id,
           label: `${formatPickupTime(window.start_time)}–${formatPickupTime(window.end_time)}`,
-          locations: availableLocations,
+          locations,
         }];
       });
 
@@ -249,4 +277,13 @@ export const getCheckoutAvailability = cache(async (): Promise<CheckoutAvailabil
     operatingDays: "Monday–Saturday",
     operatingHours: "7:00 AM–7:00 PM",
   };
-});
+}
+
+export const getCheckoutAvailability = unstable_cache(
+  loadCheckoutAvailability,
+  ["public-pickup-definitions-v1"],
+  {
+    revalidate: PICKUP_DEFINITIONS_REVALIDATE_SECONDS,
+    tags: ["pickup-definitions"],
+  },
+);

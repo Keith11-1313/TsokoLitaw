@@ -401,6 +401,15 @@ create table public.business_settings (
   updated_at timestamptz not null default now()
 );
 
+create table public.mutation_rate_limit_buckets (
+  bucket_key_hash text not null,
+  window_started_at timestamptz not null,
+  request_count integer not null default 1 check (request_count > 0),
+  updated_at timestamptz not null default now(),
+  primary key (bucket_key_hash, window_started_at),
+  check (bucket_key_hash ~ '^[a-f0-9]{64}$')
+);
+
 create table public.admin_audit_logs (
   id uuid primary key default gen_random_uuid(),
   admin_id uuid not null references public.profiles(id) on delete restrict,
@@ -419,17 +428,20 @@ create index pickup_windows_date_idx on public.pickup_windows (pickup_date_id, i
 create index daily_inventory_availability_idx on public.daily_inventory (pickup_date, is_available);
 create index profiles_deletion_due_idx on public.profiles (deletion_scheduled_for)
   where is_active and deletion_scheduled_for is not null;
-create index orders_user_created_idx on public.orders (user_id, created_at desc);
+create index orders_user_created_idx on public.orders (user_id, created_at desc, id desc);
 create unique index orders_user_checkout_idempotency_key
   on public.orders (user_id, checkout_idempotency_key)
   where user_id is not null and checkout_idempotency_key is not null;
 create index orders_status_created_idx on public.orders (status, created_at desc);
 create index orders_pickup_date_idx on public.orders (pickup_date, status);
-create index order_items_order_idx on public.order_items (order_id);
+create index order_items_order_idx on public.order_items (order_id, created_at, id);
 create index order_item_coatings_item_idx on public.order_item_coatings (order_item_id);
 create index order_item_addons_item_idx on public.order_item_addons (order_item_id);
 create index payments_order_idx on public.payments (order_id, status);
 create index refunds_order_idx on public.refunds (order_id, status);
+create index refunds_order_created_idx on public.refunds (order_id, created_at desc);
+create index mutation_rate_limit_updated_idx
+  on public.mutation_rate_limit_buckets (updated_at);
 create index notification_deliveries_order_idx on public.notification_deliveries (order_id, event_type);
 create index reviews_public_idx on public.reviews (is_visible, is_featured, created_at desc);
 create index journal_posts_public_idx on public.journal_posts (status, published_at desc);
@@ -699,6 +711,93 @@ begin
     and is_active;
 
   return found;
+end;
+$$;
+
+create or replace function public.consume_mutation_rate_limit(
+  bucket_key_hashes text[],
+  maximum_requests integer,
+  window_seconds integer
+)
+returns table (
+  allowed boolean,
+  retry_after_seconds integer,
+  remaining_requests integer
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_hash text;
+  current_window_started_at timestamptz;
+  current_count integer;
+  highest_count integer := 0;
+begin
+  if coalesce(cardinality(bucket_key_hashes), 0) < 1
+    or cardinality(bucket_key_hashes) > 2
+    or maximum_requests < 1
+    or maximum_requests > 1000
+    or window_seconds < 1
+    or window_seconds > 86400
+  then
+    raise exception 'Invalid rate-limit configuration';
+  end if;
+
+  current_window_started_at := to_timestamp(
+    floor(extract(epoch from clock_timestamp()) / window_seconds) * window_seconds
+  );
+
+  foreach target_hash in array bucket_key_hashes
+  loop
+    if target_hash !~ '^[a-f0-9]{64}$' then
+      raise exception 'Invalid rate-limit bucket';
+    end if;
+
+    insert into public.mutation_rate_limit_buckets (
+      bucket_key_hash,
+      window_started_at,
+      request_count,
+      updated_at
+    )
+    values (target_hash, current_window_started_at, 1, clock_timestamp())
+    on conflict (bucket_key_hash, window_started_at)
+    do update set
+      request_count = mutation_rate_limit_buckets.request_count + 1,
+      updated_at = clock_timestamp()
+    returning request_count into current_count;
+
+    highest_count := greatest(highest_count, current_count);
+  end loop;
+
+  return query select
+    highest_count <= maximum_requests,
+    greatest(
+      ceil(extract(epoch from (
+        current_window_started_at
+        + make_interval(secs => window_seconds)
+        - clock_timestamp()
+      )))::integer,
+      0
+    ),
+    greatest(maximum_requests - highest_count, 0);
+end;
+$$;
+
+create or replace function public.prune_mutation_rate_limit_buckets()
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  deleted_count integer;
+begin
+  delete from public.mutation_rate_limit_buckets
+  where updated_at < clock_timestamp() - interval '2 days';
+
+  get diagnostics deleted_count = row_count;
+  return deleted_count;
 end;
 $$;
 
@@ -1936,6 +2035,7 @@ alter table public.loyalty_accounts enable row level security;
 alter table public.loyalty_rewards enable row level security;
 alter table public.terms_versions enable row level security;
 alter table public.business_settings enable row level security;
+alter table public.mutation_rate_limit_buckets enable row level security;
 alter table public.admin_audit_logs enable row level security;
 
 revoke all on all tables in schema public from anon, authenticated;
@@ -1951,6 +2051,9 @@ grant execute on function public.promote_admin_by_email(text) to service_role;
 grant execute on function public.request_account_deletion() to authenticated;
 grant execute on function public.cancel_account_deletion() to authenticated;
 grant execute on function public.deactivate_due_account(uuid) to service_role;
+grant execute on function public.consume_mutation_rate_limit(text[], integer, integer)
+  to service_role;
+grant execute on function public.prune_mutation_rate_limit_buckets() to service_role;
 grant execute on function public.expire_pending_orders() to service_role;
 grant execute on function public.list_due_paymongo_checkouts(integer) to service_role;
 grant execute on function public.expire_paymongo_order(uuid, text) to service_role;
