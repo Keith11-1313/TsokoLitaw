@@ -463,7 +463,7 @@ user_id uuid references profiles(id)
 order_id uuid references orders(id) unique
 rating integer check rating between 1 and 5
 comment text
-is_visible boolean default true
+is_visible boolean default false
 is_featured boolean default false
 created_at timestamptz
 updated_at timestamptz
@@ -482,6 +482,8 @@ slug text unique
 excerpt text nullable
 content text
 content_type text
+icon_key text
+display_date date
 cover_image_url text nullable
 video_url text nullable
 status text check status in ('draft', 'published')
@@ -499,6 +501,8 @@ Suggested content types:
 - `video`
 
 Featured reviews remain in `reviews`; do not duplicate them as Journal posts.
+
+`upsert_journal_post` is executable only by trusted server code. It verifies an active Admin, validates content/type/icon/date values, preserves stable slugs during edits, controls publication timestamps, and records `journal.created` or `journal.updated` in `admin_audit_logs`. Optional cover images are stored in the public-read `journal-media` bucket with a 3 MB limit and an image-only MIME allowlist.
 
 ## 13. Promotions and Loyalty
 

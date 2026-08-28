@@ -31,6 +31,7 @@ UI structure must communicate the real workflow rather than merely resemble a dr
 | Reviews begin on completed order details | Review eligibility is tied to a specific fulfilled order |
 | New reviews await moderation | Customer submission does not imply immediate public publication; Admin visibility and featured actions are explicit |
 | Journal replaces Vlog | Announcements and stories are not always videos |
+| Journal and Reviews share one Admin area | Moderation directly controls the Community highlights shown with published Journal content |
 | Admin pages show purpose and connection | Mock controls must not imply a live customer change |
 | Admin fulfillment uses explicit confirmations | Real status changes are irreversible in the UI, customer-visible, and recorded for audit |
 
@@ -72,7 +73,9 @@ Every customer and Admin Log out control opens the same accessible confirmation 
 
 Route loading uses Boneyard-generated responsive bones captured from a non-customer fixture. The skeleton mirrors the customer shell without displaying loading prose or capturing authenticated data. Its reveal is delayed by 500 milliseconds so normal fast navigation does not flash a loading state; it appears only when a route wait becomes noticeable.
 
-Journal includes announcements, kitchen stories, product features, customer stories, selected reviews, and optional video—not video alone.
+Journal includes announcements, kitchen stories, product features, customer stories, selected reviews, and optional video—not video alone. Published post cards use the Admin-selected type, icon, display date, copy, optional cover image, and video link. Community highlights contain only reviews that are both visible and featured.
+
+Completed order details open review entry in a focused modal instead of navigating to a separate form page. The modal shows the ordered items, centers five rating controls, displays a live `0/1000` counter, prevents typing beyond 1,000 characters, and disables submission until a rating and at least 10 non-whitespace characters are present.
 
 ## 3. Admin Design Language
 
@@ -87,7 +90,7 @@ Admin pages reuse the same core tokens with a denser operational layout:
 - responsive table containers
 - cream form controls
 
-Do not create a separate visual identity for each admin page.
+Do not create a separate visual identity for each admin page. Connected operational pages may remove the earlier purpose/customer-impact/connection explainer once their controls and effects are self-evident; mock pages must retain honest connection guidance.
 
 ## 4. Design Tokens
 

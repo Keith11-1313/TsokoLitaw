@@ -338,7 +338,8 @@ Binding a review to a completed order reduces spam, prevents unrelated submissio
 - one review is allowed per completed order
 - customer email is not displayed publicly
 - public cards show the customer display name without the phrase “Verified completed order”
-- Admin Reviews moderates visibility and featured status
+- the completed-order detail opens review entry in a modal that repeats the ordered items, centers the rating controls, and shows the enforced comment limit
+- Admin Journal & Reviews moderates visibility and featured status in the same operational area as public Journal publishing
 
 ## 14. Journal Instead of Vlog
 
@@ -363,6 +364,9 @@ Journal may contain:
 
 - customer route is `/journal`
 - admin route is `/admin/journal`
+- `/admin/reviews` redirects to the review section of `/admin/journal` for compatibility
+- Admin chooses post type, icon, display date, publication state, text, and optional media
+- published posts and featured visible reviews are loaded from the same records moderated by Admin
 - old Vlog and Feedback URLs redirect for compatibility
 
 ## 15. Admin Mirrors Customer Operations
@@ -380,8 +384,7 @@ Every admin section must correspond to a real customer or operational need.
 | Pickup | Publish serviceable dates, times, and locations | Feeds Checkout pickup controls |
 | Promotions | Define eligibility and benefits | Changes future cart/checkout totals |
 | Customers | Support accounts and loyalty | Uses email-first account records |
-| Reviews | Moderate order-linked reviews | Controls public review visibility |
-| Journal | Publish announcements and stories | Feeds the public Journal |
+| Journal & Reviews | Publish updates and moderate order-linked reviews | Feeds public Journal posts and Community highlights |
 | Settings | Centralize cross-feature operational defaults | Affects contact, pickup, email, and loyalty |
 
 ### Reason

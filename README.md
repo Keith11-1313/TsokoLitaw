@@ -91,7 +91,10 @@ Phase 11 customer-order work started by product-owner request:
 - every successful fulfillment transition records the acting Admin, order, previous status, and next status in `admin_audit_logs`
 - completed-order owners can submit one persisted 1–5 star review with a validated comment
 - new reviews remain hidden from public reads until an Admin explicitly shows or features them
-- Admin Reviews loads real submissions and audits visibility/featured moderation changes
+- completed-order review entry opens in a modal with ordered items, centered stars, and a strict live 1,000-character counter
+- Admin Journal & Reviews loads real submissions and audits visibility/featured moderation changes
+- Admin can persist draft/published Journal posts with type, icon, display date, copy, an optional 3 MB cover image, and a secure video link
+- the public Journal loads published posts and only visible, featured completed-order reviews
 
 Performance and concurrency hardening implemented for the current storefront:
 
@@ -174,12 +177,11 @@ The main navigation contains Home, Our Creations, and Journal. My Orders is acco
 /admin/pickup
 /admin/promotions
 /admin/customers
-/admin/reviews
 /admin/journal
 /admin/settings
 ```
 
-Admin pages remain under `/admin` until subdomain routing, authentication, and server authorization are implemented. Compatibility redirects remain for older admin URLs.
+Admin pages remain under `/admin` until subdomain routing, authentication, and server authorization are implemented. `/admin/reviews` redirects to the completed-order review section of `/admin/journal`; other compatibility redirects remain for older admin URLs.
 
 ## Current Product Model
 

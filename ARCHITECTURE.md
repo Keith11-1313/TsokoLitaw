@@ -30,7 +30,7 @@ Next.js App Router
 └── Local brand and product assets
 ```
 
-The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Phase 11 Admin Orders reads the same persisted snapshots customers see and advances paid fulfillment through an atomic, audited database function. Completed-order owners can submit one review through a controlled writer; submissions remain non-public until audited Admin moderation. Email and the remaining Admin CRUD areas remain unconnected.
+The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Phase 11 Admin Orders reads the same persisted snapshots customers see and advances paid fulfillment through an atomic, audited database function. Completed-order owners submit one review from an order-detail modal; submissions remain non-public until audited moderation. Admin Journal & Reviews persists draft/published posts and featured reviews, and the public Journal reads only published posts plus visible featured reviews. Email and the remaining Admin CRUD areas remain unconnected.
 
 Current customer/admin relationship:
 
@@ -256,7 +256,9 @@ Pickup locations, dates, time windows, lead days, cutoff time, capacity, and ava
 - Reviews belong to a completed order and its customer.
 - Enforce one review per order.
 - Public Journal highlights expose only approved display data.
-- Journal posts support content type, publication state, and optional media.
+- Journal posts support content type, icon, editable display date, publication state, optional cover media, and secure video links.
+- `upsert_journal_post` is service-role-only, rechecks the active Admin, and audits creates/updates.
+- A public-read `journal-media` bucket accepts only JPG, PNG, or WebP cover images up to 3 MB; uploads occur through trusted server code.
 
 ## 13. Environment Variables
 

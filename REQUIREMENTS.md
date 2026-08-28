@@ -39,7 +39,8 @@ Workflow changes must be reflected together in:
 - PayMongo v2 Hosted Checkout test sessions, signed webhooks, provider references, and test payment/refund transitions are the active integration scope
 - Admin Orders reads real order snapshots and advances paid fulfillment through validated, audited server-side transitions
 - completed-order owners can submit one persisted review; new reviews remain non-public until Admin moderation
-- Admin Reviews reads real submissions and saves audited visibility/featured decisions
+- Admin Journal & Reviews combines persisted post publishing with audited review visibility/featured decisions
+- featured visible reviews and published Journal posts are loaded by the public Journal
 - remaining Admin management areas stay mock/non-persistent until their Phase 11 slices are connected
 
 ### Deferred
@@ -249,8 +250,10 @@ Customers can view:
 Reviews:
 
 - available only from an eligible completed order detail
+- opened in a modal on that order detail rather than a separate review screen
 - one review per completed order
 - 1–5 stars and written comment
+- show the ordered box/coating summary and a live 1,000-character limit
 - authenticated customer only
 - no unnecessary public personal data
 - admin may hide spam, abusive, illegal, or invalid content
@@ -268,7 +271,7 @@ Journal replaces Vlog and may contain:
 - selected order-linked reviews
 - videos
 
-Admin requires Journal management for draft/published content and featured review selection.
+Admin Journal & Reviews is one operational area. Admin can create or edit draft/published content, select the post type and icon, edit its display date and text, attach an optional cover image or secure video link, and moderate/feature completed-order reviews. Published posts and featured visible reviews must feed the public Journal.
 
 ## 12. Payment
 
@@ -357,8 +360,7 @@ Admin pages:
 - Pickup
 - Promotions
 - Customers
-- Reviews
-- Journal
+- Journal & Reviews
 - Settings
 
 Admin may eventually manage boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, promotions, loyalty, orders, reviews, Journal posts, and operational settings.

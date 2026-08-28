@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-The application is currently in **Phase 11: Orders, Reviews, Journal, and Admin CRUD**. Authentication, authorization, Phase 9 server commerce, and the Phase 10 PayMongo test-mode implementation are complete. Real Admin fulfillment and completed-order customer reviews are connected with controlled, audited server mutations. Other Admin areas remain mock until their Phase 11 slice is explicitly started.
+The application is currently in **Phase 11: Orders, Reviews, Journal, and Admin CRUD**. Authentication, authorization, Phase 9 server commerce, and the Phase 10 PayMongo test-mode implementation are complete. Real Admin fulfillment, completed-order reviews, featured public reviews, and Journal draft/publication are connected with controlled, audited server mutations. Other Admin areas remain mock until their Phase 11 slice is explicitly started.
 
 Allowed:
 
@@ -37,6 +37,7 @@ Allowed:
 - PayMongo test-mode API helpers, hosted checkout sessions, signed webhooks, and payment/refund persistence
 - authenticated Admin reads and server-validated order fulfillment mutations
 - completed-order review submission and Admin visibility/featured moderation
+- Admin Journal draft/publication management and optional cover media
 
 Do not implement unless the user explicitly starts a later phase:
 

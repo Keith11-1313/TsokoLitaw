@@ -222,10 +222,12 @@ Do not begin without explicit approval.
 - [x] Enforce completed-order review eligibility, ownership, and uniqueness
 - [x] Persist one customer review per completed order through a controlled server mutation
 - [x] Connect Admin review reads, visibility/featured moderation, and audit records
-- [ ] Connect public selected reviews
-- [ ] Implement Journal draft/publish workflow
-- [ ] Implement product, coating, add-on, inventory, pickup, promotion, customer, review, Journal, and settings administration
-- [ ] Add auditability for sensitive admin actions
+- [x] Connect public selected reviews
+- [x] Merge Reviews into Admin Journal and retain `/admin/reviews` as a compatibility redirect
+- [x] Replace the separate customer review screen with an order-detail modal and strict comment counter
+- [x] Implement Journal draft/publish editing with type, icon, date, content, cover image, and video-link support
+- [ ] Implement product, coating, add-on, inventory, pickup, promotion, customer, and settings administration
+- [x] Add auditability for fulfillment, review moderation, and Journal publication actions
 
 ## Phase 12 — Loyalty and Notifications
 
