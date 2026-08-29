@@ -148,6 +148,10 @@ Resend is the approved V1 transactional email provider. Sending occurs only from
 
 Order confirmation is the first active event. It is queued from the committed database transition to paid and confirmed, then dispatched after the transaction through Resend. The same path covers verified PayMongo payments and zero-total loyalty settlement. A stable per-order event key prevents duplicate confirmation messages, while failed attempts remain operational records for bounded scheduled retry.
 
+Ready-for-pickup is the second active event. It is queued only from the committed Admin transition to `READY_FOR_PICKUP` and carries the stored pickup date, window, location, and order-detail link. It does not act as a reminder scheduler or change fulfillment state when delivery fails.
+
+Cancellation and refund communication follows persisted state rather than browser actions. Cancellation explains whether no payment was collected or a refund was requested. Separate processing, completed, and problem messages are queued only when the exact refund row reaches `PROCESSING`, `REFUNDED`, or `FAILED`; the problem message links to the authenticated secure fallback form and never asks the customer to email financial details.
+
 Production sending requires a verified domain or sending subdomain. Resend API keys and webhook signing secrets must never be exposed to the browser or stored in Admin settings.
 
 ### Account deletion

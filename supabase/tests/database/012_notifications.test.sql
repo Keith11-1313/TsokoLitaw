@@ -16,7 +16,7 @@ select set_config('search_path', (
   from pg_extension join pg_namespace on pg_namespace.oid = pg_extension.extnamespace
   where pg_extension.extname = 'pgtap'
 ), true);
-select plan(10);
+select plan(14);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -65,6 +65,14 @@ select is((select count(*) from public.notification_deliveries), 1::bigint, 'unr
 
 update public.orders set status = 'PREPARING' where id = 'db400000-0000-4000-8000-000000000001';
 select is((select count(*) from public.notification_deliveries), 1::bigint, 'later fulfillment does not duplicate confirmation');
+
+update public.orders set status = 'READY_FOR_PICKUP' where id = 'db400000-0000-4000-8000-000000000001';
+select is((select count(*) from public.notification_deliveries), 2::bigint, 'ready transition queues one additional email');
+select is((select count(*) from public.notification_deliveries where event_type = 'order.ready_for_pickup'), 1::bigint, 'ready event is typed');
+select is((select idempotency_key from public.notification_deliveries where event_type = 'order.ready_for_pickup'), 'order.ready_for_pickup:db400000-0000-4000-8000-000000000001', 'ready event has a stable idempotency key');
+
+update public.orders set updated_at = now() where id = 'db400000-0000-4000-8000-000000000001';
+select is((select count(*) from public.notification_deliveries), 2::bigint, 'unrelated ready-order updates do not duplicate email');
 
 select ok(
   not has_function_privilege('authenticated', 'public.enqueue_transactional_order_email()', 'EXECUTE'),

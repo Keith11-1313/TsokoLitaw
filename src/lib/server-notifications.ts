@@ -1,11 +1,19 @@
 import "server-only";
 
-import { buildOrderConfirmationEmail } from "@/lib/notification-email";
+import {
+  buildOrderCancelledEmail,
+  buildOrderConfirmationEmail,
+  buildReadyForPickupEmail,
+  buildRefundCompletedEmail,
+  buildRefundFailedEmail,
+  buildRefundProcessingEmail,
+} from "@/lib/notification-email";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 interface DeliveryRow {
   id: string;
   order_id: string;
+  refund_id: string | null;
   recipient_email: string;
   idempotency_key: string;
   event_type: string;
@@ -27,6 +35,12 @@ interface OrderRow {
     quantity: number;
     order_item_coatings: Array<{ coating_name_snapshot: string; piece_count: number }> | null;
     order_item_addons: Array<{ addon_name_snapshot: string; quantity: number }> | null;
+  }> | null;
+  refunds: Array<{
+    id: string;
+    amount: number | string;
+    status: "REQUESTED" | "PROCESSING" | "REFUNDED" | "FAILED";
+    created_at: string;
   }> | null;
 }
 
@@ -102,7 +116,14 @@ async function dispatchDelivery(delivery: DeliveryRow) {
   if (claim.error || !claim.data) return false;
 
   try {
-    if (delivery.event_type !== "order.confirmed") {
+    if (![
+      "order.confirmed",
+      "order.ready_for_pickup",
+      "order.cancelled",
+      "refund.processing",
+      "refund.completed",
+      "refund.failed",
+    ].includes(delivery.event_type)) {
       throw new Error("Unsupported transactional email event.");
     }
     const { data, error } = await supabase
@@ -114,7 +135,8 @@ async function dispatchDelivery(delivery: DeliveryRow) {
           variant_name_snapshot, quantity,
           order_item_coatings (coating_name_snapshot, piece_count),
           order_item_addons (addon_name_snapshot, quantity)
-        )
+        ),
+        refunds (id, amount, status, created_at)
       `)
       .eq("id", delivery.order_id)
       .maybeSingle();
@@ -122,7 +144,7 @@ async function dispatchDelivery(delivery: DeliveryRow) {
 
     const order = data as unknown as OrderRow;
     const environment = getRequiredEmailEnvironment();
-    const email = buildOrderConfirmationEmail({
+    const emailInput = {
       orderNumber: order.order_number,
       customerName: order.customer_name,
       total: Number(order.total),
@@ -136,7 +158,45 @@ async function dispatchDelivery(delivery: DeliveryRow) {
         coatings: (item.order_item_coatings ?? []).map((coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`),
         addon: (item.order_item_addons ?? []).map((addon) => `${addon.addon_name_snapshot} × ${addon.quantity}`).join(", ") || null,
       })),
-    });
+    };
+    const orderUrl = emailInput.orderUrl;
+    const refund = delivery.refund_id
+      ? (order.refunds ?? []).find((candidate) => candidate.id === delivery.refund_id) ?? null
+      : [...(order.refunds ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null;
+    const refundInput = refund ? {
+      orderNumber: order.order_number,
+      customerName: order.customer_name,
+      orderUrl,
+      refundAmount: Number(refund.amount),
+    } : null;
+    let email;
+    switch (delivery.event_type) {
+      case "order.ready_for_pickup":
+        email = buildReadyForPickupEmail(emailInput);
+        break;
+      case "order.cancelled":
+        email = buildOrderCancelledEmail({
+          orderNumber: order.order_number,
+          customerName: order.customer_name,
+          orderUrl,
+          refundAmount: refund ? Number(refund.amount) : null,
+        });
+        break;
+      case "refund.processing":
+        if (!refundInput) throw new Error("The processing refund snapshot is unavailable.");
+        email = buildRefundProcessingEmail(refundInput);
+        break;
+      case "refund.completed":
+        if (!refundInput) throw new Error("The completed refund snapshot is unavailable.");
+        email = buildRefundCompletedEmail(refundInput);
+        break;
+      case "refund.failed":
+        if (!refundInput) throw new Error("The failed refund snapshot is unavailable.");
+        email = buildRefundFailedEmail(refundInput);
+        break;
+      default:
+        email = buildOrderConfirmationEmail(emailInput);
+    }
     const providerMessageId = await sendWithResend({
       ...environment,
       to: delivery.recipient_email,
@@ -165,6 +225,7 @@ async function dispatchDelivery(delivery: DeliveryRow) {
 
 export async function dispatchPendingNotifications(input: {
   orderId?: string;
+  eventType?: string;
   limit?: number;
 } = {}) {
   const supabase = createAdminSupabaseClient();
@@ -172,12 +233,13 @@ export async function dispatchPendingNotifications(input: {
   const staleBefore = new Date(now.getTime() - PROCESSING_TIMEOUT_MS).toISOString();
   let query = supabase
     .from("notification_deliveries")
-    .select("id, order_id, recipient_email, idempotency_key, event_type, status, attempt_count, last_attempt_at")
+    .select("id, order_id, refund_id, recipient_email, idempotency_key, event_type, status, attempt_count, last_attempt_at")
     .or(`and(status.in.(PENDING,FAILED),next_attempt_at.lte.${now.toISOString()}),and(status.eq.PROCESSING,last_attempt_at.lte.${staleBefore})`)
     .lt("attempt_count", MAX_ATTEMPTS)
     .order("created_at", { ascending: true })
     .limit(Math.max(1, Math.min(input.limit ?? 20, 50)));
   if (input.orderId) query = query.eq("order_id", input.orderId);
+  if (input.eventType) query = query.eq("event_type", input.eventType);
   const { data, error } = await query;
   if (error) throw new Error("Pending transactional emails could not be loaded.", { cause: error });
 
@@ -190,5 +252,13 @@ export async function dispatchPendingNotifications(input: {
 }
 
 export async function dispatchOrderConfirmation(orderId: string) {
-  return dispatchPendingNotifications({ orderId, limit: 1 });
+  return dispatchPendingNotifications({ orderId, eventType: "order.confirmed", limit: 1 });
+}
+
+export async function dispatchReadyForPickup(orderId: string) {
+  return dispatchPendingNotifications({ orderId, eventType: "order.ready_for_pickup", limit: 1 });
+}
+
+export async function dispatchOrderNotifications(orderId: string) {
+  return dispatchPendingNotifications({ orderId, limit: 10 });
 }

@@ -3,6 +3,7 @@ import "server-only";
 import { createPayMongoRefund, expirePayMongoCheckoutSession, PayMongoApiError } from "@/lib/paymongo";
 import { encryptRefundDestination } from "@/lib/refund-encryption";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { dispatchOrderNotifications } from "@/lib/server-notifications";
 
 interface CancellationPreparation {
   cancellation_kind: "UNPAID" | "PAID_REFUND";
@@ -24,6 +25,17 @@ interface RequestedRefund {
 
 function firstRow<T>(data: unknown) {
   return (Array.isArray(data) ? data[0] : data) as T | null;
+}
+
+async function dispatchCancellationNotifications(orderId: string) {
+  try {
+    await dispatchOrderNotifications(orderId);
+  } catch (error) {
+    console.error("[cancellation-notifications] Immediate dispatch failed", {
+      orderId,
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
+  }
 }
 
 export async function cancelCustomerOrder(orderId: string, userId: string, orderNumber: string) {
@@ -48,6 +60,7 @@ export async function cancelCustomerOrder(orderId: string, userId: string, order
       expired_checkout_id: preparation.cancellation_checkout_id,
     });
     if (result.error) throw new Error("The unpaid order could not be cancelled.", { cause: result.error });
+    await dispatchCancellationNotifications(orderId);
     return { message: "Order cancelled. No payment was collected.", refundStatus: null };
   }
 
@@ -59,6 +72,7 @@ export async function cancelCustomerOrder(orderId: string, userId: string, order
   const requested = firstRow<RequestedRefund>(requestResult.data);
   if (!requested) throw new Error("The refund request is unavailable.");
   if (requested.refund_status_value !== "REQUESTED") {
+    await dispatchCancellationNotifications(orderId);
     return { message: "This cancellation was already submitted.", refundStatus: requested.refund_status_value };
   }
 
@@ -78,6 +92,7 @@ export async function cancelCustomerOrder(orderId: string, userId: string, order
       failure_code_value: failureCode,
       failure_message_value: failureMessage,
     });
+    await dispatchCancellationNotifications(orderId);
     return {
       message: "Order cancelled, but PayMongo could not start the refund. Add a manual refund destination below.",
       refundStatus: "FAILED" as const,
@@ -94,6 +109,7 @@ export async function cancelCustomerOrder(orderId: string, userId: string, order
   if (recorded.error) {
     throw new Error("PayMongo accepted the refund, but its result could not be retained. Retry safely before taking another action.", { cause: recorded.error });
   }
+  await dispatchCancellationNotifications(orderId);
   return {
     message: refund.status === "succeeded"
       ? "Order cancelled and the full refund was accepted by PayMongo."

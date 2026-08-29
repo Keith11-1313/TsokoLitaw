@@ -242,8 +242,8 @@ Do not begin without explicit approval.
 - [x] Prevent duplicate rewards
 - [x] Show customer and Admin profiles in the Customers account directory with explicit role labels
 - [x] Queue and send an idempotent order confirmation email for verified PayMongo and zero-total loyalty orders
-- [ ] Send ready-for-pickup email
-- [ ] Add cancellation/refund communication
+- [x] Send an idempotent ready-for-pickup email after the committed Admin fulfillment transition
+- [x] Send idempotent cancellation, refund-processing, refund-completed, and refund-problem emails from persisted state transitions
 - [x] Keep email sending server-side
 - [x] Configure and verify the Resend sending subdomain
 - [ ] Add idempotent Resend sending and signed delivery webhooks

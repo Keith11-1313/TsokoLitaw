@@ -5,7 +5,10 @@ import {
   verifyPayMongoTestWebhookSignature,
 } from "@/lib/paymongo-webhook";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { dispatchOrderConfirmation } from "@/lib/server-notifications";
+import {
+  dispatchOrderConfirmation,
+  dispatchPendingNotifications,
+} from "@/lib/server-notifications";
 
 export const runtime = "nodejs";
 
@@ -67,6 +70,16 @@ export async function POST(request: Request) {
     } catch (notificationError) {
       console.error("[order-confirmation] Immediate dispatch failed", {
         orderId: paidEvent.orderId,
+        errorType: notificationError instanceof Error ? notificationError.name : "UnknownError",
+      });
+    }
+  }
+  if (refundEvent && data) {
+    try {
+      await dispatchPendingNotifications({ limit: 10 });
+    } catch (notificationError) {
+      console.error("[refund-notifications] Immediate dispatch failed", {
+        refundId: refundEvent.refundId,
         errorType: notificationError instanceof Error ? notificationError.name : "UnknownError",
       });
     }

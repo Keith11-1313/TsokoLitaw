@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { isUuid } from "@/lib/identifiers";
 import { isAllowedFulfillmentTransition } from "@/lib/order-status";
 import { transitionAdminOrderStatus } from "@/lib/server-orders";
+import { dispatchReadyForPickup } from "@/lib/server-notifications";
 import {
   enforceMutationRateLimit,
   MutationRateLimitError,
@@ -39,6 +40,16 @@ export async function transitionOrderStatusAction(input: {
       adminId: admin.id,
       ...input,
     });
+    if (input.nextStatus === "READY_FOR_PICKUP") {
+      try {
+        await dispatchReadyForPickup(input.orderId);
+      } catch (notificationError) {
+        console.error("[ready-for-pickup] Immediate dispatch failed", {
+          orderId: input.orderId,
+          errorType: notificationError instanceof Error ? notificationError.name : "UnknownError",
+        });
+      }
+    }
     revalidatePath("/admin");
     revalidatePath("/admin/orders");
     revalidatePath("/orders");

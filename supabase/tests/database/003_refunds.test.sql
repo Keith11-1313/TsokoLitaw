@@ -18,7 +18,7 @@ select set_config(
    where pg_extension.extname = 'pgtap'),
   true
 );
-select plan(34);
+select plan(40);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -74,6 +74,7 @@ select ok(public.cancel_unpaid_order('b5000000-0000-4000-8000-000000000001','b10
 select is((select status from public.orders where id = 'b5000000-0000-4000-8000-000000000001'), 'CANCELLED'::public.order_status, 'unpaid order becomes cancelled');
 select is((select payment_status from public.orders where id = 'b5000000-0000-4000-8000-000000000001'), 'FAILED'::public.payment_status, 'unpaid order payment state becomes failed');
 select is((select status from public.payments where id = 'b6000000-0000-4000-8000-000000000001'), 'FAILED'::public.payment_status, 'unpaid payment row becomes failed');
+select is((select count(*) from public.notification_deliveries where order_id = 'b5000000-0000-4000-8000-000000000001' and event_type = 'order.cancelled'), 1::bigint, 'unpaid cancellation queues one email');
 
 insert into public.orders (
   id, order_number, user_id, status, payment_status, customer_name, customer_email, pickup_date,
@@ -92,10 +93,14 @@ select is((select refund_status_value from public.request_paid_order_refund('b50
 select is((select status from public.orders where id = 'b5000000-0000-4000-8000-000000000002'), 'CANCELLED'::public.order_status, 'paid order is cancelled immediately');
 select is((select payment_status from public.orders where id = 'b5000000-0000-4000-8000-000000000002'), 'PAID'::public.payment_status, 'cancelled order remains paid while refund is pending');
 select is((select status from public.refunds where order_id = 'b5000000-0000-4000-8000-000000000002'), 'REQUESTED'::public.refund_status, 'refund lifecycle starts separately');
+select is((select count(*) from public.notification_deliveries where order_id = 'b5000000-0000-4000-8000-000000000002' and event_type = 'order.cancelled'), 1::bigint, 'paid cancellation queues one email');
 select ok(public.record_paymongo_refund_result((select id from public.refunds where order_id = 'b5000000-0000-4000-8000-000000000002'), 'ref_refund_9102', 'processing'), 'processing provider response is recorded');
 select is((select status from public.refunds where order_id = 'b5000000-0000-4000-8000-000000000002'), 'PROCESSING'::public.refund_status, 'refund becomes processing');
+select is((select count(*) from public.notification_deliveries where order_id = 'b5000000-0000-4000-8000-000000000002' and event_type = 'refund.processing'), 1::bigint, 'processing refund queues one email');
 select ok(public.record_paymongo_refund_result((select id from public.refunds where order_id = 'b5000000-0000-4000-8000-000000000002'), 'ref_refund_9102', 'succeeded'), 'successful provider result is recorded');
 select is((select status from public.refunds where order_id = 'b5000000-0000-4000-8000-000000000002'), 'REFUNDED'::public.refund_status, 'refund becomes refunded only after provider success');
+select is((select count(*) from public.notification_deliveries where order_id = 'b5000000-0000-4000-8000-000000000002' and event_type = 'refund.completed'), 1::bigint, 'completed refund queues one email');
+select is((select refund_id from public.notification_deliveries where order_id = 'b5000000-0000-4000-8000-000000000002' and event_type = 'refund.completed'), (select id from public.refunds where order_id = 'b5000000-0000-4000-8000-000000000002'), 'refund email retains the exact refund reference');
 select is((select status from public.payments where id = 'b6000000-0000-4000-8000-000000000002'), 'REFUNDED'::public.payment_status, 'payment becomes refunded');
 select is((select payment_status from public.orders where id = 'b5000000-0000-4000-8000-000000000002'), 'REFUNDED'::public.payment_status, 'order payment snapshot becomes refunded');
 
@@ -113,6 +118,7 @@ insert into public.payments (id, order_id, provider_payment_id, amount, status, 
 values ('b6000000-0000-4000-8000-000000000003', 'b5000000-0000-4000-8000-000000000003', 'pay_refund_9103', 80, 'PAID', now());
 select lives_ok($$select public.request_paid_order_refund('b5000000-0000-4000-8000-000000000003','b1000000-0000-4000-8000-000000000001')$$, 'a second paid cancellation can request a refund');
 select ok(public.fail_paymongo_refund_request((select id from public.refunds where order_id = 'b5000000-0000-4000-8000-000000000003'), 'payment_not_refundable', 'Automatic refund unavailable'), 'provider rejection marks the refund failed');
+select is((select count(*) from public.notification_deliveries where order_id = 'b5000000-0000-4000-8000-000000000003' and event_type = 'refund.failed'), 1::bigint, 'failed refund queues one attention email');
 select ok(public.request_manual_refund_fallback((select id from public.refunds where order_id = 'b5000000-0000-4000-8000-000000000003'), 'b1000000-0000-4000-8000-000000000001', 'GCASH', 'Refund Owner', 'v1.iv.tag.ciphertext'), 'failed provider refund accepts encrypted fallback details');
 select is((select method from public.refunds where order_id = 'b5000000-0000-4000-8000-000000000003'), 'MANUAL_FALLBACK'::public.refund_method, 'fallback refund method is explicit');
 select is((select status from public.refunds where order_id = 'b5000000-0000-4000-8000-000000000003'), 'REQUESTED'::public.refund_status, 'manual fallback returns to requested for Admin processing');

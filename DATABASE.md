@@ -444,6 +444,7 @@ The unique provider event key supports idempotent processing. For PayMongo Hoste
 ```text
 id uuid primary key
 order_id uuid references orders(id) nullable
+refund_id uuid references refunds(id) nullable
 user_id uuid references profiles(id) nullable
 provider text default 'resend'
 event_type text
@@ -461,7 +462,7 @@ created_at timestamptz
 updated_at timestamptz
 ```
 
-The `orders_enqueue_transactional_email` trigger inserts one `order.confirmed` row only after an order is both paid and confirmed. Its stable `order.confirmed:<order-id>` key covers PayMongo and zero-total loyalty paths without duplicate messages. `PENDING`, `PROCESSING`, `SENT`, `DELIVERED`, and `FAILED` states plus attempt timestamps support bounded retries and stale-claim recovery. Transactional email is dispatched only by trusted server code. Resend delivery webhooks remain a later slice and must be signature-verified and processed idempotently. Email status is operational metadata and never changes order or payment status by itself.
+The order trigger inserts `order.confirmed`, `order.ready_for_pickup`, and `order.cancelled` only from their persisted transitions. The refund trigger inserts `refund.processing`, `refund.completed`, and `refund.failed` only when the exact refund changes to that state, retaining `refund_id`. Stable `<event>:<entity-id>` keys prevent duplicate messages across PayMongo, loyalty, Admin fulfillment, cancellation, API responses, and webhook retries. `PENDING`, `PROCESSING`, `SENT`, `DELIVERED`, and `FAILED` states plus attempt timestamps support bounded retries and stale-claim recovery. Transactional email is dispatched only by trusted server code. Resend delivery webhooks remain a later slice and must be signature-verified and processed idempotently. Email status is operational metadata and never changes order or payment status by itself.
 
 ## 11. Reviews
 

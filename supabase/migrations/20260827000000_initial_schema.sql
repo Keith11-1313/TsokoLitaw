@@ -299,6 +299,7 @@ create table public.payment_webhook_events (
 create table public.notification_deliveries (
   id uuid primary key default gen_random_uuid(),
   order_id uuid references public.orders(id) on delete set null,
+  refund_id uuid references public.refunds(id) on delete set null,
   user_id uuid references public.profiles(id) on delete set null,
   provider text not null default 'resend',
   event_type text not null,
@@ -479,6 +480,7 @@ create index refunds_order_created_idx on public.refunds (order_id, created_at d
 create index mutation_rate_limit_updated_idx
   on public.mutation_rate_limit_buckets (updated_at);
 create index notification_deliveries_order_idx on public.notification_deliveries (order_id, event_type);
+create index notification_deliveries_refund_idx on public.notification_deliveries (refund_id, event_type);
 create index notification_deliveries_retry_idx
   on public.notification_deliveries (next_attempt_at, created_at)
   where status in ('PENDING', 'FAILED');
@@ -3334,6 +3336,103 @@ begin
     on conflict (idempotency_key) do nothing;
   end if;
 
+  if should_enqueue
+    and new.status = 'READY_FOR_PICKUP'
+    and new.payment_status = 'PAID'
+  then
+    insert into public.notification_deliveries (
+      order_id,
+      user_id,
+      provider,
+      event_type,
+      recipient_email,
+      idempotency_key,
+      status
+    ) values (
+      new.id,
+      new.user_id,
+      'resend',
+      'order.ready_for_pickup',
+      new.customer_email,
+      'order.ready_for_pickup:' || new.id::text,
+      'PENDING'
+    )
+    on conflict (idempotency_key) do nothing;
+  end if;
+
+  if should_enqueue and new.status = 'CANCELLED' then
+    insert into public.notification_deliveries (
+      order_id,
+      user_id,
+      provider,
+      event_type,
+      recipient_email,
+      idempotency_key,
+      status
+    ) values (
+      new.id,
+      new.user_id,
+      'resend',
+      'order.cancelled',
+      new.customer_email,
+      'order.cancelled:' || new.id::text,
+      'PENDING'
+    )
+    on conflict (idempotency_key) do nothing;
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.enqueue_transactional_refund_email()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_order public.orders%rowtype;
+  notification_event text;
+begin
+  if tg_op <> 'UPDATE' or old.status is not distinct from new.status then
+    return new;
+  end if;
+
+  notification_event := case new.status
+    when 'PROCESSING' then 'refund.processing'
+    when 'REFUNDED' then 'refund.completed'
+    when 'FAILED' then 'refund.failed'
+    else null
+  end;
+  if notification_event is null then return new; end if;
+
+  select * into target_order
+  from public.orders
+  where id = new.order_id;
+  if target_order.id is null then return new; end if;
+
+  insert into public.notification_deliveries (
+    order_id,
+    refund_id,
+    user_id,
+    provider,
+    event_type,
+    recipient_email,
+    idempotency_key,
+    status
+  ) values (
+    target_order.id,
+    new.id,
+    target_order.user_id,
+    'resend',
+    notification_event,
+    target_order.customer_email,
+    notification_event || ':' || new.id::text,
+    'PENDING'
+  )
+  on conflict (idempotency_key) do nothing;
+
   return new;
 end;
 $$;
@@ -3341,6 +3440,10 @@ $$;
 create trigger orders_enqueue_transactional_email
 after insert or update of status, payment_status on public.orders
 for each row execute procedure public.enqueue_transactional_order_email();
+
+create trigger refunds_enqueue_transactional_email
+after update of status on public.refunds
+for each row execute procedure public.enqueue_transactional_refund_email();
 
 do $$
 declare
