@@ -4,7 +4,7 @@ import { AdminPageLayout } from "@/components/admin/admin-page-layout";
 import { PrimaryButton } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { UncontrolledCustomSelect } from "@/components/ui/custom-select";
-import { PICKUP_DAILY_CUTOFF, PICKUP_LEAD_DAYS, PICKUP_SLOT_CAPACITY, PICKUP_SLOT_INTERVAL_MINUTES } from "@/lib/pickup";
+import { PICKUP_DAILY_CUTOFF, PICKUP_LEAD_DAYS, PICKUP_SLOT_INTERVAL_MINUTES } from "@/lib/pickup";
 
 export const metadata: Metadata = { title: "Settings | TsokoLitaw Admin" };
 
@@ -25,7 +25,6 @@ export default function AdminSettingsPage() {
             <UncontrolledCustomSelect label="Daily cut-off" options={[{ value: "5", label: PICKUP_DAILY_CUTOFF }, { value: "4", label: "4:00 PM" }]} />
             <FormField id="settings-lead-days" label="Pickup Lead Days" inputProps={{ type: "number", defaultValue: PICKUP_LEAD_DAYS, min: 1 }} />
             <FormField id="settings-slot-interval" label="Pickup Slot Interval (minutes)" inputProps={{ type: "number", defaultValue: PICKUP_SLOT_INTERVAL_MINUTES, min: 15, step: 15 }} />
-            <FormField id="settings-slot-capacity" label="Pickup Capacity per Slot (boxes)" inputProps={{ type: "number", defaultValue: PICKUP_SLOT_CAPACITY, min: 1 }} />
             <UncontrolledCustomSelect label="Pickup grace period" options={[{ value: "15", label: "15 minutes" }, { value: "30", label: "30 minutes" }, { value: "45", label: "45 minutes" }]} />
             <FormField id="settings-loyalty" label="Completed orders per reward" inputProps={{ type: "number", defaultValue: 7, min: 1 }} />
           </div>

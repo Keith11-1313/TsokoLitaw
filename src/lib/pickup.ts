@@ -7,7 +7,6 @@ export const PICKUP_OPERATING_DAYS = "Monday–Saturday";
 export const PICKUP_OPERATING_HOURS = "7:00 AM–7:00 PM";
 export const PICKUP_DAILY_CUTOFF = "5:00 PM";
 export const PICKUP_SLOT_INTERVAL_MINUTES = 60;
-export const PICKUP_SLOT_CAPACITY = 20;
 
 export const PICKUP_TIMES = [
   "7:00 AM", "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",

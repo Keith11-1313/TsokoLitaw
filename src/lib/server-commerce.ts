@@ -48,10 +48,8 @@ interface PickupDateRow {
     pickup_date_id: string;
     start_time: string;
     end_time: string;
-    capacity: number | null;
     sort_order: number;
     pickup_window_locations: Array<{
-      capacity_override: number | null;
       pickup_locations: PickupLocationRow | null;
     }> | null;
   }> | null;
@@ -249,10 +247,8 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
             pickup_date_id,
             start_time,
             end_time,
-            capacity,
             sort_order,
             pickup_window_locations (
-              capacity_override,
               pickup_locations (
                 id,
                 name,
@@ -305,12 +301,10 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
       && date.pickup_date < earliestAdvanceDate) return [];
 
     const checkoutWindows = (date.pickup_windows ?? [])
-      .filter((window) => window.capacity === null || window.capacity > 0)
       .filter((window) => date.pickup_date !== today || window.end_time.slice(0, 5) > currentTime)
       .sort((left, right) => left.sort_order - right.sort_order)
       .flatMap((window) => {
         const locations = (window.pickup_window_locations ?? [])
-          .filter((entry) => entry.capacity_override === null || entry.capacity_override > 0)
           .flatMap((entry) => entry.pickup_locations ? [entry.pickup_locations] : [])
           .sort((left, right) => left.sort_order - right.sort_order)
           .map((location) => ({ id: location.id, name: location.name }));

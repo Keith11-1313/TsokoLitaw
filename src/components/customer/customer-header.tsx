@@ -26,7 +26,7 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
           aria-label="TsokoLitaw home"
           className="shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
         >
-          <BrandLockup subtitle="Timeless dessert" />
+          <BrandLockup showSubtitle={false} />
         </Link>
 
         <nav className="hidden items-center gap-10 lg:flex" aria-label="Main navigation">

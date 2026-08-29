@@ -113,9 +113,8 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
       <aside className="order-1 self-start lg:order-2 lg:sticky lg:top-6">
         <section className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-7" aria-labelledby="build-box-heading">
           <h2 id="build-box-heading" className="font-display text-3xl">Build your box</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">One coating type is included. Each additional type uses its current Admin-configured catalog price.</p>
 
-          <div className="mt-6 space-y-5">
+          <div className="mt-5 space-y-5">
             <CustomSelect label="Box size" value={variantId} onChange={changeVariant} options={variants.map((item) => ({ value: item.id, label: `${item.label} — ${formatPhp(item.price)}` }))} />
 
             <fieldset>

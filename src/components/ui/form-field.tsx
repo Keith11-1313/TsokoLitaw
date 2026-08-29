@@ -14,7 +14,7 @@ export const inputClassName = controlClassName;
 
 interface FieldPresentationProps {
   id: string;
-  label: string;
+  label: ReactNode;
   hint?: string;
   error?: string;
   required?: boolean;

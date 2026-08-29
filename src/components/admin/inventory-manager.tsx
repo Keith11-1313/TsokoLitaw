@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { PackageCheck } from "lucide-react";
+import { useActionState, useEffect, useState } from "react";
+import { PackageCheck, Plus, X } from "lucide-react";
 import {
   consumeInventoryAction,
   saveInventoryAction,
@@ -50,13 +50,18 @@ function StockEditor({
   product,
   dates,
   record,
+  onSaved,
 }: {
   product: { id: string; name: string };
   dates: AdminInventoryDate[];
   record?: AdminInventoryRecord;
+  onSaved?: () => void;
 }) {
   const [state, action, pending] = useActionState(saveInventoryAction, initialState);
   const minimum = record ? record.stockReserved + record.stockConsumed : 0;
+  useEffect(() => {
+    if (state.status === "success") onSaved?.();
+  }, [state.status, onSaved]);
 
   return (
     <form action={action} className="rounded-card border border-border bg-surface p-5 sm:p-6">
@@ -135,7 +140,7 @@ function StockEditor({
 function ConsumptionForm({ record }: { record: AdminInventoryRecord }) {
   const [state, action, pending] = useActionState(consumeInventoryAction, initialState);
   return (
-    <form action={action} className="mt-5 border-t border-border pt-5">
+    <form action={action}>
       <input type="hidden" name="inventoryId" value={record.id} />
       <input type="hidden" name="reason" value="WASTE" />
       <h3 className="font-display text-xl">Record unusable pieces</h3>
@@ -160,6 +165,33 @@ function ConsumptionForm({ record }: { record: AdminInventoryRecord }) {
   );
 }
 
+function PublishStockModal({
+  product,
+  dates,
+  onClose,
+}: {
+  product: { id: string; name: string };
+  dates: AdminInventoryDate[];
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-foreground/40 p-4" onPointerDown={onClose}>
+      <section role="dialog" aria-modal="true" aria-labelledby="publish-stock-modal-title" onPointerDown={(event) => event.stopPropagation()} className="my-auto w-full max-w-3xl rounded-card bg-surface shadow-2xl">
+        <div className="flex items-start justify-between gap-4 px-5 pt-5 sm:px-7 sm:pt-7">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Ready-stock inventory</p>
+            <h2 id="publish-stock-modal-title" className="mt-1 font-display text-3xl">Publish stock for another date</h2>
+          </div>
+          <button type="button" aria-label="Close stock editor" onClick={onClose} className="flex size-11 items-center justify-center text-brand focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" /></button>
+        </div>
+        <div className="p-5 pt-4 sm:p-7 sm:pt-4">
+          <StockEditor product={product} dates={dates} onSaved={onClose} />
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function InventoryManager({
   product,
   dates,
@@ -170,6 +202,7 @@ export function InventoryManager({
   records: AdminInventoryRecord[];
 }) {
   const [selectedInventoryId, setSelectedInventoryId] = useState(records[0]?.id ?? "");
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const selectedRecord = records.find((record) => record.id === selectedInventoryId) ?? records[0];
   const selectedDate = selectedRecord
     ? dates.find((date) => date.pickupDate === selectedRecord.pickupDate)
@@ -193,20 +226,23 @@ export function InventoryManager({
                 ) : null}
               </div>
             </div>
-            {records.length > 1 ? (
-              <label className="space-y-2 text-sm font-bold lg:min-w-72">
-                <span>Change pickup date</span>
-                <select
-                  value={selectedRecord.id}
-                  onChange={(event) => setSelectedInventoryId(event.target.value)}
-                  className="min-h-12 w-full rounded-control bg-surface-control px-4 font-normal"
-                >
-                  {records.map((record) => (
-                    <option key={record.id} value={record.id}>{formatDate(record.pickupDate)}</option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              {records.length > 1 ? (
+                <label className="space-y-2 text-sm font-bold lg:min-w-72">
+                  <span>Change pickup date</span>
+                  <select
+                    value={selectedRecord.id}
+                    onChange={(event) => setSelectedInventoryId(event.target.value)}
+                    className="min-h-12 w-full rounded-control bg-surface-control px-4 font-normal"
+                  >
+                    {records.map((record) => (
+                      <option key={record.id} value={record.id}>{formatDate(record.pickupDate)}</option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {unconfiguredDates.length > 0 ? <PrimaryButton onClick={() => setShowPublishModal(true)}><Plus size={17} />Publish stock for another date</PrimaryButton> : null}
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label={`Inventory summary for ${formatDate(selectedRecord.pickupDate)}`}>
@@ -216,9 +252,9 @@ export function InventoryManager({
             <AdminStatCard compact label="Available now" value={String(selectedRecord.stockAvailable)} accentClassName="text-success-foreground" />
           </div>
 
-          <article key={`${selectedRecord.id}-${selectedRecord.updatedAt}`}>
+          <article key={`${selectedRecord.id}-${selectedRecord.updatedAt}`} className="space-y-5">
             <StockEditor product={product} dates={dates} record={selectedRecord} />
-            <div className="-mt-1 rounded-b-card border border-t-0 border-border bg-surface px-5 pb-6 sm:px-6">
+            <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
               <ConsumptionForm record={selectedRecord} />
             </div>
           </article>
@@ -234,19 +270,17 @@ export function InventoryManager({
               </p>
             </div>
           </div>
+          {unconfiguredDates.length > 0 ? <PrimaryButton className="mt-5" onClick={() => setShowPublishModal(true)}><Plus size={17} />Publish stock</PrimaryButton> : null}
         </section>
       )}
 
-      {unconfiguredDates.length > 0 ? (
-        <section className="mt-7" aria-labelledby="publish-stock-title">
-          <h2 id="publish-stock-title" className="sr-only">Publish stock for another date</h2>
-          <StockEditor product={product} dates={unconfiguredDates} />
-        </section>
-      ) : dates.length === 0 ? (
+      {dates.length === 0 ? (
         <p className="mt-7 rounded-card border border-warning-border bg-warning-background p-5 text-sm leading-6 text-warning-foreground">
           No eligible pickup date exists. Create an upcoming Ready stock or Hybrid date in Pickup before publishing prepared pieces.
         </p>
       ) : null}
+
+      {showPublishModal ? <PublishStockModal product={product} dates={unconfiguredDates} onClose={() => setShowPublishModal(false)} /> : null}
 
     </>
   );

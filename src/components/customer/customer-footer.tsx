@@ -30,8 +30,7 @@ export function CustomerFooter({
               titleClassName="text-3xl"
             />
             <p className="mt-5 text-sm leading-6 text-surface/80">
-              Specializing in chocolate-filled litaw (mochi-like rice cakes)
-              crafted with premium local ingredients. A modern Filipino classic.
+              This online ordering system supports our school entrepreneurship requirement while helping customers reserve TsokoLitaw for scheduled campus pickup.
             </p>
           </div>
 

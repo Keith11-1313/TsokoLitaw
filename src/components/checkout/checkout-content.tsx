@@ -137,20 +137,17 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
             <FormField id="checkout-name" label="Full name" required inputProps={{ value: customerName, onChange: (event) => setCustomerName(event.target.value), autoComplete: "name", maxLength: 100 }} />
             <FormField id="checkout-email" label="Google email" inputProps={{ defaultValue: profile.email, readOnly: true }} />
             <FormField id="checkout-mobile" label="Mobile number (optional)" hint="Add a number only if you also want pickup updates by phone." inputProps={{ value: customerMobile, onChange: (event) => setCustomerMobile(event.target.value), placeholder: "+63 900 000 0000", autoComplete: "tel", maxLength: 30 }} />
-            <FormField id="checkout-notes" label="Order notes" inputProps={{ value: customerNotes, onChange: (event) => setCustomerNotes(event.target.value), placeholder: "Optional preparation notes", maxLength: 500 }} />
           </div>
         </section>
 
         <section className="rounded-card border border-border bg-surface p-6 sm:p-8">
           <h2 className="font-display text-2xl">Campus pickup</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Admin publishes the actual available dates within {availability.operatingDays}, {availability.operatingHours}. Same-day options appear only when ready stock is available. Please arrive within the {availability.graceMinutes}-minute grace period.
-          </p>
           {hasPickupAvailability ? (
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
               <CustomSelect label="Pickup date" value={dateId} onChange={changeDate} options={availability.dates.map((date) => ({ value: date.id, label: date.label }))} />
               <CustomSelect label="Pickup time" value={selectedWindow.id} onChange={changeWindow} options={selectedDate.windows.map((window) => ({ value: window.id, label: window.label }))} />
               <CustomSelect className="sm:col-span-2" label="Pickup location" value={locationId} onChange={setLocationId} options={selectedWindow.locations.map((location) => ({ value: location.id, label: location.name }))} />
+              <FormField id="checkout-notes" label="Order notes (optional)" className="sm:col-span-2" inputProps={{ value: customerNotes, onChange: (event) => setCustomerNotes(event.target.value), placeholder: "Pickup or preparation notes", maxLength: 500 }} />
             </div>
           ) : (
             <div role="status" className="mt-6 rounded-control bg-warning-background p-4 text-sm leading-6 text-warning-foreground">
@@ -172,11 +169,14 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
         <p className="text-center text-xs leading-5 text-muted-foreground">You’ll complete payment on PayMongo’s secure test checkout. Your order is confirmed only after TsokoLitaw receives PayMongo’s signed payment notification.</p>
       </form>
 
-      <aside className="min-w-0 rounded-card border border-border bg-surface p-6 lg:sticky lg:top-6">
-        <h2 className="font-display text-2xl">Order summary</h2>
-        <ul className="mt-5 divide-y divide-border">
+      <aside className="min-w-0 overflow-hidden rounded-card border border-border bg-surface lg:sticky lg:top-6">
+        <div className="border-b border-border bg-surface-muted px-6 py-5">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Secure checkout</p>
+          <h2 className="mt-1 font-display text-3xl">Order summary</h2>
+        </div>
+        <ul className="divide-y divide-border px-6">
           {selectedItems.map((item) => (
-            <li key={item.id} className="py-4 first:pt-0">
+            <li key={item.id} className="py-5">
               <div className="flex justify-between gap-3">
                 <span className="font-bold">Box of {item.pieceCount} × {item.quantity}</span>
                 <span>{formatPhp(calculateCartLineTotal(item))}</span>
@@ -190,12 +190,13 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
             </li>
           ))}
         </ul>
-        <div className="mt-4 flex justify-between border-t border-border pt-4 text-lg font-bold">
-          <span>Browser estimate</span>
-          <span>{formatPhp(selectedSubtotal)}</span>
+        <div className="border-t border-border bg-surface-muted px-6 py-5">
+          <div className="flex items-end justify-between gap-4">
+            <div><span className="block text-xs font-bold uppercase tracking-wide text-muted-foreground">Estimated total</span><span className="mt-1 block text-xs text-muted-foreground">Verified again before payment</span></div>
+            <strong className="font-display text-3xl text-brand">{formatPhp(selectedSubtotal)}</strong>
+          </div>
         </div>
-        <p className="mt-2 text-xs leading-5 text-muted-foreground">Final prices and availability will be recalculated by the server before an order is created.</p>
-        <div className="mt-6 space-y-2 rounded-control bg-warning-background p-4 text-xs leading-5 text-warning-foreground">
+        <div className="m-6 space-y-2 rounded-control bg-warning-background p-4 text-xs leading-5 text-warning-foreground">
           <p>May contain peanuts, dairy, coconut, sesame, and chocolate ingredients.</p>
           <p>Missed pickups are non-refundable because the order has already been prepared.</p>
         </div>

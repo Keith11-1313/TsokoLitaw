@@ -16,9 +16,7 @@ export interface AdminPickupWindow {
   id: string;
   startTime: string;
   endTime: string;
-  capacity: number;
   locationIds: string[];
-  bookedBoxes: number;
 }
 
 export interface AdminPickupDate {
@@ -35,7 +33,6 @@ export interface AdminPickupSettings {
   minimumLeadDays: number;
   dailyCutoffTime: string;
   graceMinutes: number;
-  defaultCapacity: number;
   operatingStart: string;
   operatingEnd: string;
 }
@@ -50,7 +47,6 @@ interface PickupDateRow {
     id: string;
     start_time: string;
     end_time: string;
-    capacity: number | null;
     sort_order: number;
     pickup_window_locations: Array<{ pickup_location_id: string }> | null;
   }> | null;
@@ -73,15 +69,15 @@ export async function getAdminPickup() {
   const [datesResult, locationsResult, settingsResult, inventoryResult, ordersResult] = await Promise.all([
     supabase.from("pickup_dates").select(`
       id,pickup_date,availability_mode,is_open,notes,
-      pickup_windows(id,start_time,end_time,capacity,sort_order,pickup_window_locations(pickup_location_id))
+      pickup_windows(id,start_time,end_time,sort_order,pickup_window_locations(pickup_location_id))
     `).gte("pickup_date", manilaDate()).order("pickup_date"),
     supabase.from("pickup_locations").select("id,name,description,is_active,sort_order").order("sort_order"),
     supabase.from("business_settings").select("key,value").in("key", [
       "minimum_lead_days", "daily_cutoff_time", "pickup_grace_minutes",
-      "default_pickup_capacity", "pickup_operating_hours",
+      "pickup_operating_hours",
     ]),
     supabase.from("daily_inventory").select("pickup_date"),
-    supabase.from("orders").select("pickup_window_id,status,order_items(quantity)"),
+    supabase.from("orders").select("pickup_window_id,status"),
   ]);
 
   const error = datesResult.error ?? locationsResult.error ?? settingsResult.error
@@ -92,11 +88,10 @@ export async function getAdminPickup() {
     id: location.id, name: location.name, description: location.description ?? "", isActive: location.is_active,
   }));
   const inventoryDates = new Set((inventoryResult.data ?? []).map((row) => row.pickup_date));
-  const bookedByWindow = new Map<string, number>();
+  const bookedWindowIds = new Set<string>();
   for (const order of ordersResult.data ?? []) {
     if (!order.pickup_window_id || order.status === "CANCELLED" || order.status === "EXPIRED") continue;
-    const boxes = (order.order_items ?? []).reduce((sum, item) => sum + item.quantity, 0);
-    bookedByWindow.set(order.pickup_window_id, (bookedByWindow.get(order.pickup_window_id) ?? 0) + boxes);
+    bookedWindowIds.add(order.pickup_window_id);
   }
 
   const dates: AdminPickupDate[] = ((datesResult.data ?? []) as unknown as PickupDateRow[]).map((date) => {
@@ -104,14 +99,12 @@ export async function getAdminPickup() {
       id: window.id,
       startTime: window.start_time.slice(0, 5),
       endTime: window.end_time.slice(0, 5),
-      capacity: window.capacity ?? 20,
       locationIds: (window.pickup_window_locations ?? []).map((entry) => entry.pickup_location_id),
-      bookedBoxes: bookedByWindow.get(window.id) ?? 0,
     }));
     return {
       id: date.id, pickupDate: date.pickup_date, availabilityMode: date.availability_mode,
       isOpen: date.is_open, notes: date.notes ?? "", windows,
-      isLocked: inventoryDates.has(date.pickup_date) || windows.some((window) => window.bookedBoxes > 0),
+      isLocked: inventoryDates.has(date.pickup_date) || windows.some((window) => bookedWindowIds.has(window.id)),
     };
   });
 
@@ -121,7 +114,6 @@ export async function getAdminPickup() {
     minimumLeadDays: Number(settingValue(settingRows, "minimum_lead_days", 1)),
     dailyCutoffTime: String(settingValue(settingRows, "daily_cutoff_time", "17:00")),
     graceMinutes: Number(settingValue(settingRows, "pickup_grace_minutes", 15)),
-    defaultCapacity: Number(settingValue(settingRows, "default_pickup_capacity", 20)),
     operatingStart: hours.start ?? "07:00",
     operatingEnd: hours.end ?? "19:00",
   };
@@ -136,7 +128,7 @@ export async function savePickupSchedule(input: {
   availabilityMode: PickupMode;
   isOpen: boolean;
   notes: string;
-  windows: Array<{ startTime: string; endTime: string; capacity: number; locationIds: string[] }>;
+  windows: Array<{ startTime: string; endTime: string; locationIds: string[] }>;
 }) {
   const { error } = await createAdminSupabaseClient().rpc("upsert_pickup_schedule", {
     target_admin_id: input.adminId,
@@ -146,8 +138,7 @@ export async function savePickupSchedule(input: {
     open_value: input.isOpen,
     notes_value: input.notes,
     windows_value: input.windows.map((window) => ({
-      start_time: window.startTime, end_time: window.endTime,
-      capacity: window.capacity, location_ids: window.locationIds,
+      start_time: window.startTime, end_time: window.endTime, location_ids: window.locationIds,
     })),
   });
   if (error) throw new Error(error.message || "Pickup schedule could not be saved.", { cause: error });
@@ -166,7 +157,6 @@ export async function savePickupSettings(input: { adminId: string; settings: Adm
     minimum_lead_days_value: input.settings.minimumLeadDays,
     daily_cutoff_time_value: input.settings.dailyCutoffTime,
     grace_minutes_value: input.settings.graceMinutes,
-    default_capacity_value: input.settings.defaultCapacity,
     operating_start_value: input.settings.operatingStart,
     operating_end_value: input.settings.operatingEnd,
   });

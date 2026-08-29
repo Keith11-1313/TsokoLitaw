@@ -76,7 +76,6 @@ function getCheckoutErrorMessage(error: unknown) {
     : "";
 
   if (causeMessage.includes("pickup option is unavailable")) return "That pickup option is no longer available. Refresh and choose another schedule.";
-  if (causeMessage.includes("slot no longer has enough capacity")) return "That pickup slot does not have enough remaining capacity for all boxes in your cart. Reduce the total quantity or choose another schedule.";
   if (causeMessage.includes("Ready stock does not have enough pieces")
     || causeMessage.includes("Ready stock is no longer available")) return "Ready stock no longer has enough pieces for every selected box. Reduce the quantity or choose another schedule.";
   if (causeMessage.includes("Account is not eligible")) return "This account is not eligible to start a new checkout.";

@@ -38,7 +38,7 @@ export async function savePickupScheduleAction(
   const pickupDate = String(formData.get("pickupDate") ?? "");
   const mode = String(formData.get("availabilityMode") ?? "") as PickupMode;
   const notes = String(formData.get("notes") ?? "").trim();
-  let windows: Array<{ startTime: string; endTime: string; capacity: number; locationIds: string[] }>;
+  let windows: Array<{ startTime: string; endTime: string; locationIds: string[] }>;
   try { windows = JSON.parse(String(formData.get("windows") ?? "[]")) as typeof windows; }
   catch { return { status: "error", message: "The pickup windows are invalid." }; }
 
@@ -47,10 +47,9 @@ export async function savePickupScheduleAction(
     || !modes.has(mode) || notes.length > 500 || !Array.isArray(windows)
     || windows.length < 1 || windows.length > 12
     || windows.some((window) => !validTime(window.startTime) || !validTime(window.endTime)
-      || window.endTime <= window.startTime || !Number.isInteger(window.capacity)
-      || window.capacity < 1 || window.capacity > 1000 || !Array.isArray(window.locationIds)
+      || window.endTime <= window.startTime || !Array.isArray(window.locationIds)
       || window.locationIds.length < 1 || window.locationIds.some((id) => !isUuid(id)))) {
-    return { status: "error", message: "Check the date, mode, time windows, capacities, and locations." };
+    return { status: "error", message: "Check the date, mode, time windows, and locations." };
   }
   try {
     await guard(admin.id);
@@ -81,7 +80,6 @@ export async function savePickupSettingsAction(
     minimumLeadDays: Number(formData.get("minimumLeadDays")),
     dailyCutoffTime: String(formData.get("dailyCutoffTime") ?? ""),
     graceMinutes: Number(formData.get("graceMinutes")),
-    defaultCapacity: Number(formData.get("defaultCapacity")),
     operatingStart: String(formData.get("operatingStart") ?? ""),
     operatingEnd: String(formData.get("operatingEnd") ?? ""),
   };
@@ -89,10 +87,9 @@ export async function savePickupSettingsAction(
   if (!Number.isInteger(settings.minimumLeadDays) || settings.minimumLeadDays < 0 || settings.minimumLeadDays > 30
     || !validTime(settings.dailyCutoffTime) || !Number.isInteger(settings.graceMinutes)
     || settings.graceMinutes < 0 || settings.graceMinutes > 120
-    || !Number.isInteger(settings.defaultCapacity) || settings.defaultCapacity < 1 || settings.defaultCapacity > 1000
     || !validTime(settings.operatingStart) || !validTime(settings.operatingEnd)
     || settings.operatingEnd <= settings.operatingStart) {
-    return { status: "error", message: "Check the lead time, cutoff, capacity, grace period, and operating hours." };
+    return { status: "error", message: "Check the lead time, cutoff, grace period, and operating hours." };
   }
   try {
     await guard(admin.id);

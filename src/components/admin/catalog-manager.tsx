@@ -22,9 +22,9 @@ function ProductSettings({ product }: { product: AdminCatalogProduct }) {
     <input type="hidden" name="productId" value={product.id} />
     <h2 className="font-display text-2xl">Product pricing</h2>
     <p className="mt-1 text-sm text-muted-foreground">One per-piece price calculates every active box total. Checkout reloads this value from the server.</p>
-    <div className="mt-5 grid gap-5 sm:grid-cols-2">
+    <div className="mt-5">
       <FormField id="catalog-piece-price" label="Price per piece (PHP)" required inputProps={{ name: "pricePerPiece", type: "number", min: 0, max: 10000, step: "0.01", defaultValue: product.pricePerPiece }} />
-      <FormField id="catalog-product-description" label="Customer-facing product description" required as="textarea" className="sm:col-span-2" textareaProps={{ name: "description", minLength: 10, maxLength: 500, defaultValue: product.description }} />
+      <input type="hidden" name="description" value={product.description} />
     </div>
     <div className="mt-5 space-y-3"><ActionMessage state={state} /><PrimaryButton type="submit" disabled={pending}>{pending ? "Saving…" : "Save product settings"}</PrimaryButton></div>
   </form>;
