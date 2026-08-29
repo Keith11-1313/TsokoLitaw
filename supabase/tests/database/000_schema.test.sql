@@ -25,7 +25,7 @@ select set_config(
   true
 );
 
-select plan(52);
+select plan(53);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -33,6 +33,7 @@ select has_table('public', 'orders', 'orders table exists');
 select has_table('public', 'refunds', 'refunds table exists');
 select has_table('public', 'inventory_adjustments', 'inventory adjustments table exists');
 select has_table('public', 'mutation_rate_limit_buckets', 'distributed mutation rate-limit table exists');
+select hasnt_table('public', 'promotions', 'obsolete promotions table is absent');
 select has_column('public', 'profiles', 'is_active', 'profiles track whether account access is active');
 select has_column('public', 'profiles', 'deactivated_at', 'profiles record when access was deactivated');
 select has_column('public', 'orders', 'checkout_idempotency_key', 'orders store a customer checkout idempotency key');

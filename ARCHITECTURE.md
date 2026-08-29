@@ -30,7 +30,7 @@ Next.js App Router
 └── Local brand and product assets
 ```
 
-The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Phase 11 Admin Orders reads the same persisted snapshots customers see and advances paid fulfillment through an atomic, audited database function. Completed-order owners submit one review from an order-detail modal; submissions remain non-public until audited moderation. Admin Journal & Reviews persists draft/published posts and featured reviews, and the public Journal reads only published posts plus visible featured reviews. Admin Catalog uses service-only audited mutations and public square-media storage. Admin Inventory publishes date-specific prepared-piece totals and records unusable pieces through audited server mutations; checkout consumes the shared piece balance atomically across all box sizes. Admin Pickup persists schedules and customer-safe operating rules through active-Admin-checked audited functions. Email and the remaining Admin CRUD areas remain unconnected.
+The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Phase 11 Admin Orders reads the same persisted snapshots customers see and advances paid fulfillment through an atomic, audited database function. Completed-order owners submit one review from an order-detail modal; submissions remain non-public until audited moderation. Admin Journal & Reviews persists draft/published posts and featured reviews, and the public Journal reads only published posts plus visible featured reviews. Admin Catalog uses service-only audited mutations and public square-media storage. Admin Inventory publishes date-specific prepared-piece totals and records unusable pieces through audited server mutations; checkout consumes the shared piece balance atomically across all box sizes. Admin Pickup persists schedules and customer-safe operating rules through active-Admin-checked audited functions. Email and the remaining Admin CRUD areas remain unconnected.
 
 Current customer/admin relationship:
 
@@ -87,7 +87,7 @@ Next.js server responsibilities:
 - session and authorization checks
 - request validation
 - server-authoritative pricing
-- promotion and loyalty calculation
+- loyalty calculation
 - stock reservation and release
 - order creation and snapshots
 - PayMongo checkout creation
@@ -96,7 +96,7 @@ Next.js server responsibilities:
 - terms acceptance recording
 - admin mutations
 
-Phase 9 uses a two-layer checkout boundary. Next.js accepts only catalog identifiers, coating allocations, add-on counts, and quantities; it reloads current database prices and evaluates active promotion configuration. It then calls the service-role-only `create_pending_order` PostgreSQL function with the trusted snapshot projection. That function first expires overdue unpaid orders, releases any corresponding ready-stock reservations, then atomically locks the customer and pickup window, validates bounded order quantities, reserves required ready stock, writes the order graph and Terms acceptance, and returns an existing order when the same customer idempotency key is retried. Browser clients receive no direct execute permission on either commerce writer.
+Phase 9 uses a two-layer checkout boundary. Next.js accepts only catalog identifiers, coating allocations, add-on counts, and quantities; it reloads current database prices before calling the service-role-only `create_pending_order` PostgreSQL function with the trusted snapshot projection. That function first expires overdue unpaid orders, releases any corresponding ready-stock reservations, then atomically locks the customer and pickup window, validates bounded order quantities, reserves required ready stock, writes the order graph and Terms acceptance, and returns an existing order when the same customer idempotency key is retried. Browser clients receive no direct execute permission on either commerce writer.
 
 Phase 10 creates one PayMongo checkout for the order's unique payment row and stores its immutable provider ID and URL. A return to `/payment/success` reloads the owned order and may display `PAID` only after the signed webhook has completed the atomic database transition. The protected payment-expiration job lists overdue provider-bound checkouts, expires each session through PayMongo first, and only then invokes the database transition that marks the payment `FAILED`, marks the order `EXPIRED`, and releases ready stock. Provider failures remain pending and reserved for retry.
 
@@ -149,7 +149,7 @@ It supports add, remove, bounded numeric quantity editing, per-line checkout sel
 Future checkout flow:
 
 1. Send configuration identifiers and quantities to the server.
-2. Reload active product, coating, add-on, promotion, and stock records.
+2. Reload active product, coating, add-on, and stock records.
 3. Validate mixed-box counts and availability.
 4. Recalculate all prices.
 5. Create immutable order snapshots.
@@ -336,7 +336,7 @@ React `cache()` may continue to deduplicate authentication/profile work inside o
 | --- | --- | --- |
 | Active public catalog, coating descriptions, Journal posts, legal content | Yes | Use explicit Next.js cache lifetimes and tags. Future Admin publication invalidates the matching tag. |
 | Published pickup date/time/location definitions | Short-lived only | Tag and revalidate after Admin publication. A stale definition may be displayed briefly, but checkout must revalidate it live. |
-| Ready stock, current prices used for checkout, and promotions used for totals | No authoritative cache | Browser display may be a preview. Every order mutation reloads and validates current database state inside the existing transactional boundary. |
+| Ready stock and current prices used for checkout | No authoritative cache | Browser display may be a preview. Every order mutation reloads and validates current database state inside the existing transactional boundary. |
 | Profile, My Orders, order detail, payment, refund, account-deletion state, and Admin data | No shared cache | These are user-specific or sensitive. Use RLS-scoped live reads and request-only memoization where useful. |
 
 The current implementation uses tagged `unstable_cache` entries for deliberately shared read-mostly catalog previews and published pickup definitions because Cache Components are not enabled. Public catalog previews revalidate after five minutes and published pickup definitions after 30 seconds. Future Admin publication must invalidate the matching tag. If the application later enables Cache Components, these entries may move to `use cache`, `cacheLife`, and `cacheTag`. Cache keys and values must not contain secrets, payment data, refund destinations, or unnecessary PII. Checkout always reloads live catalog, price, inventory, and schedule state; webhook paths never trust cached payment or order state.

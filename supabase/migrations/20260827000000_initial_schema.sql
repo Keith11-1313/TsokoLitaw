@@ -382,19 +382,6 @@ on conflict (id) do update set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
-create table public.promotions (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  promotion_type text not null,
-  is_active boolean not null default false,
-  starts_at timestamptz,
-  ends_at timestamptz,
-  config jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  check (ends_at is null or starts_at is null or ends_at > starts_at)
-);
-
 create table public.loyalty_accounts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique references public.profiles(id) on delete cascade,
@@ -481,7 +468,6 @@ create index mutation_rate_limit_updated_idx
 create index notification_deliveries_order_idx on public.notification_deliveries (order_id, event_type);
 create index reviews_public_idx on public.reviews (is_visible, is_featured, created_at desc);
 create index journal_posts_public_idx on public.journal_posts (status, published_at desc);
-create index promotions_active_idx on public.promotions (is_active, starts_at, ends_at);
 create index loyalty_rewards_user_idx on public.loyalty_rewards (user_id, status);
 create index admin_audit_logs_admin_idx on public.admin_audit_logs (admin_id, created_at desc);
 
@@ -3090,7 +3076,7 @@ begin
     'profiles', 'products', 'product_variants', 'coatings', 'addons',
     'pickup_locations', 'pickup_dates', 'pickup_windows', 'daily_inventory',
     'payments', 'refunds', 'notification_deliveries', 'reviews', 'journal_posts',
-    'promotions', 'loyalty_accounts'
+    'loyalty_accounts'
   ]
   loop
     execute format(
@@ -3124,7 +3110,6 @@ alter table public.payment_webhook_events enable row level security;
 alter table public.notification_deliveries enable row level security;
 alter table public.reviews enable row level security;
 alter table public.journal_posts enable row level security;
-alter table public.promotions enable row level security;
 alter table public.loyalty_accounts enable row level security;
 alter table public.loyalty_rewards enable row level security;
 alter table public.terms_versions enable row level security;
@@ -3209,7 +3194,7 @@ grant execute on function public.update_pickup_settings(
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
   public.pickup_locations, public.pickup_dates, public.pickup_windows,
-  public.pickup_window_locations, public.journal_posts, public.promotions,
+  public.pickup_window_locations, public.journal_posts,
   public.terms_versions to anon, authenticated;
 grant select (id, display_name_snapshot, rating, comment, is_featured, created_at)
   on public.reviews to anon;
@@ -3247,9 +3232,6 @@ create policy pickup_window_locations_read_open_or_admin
 create policy journal_posts_read_published_or_admin
   on public.journal_posts for select to anon, authenticated
   using (status = 'published' or public.is_admin());
-create policy promotions_read_active_or_admin
-  on public.promotions for select to anon, authenticated
-  using (is_active or public.is_admin());
 create policy terms_versions_read_current_or_admin
   on public.terms_versions for select to anon, authenticated
   using (is_current or public.is_admin());

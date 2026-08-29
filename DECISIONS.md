@@ -32,7 +32,7 @@ Allowed now:
 - browser-local cart state as a non-authoritative convenience
 - responsive and keyboard-accessible interaction
 - disabled or temporary mock admin controls
-- server-side cart validation, pricing, promotion evaluation, inventory reservation, Terms acceptance, immutable order snapshots, and idempotent pending-order creation
+- server-side cart validation, pricing, inventory reservation, Terms acceptance, immutable order snapshots, and idempotent pending-order creation
 - PayMongo v2 test checkout sessions, signed/idempotent webhooks, and test payment/refund transitions
 - real Admin order reads and audited, forward-only paid fulfillment transitions
 - one persisted review per completed order, initially non-public until Admin moderation
@@ -252,7 +252,7 @@ The cart persists in browser local storage. A successful Add to cart action open
 
 ### Future server rule
 
-Submit identifiers, counts, and quantities—not trusted prices. The server validates the session, product availability, stock, promotions, terms acceptance, and final total before creating an order.
+Submit identifiers, counts, and quantities—not trusted prices. The server validates the session, product availability, stock, terms acceptance, and final total before creating an order.
 
 ## 11. Campus Pickup
 
@@ -386,7 +386,6 @@ Every admin section must correspond to a real customer or operational need.
 | Catalog | Manage boxes, coatings, add-ons, images, and prices | Feeds Our Creations and checkout pricing |
 | Inventory | Prevent overselling | Controls available and sold-out states |
 | Pickup | Publish serviceable dates, times, and locations | Feeds Checkout pickup controls |
-| Promotions | Define eligibility and benefits | Changes future cart/checkout totals |
 | Customers | Support accounts and loyalty | Uses email-first account records |
 | Journal & Reviews | Publish updates and moderate order-linked reviews | Feeds public Journal posts and Community highlights |
 | Settings | Centralize cross-feature operational defaults | Affects contact, pickup, email, and loyalty |

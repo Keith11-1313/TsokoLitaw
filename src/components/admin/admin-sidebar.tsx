@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgePercent, CalendarDays, Cookie, Home, LayoutDashboard, Menu, Newspaper, Package, PanelLeftClose, PanelLeftOpen, Settings, ShoppingBag, Users, X, type LucideIcon } from "lucide-react";
+import { CalendarDays, Cookie, Home, LayoutDashboard, Menu, Newspaper, Package, PanelLeftClose, PanelLeftOpen, Settings, ShoppingBag, Users, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BrandLockup } from "@/components/ui/brand-lockup";
@@ -9,7 +9,7 @@ import { LogoutButton } from "@/components/auth/logout-button";
 
 interface AdminNavigationItem { href: string; label: string; icon: LucideIcon }
 const adminNavigation: AdminNavigationItem[] = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard }, { href: "/admin/orders", label: "Orders", icon: ShoppingBag }, { href: "/admin/products", label: "Catalog", icon: Cookie }, { href: "/admin/inventory", label: "Inventory", icon: Package }, { href: "/admin/pickup", label: "Pickup", icon: CalendarDays }, { href: "/admin/promotions", label: "Promotions", icon: BadgePercent }, { href: "/admin/customers", label: "Customers", icon: Users }, { href: "/admin/journal", label: "Journal & Reviews", icon: Newspaper }, { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard }, { href: "/admin/orders", label: "Orders", icon: ShoppingBag }, { href: "/admin/products", label: "Catalog", icon: Cookie }, { href: "/admin/inventory", label: "Inventory", icon: Package }, { href: "/admin/pickup", label: "Pickup", icon: CalendarDays }, { href: "/admin/customers", label: "Customers", icon: Users }, { href: "/admin/journal", label: "Journal & Reviews", icon: Newspaper }, { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function AdminSidebar({ activePath, adminName = "Administrator", adminEmail = "Admin email to be configured", className }: { activePath?: string; adminName?: string; adminEmail?: string; className?: string }) {

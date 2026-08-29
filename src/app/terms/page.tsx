@@ -14,7 +14,7 @@ const sections: readonly LegalSection[] = [
   {
     heading: "Products, orders, and pricing",
     paragraphs: [
-      "Product descriptions, coating images, prices, availability, pickup schedules, and promotions may change. The final payable amount and availability must be confirmed by the server during checkout before an order is created.",
+      "Product descriptions, coating images, prices, availability, and pickup schedules may change. The final payable amount and availability must be confirmed by the server during checkout before an order is created.",
       "Customers must provide accurate account, contact, order, and pickup information. TsokoLitaw may reject or cancel an order affected by unavailable stock, an invalid payment, an obvious pricing error, suspected misuse, or a campus closure, subject to the applicable refund rules.",
     ],
   },

@@ -122,7 +122,7 @@ TsokoLitaw Terms & Conditions — educational project terms
 
 TsokoLitaw is an academic e-commerce project for demonstration, testing, and evaluation within the UCC Congressional Campus community. Features marked as previews, mock data, test transactions, or unavailable do not create a binding order. An explicitly accepted live checkout concerns real edible products for campus pickup only.
 
-Product descriptions, coatings, prices, availability, pickup schedules, and promotions may change. The server confirms the final payable amount and availability during checkout. Customers must provide accurate account, contact, order, and pickup information.
+Product descriptions, coatings, prices, availability, and pickup schedules may change. The server confirms the final payable amount and availability during checkout. Customers must provide accurate account, contact, order, and pickup information.
 
 A live order is confirmed only after the payment provider and TsokoLitaw verify payment. A redirect, screenshot, email, or browser message alone is not proof of payment. Sandbox transactions have no cash value.
 

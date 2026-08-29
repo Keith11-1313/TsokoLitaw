@@ -99,7 +99,7 @@ Phase 11 customer-order work started by product-owner request:
 Performance and concurrency hardening implemented for the current storefront:
 
 - shared public catalog previews use a five-minute tagged cache, while published pickup definitions use a 30-second tagged cache
-- authoritative checkout continues to reload live prices, promotions, inventory, and pickup state
+- authoritative checkout continues to reload live prices, inventory, and pickup state
 - checkout, resume-payment, cancellation, and manual-refund mutations use atomic database-backed per-user and per-IP limits shared across Vercel instances
 - structured server timing reports slow commerce/order reads without logging contact details, cookies, tokens, or provider secrets
 - Vercel Fluid compute is enabled and the current linked Singapore development database is paired with the `sin1` function region
@@ -107,7 +107,7 @@ Performance and concurrency hardening implemented for the current storefront:
 
 Not yet implemented or externally configured:
 
-- initial Admin promotion and the remaining live authorization checks
+- remaining live authorization checks
 - hosted PayMongo schema deployment, webhook registration, and customer redirection
 - frequent production scheduling for payment expiry and hosted refund smoke testing
 - email or real CRUD other than the approved account-deletion lifecycle
@@ -179,7 +179,6 @@ The main navigation contains Home, Our Creations, and Journal. My Orders is acco
 /admin/products
 /admin/inventory
 /admin/pickup
-/admin/promotions
 /admin/customers
 /admin/journal
 /admin/settings

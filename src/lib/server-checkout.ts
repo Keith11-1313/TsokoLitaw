@@ -3,7 +3,6 @@ import "server-only";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getCommerceCatalog } from "@/lib/server-commerce";
 import { priceCheckoutCart } from "@/lib/commerce";
-import { calculatePromotionDiscount, isPromotionActive, type PromotionRule } from "@/lib/promotion";
 import type { CheckoutCartInput } from "@/types/commerce";
 
 export interface CreatePendingOrderInput {
@@ -34,38 +33,19 @@ export async function createPendingOrder(
   const pricedCart = priceCheckoutCart(input.items, catalog);
   const supabase = createAdminSupabaseClient();
   const now = new Date().toISOString();
-  const [termsResult, promotionsResult] = await Promise.all([
-    supabase
-      .from("terms_versions")
-      .select("version")
-      .eq("is_current", true)
-      .lte("effective_at", now)
-      .maybeSingle(),
-    supabase
-      .from("promotions")
-      .select("promotion_type, config, starts_at, ends_at")
-      .eq("is_active", true),
-  ]);
+  const termsResult = await supabase
+    .from("terms_versions")
+    .select("version")
+    .eq("is_current", true)
+    .lte("effective_at", now)
+    .maybeSingle();
 
   if (termsResult.error || !termsResult.data) {
     throw new Error("The current Terms & Conditions version could not be loaded.", {
       cause: termsResult.error,
     });
   }
-  if (promotionsResult.error) {
-    throw new Error("Active promotions could not be loaded.", {
-      cause: promotionsResult.error,
-    });
-  }
-
-  const discount = calculatePromotionDiscount(
-    pricedCart.subtotal,
-    ((promotionsResult.data ?? []) as PromotionRule[]).filter((promotion) => (
-      isPromotionActive(promotion, now)
-    )),
-  );
-  const normalizedDiscount = Math.round(discount * 100) / 100;
-  const total = Math.round((pricedCart.subtotal - normalizedDiscount) * 100) / 100;
+  const total = pricedCart.subtotal;
   const pricedLines = pricedCart.lines.map((line) => ({
     product_id: line.productId,
     product_name: line.productName,
@@ -102,7 +82,7 @@ export async function createPendingOrder(
     customer_notes_value: input.customerNotes,
     priced_lines: pricedLines,
     subtotal_value: pricedCart.subtotal,
-    discount_value: normalizedDiscount,
+    discount_value: 0,
     total_value: total,
     terms_version_value: termsResult.data.version,
   });

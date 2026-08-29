@@ -276,6 +276,8 @@ created_at timestamptz
 updated_at timestamptz
 ```
 
+`discount_total` remains as a zero-valued historical accounting field for order and payment compatibility. TsokoLitaw does not expose an active Promotions feature.
+
 Order statuses:
 
 ```text
@@ -510,21 +512,7 @@ Featured reviews remain in `reviews`; do not duplicate them as Journal posts.
 
 `upsert_journal_post` is executable only by trusted server code. It verifies an active Admin, validates content/type/icon/date values, preserves stable slugs during edits, controls publication timestamps, and records `journal.created` or `journal.updated` in `admin_audit_logs`. Optional cover images are stored in the public-read `journal-media` bucket with a 3 MB limit and an image-only MIME allowlist.
 
-## 13. Promotions and Loyalty
-
-### `promotions`
-
-```text
-id uuid primary key
-name text
-type text
-is_active boolean
-starts_at timestamptz nullable
-ends_at timestamptz nullable
-config jsonb
-created_at timestamptz
-updated_at timestamptz
-```
+## 13. Loyalty
 
 ### `loyalty_accounts`
 
@@ -605,12 +593,12 @@ Customers may:
 - read/update their own profile
 - read their own orders and payments
 - submit one eligible review for their own completed order
-- read public catalog, pickup, promotion, Journal, and visible review data
+- read public catalog, pickup, Journal, and visible review data
 
 Customers may not:
 
 - access another customer’s data
-- set prices or discounts
+- set server-authoritative prices or totals
 - change stock or payment state
 - perform admin mutations
 - feature or hide reviews
@@ -644,7 +632,6 @@ Seed only through migrations or controlled scripts:
 - seven coatings
 - extra sea salt cream
 - initial operational settings
-- launch promotion when approved
 - loyalty threshold
 
 Do not seed production secrets or pretend mock customer/order records are real data.

@@ -4,7 +4,7 @@
 
 TsokoLitaw is a mobile-first B2C storefront for a student-operated Filipino dessert business. It sells chocolate-filled Litaw in configurable boxes for campus pickup.
 
-The product must eventually support browsing, customization, cart, checkout, online payment, order tracking, completed-order-linked reviews, promotions, loyalty, and administration.
+The product must eventually support browsing, customization, cart, checkout, online payment, order tracking, completed-order-linked reviews, loyalty, and administration.
 
 ## Decision Governance
 
@@ -34,7 +34,7 @@ Workflow changes must be reflected together in:
 - one reviewed production bootstrap schema, RLS policies, pgTAP tests, controlled seed data, and Supabase client helpers
 - the approved account-deletion lifecycle: authenticated scheduling/cancellation plus a server-only scheduled processor that rechecks eligibility and permanently deactivates due customer profiles while retaining their Auth identities and relational data
 - active catalog and published pickup availability are loaded from Supabase
-- server-authoritative pricing, promotion evaluation, inventory reservation/release, immutable order snapshots, Terms acceptance, and duplicate-submit protection are implemented and validated against hosted development
+- server-authoritative pricing, inventory reservation/release, immutable order snapshots, Terms acceptance, and duplicate-submit protection are implemented and validated against hosted development
 - active Admin identities may place their own customer-storefront orders, and all new orders use one shared kiosk-style number such as `TL-0001`
 - PayMongo v2 Hosted Checkout test sessions, signed webhooks, provider references, and test payment/refund transitions are the active integration scope
 - Admin Orders reads real order snapshots and advances paid fulfillment through validated, audited server-side transitions
@@ -203,7 +203,7 @@ Current frontend cart supports:
 - browser-local persistence
 - checkout navigation
 
-The browser cart is a UI convenience only. Builder and cart quantities use provisional safety limits until date-specific stock guidance is exposed in the customer UI. Checkout remains authoritative: it must reject manipulated prices, discounts, quantities, stock, pickup eligibility, and payment values using the selected pickup date and each variant's piece count.
+The browser cart is a UI convenience only. Builder and cart quantities use provisional safety limits until date-specific stock guidance is exposed in the customer UI. Checkout remains authoritative: it must reject manipulated prices, quantities, stock, pickup eligibility, and payment values using the selected pickup date and each variant's piece count.
 
 ## 9. Checkout and Pickup
 
@@ -247,7 +247,7 @@ Admin Pickup owns persisted creation and publication of dates, time windows, loc
 
 Admin changes affect future checkout availability and must not rewrite the pickup snapshot of an existing paid order.
 
-Before payment show order summary, discounts, total, pickup details, allergen notice, and cancellation/no-show notice.
+Before payment show the order summary, total, pickup details, allergen notice, and cancellation/no-show notice.
 
 ## 10. Orders and Reviews
 
@@ -349,13 +349,7 @@ Inventory supports:
 
 The published prepared total is the maximum number of pieces checkout may allocate for that product and pickup date. For example, publishing 50 permits no more than 50 pieces across every 4-, 6-, and 8-piece box combination. Each date has an independent balance. Once pieces are committed to orders or removed as waste, Admin may not reduce the total below that already-accounted quantity; a new pickup date starts a new limit. Inventory does not expose a separate online-availability checkbox: an open published pickup date with sufficient remaining pieces is available, and a closed date or exhausted balance is unavailable.
 
-## 14. Promotions and Loyalty
-
-Initial promotion idea:
-
-- buy two boxes and receive two extra pieces
-
-Promotion rules must be configurable and validated server-side.
+## 14. Loyalty
 
 Initial loyalty rule:
 
@@ -372,12 +366,11 @@ Admin pages:
 - Products
 - Inventory
 - Pickup
-- Promotions
 - Customers
 - Journal & Reviews
 - Settings
 
-Admin may eventually manage boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, promotions, loyalty, orders, reviews, Journal posts, and operational settings.
+Admin may eventually manage boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, loyalty, orders, reviews, Journal posts, and operational settings.
 
 The Admin Catalog coating form collects name, description, a validated 1:1 image, allergen information, availability, and the coating's additional-type price. Publication uses authenticated server-side persistence, controlled public media storage, cache invalidation, and Admin audit logging.
 
@@ -417,7 +410,7 @@ When backend work begins:
 - verify admin authorization server-side
 - prevent cross-customer order access
 - validate every mutation and transition
-- calculate prices, promotions, and stock server-side
+- calculate prices and stock server-side
 - verify PayMongo signatures and event uniqueness
 - avoid duplicate checkout submissions
 - never log or expose secrets

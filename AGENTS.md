@@ -32,7 +32,7 @@ Allowed:
 - browser, server, and privileged Supabase client helpers
 - Google OAuth and authenticated profile access through Supabase
 - server-side guards for checkout, account/order, review, and Admin routes
-- runtime reads for active catalog, pickup availability, promotions, and inventory
+- runtime reads for active catalog, pickup availability, and inventory
 - server-only commerce validation, pricing, inventory reservation/release, Terms acceptance, and pending-order creation
 - PayMongo test-mode API helpers, hosted checkout sessions, signed webhooks, and payment/refund persistence
 - authenticated Admin reads and server-validated order fulfillment mutations
@@ -146,7 +146,7 @@ When backend work is explicitly approved:
 - Supabase RLS is required.
 - Never expose service-role or PayMongo secret keys.
 - Admin authorization must be checked server-side.
-- Recalculate prices and promotions server-side.
+- Recalculate prices server-side.
 - Validate stock with atomic/transaction-safe operations.
 - Preserve historical order snapshots.
 - Verify PayMongo webhooks and process them idempotently.

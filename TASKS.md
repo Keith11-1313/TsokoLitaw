@@ -86,7 +86,6 @@ Phase 11 Orders, Reviews, Journal, and Admin CRUD is active. Phase 10 PayMongo T
 - [x] Products
 - [x] Inventory
 - [x] Pickup
-- [x] Promotions
 - [x] Customers
 - [x] Review Management
 - [x] Journal Management
@@ -179,7 +178,6 @@ Do not begin without explicit approval.
 - [x] Load products, variants, coatings, add-ons, and published pickup availability from database
 - [x] Validate mixed-box allocations server-side
 - [x] Recalculate PHP prices server-side
-- [x] Implement configurable promotions
 - [x] Implement daily inventory
 - [x] Reserve and release stock atomically
 - [x] Create order and item snapshots
@@ -232,7 +230,7 @@ Do not begin without explicit approval.
 - [x] Clarify selected-date Inventory UI, shared piece limits, accounted-piece lower bounds, and removal of redundant online-availability/cash-sale controls
 - [x] Connect Admin Pickup CRUD so Admin can create, publish, close, and edit dates, modes, windows, locations, lead time, cutoff, grace period, and operating hours without SQL
 - [x] Make newly published Ready Stock and Hybrid dates appear automatically in Admin Inventory; Made to order dates must not request prepared stock
-- [ ] Implement promotion, customer, and settings administration
+- [ ] Implement customer and settings administration
 - [ ] Replace provisional builder/cart quantity caps with remaining date-specific piece-stock guidance; retain transactional checkout enforcement
 - [x] Add auditability for fulfillment, Catalog mutations, review moderation, and Journal publication actions
 
