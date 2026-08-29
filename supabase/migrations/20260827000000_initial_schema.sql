@@ -2129,6 +2129,362 @@ begin
 end;
 $$;
 
+create or replace function public.get_public_pickup_settings()
+returns table (
+  minimum_lead_days integer,
+  daily_cutoff_time time,
+  pickup_grace_minutes integer,
+  operating_start time,
+  operating_end time
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    coalesce((select (value #>> '{}')::integer from public.business_settings where key = 'minimum_lead_days'), 1),
+    coalesce((select (value #>> '{}')::time from public.business_settings where key = 'daily_cutoff_time'), '17:00'::time),
+    coalesce((select (value #>> '{}')::integer from public.business_settings where key = 'pickup_grace_minutes'), 15),
+    coalesce((select (value ->> 'start')::time from public.business_settings where key = 'pickup_operating_hours'), '07:00'::time),
+    coalesce((select (value ->> 'end')::time from public.business_settings where key = 'pickup_operating_hours'), '19:00'::time);
+$$;
+
+create or replace function public.get_public_stocked_pickup_dates()
+returns table (pickup_date date)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select distinct daily_inventory.pickup_date
+  from public.daily_inventory
+  join public.pickup_dates on pickup_dates.pickup_date = daily_inventory.pickup_date
+  where pickup_dates.is_open
+    and pickup_dates.availability_mode in ('READY_STOCK', 'HYBRID')
+    and daily_inventory.is_available
+    and daily_inventory.stock_total - daily_inventory.stock_reserved - daily_inventory.stock_sold > 0;
+$$;
+
+create or replace function public.upsert_pickup_schedule(
+  target_admin_id uuid,
+  target_pickup_date_id uuid,
+  pickup_date_value date,
+  availability_mode_value public.pickup_availability_mode,
+  open_value boolean,
+  notes_value text,
+  windows_value jsonb
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_date_id uuid := coalesce(target_pickup_date_id, gen_random_uuid());
+  target_date public.pickup_dates%rowtype;
+  window_value jsonb;
+  saved_window_id uuid;
+  window_start time;
+  window_end time;
+  window_capacity integer;
+  location_ids uuid[];
+  window_position integer := 0;
+  operating_start time;
+  operating_end time;
+  audit_action text;
+begin
+  if not exists (
+    select 1 from public.profiles
+    where id = target_admin_id and role = 'admin' and is_active
+  ) then
+    raise exception 'Active administrator access is required';
+  end if;
+  if pickup_date_value is null
+    or pickup_date_value < (current_timestamp at time zone 'Asia/Manila')::date
+  then
+    raise exception 'Pickup date must be today or later';
+  end if;
+  if notes_value is not null and length(trim(notes_value)) > 500 then
+    raise exception 'Pickup note cannot exceed 500 characters';
+  end if;
+  if jsonb_typeof(windows_value) <> 'array'
+    or jsonb_array_length(windows_value) < 1
+    or jsonb_array_length(windows_value) > 12
+  then
+    raise exception 'Pickup schedule requires between 1 and 12 windows';
+  end if;
+
+  select
+    coalesce((select (value ->> 'start')::time from public.business_settings where key = 'pickup_operating_hours'), '07:00'::time),
+    coalesce((select (value ->> 'end')::time from public.business_settings where key = 'pickup_operating_hours'), '19:00'::time)
+  into operating_start, operating_end;
+
+  if target_pickup_date_id is null then
+    insert into public.pickup_dates (
+      id, pickup_date, availability_mode, is_open, notes
+    ) values (
+      saved_date_id, pickup_date_value, availability_mode_value,
+      coalesce(open_value, false), nullif(trim(notes_value), '')
+    );
+    audit_action := 'pickup.created';
+  else
+    select * into target_date
+    from public.pickup_dates
+    where id = target_pickup_date_id
+    for update;
+
+    if target_date.id is null then
+      raise exception 'Pickup date was not found';
+    end if;
+    if exists (
+      select 1 from public.daily_inventory
+      where pickup_date = target_date.pickup_date
+    ) or exists (
+      select 1
+      from public.orders
+      join public.pickup_windows on pickup_windows.id = orders.pickup_window_id
+      where pickup_windows.pickup_date_id = target_date.id
+        and orders.status not in ('CANCELLED', 'EXPIRED')
+    ) then
+      raise exception 'Pickup schedule is locked by orders or inventory';
+    end if;
+
+    update public.pickup_dates
+    set pickup_date = pickup_date_value,
+        availability_mode = availability_mode_value,
+        is_open = coalesce(open_value, false),
+        notes = nullif(trim(notes_value), ''),
+        updated_at = now()
+    where id = target_date.id;
+    delete from public.pickup_windows where pickup_date_id = target_date.id;
+    audit_action := 'pickup.updated';
+  end if;
+
+  for window_value in select value from jsonb_array_elements(windows_value)
+  loop
+    if jsonb_typeof(window_value) <> 'object'
+      or coalesce(window_value ->> 'start_time', '') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+      or coalesce(window_value ->> 'end_time', '') !~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+      or jsonb_typeof(window_value -> 'location_ids') <> 'array'
+      or jsonb_array_length(window_value -> 'location_ids') < 1
+    then
+      raise exception 'Pickup window is invalid';
+    end if;
+
+    window_start := (window_value ->> 'start_time')::time;
+    window_end := (window_value ->> 'end_time')::time;
+    window_capacity := (window_value ->> 'capacity')::integer;
+    select array_agg(distinct value::uuid)
+    into location_ids
+    from jsonb_array_elements_text(window_value -> 'location_ids');
+
+    if window_end <= window_start
+      or window_start < operating_start
+      or window_end > operating_end
+      or window_capacity < 1
+      or window_capacity > 1000
+    then
+      raise exception 'Pickup window falls outside the configured rules';
+    end if;
+    if cardinality(location_ids) <> jsonb_array_length(window_value -> 'location_ids')
+      or (select count(*) from public.pickup_locations where id = any(location_ids) and is_active) <> cardinality(location_ids)
+    then
+      raise exception 'Pickup window contains an unavailable location';
+    end if;
+
+    insert into public.pickup_windows (
+      pickup_date_id, start_time, end_time, is_open, capacity, sort_order
+    ) values (
+      saved_date_id, window_start, window_end, true, window_capacity, window_position
+    ) returning id into saved_window_id;
+    insert into public.pickup_window_locations (pickup_window_id, pickup_location_id, is_open)
+    select saved_window_id, unnest(location_ids), true;
+    window_position := window_position + 1;
+  end loop;
+
+  insert into public.admin_audit_logs (admin_id, action, entity_type, entity_id, metadata)
+  values (
+    target_admin_id, audit_action, 'pickup_date', saved_date_id::text,
+    jsonb_build_object(
+      'pickup_date', pickup_date_value,
+      'availability_mode', availability_mode_value,
+      'is_open', coalesce(open_value, false),
+      'window_count', jsonb_array_length(windows_value)
+    )
+  );
+  return saved_date_id;
+end;
+$$;
+
+create or replace function public.upsert_pickup_location(
+  target_admin_id uuid,
+  target_location_id uuid,
+  name_value text,
+  description_value text,
+  active_value boolean
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_location_id uuid := coalesce(target_location_id, gen_random_uuid());
+  target_location public.pickup_locations%rowtype;
+  normalized_name text := trim(name_value);
+  audit_action text;
+begin
+  if not exists (
+    select 1 from public.profiles
+    where id = target_admin_id and role = 'admin' and is_active
+  ) then
+    raise exception 'Active administrator access is required';
+  end if;
+  if length(normalized_name) < 2 or length(normalized_name) > 100 then
+    raise exception 'Pickup location name must contain between 2 and 100 characters';
+  end if;
+  if description_value is not null and length(trim(description_value)) > 300 then
+    raise exception 'Pickup location description cannot exceed 300 characters';
+  end if;
+
+  if target_location_id is null then
+    insert into public.pickup_locations (
+      id, name, description, is_active, sort_order
+    ) values (
+      saved_location_id, normalized_name, nullif(trim(description_value), ''),
+      coalesce(active_value, false),
+      coalesce((select max(sort_order) + 1 from public.pickup_locations), 1)
+    );
+    audit_action := 'pickup.location_created';
+  else
+    select * into target_location
+    from public.pickup_locations
+    where id = target_location_id
+    for update;
+    if target_location.id is null then raise exception 'Pickup location was not found'; end if;
+
+    update public.pickup_locations
+    set name = normalized_name,
+        description = nullif(trim(description_value), ''),
+        is_active = coalesce(active_value, false),
+        updated_at = now()
+    where id = target_location.id;
+    audit_action := 'pickup.location_updated';
+  end if;
+
+  insert into public.admin_audit_logs (admin_id, action, entity_type, entity_id, metadata)
+  values (
+    target_admin_id, audit_action, 'pickup_location', saved_location_id::text,
+    jsonb_build_object('name', normalized_name, 'is_active', coalesce(active_value, false))
+  );
+  return saved_location_id;
+end;
+$$;
+
+create or replace function public.set_pickup_date_open(
+  target_admin_id uuid,
+  target_pickup_date_id uuid,
+  open_value boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  target_date public.pickup_dates%rowtype;
+begin
+  if not exists (
+    select 1 from public.profiles
+    where id = target_admin_id and role = 'admin' and is_active
+  ) then
+    raise exception 'Active administrator access is required';
+  end if;
+  select * into target_date from public.pickup_dates
+  where id = target_pickup_date_id for update;
+  if target_date.id is null then raise exception 'Pickup date was not found'; end if;
+
+  update public.pickup_dates
+  set is_open = coalesce(open_value, false), updated_at = now()
+  where id = target_date.id;
+  insert into public.admin_audit_logs (admin_id, action, entity_type, entity_id, metadata)
+  values (
+    target_admin_id,
+    case when open_value then 'pickup.published' else 'pickup.closed' end,
+    'pickup_date', target_date.id::text,
+    jsonb_build_object('pickup_date', target_date.pickup_date, 'previous_open', target_date.is_open, 'is_open', open_value)
+  );
+  return coalesce(open_value, false);
+end;
+$$;
+
+create or replace function public.update_pickup_settings(
+  target_admin_id uuid,
+  minimum_lead_days_value integer,
+  daily_cutoff_time_value time,
+  grace_minutes_value integer,
+  default_capacity_value integer,
+  operating_start_value time,
+  operating_end_value time
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1 from public.profiles
+    where id = target_admin_id and role = 'admin' and is_active
+  ) then
+    raise exception 'Active administrator access is required';
+  end if;
+  if minimum_lead_days_value < 0 or minimum_lead_days_value > 30
+    or grace_minutes_value < 0 or grace_minutes_value > 120
+    or default_capacity_value < 1 or default_capacity_value > 1000
+    or daily_cutoff_time_value is null
+    or operating_start_value is null
+    or operating_end_value is null
+    or operating_end_value <= operating_start_value
+  then
+    raise exception 'Pickup rules are invalid';
+  end if;
+  if exists (
+    select 1
+    from public.pickup_windows
+    join public.pickup_dates on pickup_dates.id = pickup_windows.pickup_date_id
+    where pickup_dates.pickup_date >= (current_timestamp at time zone 'Asia/Manila')::date
+      and pickup_dates.is_open and pickup_windows.is_open
+      and (pickup_windows.start_time < operating_start_value or pickup_windows.end_time > operating_end_value)
+  ) then
+    raise exception 'Open pickup windows must fit inside the new operating hours';
+  end if;
+
+  insert into public.business_settings (key, value) values
+    ('minimum_lead_days', to_jsonb(minimum_lead_days_value)),
+    ('daily_cutoff_time', to_jsonb(daily_cutoff_time_value::text)),
+    ('pickup_grace_minutes', to_jsonb(grace_minutes_value)),
+    ('default_pickup_capacity', to_jsonb(default_capacity_value)),
+    ('pickup_operating_hours', jsonb_build_object('start', operating_start_value::text, 'end', operating_end_value::text))
+  on conflict (key) do update set value = excluded.value, updated_at = now();
+
+  insert into public.admin_audit_logs (admin_id, action, entity_type, entity_id, metadata)
+  values (
+    target_admin_id, 'pickup.settings_updated', 'business_settings', 'pickup',
+    jsonb_build_object(
+      'minimum_lead_days', minimum_lead_days_value,
+      'daily_cutoff_time', daily_cutoff_time_value,
+      'pickup_grace_minutes', grace_minutes_value,
+      'default_pickup_capacity', default_capacity_value,
+      'operating_start', operating_start_value,
+      'operating_end', operating_end_value
+    )
+  );
+  return true;
+end;
+$$;
+
 create or replace function public.transition_order_status(
   target_admin_id uuid,
   target_order_id uuid,
@@ -2247,6 +2603,10 @@ declare
   reserved_box_count integer;
   requested_box_count integer;
   payment_expiry_minutes integer := 15;
+  minimum_lead_days integer := 1;
+  daily_cutoff_time time := '17:00';
+  current_manila_date date := (current_timestamp at time zone 'Asia/Manila')::date;
+  current_manila_time time := (current_timestamp at time zone 'Asia/Manila')::time;
   generated_order_id uuid := gen_random_uuid();
   generated_order_number text;
   line jsonb;
@@ -2340,6 +2700,33 @@ begin
 
   if pickup_date_value is null then
     raise exception 'The selected pickup option is unavailable';
+  end if;
+
+  select coalesce((value #>> '{}')::integer, 1)
+  into minimum_lead_days
+  from public.business_settings
+  where key = 'minimum_lead_days';
+  minimum_lead_days := coalesce(minimum_lead_days, 1);
+
+  select coalesce((value #>> '{}')::time, '17:00'::time)
+  into daily_cutoff_time
+  from public.business_settings
+  where key = 'daily_cutoff_time';
+  daily_cutoff_time := coalesce(daily_cutoff_time, '17:00'::time);
+
+  if pickup_date_value = current_manila_date and pickup_end_time <= current_manila_time then
+    raise exception 'The selected pickup window has already ended';
+  end if;
+  if pickup_mode = 'MADE_TO_ORDER' and pickup_date_value = current_manila_date then
+    raise exception 'Made-to-order pickup requires an advance date';
+  end if;
+  if pickup_mode in ('MADE_TO_ORDER', 'HYBRID')
+    and pickup_date_value > current_manila_date
+    and pickup_date_value < current_manila_date
+      + minimum_lead_days
+      + (case when current_manila_time >= daily_cutoff_time then 1 else 0 end)
+  then
+    raise exception 'The selected pickup date is inside the lead-time or cutoff window';
   end if;
 
   select coalesce((value #>> '{}')::integer, 20)
@@ -2787,6 +3174,8 @@ alter default privileges for role postgres in schema public revoke all on functi
 grant usage on schema public to anon, authenticated;
 grant execute on function public.is_active_user() to anon, authenticated;
 grant execute on function public.is_admin() to anon, authenticated;
+grant execute on function public.get_public_pickup_settings() to anon, authenticated;
+grant execute on function public.get_public_stocked_pickup_dates() to anon, authenticated;
 grant execute on function public.promote_admin_by_email(text) to service_role;
 grant execute on function public.request_account_deletion() to authenticated;
 grant execute on function public.cancel_account_deletion() to authenticated;
@@ -2841,6 +3230,14 @@ grant execute on function public.upsert_daily_inventory(
 ) to service_role;
 grant execute on function public.record_inventory_consumption(
   uuid, uuid, integer, text, text
+) to service_role;
+grant execute on function public.upsert_pickup_schedule(
+  uuid, uuid, date, public.pickup_availability_mode, boolean, text, jsonb
+) to service_role;
+grant execute on function public.upsert_pickup_location(uuid, uuid, text, text, boolean) to service_role;
+grant execute on function public.set_pickup_date_open(uuid, uuid, boolean) to service_role;
+grant execute on function public.update_pickup_settings(
+  uuid, integer, time, integer, integer, time, time
 ) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
@@ -3016,6 +3413,22 @@ comment on function public.transition_order_status(
   uuid, uuid, public.order_status, public.order_status
 ) is
   'Service-role-only fulfillment transition with active-Admin validation, optimistic status matching, and audit logging.';
+comment on function public.get_public_pickup_settings() is
+  'Returns only customer-safe lead-time, cutoff, grace-period, and operating-hour settings used by Checkout.';
+comment on function public.get_public_stocked_pickup_dates() is
+  'Returns only published dates that currently have at least one sellable prepared piece; exact stock balances remain private.';
+comment on function public.upsert_pickup_schedule(
+  uuid, uuid, date, public.pickup_availability_mode, boolean, text, jsonb
+) is
+  'Service-role-only Pickup schedule writer with active-Admin validation, immutable booked/inventoried schedules, and audit logging.';
+comment on function public.upsert_pickup_location(uuid, uuid, text, text, boolean) is
+  'Service-role-only Pickup location create/update function with active-Admin validation and audit logging.';
+comment on function public.set_pickup_date_open(uuid, uuid, boolean) is
+  'Service-role-only publication toggle for an existing Pickup date with active-Admin validation and audit logging.';
+comment on function public.update_pickup_settings(
+  uuid, integer, time, integer, integer, time, time
+) is
+  'Service-role-only Pickup rules writer for lead time, cutoff, grace, capacity, and operating hours.';
 comment on function public.submit_order_review(uuid, uuid, integer, text) is
   'Service-role-only customer review writer that enforces active ownership, completed fulfillment, and one review per order.';
 comment on function public.moderate_order_review(uuid, uuid, boolean, boolean) is

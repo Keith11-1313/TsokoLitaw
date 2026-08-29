@@ -25,7 +25,7 @@ select set_config(
   true
 );
 
-select plan(42);
+select plan(52);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -182,6 +182,58 @@ select ok(
     'EXECUTE'
   ),
   'service role can invoke controlled inventory updates'
+);
+select ok(
+  has_function_privilege('anon', 'public.get_public_pickup_settings()', 'EXECUTE'),
+  'anonymous checkout can read only the customer-safe Pickup rules'
+);
+select ok(
+  has_function_privilege('anon', 'public.get_public_stocked_pickup_dates()', 'EXECUTE'),
+  'anonymous checkout can discover which Pickup dates have sellable pieces without reading inventory balances'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.upsert_pickup_schedule(uuid,uuid,date,public.pickup_availability_mode,boolean,text,jsonb)',
+    'EXECUTE'
+  ),
+  'authenticated clients cannot write Pickup schedules directly'
+);
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.upsert_pickup_schedule(uuid,uuid,date,public.pickup_availability_mode,boolean,text,jsonb)',
+    'EXECUTE'
+  ),
+  'service role can invoke controlled Pickup schedule writes'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.upsert_pickup_location(uuid,uuid,text,text,boolean)', 'EXECUTE'),
+  'authenticated clients cannot write Pickup locations directly'
+);
+select ok(
+  has_function_privilege('service_role', 'public.upsert_pickup_location(uuid,uuid,text,text,boolean)', 'EXECUTE'),
+  'service role can invoke controlled Pickup location writes'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.set_pickup_date_open(uuid,uuid,boolean)', 'EXECUTE'),
+  'authenticated clients cannot publish Pickup dates directly'
+);
+select ok(
+  has_function_privilege('service_role', 'public.set_pickup_date_open(uuid,uuid,boolean)', 'EXECUTE'),
+  'service role can invoke controlled Pickup publication changes'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated', 'public.update_pickup_settings(uuid,integer,time,integer,integer,time,time)', 'EXECUTE'
+  ),
+  'authenticated clients cannot update Pickup rules directly'
+);
+select ok(
+  has_function_privilege(
+    'service_role', 'public.update_pickup_settings(uuid,integer,time,integer,integer,time,time)', 'EXECUTE'
+  ),
+  'service role can invoke controlled Pickup rule updates'
 );
 
 select * from finish();
