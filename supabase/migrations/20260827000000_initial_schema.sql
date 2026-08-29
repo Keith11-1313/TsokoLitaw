@@ -120,7 +120,6 @@ create table public.pickup_windows (
   start_time time not null,
   end_time time not null,
   is_open boolean not null default true,
-  capacity integer check (capacity >= 0),
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -132,7 +131,6 @@ create table public.pickup_window_locations (
   pickup_window_id uuid not null references public.pickup_windows(id) on delete cascade,
   pickup_location_id uuid not null references public.pickup_locations(id) on delete cascade,
   is_open boolean not null default true,
-  capacity_override integer check (capacity_override >= 0),
   primary key (pickup_window_id, pickup_location_id)
 );
 
@@ -2187,7 +2185,6 @@ declare
   saved_window_id uuid;
   window_start time;
   window_end time;
-  window_capacity integer;
   location_ids uuid[];
   window_position integer := 0;
   operating_start time;
@@ -2274,7 +2271,6 @@ begin
 
     window_start := (window_value ->> 'start_time')::time;
     window_end := (window_value ->> 'end_time')::time;
-    window_capacity := (window_value ->> 'capacity')::integer;
     select array_agg(distinct value::uuid)
     into location_ids
     from jsonb_array_elements_text(window_value -> 'location_ids');
@@ -2282,8 +2278,6 @@ begin
     if window_end <= window_start
       or window_start < operating_start
       or window_end > operating_end
-      or window_capacity < 1
-      or window_capacity > 1000
     then
       raise exception 'Pickup window falls outside the configured rules';
     end if;
@@ -2294,9 +2288,9 @@ begin
     end if;
 
     insert into public.pickup_windows (
-      pickup_date_id, start_time, end_time, is_open, capacity, sort_order
+      pickup_date_id, start_time, end_time, is_open, sort_order
     ) values (
-      saved_date_id, window_start, window_end, true, window_capacity, window_position
+      saved_date_id, window_start, window_end, true, window_position
     ) returning id into saved_window_id;
     insert into public.pickup_window_locations (pickup_window_id, pickup_location_id, is_open)
     select saved_window_id, unnest(location_ids), true;
@@ -2424,7 +2418,6 @@ create or replace function public.update_pickup_settings(
   minimum_lead_days_value integer,
   daily_cutoff_time_value time,
   grace_minutes_value integer,
-  default_capacity_value integer,
   operating_start_value time,
   operating_end_value time
 )
@@ -2442,7 +2435,6 @@ begin
   end if;
   if minimum_lead_days_value < 0 or minimum_lead_days_value > 30
     or grace_minutes_value < 0 or grace_minutes_value > 120
-    or default_capacity_value < 1 or default_capacity_value > 1000
     or daily_cutoff_time_value is null
     or operating_start_value is null
     or operating_end_value is null
@@ -2465,7 +2457,6 @@ begin
     ('minimum_lead_days', to_jsonb(minimum_lead_days_value)),
     ('daily_cutoff_time', to_jsonb(daily_cutoff_time_value::text)),
     ('pickup_grace_minutes', to_jsonb(grace_minutes_value)),
-    ('default_pickup_capacity', to_jsonb(default_capacity_value)),
     ('pickup_operating_hours', jsonb_build_object('start', operating_start_value::text, 'end', operating_end_value::text))
   on conflict (key) do update set value = excluded.value, updated_at = now();
 
@@ -2476,7 +2467,6 @@ begin
       'minimum_lead_days', minimum_lead_days_value,
       'daily_cutoff_time', daily_cutoff_time_value,
       'pickup_grace_minutes', grace_minutes_value,
-      'default_pickup_capacity', default_capacity_value,
       'operating_start', operating_start_value,
       'operating_end', operating_end_value
     )
@@ -2597,10 +2587,6 @@ declare
   pickup_start_time time;
   pickup_end_time time;
   pickup_location_name text;
-  window_capacity integer;
-  location_capacity integer;
-  effective_capacity integer;
-  reserved_box_count integer;
   requested_box_count integer;
   payment_expiry_minutes integer := 15;
   minimum_lead_days integer := 1;
@@ -2671,17 +2657,13 @@ begin
     pickup_dates.availability_mode,
     pickup_windows.start_time,
     pickup_windows.end_time,
-    pickup_locations.name,
-    pickup_windows.capacity,
-    pickup_window_locations.capacity_override
+    pickup_locations.name
   into
     pickup_date_value,
     pickup_mode,
     pickup_start_time,
     pickup_end_time,
-    pickup_location_name,
-    window_capacity,
-    location_capacity
+    pickup_location_name
   from public.pickup_windows
   join public.pickup_dates
     on pickup_dates.id = pickup_windows.pickup_date_id
@@ -2729,29 +2711,14 @@ begin
     raise exception 'The selected pickup date is inside the lead-time or cutoff window';
   end if;
 
-  select coalesce((value #>> '{}')::integer, 20)
-  into effective_capacity
-  from public.business_settings
-  where key = 'default_pickup_capacity';
-  effective_capacity := coalesce(location_capacity, window_capacity, effective_capacity, 20);
-
-  select coalesce(sum(order_items.quantity), 0)
-  into reserved_box_count
-  from public.orders
-  join public.order_items on order_items.order_id = orders.id
-  where orders.pickup_window_id = selected_pickup_window_id
-    and orders.pickup_location_id = selected_pickup_location_id
-    and orders.status not in ('CANCELLED', 'EXPIRED');
-
   select coalesce(sum((entry ->> 'quantity')::integer), 0)
   into requested_box_count
   from jsonb_array_elements(priced_lines) entry;
 
   if requested_box_count < 1
     or requested_box_count > 100
-    or reserved_box_count + requested_box_count > effective_capacity
   then
-    raise exception 'The selected pickup slot no longer has enough capacity';
+    raise exception 'The order contains an invalid box quantity';
   end if;
 
   if pickup_mode = 'READY_STOCK'
@@ -3237,7 +3204,7 @@ grant execute on function public.upsert_pickup_schedule(
 grant execute on function public.upsert_pickup_location(uuid, uuid, text, text, boolean) to service_role;
 grant execute on function public.set_pickup_date_open(uuid, uuid, boolean) to service_role;
 grant execute on function public.update_pickup_settings(
-  uuid, integer, time, integer, integer, time, time
+  uuid, integer, time, integer, time, time
 ) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
@@ -3426,9 +3393,9 @@ comment on function public.upsert_pickup_location(uuid, uuid, text, text, boolea
 comment on function public.set_pickup_date_open(uuid, uuid, boolean) is
   'Service-role-only publication toggle for an existing Pickup date with active-Admin validation and audit logging.';
 comment on function public.update_pickup_settings(
-  uuid, integer, time, integer, integer, time, time
+  uuid, integer, time, integer, time, time
 ) is
-  'Service-role-only Pickup rules writer for lead time, cutoff, grace, capacity, and operating hours.';
+  'Service-role-only Pickup rules writer for lead time, cutoff, grace, and operating hours.';
 comment on function public.submit_order_review(uuid, uuid, integer, text) is
   'Service-role-only customer review writer that enforces active ownership, completed fulfillment, and one review per order.';
 comment on function public.moderate_order_review(uuid, uuid, boolean, boolean) is

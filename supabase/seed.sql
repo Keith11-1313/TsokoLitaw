@@ -104,7 +104,6 @@ values
   ('minimum_lead_days', '1'::jsonb),
   ('daily_cutoff_time', '"17:00"'::jsonb),
   ('pickup_slot_interval_minutes', '60'::jsonb),
-  ('default_pickup_capacity', '20'::jsonb),
   ('pickup_operating_days', '["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"]'::jsonb),
   ('pickup_operating_hours', '{"start":"07:00","end":"19:00"}'::jsonb),
   ('support_email', '"tsokolitaw@gmail.com"'::jsonb),

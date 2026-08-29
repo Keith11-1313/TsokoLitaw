@@ -63,7 +63,7 @@ select throws_ok(
   $$ select public.upsert_pickup_schedule(
     '9a000000-0000-4000-8000-000000000002', null, '2099-03-01',
     'READY_STOCK', true, null,
-    '[{"start_time":"08:00","end_time":"09:00","capacity":20,"location_ids":["14000000-0000-4000-8000-000000000001"]}]'
+    '[{"start_time":"08:00","end_time":"09:00","location_ids":["14000000-0000-4000-8000-000000000001"]}]'
   ) $$,
   'P0001',
   'Active administrator access is required',
@@ -74,7 +74,7 @@ select lives_ok(
   $$ select public.upsert_pickup_schedule(
     '9a000000-0000-4000-8000-000000000001', null, '2099-03-01',
     'READY_STOCK', true, 'school batch',
-    '[{"start_time":"08:00","end_time":"09:00","capacity":24,"location_ids":["14000000-0000-4000-8000-000000000001","14000000-0000-4000-8000-000000000002"]}]'
+    '[{"start_time":"08:00","end_time":"09:00","location_ids":["14000000-0000-4000-8000-000000000001","14000000-0000-4000-8000-000000000002"]}]'
   ) $$,
   'an active Admin can publish a pickup schedule'
 );
@@ -126,7 +126,7 @@ select is(
 
 select lives_ok(
   $$ select public.update_pickup_settings(
-    '9a000000-0000-4000-8000-000000000001', 2, '16:30', 20, 30, '07:30', '18:30'
+    '9a000000-0000-4000-8000-000000000001', 2, '16:30', 20, '07:30', '18:30'
   ) $$,
   'an active Admin can update pickup rules'
 );
@@ -159,7 +159,7 @@ select throws_ok(
     '9a000000-0000-4000-8000-000000000001',
     (select id from public.pickup_dates where pickup_date = '2099-03-01'),
     '2099-03-01', 'READY_STOCK', false, 'changed',
-    '[{"start_time":"10:00","end_time":"11:00","capacity":20,"location_ids":["14000000-0000-4000-8000-000000000001"]}]'
+    '[{"start_time":"10:00","end_time":"11:00","location_ids":["14000000-0000-4000-8000-000000000001"]}]'
   ) $$,
   'P0001',
   'Pickup schedule is locked by orders or inventory',

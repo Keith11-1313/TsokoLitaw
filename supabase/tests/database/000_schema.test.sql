@@ -225,13 +225,13 @@ select ok(
 );
 select ok(
   not has_function_privilege(
-    'authenticated', 'public.update_pickup_settings(uuid,integer,time,integer,integer,time,time)', 'EXECUTE'
+    'authenticated', 'public.update_pickup_settings(uuid,integer,time,integer,time,time)', 'EXECUTE'
   ),
   'authenticated clients cannot update Pickup rules directly'
 );
 select ok(
   has_function_privilege(
-    'service_role', 'public.update_pickup_settings(uuid,integer,time,integer,integer,time,time)', 'EXECUTE'
+    'service_role', 'public.update_pickup_settings(uuid,integer,time,integer,time,time)', 'EXECUTE'
   ),
   'service role can invoke controlled Pickup rule updates'
 );
