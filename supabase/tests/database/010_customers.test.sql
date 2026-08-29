@@ -18,7 +18,7 @@ select set_config(
    where pg_extension.extname = 'pgtap'),
   true
 );
-select plan(7);
+select plan(9);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -64,11 +64,31 @@ insert into public.orders (
   'customers-test', now(), now()
 );
 
+insert into public.orders (
+  id, order_number, user_id, status, payment_status, customer_name, customer_email,
+  pickup_date, pickup_window_id, pickup_location_id, pickup_window_snapshot,
+  pickup_location_snapshot, subtotal, total, terms_version, terms_accepted_at
+) values (
+  'ca400000-0000-4000-8000-000000000002', 'TL-9302',
+  'ca000000-0000-4000-8000-000000000002', 'CANCELLED', 'PAID',
+  'Summary Customer', 'customer-summary@example.test', '2099-05-01',
+  'ca300000-0000-4000-8000-000000000001',
+  'ca100000-0000-4000-8000-000000000001',
+  '10:00 AM–11:00 AM', 'Customer summary test location', 40, 40,
+  'customers-test', now()
+);
+
 update public.loyalty_accounts
 set completed_order_count = 1
 where user_id = 'ca000000-0000-4000-8000-000000000002';
 insert into public.loyalty_rewards (user_id, reward_type, threshold, source_order_id)
 values ('ca000000-0000-4000-8000-000000000002', 'FREE_4_PIECE', 7, 'ca400000-0000-4000-8000-000000000001');
+insert into public.loyalty_rewards (
+  user_id, reward_type, threshold, status, redeemed_at, source_order_id, redeemed_order_id
+) values (
+  'ca000000-0000-4000-8000-000000000002', 'FREE_4_PIECE', 7, 'redeemed', now(),
+  'ca400000-0000-4000-8000-000000000002', 'ca400000-0000-4000-8000-000000000002'
+);
 
 select lives_ok(
   $$ select * from public.get_admin_customer_summaries(
@@ -110,6 +130,20 @@ select is(
   )),
   1::bigint,
   'the summary includes available loyalty rewards'
+);
+select is(
+  (select loyalty_threshold from public.get_admin_customer_summaries(
+    'ca000000-0000-4000-8000-000000000001', 'summary', 100
+  )),
+  7,
+  'the summary includes the configured loyalty threshold'
+);
+select is(
+  (select redeemed_rewards from public.get_admin_customer_summaries(
+    'ca000000-0000-4000-8000-000000000001', 'summary', 100
+  )),
+  1::bigint,
+  'the summary includes redeemed loyalty rewards'
 );
 select throws_ok(
   $$ select * from public.get_admin_customer_summaries(

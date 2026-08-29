@@ -2189,7 +2189,9 @@ returns table (
   completed_spend numeric,
   last_order_at timestamptz,
   loyalty_completed_orders integer,
-  available_rewards bigint
+  loyalty_threshold integer,
+  available_rewards bigint,
+  redeemed_rewards bigint
 )
 language plpgsql
 stable
@@ -2218,9 +2220,16 @@ begin
     coalesce(order_summary.completed_spend, 0::numeric),
     order_summary.last_order_at,
     coalesce(loyalty_accounts.completed_order_count, 0),
-    coalesce(reward_summary.available_rewards, 0)
+    coalesce(loyalty_config.threshold, 7),
+    coalesce(reward_summary.available_rewards, 0),
+    coalesce(reward_summary.redeemed_rewards, 0)
   from public.profiles
   left join public.loyalty_accounts on loyalty_accounts.user_id = profiles.id
+  left join lateral (
+    select greatest(coalesce((business_settings.value #>> '{}')::integer, 7), 1) as threshold
+    from public.business_settings
+    where business_settings.key = 'loyalty_threshold'
+  ) loyalty_config on true
   left join lateral (
     select
       count(orders.id) filter (where orders.status = 'COMPLETED') as completed_orders,
@@ -2232,10 +2241,11 @@ begin
     where orders.user_id = profiles.id
   ) order_summary on true
   left join lateral (
-    select count(*) as available_rewards
+    select
+      count(*) filter (where loyalty_rewards.status = 'earned') as available_rewards,
+      count(*) filter (where loyalty_rewards.status = 'redeemed') as redeemed_rewards
     from public.loyalty_rewards
     where loyalty_rewards.user_id = profiles.id
-      and loyalty_rewards.status = 'earned'
   ) reward_summary on true
   where profiles.role = 'customer'
     and (
@@ -3576,7 +3586,7 @@ comment on function public.get_public_pickup_settings() is
 comment on function public.get_public_pickup_inventory() is
   'Returns remaining prepared pieces by published pickup date and product for customer checkout guidance; transactional reservation remains authoritative.';
 comment on function public.get_admin_customer_summaries(uuid, text, integer) is
-  'Service-role-only bounded customer and completed-order aggregate with active-Admin validation.';
+  'Service-role-only bounded customer, completed-order, and loyalty aggregate with active-Admin validation.';
 comment on function public.upsert_pickup_schedule(
   uuid, uuid, date, public.pickup_availability_mode, boolean, text, jsonb
 ) is

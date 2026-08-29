@@ -14,7 +14,9 @@ export interface AdminCustomerSummary {
   completedSpend: number;
   lastOrderAt: string | null;
   loyaltyCompletedOrders: number;
+  loyaltyThreshold: number;
   availableRewards: number;
+  redeemedRewards: number;
 }
 
 interface AdminCustomerSummaryRow {
@@ -28,7 +30,9 @@ interface AdminCustomerSummaryRow {
   completed_spend: number | string;
   last_order_at: string | null;
   loyalty_completed_orders: number | string;
+  loyalty_threshold: number | string;
   available_rewards: number | string;
+  redeemed_rewards: number | string;
 }
 
 export async function getAdminCustomerSummaries(adminId: string, search = "") {
@@ -54,6 +58,8 @@ export async function getAdminCustomerSummaries(adminId: string, search = "") {
     completedSpend: Number(customer.completed_spend),
     lastOrderAt: customer.last_order_at,
     loyaltyCompletedOrders: Number(customer.loyalty_completed_orders),
+    loyaltyThreshold: Number(customer.loyalty_threshold),
     availableRewards: Number(customer.available_rewards),
+    redeemedRewards: Number(customer.redeemed_rewards),
   }));
 }
