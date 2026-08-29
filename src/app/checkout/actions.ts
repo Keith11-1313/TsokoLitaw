@@ -10,6 +10,7 @@ import {
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { CheckoutCartInput } from "@/types/commerce";
 import { MAX_ADDON_QUANTITY, MAX_CART_LINE_QUANTITY } from "@/lib/commerce";
+import { dispatchOrderConfirmation } from "@/lib/server-notifications";
 
 export interface CheckoutSubmissionInput {
   checkoutKey: string;
@@ -126,6 +127,14 @@ export async function submitPendingOrderAction(
 
   try {
     if (result.total === 0) {
+      try {
+        await dispatchOrderConfirmation(result.orderId);
+      } catch (notificationError) {
+        console.error("[order-confirmation] Loyalty order dispatch failed", {
+          orderId: result.orderId,
+          errorType: notificationError instanceof Error ? notificationError.name : "UnknownError",
+        });
+      }
       return {
         status: "success",
         ...result,

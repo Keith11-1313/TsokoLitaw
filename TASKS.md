@@ -241,13 +241,13 @@ Do not begin without explicit approval.
 - [x] Create and redeem seven-order reward
 - [x] Prevent duplicate rewards
 - [x] Show customer and Admin profiles in the Customers account directory with explicit role labels
-- [ ] Send order confirmation email
+- [x] Queue and send an idempotent order confirmation email for verified PayMongo and zero-total loyalty orders
 - [ ] Send ready-for-pickup email
 - [ ] Add cancellation/refund communication
-- [ ] Keep email sending server-side
-- [ ] Configure and verify the Resend sending domain or subdomain
+- [x] Keep email sending server-side
+- [x] Configure and verify the Resend sending subdomain
 - [ ] Add idempotent Resend sending and signed delivery webhooks
-- [ ] Record message IDs, delivery states, failures, and retry attempts
+- [x] Record order-confirmation message IDs, delivery states, failures, and retry attempts
 
 ## Phase 13 — Security and Production
 

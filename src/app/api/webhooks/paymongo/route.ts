@@ -5,6 +5,7 @@ import {
   verifyPayMongoTestWebhookSignature,
 } from "@/lib/paymongo-webhook";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { dispatchOrderConfirmation } from "@/lib/server-notifications";
 
 export const runtime = "nodejs";
 
@@ -58,6 +59,17 @@ export async function POST(request: Request) {
     });
   if (error) {
     return NextResponse.json({ error: "Payment processing is temporarily unavailable." }, { status: 500 });
+  }
+
+  if (paidEvent && data) {
+    try {
+      await dispatchOrderConfirmation(paidEvent.orderId);
+    } catch (notificationError) {
+      console.error("[order-confirmation] Immediate dispatch failed", {
+        orderId: paidEvent.orderId,
+        errorType: notificationError instanceof Error ? notificationError.name : "UnknownError",
+      });
+    }
   }
 
   return NextResponse.json({ received: true, processed: Boolean(data) });

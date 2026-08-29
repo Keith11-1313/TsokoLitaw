@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-**Phase 12: Loyalty and Notifications is active.** Phase 11 Admin operations, authentication, server commerce, and PayMongo test mode are complete. Completed orders now earn atomic seven-order rewards, customers and Admin can see progress, and one free 4-piece base price can be redeemed safely at checkout. Transactional notifications remain deferred within Phase 12; PayMongo live charges remain deferred to production work.
+**Phase 12: Loyalty and Notifications is active.** Phase 11 Admin operations, authentication, server commerce, and PayMongo test mode are complete. Completed orders now earn atomic seven-order rewards, customers and Admin can see progress, and one free 4-piece base price can be redeemed safely at checkout. Paid orders now queue and send one idempotent Resend confirmation email, including zero-total loyalty orders; ready, cancellation, refund, and delivery-webhook events remain. PayMongo live charges remain deferred to production work.
 
 The connected Admin Customers page is an account directory: it includes customer and Admin profiles, labels their roles explicitly, and shows their real order and loyalty activity when present.
 
@@ -351,6 +351,10 @@ Account-deletion tables and functions are included in the canonical bootstrap sc
 
 `/api/cron/payment-expirations` uses the same `CRON_SECRET` bearer protection. A Supabase Cron HTTP job invokes it every five minutes (`*/5 * * * *`) so overdue PayMongo checkouts are closed near the configured 15-minute payment deadline. Vercel Hobby cron supports only daily schedules, so `vercel.json` deliberately contains no cron entries. The processor expires PayMongo first and releases stock only after the exact database transition succeeds.
 
+### Transactional-email retry scheduler
+
+`/api/cron/notifications` uses the same `CRON_SECRET` bearer protection and processes at most 20 due deliveries per call. Order confirmation is attempted immediately after verified payment or zero-total loyalty settlement; a Supabase Cron HTTP job should invoke this endpoint every five minutes (`*/5 * * * *`) to retry transient failures. Each provider request reuses the stored event idempotency key, attempts are capped at five, and a stale processing claim may be recovered after ten minutes.
+
 ### Refund security and webhooks
 
 Generate a different 32-byte encryption key for each environment and store its base64 value as the server-only `REFUND_DESTINATION_ENCRYPTION_KEY` in `.env.local` and Vercel. Never expose it with a `NEXT_PUBLIC_` prefix:
@@ -378,7 +382,7 @@ The public GitHub repository can be connected to Vercel. Supabase URL and key va
 
 Production authentication will use `auth.tsokolitaw.com` through Supabase’s paid custom-domain add-on. The production checklist includes DNS and certificate verification, Google branding and callback updates, Vercel environment changes, and end-to-end authentication/authorization testing. Development continues to use the default Supabase project domain.
 
-Future transactional order email will use Resend from server-only code. Production sending requires a verified domain or sending subdomain; API keys and webhook secrets belong only in protected local/Vercel environment settings.
+Order confirmation uses Resend from server-only code and the verified `updates.tsokolitaw.com` sending subdomain. A database trigger queues the committed paid/confirmed transition, immediate dispatch follows PayMongo or loyalty settlement, and `/api/cron/notifications` retries bounded failures with the shared `CRON_SECRET`. API keys and webhook secrets belong only in protected local/Vercel environment settings. Signed Resend delivery-webhook handling remains a later notification slice.
 
 Do not add production secrets until the corresponding backend integration begins. Never commit `.env.local`.
 

@@ -453,13 +453,15 @@ provider_message_id text nullable unique
 status text
 attempt_count integer default 0
 last_error text nullable
+last_attempt_at timestamptz nullable
+next_attempt_at timestamptz
 sent_at timestamptz nullable
 delivered_at timestamptz nullable
 created_at timestamptz
 updated_at timestamptz
 ```
 
-Transactional email is dispatched only by trusted server code. Resend delivery webhooks must be signature-verified and processed idempotently. Email status is operational metadata and never changes order or payment status by itself.
+The `orders_enqueue_transactional_email` trigger inserts one `order.confirmed` row only after an order is both paid and confirmed. Its stable `order.confirmed:<order-id>` key covers PayMongo and zero-total loyalty paths without duplicate messages. `PENDING`, `PROCESSING`, `SENT`, `DELIVERED`, and `FAILED` states plus attempt timestamps support bounded retries and stale-claim recovery. Transactional email is dispatched only by trusted server code. Resend delivery webhooks remain a later slice and must be signature-verified and processed idempotently. Email status is operational metadata and never changes order or payment status by itself.
 
 ## 11. Reviews
 

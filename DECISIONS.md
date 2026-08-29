@@ -40,7 +40,7 @@ Allowed now:
 Deferred until separately approved:
 
 - PayMongo live mode and live keys
-- transactional email
+- transactional email events beyond the active Phase 12 slice
 - Admin CRUD areas not yet reached by the current Phase 11 slice
 - admin subdomain and DNS configuration
 
@@ -145,6 +145,8 @@ Google Sign-In already supplies a stable account email. Requiring a phone number
 ### Transactional email provider
 
 Resend is the approved V1 transactional email provider. Sending occurs only from trusted server code with idempotency protection. The application records the provider message ID and delivery state so failures can be retried and investigated without treating email delivery as proof of an order or payment transition.
+
+Order confirmation is the first active event. It is queued from the committed database transition to paid and confirmed, then dispatched after the transaction through Resend. The same path covers verified PayMongo payments and zero-total loyalty settlement. A stable per-order event key prevents duplicate confirmation messages, while failed attempts remain operational records for bounded scheduled retry.
 
 Production sending requires a verified domain or sending subdomain. Resend API keys and webhook signing secrets must never be exposed to the browser or stored in Admin settings.
 

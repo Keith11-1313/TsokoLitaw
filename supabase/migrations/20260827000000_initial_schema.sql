@@ -305,9 +305,12 @@ create table public.notification_deliveries (
   recipient_email text not null,
   idempotency_key text not null unique,
   provider_message_id text unique,
-  status text not null check (status in ('PENDING', 'SENT', 'DELIVERED', 'FAILED')),
+  status text not null default 'PENDING'
+    check (status in ('PENDING', 'PROCESSING', 'SENT', 'DELIVERED', 'FAILED')),
   attempt_count integer not null default 0 check (attempt_count >= 0),
   last_error text,
+  last_attempt_at timestamptz,
+  next_attempt_at timestamptz not null default now(),
   sent_at timestamptz,
   delivered_at timestamptz,
   created_at timestamptz not null default now(),
@@ -476,6 +479,9 @@ create index refunds_order_created_idx on public.refunds (order_id, created_at d
 create index mutation_rate_limit_updated_idx
   on public.mutation_rate_limit_buckets (updated_at);
 create index notification_deliveries_order_idx on public.notification_deliveries (order_id, event_type);
+create index notification_deliveries_retry_idx
+  on public.notification_deliveries (next_attempt_at, created_at)
+  where status in ('PENDING', 'FAILED');
 create index reviews_public_idx on public.reviews (is_visible, is_featured, created_at desc);
 create index journal_posts_public_idx on public.journal_posts (status, published_at desc);
 create index loyalty_rewards_user_idx on public.loyalty_rewards (user_id, status);
@@ -3287,6 +3293,54 @@ begin
   return true;
 end;
 $$;
+
+create or replace function public.enqueue_transactional_order_email()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  should_enqueue boolean := false;
+begin
+  if tg_op = 'INSERT' then
+    should_enqueue := true;
+  elsif tg_op = 'UPDATE' then
+    should_enqueue := old.status is distinct from new.status
+      or old.payment_status is distinct from new.payment_status;
+  end if;
+
+  if should_enqueue
+    and new.status = 'CONFIRMED'
+    and new.payment_status = 'PAID'
+  then
+    insert into public.notification_deliveries (
+      order_id,
+      user_id,
+      provider,
+      event_type,
+      recipient_email,
+      idempotency_key,
+      status
+    ) values (
+      new.id,
+      new.user_id,
+      'resend',
+      'order.confirmed',
+      new.customer_email,
+      'order.confirmed:' || new.id::text,
+      'PENDING'
+    )
+    on conflict (idempotency_key) do nothing;
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger orders_enqueue_transactional_email
+after insert or update of status, payment_status on public.orders
+for each row execute procedure public.enqueue_transactional_order_email();
 
 do $$
 declare

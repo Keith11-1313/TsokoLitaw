@@ -41,11 +41,12 @@ Workflow changes must be reflected together in:
 - featured visible reviews and published Journal posts are loaded by the public Journal
 - the Admin dashboard combines bounded live order, Catalog, Pickup, Inventory, customer, Journal, and review summaries
 - completed-order loyalty earning, customer/Admin progress, and single-use checkout redemption are implemented
+- Resend order-confirmation email is queued exactly once when a paid order becomes confirmed, including zero-total loyalty orders; trusted retry processing is connected
 
 ### Deferred
 
 - PayMongo live mode
-- Phase 12 transactional email and notification work
+- remaining Phase 12 ready-for-pickup, cancellation, refund, and delivery-webhook notifications
 - admin subdomain configuration
 
 UI labels must clearly distinguish mock or unavailable backend actions.
