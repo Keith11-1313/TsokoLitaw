@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-**Phase 12: Loyalty and Notifications is active.** Phase 11 Admin operations, authentication, server commerce, and PayMongo test mode are complete. Loyalty is atomic, and all six agreed customer emails—confirmation, ready, cancellation, refund processing, refund completed, and refund problem—now queue from persisted transitions and send idempotently through Resend. Signed, idempotent Resend delivery-webhook tracking is connected; a hosted notification smoke test remains. PayMongo live charges remain deferred to production work.
+**Phase 12: Loyalty and Notifications is complete.** Loyalty is atomic, and all six agreed customer emails—confirmation, ready, cancellation, refund processing, refund completed, and refund problem—queue exactly once from persisted transitions, retry bounded temporary failures, and record signed Resend delivery callbacks. Hosted Dev smoke tests passed for all six paths and retry recovery; the canonical migration resets cleanly and all 293 pgTAP database tests pass. Phase 13: Security and Production is next but has not been started, and PayMongo live charges remain deferred.
 
 The connected Admin Customers page is an account directory: it includes customer and Admin profiles, labels their roles explicitly, and shows their real order and loyalty activity when present.
 

@@ -23,7 +23,7 @@ Workflow changes must be reflected together in:
 
 ## 2. Delivery Stages
 
-### Current: Phase 12 — Loyalty and Notifications
+### Completed: Phase 12 — Loyalty and Notifications
 
 - Next.js, React, TypeScript, and Tailwind UI
 - temporary client-side interactions only where persistence is not required
@@ -43,12 +43,13 @@ Workflow changes must be reflected together in:
 - completed-order loyalty earning, customer/Admin progress, and single-use checkout redemption are implemented
 - All six V1 Resend customer emails are queued exactly once from committed order/refund transitions: confirmation, ready for pickup, cancellation, refund processing, refund completed, and refund problem; trusted retry processing is shared
 - Signed Resend delivery webhooks are verified against the untouched request body, deduplicated by provider event ID, and update operational delivery state without changing commerce state
+- Hosted Dev smoke testing confirms all six notification transitions, exactly-once queueing, retry recovery, and Resend delivery callbacks; the canonical migration resets cleanly and all 293 pgTAP database tests pass
 
 ### Deferred
 
 - PayMongo live mode
-- remaining Phase 12 hosted notification smoke testing
 - admin subdomain configuration
+- Phase 13 security hardening and production launch work until explicitly started
 
 UI labels must clearly distinguish mock or unavailable backend actions.
 

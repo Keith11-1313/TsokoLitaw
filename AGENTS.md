@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-**Phase 12: Loyalty and Notifications is active.** Authentication, authorization, Phase 9 server commerce, Phase 10 PayMongo test mode, and Phase 11 Admin operations are complete. Seven completed orders atomically earn one free 4-piece reward; customer/Admin progress and safe checkout redemption are connected. Transactional notifications and email are the remaining Phase 12 work.
+**Phase 12: Loyalty and Notifications is complete.** Authentication, authorization, Phase 9 server commerce, Phase 10 PayMongo test mode, Phase 11 Admin operations, atomic seven-order loyalty, all six transactional emails, bounded retry processing, and signed Resend delivery tracking are implemented and validated. Phase 13: Security and Production is next but must be explicitly started by the user.
 
 Allowed:
 
@@ -43,7 +43,7 @@ Allowed:
 Do not implement unless the user explicitly starts a later phase:
 
 - PayMongo live-mode keys or charges
-- transactional email
+- transactional email events beyond the six completed V1 events
 - Admin CRUD outside the currently approved Phase 11 slice
 - admin subdomain or DNS configuration
 

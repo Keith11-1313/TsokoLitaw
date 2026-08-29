@@ -248,7 +248,7 @@ Do not begin without explicit approval.
 - [x] Configure and verify the Resend sending subdomain
 - [x] Add idempotent Resend sending and signed delivery webhooks
 - [x] Record order-confirmation message IDs, delivery states, failures, and retry attempts
-- [ ] Run a hosted end-to-end smoke test for all six notification transitions and Resend delivery tracking
+- [x] Run a hosted end-to-end smoke test for all six notification transitions, exactly-once behavior, retry recovery, and Resend delivery tracking
 
 ## Phase 13 — Security and Production
 

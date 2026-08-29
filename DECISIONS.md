@@ -40,13 +40,13 @@ Allowed now:
 Deferred until separately approved:
 
 - PayMongo live mode and live keys
-- transactional email events beyond the active Phase 12 slice
+- transactional email events beyond the six completed V1 events
 - Admin CRUD areas not yet reached by the current Phase 11 slice
 - admin subdomain and DNS configuration
 
 ### Reason
 
-The customer workflow, authentication boundary, server commerce, and test payment lifecycle are connected. Phase 11 now joins customer order tracking to operational Admin fulfillment one bounded management area at a time, preserving server authorization and auditability.
+The customer workflow, authentication boundary, server commerce, test payment lifecycle, Admin operations, loyalty, and six transactional notification paths are connected. Phase 13 security and production work remains separately gated so production credentials and live charges cannot be enabled implicitly.
 
 ### UI consequence
 

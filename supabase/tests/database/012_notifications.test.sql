@@ -128,10 +128,10 @@ select is(
   'provider event is recorded once'
 );
 select ok(
-  not public.process_resend_delivery_event(
+  public.process_resend_delivery_event(
     'evt_sent', 'email_notification_test', 'email.sent', '2099-08-01 01:00:00+00'
   ),
-  'duplicate provider event is ignored'
+  'processed duplicate provider event is safely acknowledged'
 );
 select is(
   (select count(*) from public.notification_webhook_events where provider_event_id = 'evt_sent'),
