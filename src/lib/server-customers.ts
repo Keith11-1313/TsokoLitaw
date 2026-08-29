@@ -7,6 +7,7 @@ export interface AdminCustomerSummary {
   id: string;
   fullName: string;
   email: string;
+  accountRole: "customer" | "admin";
   mobileNumber: string | null;
   isActive: boolean;
   joinedAt: string;
@@ -23,6 +24,7 @@ interface AdminCustomerSummaryRow {
   user_id: string;
   full_name: string;
   email: string;
+  account_role: "customer" | "admin";
   mobile_number: string | null;
   is_active: boolean;
   joined_at: string;
@@ -51,6 +53,7 @@ export async function getAdminCustomerSummaries(adminId: string, search = "") {
     id: customer.user_id,
     fullName: customer.full_name,
     email: customer.email,
+    accountRole: customer.account_role,
     mobileNumber: customer.mobile_number,
     isActive: customer.is_active,
     joinedAt: customer.joined_at,

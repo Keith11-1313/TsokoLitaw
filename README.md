@@ -12,6 +12,8 @@ Read it before changing established workflows. The rough PNG references do not o
 
 **Phase 12: Loyalty and Notifications is active.** Phase 11 Admin operations, authentication, server commerce, and PayMongo test mode are complete. Completed orders now earn atomic seven-order rewards, customers and Admin can see progress, and one free 4-piece base price can be redeemed safely at checkout. Transactional notifications remain deferred within Phase 12; PayMongo live charges remain deferred to production work.
 
+The connected Admin Customers page is a buyer directory: it includes all customer-role profiles and labels Admin accounts as `Admin buyer` only after they place a storefront order.
+
 Implemented customer and Admin interface:
 
 - responsive customer and admin interfaces

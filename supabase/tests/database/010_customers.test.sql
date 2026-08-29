@@ -18,7 +18,7 @@ select set_config(
    where pg_extension.extname = 'pgtap'),
   true
 );
-select plan(9);
+select plan(10);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -72,6 +72,20 @@ insert into public.orders (
   'ca400000-0000-4000-8000-000000000002', 'TL-9302',
   'ca000000-0000-4000-8000-000000000002', 'CANCELLED', 'PAID',
   'Summary Customer', 'customer-summary@example.test', '2099-05-01',
+  'ca300000-0000-4000-8000-000000000001',
+  'ca100000-0000-4000-8000-000000000001',
+  '10:00 AM–11:00 AM', 'Customer summary test location', 40, 40,
+  'customers-test', now()
+);
+
+insert into public.orders (
+  id, order_number, user_id, status, payment_status, customer_name, customer_email,
+  pickup_date, pickup_window_id, pickup_location_id, pickup_window_snapshot,
+  pickup_location_snapshot, subtotal, total, terms_version, terms_accepted_at
+) values (
+  'ca400000-0000-4000-8000-000000000003', 'TL-9303',
+  'ca000000-0000-4000-8000-000000000001', 'CONFIRMED', 'PAID',
+  'Customers Admin', 'customers-admin@example.test', '2099-05-01',
   'ca300000-0000-4000-8000-000000000001',
   'ca100000-0000-4000-8000-000000000001',
   '10:00 AM–11:00 AM', 'Customer summary test location', 40, 40,
@@ -144,6 +158,13 @@ select is(
   )),
   1::bigint,
   'the summary includes redeemed loyalty rewards'
+);
+select is(
+  (select account_role from public.get_admin_customer_summaries(
+    'ca000000-0000-4000-8000-000000000001', 'customers admin', 100
+  )),
+  'admin'::public.profile_role,
+  'an Admin storefront buyer is included and labelled with the Admin role'
 );
 select throws_ok(
   $$ select * from public.get_admin_customer_summaries(

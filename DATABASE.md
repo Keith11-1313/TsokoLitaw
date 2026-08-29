@@ -538,7 +538,7 @@ redeemed_order_id uuid references orders(id) nullable unique
 created_at timestamptz
 ```
 
-Initial loyalty rule: seven completed orders earn one free 4-piece reward. An order-completion trigger locks the customer's loyalty account, increments the count once, and creates the threshold reward. The atomic checkout writer locks an earned reward, verifies an eligible 4-piece line, binds it through `redeemed_order_id`, and discounts only that line's base price. Cancelled or expired redemption orders restore the reward. Zero-total reward orders record a paid `loyalty` settlement without PayMongo. The bounded Admin customer summary reports the configured threshold plus available and redeemed reward counts; redeemed counts exclude rewards restored after cancellation or expiry.
+Initial loyalty rule: seven completed orders earn one free 4-piece reward. An order-completion trigger locks the customer's loyalty account, increments the count once, and creates the threshold reward. The atomic checkout writer locks an earned reward, verifies an eligible 4-piece line, binds it through `redeemed_order_id`, and discounts only that line's base price. Cancelled or expired redemption orders restore the reward. Zero-total reward orders record a paid `loyalty` settlement without PayMongo. The bounded Admin customer summary reports the configured threshold plus available and redeemed reward counts; redeemed counts exclude rewards restored after cancellation or expiry. The buyer summary includes all customer-role profiles and only Admin profiles that have placed at least one storefront order, returning the role so the UI can label Admin buyers explicitly.
 
 ## 14. Terms and Operational Configuration
 

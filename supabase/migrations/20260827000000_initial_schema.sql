@@ -2182,6 +2182,7 @@ returns table (
   user_id uuid,
   full_name text,
   email text,
+  account_role public.profile_role,
   mobile_number text,
   is_active boolean,
   joined_at timestamptz,
@@ -2213,6 +2214,7 @@ begin
     profiles.id,
     profiles.full_name,
     profiles.email,
+    profiles.role,
     profiles.mobile_number,
     profiles.is_active,
     profiles.created_at,
@@ -2232,6 +2234,7 @@ begin
   ) loyalty_config on true
   left join lateral (
     select
+      count(orders.id) as all_orders,
       count(orders.id) filter (where orders.status = 'COMPLETED') as completed_orders,
       coalesce(sum(orders.total) filter (
         where orders.status = 'COMPLETED' and orders.payment_status = 'PAID'
@@ -2247,7 +2250,10 @@ begin
     from public.loyalty_rewards
     where loyalty_rewards.user_id = profiles.id
   ) reward_summary on true
-  where profiles.role = 'customer'
+  where (
+      profiles.role = 'customer'
+      or (profiles.role = 'admin' and coalesce(order_summary.all_orders, 0) > 0)
+    )
     and (
       nullif(btrim(search_value), '') is null
       or profiles.full_name ilike '%' || btrim(search_value) || '%'

@@ -389,6 +389,8 @@ Every admin section must correspond to a real customer or operational need.
 | Customers | Support accounts and loyalty | Uses email-first account records |
 | Journal | Publish updates and moderate order-linked reviews | Feeds public Journal posts and Community highlights |
 
+The Customers area is buyer-oriented rather than a role directory. Customer-role profiles remain listed normally. Because authorized Admins may also place real storefront orders, an Admin appears there only after placing an order and is labelled `Admin buyer`; Admin accounts with no customer activity stay out of the operational list.
+
 ### Loyalty redemption
 
 Seven orders count only after paid fulfillment reaches `COMPLETED`. Each threshold completion creates one immutable free-4-piece reward. Checkout may bind one available reward to one order containing a selected 4-piece box; the discount covers that box's current base price only, so add-ons and extra coating types remain payable. The database locks and redeems the reward in the same transaction that creates the order. Cancellation or expiry restores it. A resulting ₱0 order records a `loyalty` settlement and moves directly to `CONFIRMED` without a meaningless hosted payment session.
