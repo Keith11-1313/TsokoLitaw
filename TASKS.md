@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Phase 11 Orders, Reviews, Journal, and Admin CRUD is active. Phase 10 PayMongo Test Mode implementation is complete using test credentials only; its remaining hosted provider-expiry and cancellation/refund smoke checks stay visible as release follow-ups.
+Phase 11 Orders, Reviews, Journal, and Admin CRUD is complete. Phase 10 PayMongo Test Mode implementation is complete using test credentials only; its remaining hosted provider-expiry and cancellation/refund smoke checks stay visible as release follow-ups.
 
 ## Decision Baseline
 
@@ -233,6 +233,7 @@ Do not begin without explicit approval.
 - [x] Remove the redundant Admin Settings page; Pickup owns pickup rules and no separate page returns until genuine global configuration exists
 - [x] Show selected-date remaining prepared pieces in Checkout, compare them with selected cart piece demand, and retain transactional enforcement
 - [x] Add auditability for fulfillment, Catalog mutations, review moderation, and Journal publication actions
+- [x] Replace the order-only Admin dashboard preview with live cross-feature summaries, seven-day paid-revenue and fulfillment-status charts, recent orders, and connected quick actions
 
 ## Phase 12 — Loyalty and Notifications
 

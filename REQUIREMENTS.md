@@ -23,14 +23,12 @@ Workflow changes must be reflected together in:
 
 ## 2. Delivery Stages
 
-### Current: Phase 11 — Orders, Reviews, Journal, and Admin CRUD
+### Current: Phase 11 complete — Orders, Reviews, Journal, and Admin CRUD
 
 - Next.js, React, TypeScript, and Tailwind UI
-- mock order/payment/Admin operational data remains where later phases have not connected persistence
-- temporary client-side component interactions
+- temporary client-side interactions only where persistence is not required
 - Google OAuth, cookie-backed sessions, protected customer routes, authenticated profile updates, and server-side Admin role checks
 - browser-local cart persistence
-- static payment and account previews
 - one reviewed production bootstrap schema, RLS policies, pgTAP tests, controlled seed data, and Supabase client helpers
 - the approved account-deletion lifecycle: authenticated scheduling/cancellation plus a server-only scheduled processor that rechecks eligibility and permanently deactivates due customer profiles while retaining their Auth identities and relational data
 - active catalog and published pickup availability are loaded from Supabase
@@ -41,12 +39,12 @@ Workflow changes must be reflected together in:
 - completed-order owners can submit one persisted review; new reviews remain non-public until Admin moderation
 - Admin Journal combines persisted post publishing with audited review visibility/featured decisions
 - featured visible reviews and published Journal posts are loaded by the public Journal
-- remaining Admin management areas stay mock/non-persistent until their Phase 11 slices are connected
+- the Admin dashboard combines bounded live order, Catalog, Pickup, Inventory, customer, Journal, and review summaries
 
 ### Deferred
 
 - PayMongo live mode
-- email and Admin CRUD areas not yet reached by the active Phase 11 slice
+- email and Phase 12 loyalty/notification work
 - admin subdomain configuration
 
 UI labels must clearly distinguish mock or unavailable backend actions.
@@ -368,6 +366,8 @@ Admin pages:
 - Pickup
 - Customers
 - Journal
+
+The Dashboard is a read-only operational overview of every connected Admin area. It shows bounded recent-order metrics, seven-day paid revenue, the current fulfillment-status mix, linked area summaries, recent orders, and real quick actions. Charts must label their values, remain useful without color alone, and state when a metric comes from the bounded recent-order set rather than lifetime data.
 
 Admin may eventually manage boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, loyalty, orders, reviews, and Journal posts. Pickup Management owns pickup-related operational rules; a separate Settings page is intentionally omitted until genuine cross-feature configuration exists.
 

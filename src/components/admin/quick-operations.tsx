@@ -1,4 +1,4 @@
-import { ClipboardList, Download, PlusCircle } from "lucide-react";
+import { CalendarPlus, ClipboardList, PlusCircle } from "lucide-react";
 import Link from "next/link";
 
 const operations = [
@@ -15,10 +15,10 @@ const operations = [
     href: "/admin/orders",
   },
   {
-    title: "Export Sales Report",
-    description: "Download CSV/PDF audit logs",
-    icon: Download,
-    href: null,
+    title: "Publish Pickup Date",
+    description: "Add a date, time window, and campus location",
+    icon: CalendarPlus,
+    href: "/admin/pickup",
   },
 ] as const;
 
@@ -49,7 +49,7 @@ export function QuickOperations() {
                 </span>
               </span>
             </Link>
-          ) : <button key={operation.title} type="button" disabled title="Export requires backend data" className="flex min-h-20 items-center gap-3 rounded-card border border-border bg-surface px-5 text-left opacity-55"><span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-brand"><Icon size={20} /></span><span><span className="block text-sm font-bold">{operation.title}</span><span className="block text-xs text-muted-foreground">Available after backend reports are connected</span></span></button>;
+          ) : null;
         })}
       </div>
     </section>

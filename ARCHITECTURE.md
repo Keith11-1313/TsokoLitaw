@@ -30,7 +30,7 @@ Next.js App Router
 └── Local brand and product assets
 ```
 
-The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Phase 11 Admin Orders reads the same persisted snapshots customers see and advances paid fulfillment through an atomic, audited database function. Completed-order owners submit one review from an order-detail modal; submissions remain non-public until audited moderation. Admin Journal persists draft/published posts and featured reviews, and the public Journal reads only published posts plus visible featured reviews. Admin Catalog uses service-only audited mutations and public square-media storage. Admin Inventory publishes date-specific prepared-piece totals and records unusable pieces through audited server mutations; checkout consumes the shared piece balance atomically across all box sizes. Admin Pickup persists schedules and customer-safe operating rules through active-Admin-checked audited functions. Email and the remaining Admin CRUD areas remain unconnected.
+The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Phase 11 Admin Orders reads the same persisted snapshots customers see and advances paid fulfillment through an atomic, audited database function. Completed-order owners submit one review from an order-detail modal; submissions remain non-public until audited moderation. Admin Journal persists draft/published posts and featured reviews, and the public Journal reads only published posts plus visible featured reviews. Admin Catalog uses service-only audited mutations and public square-media storage. Admin Inventory publishes date-specific prepared-piece totals and records unusable pieces through audited server mutations; checkout consumes the shared piece balance atomically across all box sizes. Admin Pickup persists schedules and customer-safe operating rules through active-Admin-checked audited functions. The Admin dashboard reads bounded summaries from these connected domains in parallel and does not introduce a separate reporting store. Phase 12 loyalty, notifications, and email remain unconnected.
 
 Current customer/admin relationship:
 
@@ -46,14 +46,14 @@ Database-published pickup data and safe rules
 
 Admin order operations
 ├── Admin Orders real snapshot list and fulfillment transitions
-└── Dashboard real recent-order summaries
+└── Dashboard bounded order charts plus linked Catalog, Pickup, Inventory, Customers, Journal, and review summaries
 
 Authenticated customer order surfaces
 ├── My Orders ownership-scoped database list and status filters
 └── Dynamic order/review routes unavailable until their scoped detail reads and mutations exist
 ```
 
-Customer catalog and pickup reads reflect the linked database. Connected Admin areas write through server-only controlled mutations; remaining Admin previews stay non-persistent.
+Customer catalog and pickup reads reflect the linked database. Connected Admin areas write through server-only controlled mutations; the Dashboard remains read-only and links to those authoritative management surfaces.
 
 Client Components are limited to interactions such as:
 

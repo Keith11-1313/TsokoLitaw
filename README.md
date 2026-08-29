@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-**Phase 11: Orders, Reviews, Journal, and Admin CRUD is active.** Authentication, server commerce, and the PayMongo test-mode implementation are complete. Admin Orders now reads real order snapshots and advances paid orders through a forward-only, audited fulfillment workflow. PayMongo remains test-only; live charges and transactional email remain deferred.
+**Phase 11: Orders, Reviews, Journal, and Admin CRUD is complete.** Authentication, server commerce, and the PayMongo test-mode implementation are complete. Admin operational areas are connected, and the Dashboard provides live bounded summaries and charts across them. PayMongo remains test-only; live charges, loyalty, and transactional email remain deferred.
 
 Implemented customer and Admin interface:
 
@@ -113,9 +113,9 @@ Not yet implemented or externally configured:
 - email or real CRUD other than the approved account-deletion lifecycle
 - admin authorization or admin subdomain routing
 
-Customer identity, account state, catalog, published pickup options, orders, test payments, and Admin fulfillment are live Supabase data. Admin management areas outside the current fulfillment slice remain mock or unconnected, and disabled actions identify features that require future backend work.
+Customer identity, account state, catalog, published pickup options, orders, test payments, and the Phase 11 Admin areas use live Supabase data. Later-phase features remain unavailable until their secure server workflows are implemented.
 
-Our Creations and Checkout now read customer-safe commerce, Pickup schedules, and operating rules from Supabase. Admin Catalog, Inventory, and Pickup are connected; the remaining unfinished management areas stay non-persistent until their Phase 11 CRUD slices.
+Our Creations and Checkout now read customer-safe commerce, Pickup schedules, and operating rules from Supabase. Admin Orders, Catalog, Inventory, Pickup, Customers, Journal, Reviews, and the cross-feature Dashboard are connected.
 
 The Admin Catalog now persists the base per-piece price, approved box-size availability, coatings, square coating media, additional-type prices, and add-on pricing. The primary storefront product remains active; box variants and selectable records control what customers can buy. Controlled service-role mutations recheck active Admin access, write audit records, and invalidate the public catalog cache; checkout still reloads live values and enforces date-specific inventory and pickup eligibility.
 

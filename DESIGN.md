@@ -93,6 +93,8 @@ Admin pages reuse the same core tokens with a denser operational layout:
 - responsive table containers
 - cream form controls
 
+The Admin Dashboard is the one cross-feature overview. It uses directly labelled seven-day paid-revenue and fulfillment-status charts, a responsive linked card for every Admin area, recent orders, and genuine quick actions. Other Admin pages stay focused on their own workflow instead of repeating dashboard charts.
+
 Do not create a separate visual identity for each admin page. Connected operational pages may remove the earlier purpose/customer-impact/connection explainer once their controls and effects are self-evident; mock pages must retain honest connection guidance.
 
 ## 4. Design Tokens
