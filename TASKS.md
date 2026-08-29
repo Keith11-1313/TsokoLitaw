@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Phase 11 Orders, Reviews, Journal, and Admin CRUD is complete. Phase 10 PayMongo Test Mode implementation is complete using test credentials only; its remaining hosted provider-expiry and cancellation/refund smoke checks stay visible as release follow-ups.
+Phase 12 Loyalty and Notifications is complete. Phase 13 Security and Production is ready to begin when explicitly approved. Final Privacy wording and the controlled live-provider paid-cancellation/full-refund smoke remain explicit release follow-ups.
 
 ## Decision Baseline
 
@@ -23,7 +23,7 @@ Phase 11 Orders, Reviews, Journal, and Admin CRUD is complete. Phase 10 PayMongo
 - [x] Initialize Git and connect public GitHub repository
 - [x] Add Lucide React
 - [x] Add lint, typecheck, and build scripts
-- [ ] Add `.env.example` when the first backend integration begins
+- [x] Add `.env.example` when the first backend integration begins
 - [ ] Confirm production environment policy before adding secrets
 
 ## Phase 1 — Design Foundation and Assets
@@ -59,8 +59,8 @@ Phase 11 Orders, Reviews, Journal, and Admin CRUD is complete. Phase 10 PayMongo
 - [x] Remove My Orders from main navigation
 - [x] Add Account/Profile and Cart header actions
 - [x] Add Terms and Privacy footer links
-- [ ] Perform final content and interaction review with product owner
-- [ ] Replace remaining placeholders when approved assets are supplied
+- [x] Perform final content and interaction review with product owner
+- [x] Replace remaining placeholders with the approved supplied assets
 
 ## Phase 3 — Frontend Commerce Behavior
 
@@ -77,7 +77,7 @@ Phase 11 Orders, Reviews, Journal, and Admin CRUD is complete. Phase 10 PayMongo
 - [x] Persist cart in browser local storage
 - [x] Navigate from cart to checkout
 - [x] Add automated unit tests for configurable piece/coating pricing, cart totals, and configuration calculations
-- [ ] Replace all browser-authoritative calculations during backend phase
+- [x] Replace browser-authoritative commerce calculations with server reload, validation, repricing, and atomic stock enforcement while retaining browser estimates as non-authoritative UI
 
 ## Phase 4 — Admin Static UI
 
@@ -167,10 +167,10 @@ Do not begin without explicit approval.
 - [x] Add the deleted-account login bounce screen
 - [x] Apply the revised account-deactivation schema to the hosted development project; keep the production bootstrap schema squashed
 - [x] Configure `CRON_SECRET` in Vercel and protect the account-deletion endpoint
-- [ ] Create the daily Supabase Cron account-deletion HTTP job using the matching secret from Supabase Vault
-- [ ] Redeploy Production without the removed Vercel cron and verify one authorized Supabase Cron invocation
-- [ ] Verify deletion request, checkout blocking, cancellation, due deactivation, retained relationships, access denial, and login bounce against the hosted project
-- [ ] Execute live Google OAuth, initial Admin bootstrap, logout, unauthorized Admin, and cross-customer pgTAP verification
+- [x] Create the daily Supabase Cron account-deletion HTTP job using the matching secret from Supabase Vault
+- [x] Redeploy Production without the removed Vercel cron and verify one authorized Supabase Cron invocation
+- [x] Verify deletion request, checkout blocking, cancellation, due deactivation, retained relationships, access denial, and login bounce against the hosted project
+- [x] Execute live Google OAuth, initial Admin bootstrap, logout, unauthorized Admin, and cross-customer pgTAP verification
 
 ## Phase 9 — Server Commerce
 
@@ -200,7 +200,7 @@ Do not begin without explicit approval.
 - [x] Schedule `/api/cron/payment-expirations` every five minutes through Supabase Cron and verify its authorized HTTP `200` response
 - [x] Apply and validate the coordinated-expiry schema upgrade on hosted development
 - [x] Complete the hosted test payment and signed paid-webhook smoke test
-- [ ] Complete a clean hosted provider-expiry smoke test after the development-order reset
+- [x] Complete a clean hosted provider-expiry smoke test after the development-order reset
 - [ ] Complete the hosted paid-cancellation and full-refund smoke test
 - [x] Implement full original-method refunds and verified refund webhooks
 - [x] Track refund state separately from order cancellation

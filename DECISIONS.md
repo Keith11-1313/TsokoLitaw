@@ -22,7 +22,7 @@ The PNGs in `references/` are retained as early visual context. They are not pix
 
 ### Decision
 
-The current milestone is Phase 11 Orders, Reviews, Journal, and Admin CRUD. Phase 10 PayMongo Test Mode implementation is complete, with hosted provider smoke checks retained as release follow-ups.
+Phase 12 Loyalty and Notifications is complete. Phase 13 Security and Production is the next gated milestone, with hosted provider-expiry, account-deletion, production-auth, and live-refund checks retained as explicit release follow-ups.
 
 Allowed now:
 
