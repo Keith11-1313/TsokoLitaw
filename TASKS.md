@@ -127,10 +127,10 @@ Do not begin without explicit approval.
 - [x] Review and approve the database model as the Supabase baseline
 - [x] Approve provisional price seeds and admin-managed pricing
 - [x] Finalize recipe and allergen data
-- [x] Approve admin-managed pickup locations, schedules, lead time, cutoff, capacity, and availability
+- [x] Approve admin-managed pickup locations, schedules, lead time, cutoff, and availability; remove the redundant boxes-per-window capacity
 - [x] Confirm launch pickup locations and the Monday–Saturday, 7:00 AM–7:00 PM operating window
 - [x] Confirm made-to-order default with Admin-published same-day ready stock
-- [x] Set provisional made-to-order defaults: one-day lead time, 5:00 PM cutoff, hourly slots, and 20 boxes per slot
+- [x] Set provisional made-to-order defaults: one-day lead time, 5:00 PM cutoff, and hourly slots
 - [x] Finalize cancellation, refund, and no-show policies
 - [x] Choose Resend as the transactional email provider
 - [x] Approve one equal-permission admin role for five accounts
@@ -230,7 +230,7 @@ Do not begin without explicit approval.
 - [x] Add persistent per-line Cart checkout selection and remove only purchased lines after verified payment
 - [x] Implement piece-based Inventory administration with exact ready-stock totals, online commitments, unusable-piece recording, and audit records; pickup publication and remaining stock control website-paid sales
 - [x] Clarify selected-date Inventory UI, shared piece limits, accounted-piece lower bounds, and removal of redundant online-availability/cash-sale controls
-- [x] Connect Admin Pickup CRUD so Admin can create, publish, close, and edit dates, modes, windows, locations, lead time, cutoff, grace period, operating hours, and capacity without SQL
+- [x] Connect Admin Pickup CRUD so Admin can create, publish, close, and edit dates, modes, windows, locations, lead time, cutoff, grace period, and operating hours without SQL
 - [x] Make newly published Ready Stock and Hybrid dates appear automatically in Admin Inventory; Made to order dates must not request prepared stock
 - [ ] Implement promotion, customer, and settings administration
 - [ ] Replace provisional builder/cart quantity caps with remaining date-specific piece-stock guidance; retain transactional checkout enforcement

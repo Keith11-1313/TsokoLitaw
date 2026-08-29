@@ -96,7 +96,7 @@ Next.js server responsibilities:
 - terms acceptance recording
 - admin mutations
 
-Phase 9 uses a two-layer checkout boundary. Next.js accepts only catalog identifiers, coating allocations, add-on counts, and quantities; it reloads current database prices and evaluates active promotion configuration. It then calls the service-role-only `create_pending_order` PostgreSQL function with the trusted snapshot projection. That function first expires overdue unpaid orders, releases any corresponding ready-stock reservations, then atomically locks the customer and pickup window, enforces capacity, reserves required ready stock, writes the order graph and Terms acceptance, and returns an existing order when the same customer idempotency key is retried. Browser clients receive no direct execute permission on either commerce writer.
+Phase 9 uses a two-layer checkout boundary. Next.js accepts only catalog identifiers, coating allocations, add-on counts, and quantities; it reloads current database prices and evaluates active promotion configuration. It then calls the service-role-only `create_pending_order` PostgreSQL function with the trusted snapshot projection. That function first expires overdue unpaid orders, releases any corresponding ready-stock reservations, then atomically locks the customer and pickup window, validates bounded order quantities, reserves required ready stock, writes the order graph and Terms acceptance, and returns an existing order when the same customer idempotency key is retried. Browser clients receive no direct execute permission on either commerce writer.
 
 Phase 10 creates one PayMongo checkout for the order's unique payment row and stores its immutable provider ID and URL. A return to `/payment/success` reloads the owned order and may display `PAID` only after the signed webhook has completed the atomic database transition. The protected payment-expiration job lists overdue provider-bound checkouts, expires each session through PayMongo first, and only then invokes the database transition that marks the payment `FAILED`, marks the order `EXPIRED`, and releases ready stock. Provider failures remain pending and reserved for retry.
 
@@ -136,7 +136,7 @@ src/
 
 Commerce business rules belong in server modules and database functions rather than presentation components.
 
-Our Creations consumes the active database catalog, including the saved customer-facing product description, and Checkout consumes published database pickup options plus customer-safe lead/cutoff rules. Admin Catalog and Pickup write their respective records through controlled server actions. Inventory automatically receives eligible Ready Stock and Hybrid dates created in Pickup, while Made to order never requests prepared inventory.
+Our Creations consumes the active database catalog, and Checkout consumes published database pickup options plus customer-safe lead/cutoff rules. Admin Catalog and Pickup write their respective records through controlled server actions. Inventory automatically receives eligible Ready Stock and Hybrid dates created in Pickup, while Made to order never requests prepared inventory.
 
 The Admin coating form validates a square 1:1 image in the browser, limits server uploads to approved image types and 3 MB, stores the public asset in `catalog-media`, and publishes the database record only through an active-Admin-checked service mutation.
 
@@ -144,7 +144,7 @@ The Admin coating form validates a square 1:1 image in the browser, limits serve
 
 The UI cart is exposed through `CartProvider` and persisted under a browser-local storage key.
 
-It supports add, remove, bounded numeric quantity editing, per-line checkout selection, subtotal, and clear operations. Cart lines and their selected IDs persist under separate browser-local keys. When hosted checkout starts, the selected line IDs are snapshotted under a pending-checkout key; verified payment removes only that snapshot so unchecked lines remain in Cart. Builder and Cart caps protect the client surface from extreme values but do not claim live stock knowledge. The cart is deliberately non-authoritative and must not be treated as an order record; checkout rechecks date-specific inventory and pickup capacity transactionally.
+It supports add, remove, bounded numeric quantity editing, per-line checkout selection, subtotal, and clear operations. Cart lines and their selected IDs persist under separate browser-local keys. When hosted checkout starts, the selected line IDs are snapshotted under a pending-checkout key; verified payment removes only that snapshot so unchecked lines remain in Cart. Builder and Cart caps protect the client surface from extreme values but do not claim live stock knowledge. The cart is deliberately non-authoritative and must not be treated as an order record; checkout rechecks date-specific inventory and pickup eligibility transactionally.
 
 Future checkout flow:
 
@@ -242,14 +242,14 @@ available = stock_total - stock_reserved - stock_sold
 
 Checkout converts every requested box into pieces (`quantity × product_variants.piece_count`) before locking and updating the one daily product balance. Expired or cancelled unpaid orders reverse the same piece calculation. Admin may set the exact prepared total and record unusable pieces only through active-Admin-checked database functions. Every change writes both an inventory adjustment and an Admin audit entry. A saved total cannot be lower than already committed plus consumed pieces. Checkout availability follows the published pickup date and remaining stock; Inventory does not expose a second manual availability control.
 
-Pickup locations, dates, time windows, lead days, cutoff time, capacity, and availability mode are admin-managed database records or settings. Made-to-order is the default; Admin can publish same-day ready-stock options when products are brought to school. Every customer sale in every mode still uses website checkout and online payment; the mode changes preparation and inventory behavior only. Waste must be recorded so checkout does not oversell. Checkout reads only published, currently eligible options. Paid orders preserve pickup snapshots so later admin edits do not rewrite existing commitments.
+Pickup locations, dates, time windows, lead days, cutoff time, and availability mode are admin-managed database records or settings. Made-to-order is the default; Admin can publish same-day ready-stock options when products are brought to school. Every customer sale in every mode still uses website checkout and online payment; the mode changes preparation and inventory behavior only. Waste must be recorded so checkout does not oversell. Checkout reads only published, currently eligible options. Paid orders preserve pickup snapshots so later admin edits do not rewrite existing commitments.
 
 Responsibility and data flow:
 
 ```text
 Admin Pickup
 → creates one explicit pickup date
-→ assigns mode, windows, locations, cutoff, lead time, and capacity
+→ assigns mode, windows, locations, cutoff, and lead time
 → publishes or closes the date
 
 Ready Stock or Hybrid date
@@ -336,7 +336,7 @@ React `cache()` may continue to deduplicate authentication/profile work inside o
 | --- | --- | --- |
 | Active public catalog, coating descriptions, Journal posts, legal content | Yes | Use explicit Next.js cache lifetimes and tags. Future Admin publication invalidates the matching tag. |
 | Published pickup date/time/location definitions | Short-lived only | Tag and revalidate after Admin publication. A stale definition may be displayed briefly, but checkout must revalidate it live. |
-| Remaining pickup capacity, ready stock, current prices used for checkout, and promotions used for totals | No authoritative cache | Browser display may be a preview. Every order mutation reloads and validates current database state inside the existing transactional boundary. |
+| Ready stock, current prices used for checkout, and promotions used for totals | No authoritative cache | Browser display may be a preview. Every order mutation reloads and validates current database state inside the existing transactional boundary. |
 | Profile, My Orders, order detail, payment, refund, account-deletion state, and Admin data | No shared cache | These are user-specific or sensitive. Use RLS-scoped live reads and request-only memoization where useful. |
 
 The current implementation uses tagged `unstable_cache` entries for deliberately shared read-mostly catalog previews and published pickup definitions because Cache Components are not enabled. Public catalog previews revalidate after five minutes and published pickup definitions after 30 seconds. Future Admin publication must invalidate the matching tag. If the application later enables Cache Components, these entries may move to `use cache`, `cacheLife`, and `cacheTag`. Cache keys and values must not contain secrets, payment data, refund destinations, or unnecessary PII. Checkout always reloads live catalog, price, inventory, and schedule state; webhook paths never trust cached payment or order state.

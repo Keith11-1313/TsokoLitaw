@@ -169,7 +169,7 @@ Each coating catalog record requires:
 
 Admin coating creation validates and previews the square image before submitting the connected audited Catalog mutation. A coating appears in the customer builder only after successful persistence and cache invalidation; failed or incomplete submissions must never look published.
 
-The temporary prices are approved as initial database seed values. Authorized admins may edit the base price per piece plus each coating's additional-type charge, add-on pricing, and related pricing. The primary product remains customer-facing; availability is controlled at the sellable box-size, coating, and add-on levels rather than with a redundant whole-product switch. Its Admin-managed description is displayed on Our Creations. Every active add-on created in Admin Catalog must appear in the customer box builder. A configured box may select one add-on type and its quantity; the cart keeps its name for display, while checkout submits its database ID and quantity for server-side availability and price validation. Box totals are derived from the selected variant's piece count and the current base piece price. The ₱5 additional-coating amount is not fixed: checkout must reload its current Admin-managed value and recalculate money on the server, while completed orders retain immutable price snapshots.
+The temporary prices are approved as initial database seed values. Authorized admins may edit the base price per piece plus each coating's additional-type charge, add-on pricing, and related pricing. The primary product remains customer-facing; availability is controlled at the sellable box-size, coating, and add-on levels rather than with a redundant whole-product switch. Every active add-on created in Admin Catalog must appear in the customer box builder. A configured box may select one add-on type and its quantity; the cart keeps its name for display, while checkout submits its database ID and quantity for server-side availability and price validation. Box totals are derived from the selected variant's piece count and the current base piece price. The ₱5 additional-coating amount is not fixed: checkout must reload its current Admin-managed value and recalculate money on the server, while completed orders retain immutable price snapshots.
 
 ## 7. Product Customization
 
@@ -203,7 +203,7 @@ Current frontend cart supports:
 - browser-local persistence
 - checkout navigation
 
-The browser cart is a UI convenience only. Builder and cart quantities use provisional safety limits until date-specific stock guidance is exposed in the customer UI. Checkout remains authoritative: it must reject manipulated prices, discounts, quantities, stock, pickup capacity, and payment values using the selected pickup date and each variant's piece count.
+The browser cart is a UI convenience only. Builder and cart quantities use provisional safety limits until date-specific stock guidance is exposed in the customer UI. Checkout remains authoritative: it must reject manipulated prices, discounts, quantities, stock, pickup eligibility, and payment values using the selected pickup date and each variant's piece count.
 
 ## 9. Checkout and Pickup
 
@@ -225,14 +225,14 @@ Launch pickup locations:
 - UCC Congress — 3rd Floor
 - UCC Congress — Covered Court
 
-Pickup locations, dates, time windows, lead time, cutoff time, capacity, and availability must be database-backed and admin-controlled. Current mock values may be used as provisional launch seeds until operations replaces them. Initial business rules:
+Pickup locations, dates, time windows, lead time, cutoff time, and availability must be database-backed and admin-controlled. Current mock values may be used as provisional launch seeds until operations replaces them. Initial business rules:
 
 - operating window: Monday–Saturday, 7:00 AM–7:00 PM
 - Admin publishes only the dates and time slots the team can actually serve; the operating window does not promise that every slot is available
 - every customer sale, including Ready Stock and Hybrid pickup, must be ordered and paid through the website; V1 does not accept cash or untracked walk-in sales
 - made-to-order is the default and follows Admin-configured lead-time and cutoff rules
 - same-day pickup is available only when Admin publishes ready stock brought to school
-- provisional made-to-order setup: one-day lead time, 5:00 PM daily cutoff, hourly slots, and 20 boxes per slot
+- provisional made-to-order setup: one-day lead time, 5:00 PM daily cutoff, and hourly slots
 - pickup grace period: 15 minutes
 - ready-stock availability closes when its configured on-hand stock is exhausted
 - no automatic refund for no-show
@@ -243,7 +243,7 @@ Availability modes always operate on an explicitly published pickup date:
 - `READY_STOCK`: Admin first publishes the pickup date, then publishes the exact number of already prepared pieces in Inventory. That number is the date's upper online-sales limit across all box sizes.
 - `HYBRID`: same-day checkout consumes the published prepared-piece balance while eligible advance orders follow the made-to-order rules.
 
-Admin Pickup owns persisted creation and publication of dates, time windows, locations, mode, cutoff, lead time, grace period, operating hours, and capacity. Admin Inventory cannot invent another pickup date; it lists existing upcoming Ready Stock and Hybrid dates and assigns an independent prepared-piece balance to each. Schedules with an order or published inventory are locked against structural edits, but Admin may close or republish the date without changing existing order snapshots.
+Admin Pickup owns persisted creation and publication of dates, time windows, locations, mode, cutoff, lead time, grace period, and operating hours. Admin Inventory cannot invent another pickup date; it lists existing upcoming Ready Stock and Hybrid dates and assigns an independent prepared-piece balance to each. Schedules with an order or published inventory are locked against structural edits, but Admin may close or republish the date without changing existing order snapshots.
 
 Admin changes affect future checkout availability and must not rewrite the pickup snapshot of an existing paid order.
 

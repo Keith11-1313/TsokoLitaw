@@ -28,7 +28,7 @@ UI structure must communicate the real workflow rather than merely resemble a dr
 | Mobile builder appears before coatings | Customers need configuration context before scanning all choices |
 | Mixed-box counters are on coating cards | Allocation happens piece by piece against visible coating options |
 | Admin Catalog explains each derived box price | Box size multiplies the current admin-managed price per piece; it is not a permanent fixed amount |
-| Product description is customer-facing | Admin copy changes are visible at the top of Our Creations instead of being an unexplained internal field |
+| Product builder starts with actionable choices | Our Creations opens directly on coating selection and box configuration without redundant promotional copy |
 | Quantities are numeric inputs | Builder and Cart use the same bounded direct-entry pattern; final date-specific stock is confirmed at Checkout |
 | Terms and Privacy are in Footer and Checkout | They remain accessible and appear where acceptance matters |
 | Reviews begin on completed order details | Review eligibility is tied to a specific fulfilled order |
@@ -272,7 +272,7 @@ Checkout now opens PayMongo Hosted Checkout after the server creates or reloads 
 
 Order references use the short shared kiosk format `TL-0001`. Customer and Admin views must display the same stored order number so it can be spoken and matched quickly at pickup.
 
-Pickup UI must distinguish Made to order, Ready stock, and Hybrid. The configured operating window is guidance only; checkout shows only dates and slots explicitly published by Admin, and no mode appears automatically every day. All three modes use website checkout and online payment. Admin Pickup creates and publishes the schedule; Ready Stock and Hybrid dates then become selectable in Admin Inventory. Schedule cards show mode, publication state, windows, locations, capacity use, and a lock when orders or inventory make structural edits unsafe.
+Pickup UI must distinguish Made to order, Ready stock, and Hybrid. The configured operating window is guidance only; checkout shows only dates and slots explicitly published by Admin, and no mode appears automatically every day. All three modes use website checkout and online payment. Admin Pickup creates and publishes the schedule; Ready Stock and Hybrid dates then become selectable in Admin Inventory. Schedule cards show mode, publication state, windows, locations, and a lock when orders or inventory make structural edits unsafe. Long date lists use a selector and one focused schedule card instead of an indefinitely growing stack.
 
 Cancellation confirmation must explain whether the action only releases an unpaid reservation or starts a full refund to the original payment method. Do not ask for a GCash, Maya, or bank destination during the normal PayMongo refund flow; show a restricted fallback form only after the automatic refund is unavailable or has failed.
 

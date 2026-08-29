@@ -57,9 +57,9 @@ Phase 9 server-commerce work completed so far:
 - Checkout uses the authenticated profile rather than mock customer details
 - Checkout lists only database-published pickup dates, windows, and locations and shows an honest unavailable state when none are published
 - untrusted cart IDs and counts are validated and repriced against the active catalog on the server
-- the canonical schema includes a service-only atomic pending-order writer for capacity checks, ready-stock reservation, immutable snapshots, Terms acceptance, and duplicate-submit protection
+- the canonical schema includes a service-only atomic pending-order writer for pickup validation, ready-stock reservation, immutable snapshots, Terms acceptance, and duplicate-submit protection
 - Checkout submits only catalog identifiers and counts to a server action; browser prices are ignored and active database prices are recalculated
-- overdue unpaid orders become `EXPIRED` and release ready-stock reservations before new checkout capacity is accepted
+- overdue unpaid orders become `EXPIRED` and release ready-stock reservations before new checkout attempts are accepted
 - the controlled seed includes the current Terms version required for checkout acceptance snapshots
 - active Admin identities can place their own storefront orders, and new orders use a shared short number such as `TL-0001`
 
@@ -99,7 +99,7 @@ Phase 11 customer-order work started by product-owner request:
 Performance and concurrency hardening implemented for the current storefront:
 
 - shared public catalog previews use a five-minute tagged cache, while published pickup definitions use a 30-second tagged cache
-- authoritative checkout continues to reload live prices, promotions, inventory, capacity, and pickup state
+- authoritative checkout continues to reload live prices, promotions, inventory, and pickup state
 - checkout, resume-payment, cancellation, and manual-refund mutations use atomic database-backed per-user and per-IP limits shared across Vercel instances
 - structured server timing reports slow commerce/order reads without logging contact details, cookies, tokens, or provider secrets
 - Vercel Fluid compute is enabled and the current linked Singapore development database is paired with the `sin1` function region
@@ -117,7 +117,7 @@ Customer identity, account state, catalog, published pickup options, orders, tes
 
 Our Creations and Checkout now read customer-safe commerce, Pickup schedules, and operating rules from Supabase. Admin Catalog, Inventory, and Pickup are connected; the remaining unfinished management areas stay non-persistent until their Phase 11 CRUD slices.
 
-The Admin Catalog now persists the base per-piece price, customer-facing product description, approved box-size availability, coatings, square coating media, additional-type prices, and add-on pricing. The primary storefront product remains active; box variants and selectable records control what customers can buy. Controlled service-role mutations recheck active Admin access, write audit records, and invalidate the public catalog cache; checkout still reloads live values and enforces date-specific inventory and pickup capacity.
+The Admin Catalog now persists the base per-piece price, approved box-size availability, coatings, square coating media, additional-type prices, and add-on pricing. The primary storefront product remains active; box variants and selectable records control what customers can buy. Controlled service-role mutations recheck active Admin access, write audit records, and invalidate the public catalog cache; checkout still reloads live values and enforces date-specific inventory and pickup eligibility.
 
 Admin Inventory now persists ready stock as individual prepared Palitaw pieces per pickup date, shared by the 4-, 6-, and 8-piece boxes. Admin can publish an exact total and record unusable pieces. Checkout atomically commits `box quantity × piece count`; expiry and unpaid cancellation release the same number of pieces. Pickup publication and remaining stock determine whether checkout is available. Inventory mutations require an active Admin, enforce non-negative available stock, and write adjustment plus Admin audit records. Made to order, Ready stock, and Hybrid all require website checkout and online payment; V1 does not accept cash or untracked walk-in sales.
 
@@ -213,11 +213,11 @@ Mixed boxes allocate every piece to a coating. The allocated piece count must eq
 
 These catalog values now come from Supabase, but browser totals remain estimates. Phase 9 must recalculate the final checkout price from current database values on the server.
 
-The ₱10 per-piece amount is approved as the provisional database seed. Authorized admins will manage the active base piece price, and each box total will be derived from its piece count. The ₱5 additional-coating charge is also only a seed and will come from the coating price configured in Admin. Completed orders preserve immutable price snapshots. Pickup locations, schedules, lead time, cutoff, capacity, and availability will likewise be admin-managed without rewriting existing paid-order pickup snapshots.
+The ₱10 per-piece amount is approved as the provisional database seed. Authorized admins will manage the active base piece price, and each box total will be derived from its piece count. The ₱5 additional-coating charge is also only a seed and will come from the coating price configured in Admin. Completed orders preserve immutable price snapshots. Pickup locations, schedules, lead time, cutoff, and availability will likewise be admin-managed without rewriting existing paid-order pickup snapshots.
 
 Pickup is centered at UCC Congress: 3rd Floor and Covered Court. Monday–Saturday, 7:00 AM–7:00 PM is the operating window, but Admin publishes every actual date and slot; nothing is made available automatically each day. Made to order uses a published schedule plus lead-time/cutoff rules without prepared inventory. Ready stock uses a published date plus a prepared-piece upper limit. Hybrid consumes prepared pieces for same-day checkout while allowing eligible advance made-to-order checkout. Every mode uses the website and online payment.
 
-The provisional made-to-order defaults are one day of lead time, a 5:00 PM daily cutoff, hourly slots, and 20 boxes per slot. These are operational Admin settings, not permanent storefront rules.
+The provisional made-to-order defaults are one day of lead time, a 5:00 PM daily cutoff, and hourly slots. These are operational Admin settings, not permanent storefront rules.
 
 V1 uses one equal-permission admin role supporting five approved Google accounts. One account may be configured first and four added later. Customers may cancel through `CONFIRMED`; paid cancellations receive a full refund to the original PayMongo payment method. Cancellation and standard refund eligibility end at `PREPARING`, and no-shows are non-refundable. Order cancellation and refund processing remain separately tracked.
 

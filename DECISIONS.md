@@ -203,8 +203,8 @@ The ₱10 per-piece amount is the approved initial database seed, not a permanen
 - allocated pieces must exactly equal the selected box size
 - extra sea salt cream is the initial optional add-on, temporarily ₱18 per cup
 - Admin-created active add-ons automatically appear in the customer builder; each configured box may select one add-on type and a quantity
-- the primary product has no redundant storefront availability checkbox; sellability is controlled through its box sizes and selectable catalog records, and its saved description appears on Our Creations
-- add-on and box quantities use bounded numeric inputs in both the builder and Cart; date-specific inventory and pickup capacity remain authoritative at checkout
+- the primary product has no redundant storefront availability checkbox; sellability is controlled through its box sizes and selectable catalog records
+- add-on and box quantities use bounded numeric inputs in both the builder and Cart; date-specific prepared-piece inventory remains authoritative at checkout
 - customers may select individual cart lines for checkout; newly added lines default to selected, unchecked lines remain in the browser cart, and verified payment removes only the persisted checkout selection
 
 ### Reason
@@ -268,10 +268,10 @@ Current launch configuration:
 - published dates, time slots, and allowed locations from Supabase
 - made-to-order by default, using Admin-controlled lead time and cutoff
 - same-day pickup only when Admin publishes ready stock brought to school
-- initial made-to-order seed: one-day lead time, 5:00 PM cutoff, hourly slots, and 20 boxes per slot
+- initial made-to-order seed: one-day lead time, 5:00 PM cutoff, and hourly slots
 - 15-minute grace period
 
-The database treats locations, published dates, time windows, lead time, cutoff time, capacity, stock mode, and availability as operational configuration. Checkout shows only published records. The operating window is a boundary, not a promise that each date or time will be offered. Existing paid orders preserve their selected pickup details as historical snapshots.
+The database treats locations, published dates, time windows, lead time, cutoff time, stock mode, and availability as operational configuration. Checkout shows only published records. The operating window is a boundary, not a promise that each date or time will be offered. Existing paid orders preserve their selected pickup details as historical snapshots. A separate boxes-per-window capacity was removed because prepared-piece inventory is the approved stock boundary for Ready Stock and same-day Hybrid checkout; bounded per-order quantities remain an abuse safeguard.
 
 ### Reason
 

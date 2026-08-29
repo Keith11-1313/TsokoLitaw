@@ -18,7 +18,7 @@ The proposed schema follows `DECISIONS.md` and the current workflow:
 | Mixed boxes allocate every piece | `order_item_coatings.piece_count` totals must match the item snapshot |
 | First coating type is included | snapshot which type was included and price additional distinct types server-side |
 | Admin-managed seed pricing | ₱10 seeds the product's active per-piece price; checkout derives each box total server-side and orders preserve snapshots |
-| Campus pickup only | admin-managed dates, windows, locations, lead/cutoff settings, capacity, and historical order snapshots; no delivery address |
+| Campus pickup only | admin-managed dates, windows, locations, lead/cutoff settings, and historical order snapshots; no delivery address |
 | Five admins share one role | bootstrap one approved Google-backed admin now and add up to four later; all authorization remains server-side |
 | Cancellation closes at preparation | cancel through `CONFIRMED`; paid cancellation creates a separately tracked refund; prepared/no-show orders are non-refundable |
 | Reviews require completed orders | unique review per order plus ownership/status validation |
@@ -170,7 +170,6 @@ pickup_date_id uuid references pickup_dates(id)
 start_time time
 end_time time
 is_open boolean default true
-capacity integer nullable check capacity >= 0
 sort_order integer
 ```
 
@@ -192,7 +191,6 @@ updated_at timestamptz
 pickup_window_id uuid references pickup_windows(id)
 pickup_location_id uuid references pickup_locations(id)
 is_open boolean default true
-capacity_override integer nullable check capacity_override >= 0
 primary key(pickup_window_id, pickup_location_id)
 ```
 
@@ -306,7 +304,7 @@ Use database checks or controlled server transitions rather than unrestricted te
 
 `order_number_sequence` generates a short, concurrency-safe kiosk number such as `TL-0001`. The same stored value is shown to the customer and to Admin operations; it is never generated separately in either UI.
 
-The service-role-only `create_pending_order` function is the transaction boundary for Phase 9. Next.js first reloads the active catalog and calculates trusted snapshot values, then the function expires overdue unpaid orders, locks the signed-in profile and pickup window, rechecks account and pickup eligibility, enforces slot capacity, reserves ready stock when required, inserts the order and all item/coating/add-on snapshots, and records the current Terms version. Active admins may place their own storefront orders because the server action always binds `target_user_id` to the authenticated profile; it cannot submit for an arbitrary customer. The service-role-only `expire_pending_orders` function directly expires only overdue orders that do not have an attached active provider checkout. Provider-bound orders use the coordinated PayMongo expiry functions described below. Authenticated browser clients cannot execute these functions directly.
+The service-role-only `create_pending_order` function is the transaction boundary for Phase 9. Next.js first reloads the active catalog and calculates trusted snapshot values, then the function expires overdue unpaid orders, locks the signed-in profile and pickup window, rechecks account and pickup eligibility, enforces bounded order quantities, reserves ready stock when required, inserts the order and all item/coating/add-on snapshots, and records the current Terms version. Active admins may place their own storefront orders because the server action always binds `target_user_id` to the authenticated profile; it cannot submit for an arbitrary customer. The service-role-only `expire_pending_orders` function directly expires only overdue orders that do not have an attached active provider checkout. Provider-bound orders use the coordinated PayMongo expiry functions described below. Authenticated browser clients cannot execute these functions directly.
 
 ## 9. Order Items and Coating Allocations
 
@@ -580,7 +578,6 @@ Possible keys:
 - `pickup_grace_minutes`
 - `minimum_lead_days`
 - `daily_cutoff_time`
-- `default_pickup_capacity`
 - `support_email`
 - `extra_coating_type_price`
 - `loyalty_threshold`
