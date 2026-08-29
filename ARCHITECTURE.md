@@ -55,7 +55,7 @@ Authenticated customer order surfaces
 
 Customer catalog and pickup reads reflect the linked database. Connected Admin areas write through server-only controlled mutations; the Dashboard remains read-only and links to those authoritative management surfaces.
 
-The bounded Admin buyer summary returns customer-role profiles plus Admin profiles that have at least one storefront order. It returns the profile role with order and loyalty aggregates so the Customers UI can distinguish an `Admin buyer` without treating authorization as customer-owned browser state.
+The bounded Admin account summary returns customer and Admin profiles with their role, order aggregates, and loyalty aggregates. The Customers UI labels authorization roles explicitly; inactive and zero-activity accounts remain visible to authorized Admin support users.
 
 Client Components are limited to interactions such as:
 

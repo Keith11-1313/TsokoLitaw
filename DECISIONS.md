@@ -389,7 +389,7 @@ Every admin section must correspond to a real customer or operational need.
 | Customers | Support accounts and loyalty | Uses email-first account records |
 | Journal | Publish updates and moderate order-linked reviews | Feeds public Journal posts and Community highlights |
 
-The Customers area is buyer-oriented rather than a role directory. Customer-role profiles remain listed normally. Because authorized Admins may also place real storefront orders, an Admin appears there only after placing an order and is labelled `Admin buyer`; Admin accounts with no customer activity stay out of the operational list.
+The Customers area is an account-support directory. Customer and Admin profiles are both listed and labelled by role, including accounts with no orders, while completed-order and loyalty columns continue to describe only actual storefront activity.
 
 ### Loyalty redemption
 

@@ -240,7 +240,7 @@ Do not begin without explicit approval.
 - [x] Count completed orders only
 - [x] Create and redeem seven-order reward
 - [x] Prevent duplicate rewards
-- [x] Show Admin storefront purchasers in the Customers buyer directory with an explicit Admin-buyer label
+- [x] Show customer and Admin profiles in the Customers account directory with explicit role labels
 - [ ] Send order confirmation email
 - [ ] Send ready-for-pickup email
 - [ ] Add cancellation/refund communication

@@ -372,7 +372,7 @@ The Dashboard is a read-only operational overview of every connected Admin area.
 
 Admin may eventually manage boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, loyalty, orders, reviews, and Journal posts. Pickup Management owns pickup-related operational rules; a separate Settings page is intentionally omitted until genuine cross-feature configuration exists.
 
-Admin Customers is a buyer-support directory. It includes every customer-role account and any Admin account only after that Admin has placed a storefront order. Admin purchasers must be explicitly labelled as Admin buyers so their order and loyalty activity remains visible without confusing their authorization role with an ordinary customer account.
+Admin Customers is an account-support directory. It includes every customer and Admin profile, labels each role explicitly, and shows zero order or loyalty activity when an account has not purchased yet.
 
 The Admin Catalog coating form collects name, description, a validated 1:1 image, allergen information, availability, and the coating's additional-type price. Publication uses authenticated server-side persistence, controlled public media storage, cache invalidation, and Admin audit logging.
 

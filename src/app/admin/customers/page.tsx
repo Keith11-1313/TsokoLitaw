@@ -59,7 +59,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
             ? "bg-brand/10 text-brand"
             : "bg-surface-muted text-foreground",
         )}>
-          {customer.accountRole === "admin" ? "Admin buyer" : "Customer"}
+          {customer.accountRole === "admin" ? "Admin" : "Customer"}
         </span>
         <span className={cn(
           "inline-flex rounded-full px-3 py-1 text-[0.6875rem] font-bold",
@@ -74,7 +74,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
     orders: (
       <span>
         <strong className="block text-foreground">
-          {customer.completedOrders} {customer.completedOrders === 1 ? "order" : "orders"}
+          {customer.completedOrders} {customer.completedOrders === 1 ? "completed order" : "completed orders"}
         </strong>
         <span className="text-xs">{formatPhp(customer.completedSpend)} paid value</span>
       </span>
@@ -120,7 +120,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
     <AdminPageLayout
       activePath="/admin/customers"
       title="Customers"
-      description="Customer accounts, Admin buyers, completed purchases, and loyalty activity."
+      description="Customer and Admin accounts with completed-purchase and loyalty activity."
       purpose="Support customers and understand completed-order activity without exposing another customer’s private order details."
       customerImpact="Uses account email as the primary contact; mobile remains optional."
       connected
@@ -137,7 +137,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
       <section className="mb-5 rounded-card border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="font-display text-2xl text-foreground">Buyer directory</h2>
+            <h2 className="font-display text-2xl text-foreground">Account directory</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               {formatPhp(completedRevenue)} completed paid value across the accounts shown.
             </p>
@@ -167,9 +167,9 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
         </div>
       </section>
 
-      <AdminDataTable caption="Buyer directory" columns={columns} rows={rows} minimumWidth="64rem" />
+      <AdminDataTable caption="Account directory" columns={columns} rows={rows} minimumWidth="64rem" />
       <p className="mt-3 text-xs text-muted-foreground">
-        Showing up to 100 customer accounts plus Admin accounts that have placed a storefront order. Order counts and financial totals include completed, paid orders only.
+        Showing up to 100 customer and Admin accounts. Order counts and financial totals include completed, paid orders only.
       </p>
     </AdminPageLayout>
   );
