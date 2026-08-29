@@ -17,7 +17,8 @@ interface DeliveryRow {
   recipient_email: string;
   idempotency_key: string;
   event_type: string;
-  status: "PENDING" | "PROCESSING" | "SENT" | "DELIVERED" | "FAILED";
+  status: "PENDING" | "PROCESSING" | "SEND_FAILED" | "SENT" | "DELAYED"
+    | "DELIVERED" | "BOUNCED" | "COMPLAINED" | "FAILED" | "SUPPRESSED";
   attempt_count: number;
   last_attempt_at: string | null;
 }
@@ -88,9 +89,34 @@ async function sendWithResend(input: {
   return body.id;
 }
 
+async function reconcilePendingResendEvents(providerMessageId: string) {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("notification_webhook_events")
+    .select("provider_event_id, provider_message_id, event_type, event_created_at")
+    .eq("provider", "resend")
+    .eq("provider_message_id", providerMessageId)
+    .is("processed_at", null)
+    .order("event_created_at", { ascending: true })
+    .limit(20);
+  if (error) throw new Error("Pending Resend delivery events could not be loaded.", { cause: error });
+
+  for (const event of data ?? []) {
+    const result = await supabase.rpc("process_resend_delivery_event", {
+      provider_event_id_value: event.provider_event_id,
+      provider_message_id_value: event.provider_message_id,
+      event_type_value: event.event_type,
+      event_created_at_value: event.event_created_at,
+    });
+    if (result.error) {
+      throw new Error("A pending Resend delivery event could not be reconciled.", { cause: result.error });
+    }
+  }
+}
+
 function canClaim(delivery: DeliveryRow, now: number) {
   if (delivery.attempt_count >= MAX_ATTEMPTS) return false;
-  if (delivery.status === "PENDING" || delivery.status === "FAILED") return true;
+  if (delivery.status === "PENDING" || delivery.status === "SEND_FAILED") return true;
   return delivery.status === "PROCESSING"
     && delivery.last_attempt_at !== null
     && new Date(delivery.last_attempt_at).getTime() <= now - PROCESSING_TIMEOUT_MS;
@@ -204,18 +230,27 @@ async function dispatchDelivery(delivery: DeliveryRow) {
       ...email,
     });
     const sentAt = new Date().toISOString();
-    await supabase.from("notification_deliveries").update({
+    const sentUpdate = await supabase.from("notification_deliveries").update({
       status: "SENT",
       provider_message_id: providerMessageId,
       sent_at: sentAt,
       next_attempt_at: sentAt,
       last_error: null,
     }).eq("id", delivery.id).eq("status", "PROCESSING");
+    if (sentUpdate.error) throw new Error("The sent notification could not be recorded.", { cause: sentUpdate.error });
+    try {
+      await reconcilePendingResendEvents(providerMessageId);
+    } catch (reconciliationError) {
+      console.error("[resend-webhook] Pending delivery reconciliation failed", {
+        deliveryId: delivery.id,
+        errorType: reconciliationError instanceof Error ? reconciliationError.name : "UnknownError",
+      });
+    }
     return true;
   } catch (error) {
     const delayMinutes = Math.min(5 * (2 ** Math.max(nextAttempt - 1, 0)), 60);
     await supabase.from("notification_deliveries").update({
-      status: "FAILED",
+      status: "SEND_FAILED",
       last_error: error instanceof Error ? error.message.slice(0, 500) : "Transactional email failed.",
       next_attempt_at: new Date(Date.now() + delayMinutes * 60_000).toISOString(),
     }).eq("id", delivery.id).eq("status", "PROCESSING");
@@ -234,7 +269,7 @@ export async function dispatchPendingNotifications(input: {
   let query = supabase
     .from("notification_deliveries")
     .select("id, order_id, refund_id, recipient_email, idempotency_key, event_type, status, attempt_count, last_attempt_at")
-    .or(`and(status.in.(PENDING,FAILED),next_attempt_at.lte.${now.toISOString()}),and(status.eq.PROCESSING,last_attempt_at.lte.${staleBefore})`)
+    .or(`and(status.in.(PENDING,SEND_FAILED),next_attempt_at.lte.${now.toISOString()}),and(status.eq.PROCESSING,last_attempt_at.lte.${staleBefore})`)
     .lt("attempt_count", MAX_ATTEMPTS)
     .order("created_at", { ascending: true })
     .limit(Math.max(1, Math.min(input.limit ?? 20, 50)));

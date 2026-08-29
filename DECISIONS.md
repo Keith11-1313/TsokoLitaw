@@ -154,6 +154,8 @@ Cancellation and refund communication follows persisted state rather than browse
 
 Production sending requires a verified domain or sending subdomain. Resend API keys and webhook signing secrets must never be exposed to the browser or stored in Admin settings.
 
+Resend delivery callbacks are accepted only by a server endpoint that verifies the signed, untouched request body. The Svix event ID is the durable deduplication key, while the provider event timestamp prevents an older out-of-order callback from replacing newer delivery state. Local API failures use `SEND_FAILED` and remain retryable; provider outcomes such as `FAILED`, `BOUNCED`, `COMPLAINED`, and `SUPPRESSED` are terminal operational evidence and are not automatically resent. Delivery metadata never changes order, payment, refund, or fulfillment state.
+
 ### Account deletion
 
 Customers may schedule account deletion from a Profile danger zone. The request has a fixed 90-day grace period and remains cancellable until processing. Pending deletion blocks new checkout; active orders or refunds block the initial request. Admin identities use a separate controlled removal process.

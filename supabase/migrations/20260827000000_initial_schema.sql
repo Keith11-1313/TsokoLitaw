@@ -307,15 +307,31 @@ create table public.notification_deliveries (
   idempotency_key text not null unique,
   provider_message_id text unique,
   status text not null default 'PENDING'
-    check (status in ('PENDING', 'PROCESSING', 'SENT', 'DELIVERED', 'FAILED')),
+    check (status in (
+      'PENDING', 'PROCESSING', 'SEND_FAILED', 'SENT', 'DELAYED',
+      'DELIVERED', 'BOUNCED', 'COMPLAINED', 'FAILED', 'SUPPRESSED'
+    )),
   attempt_count integer not null default 0 check (attempt_count >= 0),
   last_error text,
   last_attempt_at timestamptz,
   next_attempt_at timestamptz not null default now(),
   sent_at timestamptz,
   delivered_at timestamptz,
+  provider_event_at timestamptz,
+  last_event_type text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table public.notification_webhook_events (
+  id uuid primary key default gen_random_uuid(),
+  provider text not null default 'resend',
+  provider_event_id text not null unique,
+  provider_message_id text not null,
+  event_type text not null,
+  event_created_at timestamptz not null,
+  processed_at timestamptz,
+  created_at timestamptz not null default now()
 );
 
 create table public.reviews (
@@ -483,7 +499,9 @@ create index notification_deliveries_order_idx on public.notification_deliveries
 create index notification_deliveries_refund_idx on public.notification_deliveries (refund_id, event_type);
 create index notification_deliveries_retry_idx
   on public.notification_deliveries (next_attempt_at, created_at)
-  where status in ('PENDING', 'FAILED');
+  where status in ('PENDING', 'SEND_FAILED');
+create index notification_webhook_message_idx
+  on public.notification_webhook_events (provider_message_id, event_created_at desc);
 create index reviews_public_idx on public.reviews (is_visible, is_featured, created_at desc);
 create index journal_posts_public_idx on public.journal_posts (status, published_at desc);
 create index loyalty_rewards_user_idx on public.loyalty_rewards (user_id, status);
@@ -3437,6 +3455,102 @@ begin
 end;
 $$;
 
+create or replace function public.process_resend_delivery_event(
+  provider_event_id_value text,
+  provider_message_id_value text,
+  event_type_value text,
+  event_created_at_value timestamptz
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  inserted_event_id uuid;
+  delivery public.notification_deliveries%rowtype;
+  next_status text;
+begin
+  if provider_event_id_value is null or length(provider_event_id_value) not between 1 and 255
+    or provider_message_id_value is null or length(provider_message_id_value) not between 1 and 255
+    or event_type_value not in (
+      'email.sent', 'email.delivered', 'email.delivery_delayed', 'email.bounced',
+      'email.complained', 'email.failed', 'email.suppressed'
+    )
+    or event_created_at_value is null
+  then
+    raise exception 'Resend delivery event is invalid';
+  end if;
+
+  insert into public.notification_webhook_events (
+    provider, provider_event_id, provider_message_id, event_type, event_created_at
+  ) values (
+    'resend', provider_event_id_value, provider_message_id_value,
+    event_type_value, event_created_at_value
+  )
+  on conflict (provider_event_id) do nothing
+  returning id into inserted_event_id;
+
+  if inserted_event_id is null then
+    select id into inserted_event_id
+    from public.notification_webhook_events
+    where provider_event_id = provider_event_id_value
+      and provider_message_id = provider_message_id_value
+      and event_type = event_type_value
+      and event_created_at = event_created_at_value
+      and processed_at is null;
+    if inserted_event_id is null then return true; end if;
+  end if;
+
+  select * into delivery
+  from public.notification_deliveries
+  where provider = 'resend'
+    and provider_message_id = provider_message_id_value
+  for update;
+
+  if delivery.id is null then
+    return false;
+  end if;
+
+  next_status := case event_type_value
+    when 'email.sent' then 'SENT'
+    when 'email.delivered' then 'DELIVERED'
+    when 'email.delivery_delayed' then 'DELAYED'
+    when 'email.bounced' then 'BOUNCED'
+    when 'email.complained' then 'COMPLAINED'
+    when 'email.failed' then 'FAILED'
+    when 'email.suppressed' then 'SUPPRESSED'
+  end;
+
+  if delivery.provider_event_at is null
+    or event_created_at_value > delivery.provider_event_at
+  then
+    update public.notification_deliveries
+    set status = next_status,
+        delivered_at = case
+          when event_type_value = 'email.delivered' then event_created_at_value
+          else delivered_at
+        end,
+        provider_event_at = event_created_at_value,
+        last_event_type = event_type_value,
+        last_error = case
+          when event_type_value in ('email.bounced', 'email.complained', 'email.failed', 'email.suppressed')
+            then 'Resend reported ' || event_type_value || '.'
+          when event_type_value in ('email.sent', 'email.delivered') then null
+          else last_error
+        end,
+        updated_at = now()
+    where id = delivery.id;
+  end if;
+
+  update public.notification_webhook_events
+  set processed_at = now()
+  where id = inserted_event_id;
+
+  return true;
+end;
+$$;
+
 create trigger orders_enqueue_transactional_email
 after insert or update of status, payment_status on public.orders
 for each row execute procedure public.enqueue_transactional_order_email();
@@ -3485,6 +3599,7 @@ alter table public.refunds enable row level security;
 alter table public.manual_refund_destinations enable row level security;
 alter table public.payment_webhook_events enable row level security;
 alter table public.notification_deliveries enable row level security;
+alter table public.notification_webhook_events enable row level security;
 alter table public.reviews enable row level security;
 alter table public.journal_posts enable row level security;
 alter table public.loyalty_accounts enable row level security;
@@ -3532,6 +3647,9 @@ grant execute on function public.record_paymongo_refund_result(
 grant execute on function public.fail_paymongo_refund_request(uuid, text, text) to service_role;
 grant execute on function public.process_paymongo_refund_event(
   text, text, text, numeric, text, jsonb
+) to service_role;
+grant execute on function public.process_resend_delivery_event(
+  text, text, text, timestamptz
 ) to service_role;
 grant execute on function public.request_manual_refund_fallback(
   uuid, uuid, text, text, text
@@ -3712,6 +3830,8 @@ create policy payment_webhook_events_admin_read
   on public.payment_webhook_events for select to authenticated using (public.is_admin());
 create policy notification_deliveries_admin_read
   on public.notification_deliveries for select to authenticated using (public.is_admin());
+create policy notification_webhook_events_admin_read
+  on public.notification_webhook_events for select to authenticated using (public.is_admin());
 create policy business_settings_admin_read
   on public.business_settings for select to authenticated using (public.is_admin());
 create policy admin_audit_logs_admin_read
@@ -3719,7 +3839,7 @@ create policy admin_audit_logs_admin_read
 
 grant select on public.daily_inventory, public.inventory_adjustments,
   public.manual_refund_destinations, public.payment_webhook_events,
-  public.notification_deliveries, public.business_settings,
+  public.notification_deliveries, public.notification_webhook_events, public.business_settings,
   public.admin_audit_logs to authenticated;
 
 comment on function public.promote_admin_by_email(text) is
@@ -3787,6 +3907,8 @@ comment on function public.record_paymongo_refund_result(uuid, text, text, text,
   'Records an authenticated PayMongo refund API result and settles payment state only after success.';
 comment on function public.process_paymongo_refund_event(text, text, text, numeric, text, jsonb) is
   'Idempotently applies a signed PayMongo refund event to the exact payment and refund.';
+comment on function public.process_resend_delivery_event(text, text, text, timestamptz) is
+  'Service-role-only idempotent Resend delivery-state recorder. Email state never changes commerce state.';
 comment on function public.request_manual_refund_fallback(uuid, uuid, text, text, text) is
   'Stores an encrypted customer refund destination only after original-method refund failure.';
 comment on function public.update_catalog_product(uuid, uuid, text, numeric, boolean) is

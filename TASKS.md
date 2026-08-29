@@ -246,8 +246,9 @@ Do not begin without explicit approval.
 - [x] Send idempotent cancellation, refund-processing, refund-completed, and refund-problem emails from persisted state transitions
 - [x] Keep email sending server-side
 - [x] Configure and verify the Resend sending subdomain
-- [ ] Add idempotent Resend sending and signed delivery webhooks
+- [x] Add idempotent Resend sending and signed delivery webhooks
 - [x] Record order-confirmation message IDs, delivery states, failures, and retry attempts
+- [ ] Run a hosted end-to-end smoke test for all six notification transitions and Resend delivery tracking
 
 ## Phase 13 — Security and Production
 

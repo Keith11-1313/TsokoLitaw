@@ -458,11 +458,28 @@ last_attempt_at timestamptz nullable
 next_attempt_at timestamptz
 sent_at timestamptz nullable
 delivered_at timestamptz nullable
+provider_event_at timestamptz nullable
+last_event_type text nullable
 created_at timestamptz
 updated_at timestamptz
 ```
 
-The order trigger inserts `order.confirmed`, `order.ready_for_pickup`, and `order.cancelled` only from their persisted transitions. The refund trigger inserts `refund.processing`, `refund.completed`, and `refund.failed` only when the exact refund changes to that state, retaining `refund_id`. Stable `<event>:<entity-id>` keys prevent duplicate messages across PayMongo, loyalty, Admin fulfillment, cancellation, API responses, and webhook retries. `PENDING`, `PROCESSING`, `SENT`, `DELIVERED`, and `FAILED` states plus attempt timestamps support bounded retries and stale-claim recovery. Transactional email is dispatched only by trusted server code. Resend delivery webhooks remain a later slice and must be signature-verified and processed idempotently. Email status is operational metadata and never changes order or payment status by itself.
+The order trigger inserts `order.confirmed`, `order.ready_for_pickup`, and `order.cancelled` only from their persisted transitions. The refund trigger inserts `refund.processing`, `refund.completed`, and `refund.failed` only when the exact refund changes to that state, retaining `refund_id`. Stable `<event>:<entity-id>` keys prevent duplicate messages across PayMongo, loyalty, Admin fulfillment, cancellation, API responses, and webhook retries. `PENDING`, `PROCESSING`, and `SEND_FAILED` support bounded local-send retries and stale-claim recovery. `SENT`, `DELAYED`, `DELIVERED`, `BOUNCED`, `COMPLAINED`, `FAILED`, and `SUPPRESSED` describe provider-observed delivery outcomes. Transactional email is dispatched only by trusted server code. Email status is operational metadata and never changes order or payment status by itself.
+
+### `notification_webhook_events`
+
+```text
+id uuid primary key
+provider text default 'resend'
+provider_event_id text unique
+provider_message_id text
+event_type text
+event_created_at timestamptz
+processed_at timestamptz nullable
+created_at timestamptz
+```
+
+`POST /api/webhooks/resend` verifies Resend's signature against the untouched request body before any payload is trusted. `process_resend_delivery_event` is executable only by `service_role`; it records each Svix event ID once and updates a matching delivery only when the provider timestamp is newer than the last applied event. The ledger deliberately excludes the raw webhook body, recipient address, and email content. If a callback races ahead of saving its provider message ID, the event remains pending and the sender reconciles it immediately after the message ID is committed.
 
 ## 11. Reviews
 

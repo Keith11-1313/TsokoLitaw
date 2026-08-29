@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-**Phase 12: Loyalty and Notifications is active.** Phase 11 Admin operations, authentication, server commerce, and PayMongo test mode are complete. Loyalty is atomic, and all six agreed customer emails—confirmation, ready, cancellation, refund processing, refund completed, and refund problem—now queue from persisted transitions and send idempotently through Resend. Signed Resend delivery-webhook tracking and hosted notification smoke testing remain. PayMongo live charges remain deferred to production work.
+**Phase 12: Loyalty and Notifications is active.** Phase 11 Admin operations, authentication, server commerce, and PayMongo test mode are complete. Loyalty is atomic, and all six agreed customer emails—confirmation, ready, cancellation, refund processing, refund completed, and refund problem—now queue from persisted transitions and send idempotently through Resend. Signed, idempotent Resend delivery-webhook tracking is connected; a hosted notification smoke test remains. PayMongo live charges remain deferred to production work.
 
 The connected Admin Customers page is an account directory: it includes customer and Admin profiles, labels their roles explicitly, and shows their real order and loyalty activity when present.
 
@@ -382,7 +382,9 @@ The public GitHub repository can be connected to Vercel. Supabase URL and key va
 
 Production authentication will use `auth.tsokolitaw.com` through Supabase’s paid custom-domain add-on. The production checklist includes DNS and certificate verification, Google branding and callback updates, Vercel environment changes, and end-to-end authentication/authorization testing. Development continues to use the default Supabase project domain.
 
-The six transactional order/refund emails use Resend from server-only code and the verified `updates.tsokolitaw.com` sending subdomain. Database triggers queue committed order and refund transitions; immediate dispatch follows PayMongo, loyalty settlement, Admin fulfillment, cancellation, and verified refund updates, while `/api/cron/notifications` retries bounded failures with the shared `CRON_SECRET`. API keys and webhook secrets belong only in protected local/Vercel environment settings. Signed Resend delivery-webhook handling remains the final notification integration slice.
+The six transactional order/refund emails use Resend from server-only code and the verified `updates.tsokolitaw.com` sending subdomain. Database triggers queue committed order and refund transitions; immediate dispatch follows PayMongo, loyalty settlement, Admin fulfillment, cancellation, and verified refund updates, while `/api/cron/notifications` retries bounded local send failures with the shared `CRON_SECRET`.
+
+Resend delivery tracking is received at `POST /api/webhooks/resend`. Configure that deployed URL in Resend, subscribe to `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.complained`, `email.failed`, and `email.suppressed`, then copy the endpoint signing secret into the protected `RESEND_WEBHOOK_SECRET` environment variable. The handler verifies the signature against the untouched request body, stores each provider event once, and rejects older events as delivery-state updates when Resend delivers events out of order. API keys and webhook secrets belong only in protected local/Vercel environment settings.
 
 Do not add production secrets until the corresponding backend integration begins. Never commit `.env.local`.
 

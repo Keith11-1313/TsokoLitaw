@@ -42,11 +42,12 @@ Workflow changes must be reflected together in:
 - the Admin dashboard combines bounded live order, Catalog, Pickup, Inventory, customer, Journal, and review summaries
 - completed-order loyalty earning, customer/Admin progress, and single-use checkout redemption are implemented
 - All six V1 Resend customer emails are queued exactly once from committed order/refund transitions: confirmation, ready for pickup, cancellation, refund processing, refund completed, and refund problem; trusted retry processing is shared
+- Signed Resend delivery webhooks are verified against the untouched request body, deduplicated by provider event ID, and update operational delivery state without changing commerce state
 
 ### Deferred
 
 - PayMongo live mode
-- remaining Phase 12 signed Resend delivery-webhook tracking and hosted notification smoke testing
+- remaining Phase 12 hosted notification smoke testing
 - admin subdomain configuration
 
 UI labels must clearly distinguish mock or unavailable backend actions.

@@ -16,7 +16,7 @@ select set_config('search_path', (
   from pg_extension join pg_namespace on pg_namespace.oid = pg_extension.extnamespace
   where pg_extension.extname = 'pgtap'
 ), true);
-select plan(14);
+select plan(37);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -81,6 +81,143 @@ select ok(
 select ok(
   (select count(*) = 1 from pg_indexes where schemaname = 'public' and indexname = 'notification_deliveries_retry_idx'),
   'retry queue index exists'
+);
+
+select has_table('public', 'notification_webhook_events', 'delivery webhook event ledger exists');
+select has_function(
+  'public',
+  'process_resend_delivery_event',
+  array['text', 'text', 'text', 'timestamp with time zone'],
+  'Resend delivery event processor exists'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.process_resend_delivery_event(text,text,text,timestamp with time zone)',
+    'EXECUTE'
+  ),
+  'customers cannot process Resend delivery events'
+);
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.process_resend_delivery_event(text,text,text,timestamp with time zone)',
+    'EXECUTE'
+  ),
+  'trusted server code can process Resend delivery events'
+);
+
+update public.notification_deliveries
+set status = 'SENT', provider_message_id = 'email_notification_test'
+where event_type = 'order.confirmed';
+
+select ok(
+  public.process_resend_delivery_event(
+    'evt_sent', 'email_notification_test', 'email.sent', '2099-08-01 01:00:00+00'
+  ),
+  'first signed event is processed'
+);
+select is(
+  (select status from public.notification_deliveries where event_type = 'order.confirmed'),
+  'SENT',
+  'sent event retains sent state'
+);
+select is(
+  (select count(*) from public.notification_webhook_events where provider_event_id = 'evt_sent'),
+  1::bigint,
+  'provider event is recorded once'
+);
+select ok(
+  not public.process_resend_delivery_event(
+    'evt_sent', 'email_notification_test', 'email.sent', '2099-08-01 01:00:00+00'
+  ),
+  'duplicate provider event is ignored'
+);
+select is(
+  (select count(*) from public.notification_webhook_events where provider_event_id = 'evt_sent'),
+  1::bigint,
+  'duplicate does not create another ledger row'
+);
+
+select ok(
+  public.process_resend_delivery_event(
+    'evt_delivered', 'email_notification_test', 'email.delivered', '2099-08-01 01:02:00+00'
+  ),
+  'delivered event is processed'
+);
+select is(
+  (select status from public.notification_deliveries where event_type = 'order.confirmed'),
+  'DELIVERED',
+  'delivery status advances to delivered'
+);
+select is(
+  (select delivered_at from public.notification_deliveries where event_type = 'order.confirmed'),
+  '2099-08-01 01:02:00+00'::timestamptz,
+  'delivered timestamp comes from the provider event'
+);
+
+select ok(
+  public.process_resend_delivery_event(
+    'evt_delayed_older', 'email_notification_test', 'email.delivery_delayed', '2099-08-01 01:01:00+00'
+  ),
+  'an older out-of-order event is safely acknowledged'
+);
+select is(
+  (select status from public.notification_deliveries where event_type = 'order.confirmed'),
+  'DELIVERED',
+  'older delayed event cannot downgrade delivered state'
+);
+select is(
+  (select provider_event_at from public.notification_deliveries where event_type = 'order.confirmed'),
+  '2099-08-01 01:02:00+00'::timestamptz,
+  'newest provider event time is retained'
+);
+
+select ok(
+  public.process_resend_delivery_event(
+    'evt_bounced', 'email_notification_test', 'email.bounced', '2099-08-01 01:03:00+00'
+  ),
+  'newer bounce event is processed'
+);
+select is(
+  (select status from public.notification_deliveries where event_type = 'order.confirmed'),
+  'BOUNCED',
+  'newer bounce becomes the current delivery state'
+);
+select is(
+  (select last_event_type from public.notification_deliveries where event_type = 'order.confirmed'),
+  'email.bounced',
+  'last provider event type is retained for operations'
+);
+
+select ok(
+  not public.process_resend_delivery_event(
+    'evt_unknown_message', 'email_missing', 'email.failed', '2099-08-01 01:04:00+00'
+  ),
+  'event arriving before its provider message is saved remains pending'
+);
+select ok(
+  (select processed_at is null from public.notification_webhook_events where provider_event_id = 'evt_unknown_message'),
+  'early event remains available for sender reconciliation'
+);
+
+update public.notification_deliveries
+set status = 'SENT', provider_message_id = 'email_missing'
+where event_type = 'order.ready_for_pickup';
+select ok(
+  public.process_resend_delivery_event(
+    'evt_unknown_message', 'email_missing', 'email.failed', '2099-08-01 01:04:00+00'
+  ),
+  'the same event is reconciled after the provider message ID is saved'
+);
+select is(
+  (select status from public.notification_deliveries where event_type = 'order.ready_for_pickup'),
+  'FAILED',
+  'reconciled event updates the matching delivery'
+);
+select ok(
+  (select processed_at is not null from public.notification_webhook_events where provider_event_id = 'evt_unknown_message'),
+  'reconciled event is marked processed'
 );
 
 select * from finish();
