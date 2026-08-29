@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
 import { ProfileAccountShortcuts } from "@/components/customer/profile-account-shortcuts";
 import { ProfileForm } from "@/components/customer/profile-form";
+import { LoyaltyProgressCard } from "@/components/customer/loyalty-progress-card";
 import { AccountDangerZone } from "@/components/customer/account-danger-zone";
 import { SiteContainer } from "@/components/layout/site-container";
 import { requireCustomer } from "@/lib/auth";
+import { getCustomerLoyaltyStatus } from "@/lib/server-loyalty";
 
 export const metadata: Metadata = { title: "Profile | TsokoLitaw" };
 
 export default async function ProfilePage() {
   const profile = await requireCustomer("/profile");
+  const loyalty = await getCustomerLoyaltyStatus(profile.id);
 
   return (
     <CustomerPageShell>
@@ -22,10 +25,7 @@ export default async function ProfilePage() {
               <ProfileForm fullName={profile.fullName} email={profile.email} mobileNumber={profile.mobileNumber} />
             </section>
             <aside className="space-y-5">
-              <section className="rounded-card border border-border bg-surface p-6">
-                <h2 className="font-display text-xl">Loyalty progress</h2>
-                <p className="mt-2 text-sm text-muted-foreground">Order-linked loyalty will be connected during server commerce.</p>
-              </section>
+              <LoyaltyProgressCard loyalty={loyalty} />
               <ProfileAccountShortcuts isAdmin={profile.role === "admin"} />
               <AccountDangerZone deletionScheduledFor={profile.deletionScheduledFor} />
             </aside>

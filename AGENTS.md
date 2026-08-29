@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-**Phase 11: Orders, Reviews, Journal, and Admin CRUD is complete.** Authentication, authorization, Phase 9 server commerce, and the Phase 10 PayMongo test-mode implementation are also complete. Real Admin fulfillment, completed-order reviews, featured public reviews, Journal draft/publication, Catalog management, date-specific prepared-piece Inventory, Pickup scheduling, and bounded customer summaries are connected. Checkout exposes date-specific remaining-piece guidance while retaining atomic server enforcement. Phase 12 loyalty earning/redemption and notifications have not started.
+**Phase 12: Loyalty and Notifications is active.** Authentication, authorization, Phase 9 server commerce, Phase 10 PayMongo test mode, and Phase 11 Admin operations are complete. Seven completed orders atomically earn one free 4-piece reward; customer/Admin progress and safe checkout redemption are connected. Transactional notifications and email are the remaining Phase 12 work.
 
 Allowed:
 

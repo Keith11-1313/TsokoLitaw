@@ -534,10 +534,11 @@ status text
 earned_at timestamptz
 redeemed_at timestamptz nullable
 source_order_id uuid references orders(id)
+redeemed_order_id uuid references orders(id) nullable unique
 created_at timestamptz
 ```
 
-Initial loyalty seed: seven completed orders earn one free 4-piece reward.
+Initial loyalty rule: seven completed orders earn one free 4-piece reward. An order-completion trigger locks the customer's loyalty account, increments the count once, and creates the threshold reward. The atomic checkout writer locks an earned reward, verifies an eligible 4-piece line, binds it through `redeemed_order_id`, and discounts only that line's base price. Cancelled or expired redemption orders restore the reward. Zero-total reward orders record a paid `loyalty` settlement without PayMongo.
 
 ## 14. Terms and Operational Configuration
 

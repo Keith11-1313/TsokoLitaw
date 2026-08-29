@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-**Phase 11: Orders, Reviews, Journal, and Admin CRUD is complete.** Authentication, server commerce, and the PayMongo test-mode implementation are complete. Admin operational areas are connected, and the Dashboard provides live bounded summaries and charts across them. PayMongo remains test-only; live charges, loyalty, and transactional email remain deferred.
+**Phase 12: Loyalty and Notifications is active.** Phase 11 Admin operations, authentication, server commerce, and PayMongo test mode are complete. Completed orders now earn atomic seven-order rewards, customers and Admin can see progress, and one free 4-piece base price can be redeemed safely at checkout. Transactional notifications remain deferred within Phase 12; PayMongo live charges remain deferred to production work.
 
 Implemented customer and Admin interface:
 

@@ -18,7 +18,7 @@ select set_config(
    where pg_extension.extname = 'pgtap'),
   true
 );
-select plan(5);
+select plan(7);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -64,6 +64,12 @@ insert into public.orders (
   'customers-test', now(), now()
 );
 
+update public.loyalty_accounts
+set completed_order_count = 1
+where user_id = 'ca000000-0000-4000-8000-000000000002';
+insert into public.loyalty_rewards (user_id, reward_type, threshold, source_order_id)
+values ('ca000000-0000-4000-8000-000000000002', 'FREE_4_PIECE', 7, 'ca400000-0000-4000-8000-000000000001');
+
 select lives_ok(
   $$ select * from public.get_admin_customer_summaries(
     'ca000000-0000-4000-8000-000000000001', null, 100
@@ -90,6 +96,20 @@ select is(
   )),
   40::numeric,
   'the summary totals completed paid value'
+);
+select is(
+  (select loyalty_completed_orders from public.get_admin_customer_summaries(
+    'ca000000-0000-4000-8000-000000000001', 'summary', 100
+  )),
+  1,
+  'the summary includes loyalty completion progress'
+);
+select is(
+  (select available_rewards from public.get_admin_customer_summaries(
+    'ca000000-0000-4000-8000-000000000001', 'summary', 100
+  )),
+  1::bigint,
+  'the summary includes available loyalty rewards'
 );
 select throws_ok(
   $$ select * from public.get_admin_customer_summaries(

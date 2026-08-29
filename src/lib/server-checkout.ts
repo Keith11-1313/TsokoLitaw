@@ -14,6 +14,7 @@ export interface CreatePendingOrderInput {
   customerMobile: string;
   customerNotes: string;
   termsAccepted: boolean;
+  loyaltyRewardId: string | null;
   items: readonly CheckoutCartInput[];
 }
 
@@ -45,7 +46,16 @@ export async function createPendingOrder(
       cause: termsResult.error,
     });
   }
-  const total = pricedCart.subtotal;
+  const rewardDiscount = input.loyaltyRewardId
+    ? pricedCart.lines
+      .filter((line) => line.pieceCount === 4)
+      .reduce<number | null>((lowest, line) => lowest === null ? line.baseUnitPrice : Math.min(lowest, line.baseUnitPrice), null)
+    : 0;
+  if (input.loyaltyRewardId && rewardDiscount === null) {
+    throw new Error("A free 4-piece reward requires an eligible 4-piece box.");
+  }
+  const discount = rewardDiscount ?? 0;
+  const total = pricedCart.subtotal - discount;
   const pricedLines = pricedCart.lines.map((line) => ({
     product_id: line.productId,
     product_name: line.productName,
@@ -82,9 +92,10 @@ export async function createPendingOrder(
     customer_notes_value: input.customerNotes,
     priced_lines: pricedLines,
     subtotal_value: pricedCart.subtotal,
-    discount_value: 0,
+    discount_value: discount,
     total_value: total,
     terms_version_value: termsResult.data.version,
+    loyalty_reward_id: input.loyaltyRewardId,
   });
 
   if (error) throw new Error("The pending order could not be created.", { cause: error });

@@ -18,12 +18,14 @@ export default async function PaymentSuccessPage({
   const { data } = orderId
     ? await supabase
       .from("orders")
-      .select("order_number, payment_status")
+      .select("order_number, payment_status, payments(provider)")
       .eq("id", orderId)
       .eq("user_id", profile.id)
       .maybeSingle()
     : { data: null };
   const isPaid = data?.payment_status === "PAID";
+  const payment = Array.isArray(data?.payments) ? data.payments[0] : data?.payments;
+  const isLoyaltyOnly = payment?.provider === "loyalty";
 
   return (
     <>
@@ -31,7 +33,9 @@ export default async function PaymentSuccessPage({
       <PaymentResultPage
       title={isPaid ? "Payment confirmed" : "Payment is being verified"}
       description={isPaid
-        ? `PayMongo confirmed payment for order ${data.order_number}. TsokoLitaw can now prepare it for fulfillment.`
+        ? isLoyaltyOnly
+          ? `Your loyalty reward covered order ${data.order_number}. TsokoLitaw can now prepare it for fulfillment.`
+          : `PayMongo confirmed payment for order ${data.order_number}. TsokoLitaw can now prepare it for fulfillment.`
         : "Returning from PayMongo does not confirm payment by itself. We’ll update the order after the signed PayMongo notification arrives."}
       icon={isPaid ? CheckCircle2 : Clock3}
       tone="success"

@@ -155,7 +155,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.create_pending_order(uuid,uuid,uuid,uuid,text,text,text,jsonb,numeric,numeric,numeric,text)',
+    'public.create_pending_order(uuid,uuid,uuid,uuid,text,text,text,jsonb,numeric,numeric,numeric,text,uuid)',
     'EXECUTE'
   ),
   'authenticated users cannot invoke the atomic order writer directly'
@@ -163,7 +163,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.create_pending_order(uuid,uuid,uuid,uuid,text,text,text,jsonb,numeric,numeric,numeric,text)',
+    'public.create_pending_order(uuid,uuid,uuid,uuid,text,text,text,jsonb,numeric,numeric,numeric,text,uuid)',
     'EXECUTE'
   ),
   'service role can invoke the atomic order writer'

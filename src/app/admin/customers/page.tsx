@@ -16,6 +16,7 @@ const columns: readonly AdminTableColumn[] = [
   { key: "customer", label: "Customer" },
   { key: "account", label: "Account" },
   { key: "orders", label: "Completed Orders" },
+  { key: "loyalty", label: "Loyalty" },
   { key: "spend", label: "Completed Spend" },
   { key: "last", label: "Last Order" },
 ];
@@ -38,6 +39,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
     customer: <div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-full bg-surface-muted"><UserRound size={17} /></span><span><strong className="block text-foreground">{customer.fullName || "Unnamed customer"}</strong><span className="text-xs">{customer.email}</span>{customer.mobileNumber ? <span className="block text-xs">{customer.mobileNumber}</span> : null}</span></div>,
     account: <span className={cn("rounded-full px-3 py-1 text-xs font-bold", customer.isActive ? "bg-success-background text-success-foreground" : "bg-danger-background text-danger-foreground")}>{customer.isActive ? "Active" : "Inactive"}</span>,
     orders: customer.completedOrders,
+    loyalty: <span><strong className="block text-foreground">{customer.loyaltyCompletedOrders % 7}/7</strong><span className="text-xs">{customer.availableRewards} available {customer.availableRewards === 1 ? "reward" : "rewards"}</span></span>,
     spend: <strong className="text-foreground">{formatPhp(customer.completedSpend)}</strong>,
     last: formatDate(customer.lastOrderAt),
   }));

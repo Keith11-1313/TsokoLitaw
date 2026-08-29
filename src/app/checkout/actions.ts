@@ -19,6 +19,7 @@ export interface CheckoutSubmissionInput {
   customerMobile: string;
   customerNotes: string;
   termsAccepted: boolean;
+  loyaltyRewardId: string | null;
   items: CheckoutCartInput[];
 }
 
@@ -63,6 +64,9 @@ function getValidationMessage(input: CheckoutSubmissionInput) {
   if (input.customerMobile.trim().length > 30) return "Mobile number must be 30 characters or fewer.";
   if (input.customerNotes.trim().length > 500) return "Order notes must be 500 characters or fewer.";
   if (!input.termsAccepted) return "Accept the Terms & Conditions before continuing.";
+  if (input.loyaltyRewardId !== null && !UUID_PATTERN.test(input.loyaltyRewardId)) {
+    return "Choose a valid loyalty reward.";
+  }
   if (!Array.isArray(input.items) || input.items.length < 1 || input.items.length > 20) {
     return "Your cart must contain between 1 and 20 configured boxes.";
   }
@@ -79,6 +83,8 @@ function getCheckoutErrorMessage(error: unknown) {
   if (causeMessage.includes("Ready stock does not have enough pieces")
     || causeMessage.includes("Ready stock is no longer available")) return "Ready stock no longer has enough pieces for every selected box. Reduce the quantity or choose another schedule.";
   if (causeMessage.includes("Account is not eligible")) return "This account is not eligible to start a new checkout.";
+  if (causeMessage.includes("loyalty reward is unavailable")) return "That loyalty reward is no longer available. Refresh and try again.";
+  if (causeMessage.includes("free 4-piece reward requires")) return "Add and select an eligible 4-piece box before using this reward.";
   return "The order could not be prepared. No payment was collected. Please try again.";
 }
 
@@ -119,6 +125,13 @@ export async function submitPendingOrderAction(
   }
 
   try {
+    if (result.total === 0) {
+      return {
+        status: "success",
+        ...result,
+        checkoutUrl: `/payment/success?order=${encodeURIComponent(result.orderId)}`,
+      };
+    }
     const checkoutUrl = await getOrCreatePayMongoCheckout(result.orderId, profile.id);
     return { status: "success", ...result, checkoutUrl };
   } catch {

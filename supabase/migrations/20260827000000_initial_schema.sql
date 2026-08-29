@@ -392,15 +392,25 @@ create table public.loyalty_accounts (
 create table public.loyalty_rewards (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
-  reward_type text not null,
+  reward_type text not null check (reward_type = 'FREE_4_PIECE'),
   threshold integer not null check (threshold > 0),
   status public.loyalty_reward_status not null default 'earned',
   earned_at timestamptz not null default now(),
   redeemed_at timestamptz,
   source_order_id uuid not null references public.orders(id) on delete restrict,
+  redeemed_order_id uuid references public.orders(id) on delete restrict,
   created_at timestamptz not null default now(),
-  unique (user_id, reward_type, source_order_id)
+  unique (user_id, reward_type, source_order_id),
+  check (
+    (status = 'earned' and redeemed_at is null and redeemed_order_id is null)
+    or (status = 'redeemed' and redeemed_at is not null and redeemed_order_id is not null)
+    or status = 'expired'
+  )
 );
+
+create unique index loyalty_rewards_redeemed_order_key
+  on public.loyalty_rewards (redeemed_order_id)
+  where redeemed_order_id is not null;
 
 create table public.terms_versions (
   id uuid primary key default gen_random_uuid(),
@@ -2177,7 +2187,9 @@ returns table (
   joined_at timestamptz,
   completed_orders bigint,
   completed_spend numeric,
-  last_order_at timestamptz
+  last_order_at timestamptz,
+  loyalty_completed_orders integer,
+  available_rewards bigint
 )
 language plpgsql
 stable
@@ -2202,21 +2214,36 @@ begin
     profiles.mobile_number,
     profiles.is_active,
     profiles.created_at,
-    count(orders.id) filter (where orders.status = 'COMPLETED'),
-    coalesce(sum(orders.total) filter (
-      where orders.status = 'COMPLETED' and orders.payment_status = 'PAID'
-    ), 0::numeric),
-    max(orders.created_at)
+    coalesce(order_summary.completed_orders, 0),
+    coalesce(order_summary.completed_spend, 0::numeric),
+    order_summary.last_order_at,
+    coalesce(loyalty_accounts.completed_order_count, 0),
+    coalesce(reward_summary.available_rewards, 0)
   from public.profiles
-  left join public.orders on orders.user_id = profiles.id
+  left join public.loyalty_accounts on loyalty_accounts.user_id = profiles.id
+  left join lateral (
+    select
+      count(orders.id) filter (where orders.status = 'COMPLETED') as completed_orders,
+      coalesce(sum(orders.total) filter (
+        where orders.status = 'COMPLETED' and orders.payment_status = 'PAID'
+      ), 0::numeric) as completed_spend,
+      max(orders.created_at) as last_order_at
+    from public.orders
+    where orders.user_id = profiles.id
+  ) order_summary on true
+  left join lateral (
+    select count(*) as available_rewards
+    from public.loyalty_rewards
+    where loyalty_rewards.user_id = profiles.id
+      and loyalty_rewards.status = 'earned'
+  ) reward_summary on true
   where profiles.role = 'customer'
     and (
       nullif(btrim(search_value), '') is null
       or profiles.full_name ilike '%' || btrim(search_value) || '%'
       or profiles.email ilike '%' || btrim(search_value) || '%'
     )
-  group by profiles.id
-  order by max(orders.created_at) desc nulls last, profiles.created_at desc
+  order by order_summary.last_order_at desc nulls last, profiles.created_at desc
   limit greatest(1, least(coalesce(result_limit, 100), 500));
 end;
 $$;
@@ -2532,6 +2559,60 @@ begin
 end;
 $$;
 
+create or replace function public.sync_completed_order_loyalty()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  next_completed_count integer;
+  loyalty_threshold integer := 7;
+begin
+  if old.status is distinct from 'COMPLETED' and new.status = 'COMPLETED' then
+    insert into public.loyalty_accounts (user_id)
+    values (new.user_id)
+    on conflict (user_id) do nothing;
+
+    select coalesce((value #>> '{}')::integer, 7)
+    into loyalty_threshold
+    from public.business_settings
+    where key = 'loyalty_threshold';
+    loyalty_threshold := greatest(coalesce(loyalty_threshold, 7), 1);
+
+    update public.loyalty_accounts
+    set completed_order_count = completed_order_count + 1,
+        updated_at = now()
+    where user_id = new.user_id
+    returning completed_order_count into next_completed_count;
+
+    if next_completed_count % loyalty_threshold = 0 then
+      insert into public.loyalty_rewards (
+        user_id, reward_type, threshold, source_order_id
+      ) values (
+        new.user_id, 'FREE_4_PIECE', loyalty_threshold, new.id
+      )
+      on conflict (user_id, reward_type, source_order_id) do nothing;
+    end if;
+  elsif old.status is distinct from new.status
+    and new.status in ('CANCELLED', 'EXPIRED')
+  then
+    update public.loyalty_rewards
+    set status = 'earned',
+        redeemed_at = null,
+        redeemed_order_id = null
+    where redeemed_order_id = new.id
+      and status = 'redeemed';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger orders_sync_completed_loyalty
+  after update of status on public.orders
+  for each row execute procedure public.sync_completed_order_loyalty();
+
 create or replace function public.transition_order_status(
   target_admin_id uuid,
   target_order_id uuid,
@@ -2624,7 +2705,8 @@ create or replace function public.create_pending_order(
   subtotal_value numeric,
   discount_value numeric,
   total_value numeric,
-  terms_version_value text
+  terms_version_value text,
+  loyalty_reward_id uuid
 )
 returns table (
   created_order_id uuid,
@@ -2657,6 +2739,8 @@ declare
   addon jsonb;
   inserted_order_item_id uuid;
   requested_product record;
+  selected_reward public.loyalty_rewards%rowtype;
+  calculated_reward_discount numeric := 0;
 begin
   perform public.expire_pending_orders();
 
@@ -2695,6 +2779,36 @@ begin
     or jsonb_array_length(priced_lines) > 20
   then
     raise exception 'Priced order lines are invalid';
+  end if;
+
+  if loyalty_reward_id is not null then
+    select * into selected_reward
+    from public.loyalty_rewards
+    where id = loyalty_reward_id
+      and user_id = target_user_id
+      and reward_type = 'FREE_4_PIECE'
+      and status = 'earned'
+    for update;
+
+    if selected_reward.id is null then
+      raise exception 'The selected loyalty reward is unavailable';
+    end if;
+
+    select min((entry ->> 'base_unit_price')::numeric)
+    into calculated_reward_discount
+    from jsonb_array_elements(priced_lines) entry
+    where (entry ->> 'piece_count')::integer = 4
+      and (entry ->> 'quantity')::integer >= 1;
+
+    if calculated_reward_discount is null or calculated_reward_discount <= 0 then
+      raise exception 'A free 4-piece reward requires an eligible 4-piece box';
+    end if;
+  elsif discount_value <> 0 then
+    raise exception 'A discount requires an eligible loyalty reward';
+  end if;
+
+  if discount_value <> calculated_reward_discount then
+    raise exception 'The loyalty discount is inconsistent';
   end if;
 
   if subtotal_value < 0
@@ -2859,6 +2973,14 @@ begin
     now() + make_interval(mins => payment_expiry_minutes)
   );
 
+  if selected_reward.id is not null then
+    update public.loyalty_rewards
+    set status = 'redeemed',
+        redeemed_at = now(),
+        redeemed_order_id = generated_order_id
+    where id = selected_reward.id;
+  end if;
+
   for line in select value from jsonb_array_elements(priced_lines)
   loop
     insert into public.order_items (
@@ -2923,6 +3045,21 @@ begin
       );
     end if;
   end loop;
+
+  if total_value = 0 then
+    update public.orders
+    set status = 'CONFIRMED',
+        payment_status = 'PAID',
+        payment_expires_at = null,
+        updated_at = now()
+    where id = generated_order_id;
+
+    insert into public.payments (
+      order_id, provider, amount, status, paid_at
+    ) values (
+      generated_order_id, 'loyalty', 0, 'PAID', now()
+    );
+  end if;
 
   return query select generated_order_id, generated_order_number, total_value, true;
 end;
@@ -3210,7 +3347,7 @@ grant execute on function public.expire_pending_orders() to service_role;
 grant execute on function public.list_due_paymongo_checkouts(integer) to service_role;
 grant execute on function public.expire_paymongo_order(uuid, text) to service_role;
 grant execute on function public.create_pending_order(
-  uuid, uuid, uuid, uuid, text, text, text, jsonb, numeric, numeric, numeric, text
+  uuid, uuid, uuid, uuid, text, text, text, jsonb, numeric, numeric, numeric, text, uuid
 ) to service_role;
 grant execute on function public.prepare_paymongo_checkout(uuid, uuid) to service_role;
 grant execute on function public.attach_paymongo_checkout(uuid, text, text) to service_role;
@@ -3461,8 +3598,10 @@ comment on function public.upsert_journal_post(
 ) is
   'Service-role-only Journal draft/publication writer with active-Admin validation and audit logging.';
 comment on function public.create_pending_order(
-  uuid, uuid, uuid, uuid, text, text, text, jsonb, numeric, numeric, numeric, text
-) is 'Service-role-only atomic order writer. Next.js must reload and validate active catalog prices before calling it.';
+  uuid, uuid, uuid, uuid, text, text, text, jsonb, numeric, numeric, numeric, text, uuid
+) is 'Service-role-only atomic order writer with single-use loyalty redemption. Next.js must reload and validate active catalog prices before calling it.';
+comment on function public.sync_completed_order_loyalty() is
+  'Awards one free 4-piece reward per configured completed-order threshold and restores redeemed rewards when their order is cancelled or expires.';
 comment on function public.prepare_paymongo_checkout(uuid, uuid) is
   'Service-role-only payment initializer that creates at most one pending PayMongo payment per eligible order.';
 comment on function public.attach_paymongo_checkout(uuid, text, text) is

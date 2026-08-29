@@ -389,6 +389,10 @@ Every admin section must correspond to a real customer or operational need.
 | Customers | Support accounts and loyalty | Uses email-first account records |
 | Journal | Publish updates and moderate order-linked reviews | Feeds public Journal posts and Community highlights |
 
+### Loyalty redemption
+
+Seven orders count only after paid fulfillment reaches `COMPLETED`. Each threshold completion creates one immutable free-4-piece reward. Checkout may bind one available reward to one order containing a selected 4-piece box; the discount covers that box's current base price only, so add-ons and extra coating types remain payable. The database locks and redeems the reward in the same transaction that creates the order. Cancellation or expiry restores it. A resulting ₱0 order records a `loyalty` settlement and moves directly to `CONFIRMED` without a meaningless hosted payment session.
+
 ### Reason
 
 Admin screens without a customer or operational consumer create confusing controls and data that nobody uses.

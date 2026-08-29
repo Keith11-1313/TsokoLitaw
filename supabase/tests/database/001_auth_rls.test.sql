@@ -166,7 +166,8 @@ select is(
       40,
       0,
       40,
-      'rls-test-v1'
+      'rls-test-v1',
+      null
     )
   ),
   true,
@@ -182,7 +183,7 @@ select is(
       '92000000-0000-4000-8000-000000000001',
       'RLS Owner', null, null,
       '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"extra_coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0,"is_included_type":true}],"addon":null}]'::jsonb,
-      40, 0, 40, 'rls-test-v1'
+      40, 0, 40, 'rls-test-v1', null
     )
   ),
   false,
@@ -247,7 +248,7 @@ select is(
       '92000000-0000-4000-8000-000000000001',
       'RLS Admin', null, null,
       '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"extra_coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0,"is_included_type":true}],"addon":null}]'::jsonb,
-      40, 0, 40, 'rls-test-v1'
+      40, 0, 40, 'rls-test-v1', null
     )
   ),
   true,

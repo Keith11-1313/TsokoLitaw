@@ -95,6 +95,8 @@ Admin pages reuse the same core tokens with a denser operational layout:
 
 The Admin Dashboard is the one cross-feature overview. It uses directly labelled seven-day paid-revenue and fulfillment-status charts, a responsive linked card for every Admin area, recent orders, and genuine quick actions. Other Admin pages stay focused on their own workflow instead of repeating dashboard charts.
 
+Customer Profile shows completed-order progress toward the next seven-order reward plus the number of available free boxes. Admin Customers shows the same persisted count and available rewards. Checkout exposes reward redemption only when an available reward and a selected 4-piece box both exist, then shows the discount as a separate summary line before the final total.
+
 Do not create a separate visual identity for each admin page. Connected operational pages may remove the earlier purpose/customer-impact/connection explainer once their controls and effects are self-evident; mock pages must retain honest connection guidance.
 
 ## 4. Design Tokens

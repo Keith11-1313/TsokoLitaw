@@ -23,7 +23,7 @@ Workflow changes must be reflected together in:
 
 ## 2. Delivery Stages
 
-### Current: Phase 11 complete — Orders, Reviews, Journal, and Admin CRUD
+### Current: Phase 12 — Loyalty and Notifications
 
 - Next.js, React, TypeScript, and Tailwind UI
 - temporary client-side interactions only where persistence is not required
@@ -40,11 +40,12 @@ Workflow changes must be reflected together in:
 - Admin Journal combines persisted post publishing with audited review visibility/featured decisions
 - featured visible reviews and published Journal posts are loaded by the public Journal
 - the Admin dashboard combines bounded live order, Catalog, Pickup, Inventory, customer, Journal, and review summaries
+- completed-order loyalty earning, customer/Admin progress, and single-use checkout redemption are implemented
 
 ### Deferred
 
 - PayMongo live mode
-- email and Phase 12 loyalty/notification work
+- Phase 12 transactional email and notification work
 - admin subdomain configuration
 
 UI labels must clearly distinguish mock or unavailable backend actions.
@@ -353,7 +354,7 @@ Initial loyalty rule:
 
 - every seven completed orders earns a free 4-piece box
 
-Cancelled, expired, unpaid, or failed orders do not count. Prevent duplicate rewards and redemption.
+Cancelled, expired, unpaid, or failed orders do not count. One reward discounts the current base price of one selected 4-piece box; add-ons and additional coating types remain payable. Redemption is atomic, one reward cannot fund two orders, and a pending redemption returns to available if its order expires or is cancelled. A fully rewarded ₱0 order is recorded as loyalty-settled and confirmed without opening PayMongo.
 
 ## 15. Admin
 

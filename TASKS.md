@@ -237,9 +237,9 @@ Do not begin without explicit approval.
 
 ## Phase 12 — Loyalty and Notifications
 
-- [ ] Count completed orders only
-- [ ] Create and redeem seven-order reward
-- [ ] Prevent duplicate rewards
+- [x] Count completed orders only
+- [x] Create and redeem seven-order reward
+- [x] Prevent duplicate rewards
 - [ ] Send order confirmation email
 - [ ] Send ready-for-pickup email
 - [ ] Add cancellation/refund communication

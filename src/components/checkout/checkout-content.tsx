@@ -13,15 +13,17 @@ import { CustomSelect } from "@/components/ui/custom-select";
 import { FormField } from "@/components/ui/form-field";
 import { calculateCartLineTotal, formatPhp } from "@/lib/commerce";
 import type { AuthProfile } from "@/lib/auth";
+import type { CustomerLoyaltyStatus } from "@/lib/server-loyalty";
 import type { CheckoutAvailability } from "@/types/pickup";
 
 interface CheckoutContentProps {
   availability: CheckoutAvailability;
   profile: AuthProfile;
+  loyalty: CustomerLoyaltyStatus;
   resumeOrderId: string | null;
 }
 
-export function CheckoutContent({ availability, profile, resumeOrderId }: CheckoutContentProps) {
+export function CheckoutContent({ availability, profile, loyalty, resumeOrderId }: CheckoutContentProps) {
   const { selectedItems, selectedSubtotal, markSelectedItemsPendingCheckout } = useCart();
   const checkoutKeyRef = useRef<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -29,6 +31,7 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
   const [customerMobile, setCustomerMobile] = useState(profile.mobileNumber ?? "");
   const [customerNotes, setCustomerNotes] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [useReward, setUseReward] = useState(false);
   const [submission, setSubmission] = useState<CheckoutSubmissionResult | null>(null);
   const [dateId, setDateId] = useState(availability.dates[0]?.id ?? "");
   const selectedDate = availability.dates.find((date) => date.id === dateId)
@@ -66,6 +69,9 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
         customerMobile,
         customerNotes,
         termsAccepted,
+        loyaltyRewardId: useReward && selectedItems.some((item) => item.pieceCount === 4)
+          ? loyalty.availableRewards[0]?.id ?? null
+          : null,
         items: selectedItems.map((item) => ({
           variantId: item.variantId,
           coatingCounts: item.coatingCounts,
@@ -132,6 +138,12 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
   );
   const remainingPieces = selectedDate?.remainingPieces ?? null;
   const exceedsPreparedStock = remainingPieces !== null && requestedPieces > remainingPieces;
+  const availableReward = loyalty.availableRewards[0] ?? null;
+  const eligibleRewardBoxes = selectedItems.filter((item) => item.pieceCount === 4);
+  const rewardDiscount = useReward && availableReward && eligibleRewardBoxes.length
+    ? Math.min(...eligibleRewardBoxes.map((item) => item.boxPrice))
+    : 0;
+  const checkoutTotal = Math.max(selectedSubtotal - rewardDiscount, 0);
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[1.25fr_.75fr]">
@@ -145,6 +157,30 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
             <FormField id="checkout-mobile" label="Mobile number (optional)" hint="Add a number only if you also want pickup updates by phone." inputProps={{ value: customerMobile, onChange: (event) => setCustomerMobile(event.target.value), placeholder: "+63 900 000 0000", autoComplete: "tel", maxLength: 30 }} />
           </div>
         </section>
+
+        {availableReward ? (
+          <section className="rounded-card border border-border bg-surface p-6 sm:p-8" aria-labelledby="checkout-reward-title">
+            <h2 id="checkout-reward-title" className="font-display text-2xl">Loyalty reward</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">Use one reward for the base price of one 4-piece box. Add-ons and additional coating types remain charged.</p>
+            <label className="mt-5 flex items-start gap-3 rounded-control bg-success-background p-4 text-sm text-success-foreground">
+              <input
+                type="checkbox"
+                checked={useReward}
+                onChange={(event) => setUseReward(event.target.checked)}
+                disabled={!eligibleRewardBoxes.length}
+                className="mt-0.5 size-4 accent-brand"
+              />
+              <span>
+                <strong className="block">Apply free 4-piece reward</strong>
+                <span className="mt-1 block text-xs">
+                  {eligibleRewardBoxes.length
+                    ? `${loyalty.availableRewards.length} reward${loyalty.availableRewards.length === 1 ? "" : "s"} available.`
+                    : "Select a 4-piece box in your cart to use this reward."}
+                </span>
+              </span>
+            </label>
+          </section>
+        ) : null}
 
         <section className="rounded-card border border-border bg-surface p-6 sm:p-8">
           <h2 className="font-display text-2xl">Campus pickup</h2>
@@ -204,9 +240,13 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
           ))}
         </ul>
         <div className="border-t border-border bg-surface-muted px-6 py-5">
-          <div className="flex items-end justify-between gap-4">
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between gap-4"><span>Subtotal</span><span>{formatPhp(selectedSubtotal)}</span></div>
+            {rewardDiscount > 0 ? <div className="flex justify-between gap-4 font-bold text-success-foreground"><span>Loyalty reward</span><span>−{formatPhp(rewardDiscount)}</span></div> : null}
+          </div>
+          <div className="mt-4 flex items-end justify-between gap-4 border-t border-border pt-4">
             <div><span className="block text-xs font-bold uppercase tracking-wide text-muted-foreground">Estimated total</span><span className="mt-1 block text-xs text-muted-foreground">Verified again before payment</span></div>
-            <strong className="font-display text-3xl text-brand">{formatPhp(selectedSubtotal)}</strong>
+            <strong className="font-display text-3xl text-brand">{formatPhp(checkoutTotal)}</strong>
           </div>
         </div>
         <div className="m-6 space-y-2 rounded-control bg-warning-background p-4 text-xs leading-5 text-warning-foreground">
