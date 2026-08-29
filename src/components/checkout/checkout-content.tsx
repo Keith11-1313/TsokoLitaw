@@ -126,6 +126,12 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
   }
 
   const hasPickupAvailability = Boolean(selectedDate && selectedWindow && locationId);
+  const requestedPieces = selectedItems.reduce(
+    (total, item) => total + item.pieceCount * item.quantity,
+    0,
+  );
+  const remainingPieces = selectedDate?.remainingPieces ?? null;
+  const exceedsPreparedStock = remainingPieces !== null && requestedPieces > remainingPieces;
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[1.25fr_.75fr]">
@@ -147,6 +153,13 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
               <CustomSelect label="Pickup date" value={dateId} onChange={changeDate} options={availability.dates.map((date) => ({ value: date.id, label: date.label }))} />
               <CustomSelect label="Pickup time" value={selectedWindow.id} onChange={changeWindow} options={selectedDate.windows.map((window) => ({ value: window.id, label: window.label }))} />
               <CustomSelect className="sm:col-span-2" label="Pickup location" value={locationId} onChange={setLocationId} options={selectedWindow.locations.map((location) => ({ value: location.id, label: location.name }))} />
+              {remainingPieces !== null ? (
+                <div role={exceedsPreparedStock ? "alert" : "status"} className={`sm:col-span-2 rounded-control p-4 text-sm leading-6 ${exceedsPreparedStock ? "bg-danger-background font-bold text-danger-foreground" : "bg-success-background text-success-foreground"}`}>
+                  {exceedsPreparedStock
+                    ? `This cart needs ${requestedPieces} pieces, but only ${remainingPieces} remain for this pickup date. Return to your cart and reduce the box quantities or select another date.`
+                    : `${remainingPieces} prepared pieces remain for this date. Your selected cart uses ${requestedPieces}.`}
+                </div>
+              ) : null}
               <FormField id="checkout-notes" label="Order notes (optional)" className="sm:col-span-2" inputProps={{ value: customerNotes, onChange: (event) => setCustomerNotes(event.target.value), placeholder: "Pickup or preparation notes", maxLength: 500 }} />
             </div>
           ) : (
@@ -163,8 +176,8 @@ export function CheckoutContent({ availability, profile, resumeOrderId }: Checko
         {submission?.status === "error" ? (
           <p role="alert" className="rounded-control bg-danger-background p-4 text-sm font-bold text-danger-foreground">{submission.message}</p>
         ) : null}
-        <PrimaryButton type="submit" disabled={!hasPickupAvailability || !termsAccepted || isPending || submission?.status === "success"} className="w-full rounded-control!">
-          {!hasPickupAvailability ? "Pickup unavailable" : isPending ? "Opening secure payment…" : submission?.status === "success" ? "Opening PayMongo…" : "Continue to secure payment"}
+        <PrimaryButton type="submit" disabled={!hasPickupAvailability || exceedsPreparedStock || !termsAccepted || isPending || submission?.status === "success"} className="w-full rounded-control!">
+          {!hasPickupAvailability ? "Pickup unavailable" : exceedsPreparedStock ? "Reduce cart quantities" : isPending ? "Opening secure payment…" : submission?.status === "success" ? "Opening PayMongo…" : "Continue to secure payment"}
         </PrimaryButton>
         <p className="text-center text-xs leading-5 text-muted-foreground">You’ll complete payment on PayMongo’s secure test checkout. Your order is confirmed only after TsokoLitaw receives PayMongo’s signed payment notification.</p>
       </form>

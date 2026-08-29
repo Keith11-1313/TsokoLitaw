@@ -25,7 +25,7 @@ select set_config(
   true
 );
 
-select plan(53);
+select plan(55);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -189,8 +189,16 @@ select ok(
   'anonymous checkout can read only the customer-safe Pickup rules'
 );
 select ok(
-  has_function_privilege('anon', 'public.get_public_stocked_pickup_dates()', 'EXECUTE'),
-  'anonymous checkout can discover which Pickup dates have sellable pieces without reading inventory balances'
+  has_function_privilege('anon', 'public.get_public_pickup_inventory()', 'EXECUTE'),
+  'anonymous checkout can read customer-safe remaining pieces by Pickup date'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.get_admin_customer_summaries(uuid,text,integer)', 'EXECUTE'),
+  'authenticated clients cannot invoke Admin customer aggregates directly'
+);
+select ok(
+  has_function_privilege('service_role', 'public.get_admin_customer_summaries(uuid,text,integer)', 'EXECUTE'),
+  'service role can invoke bounded Admin customer aggregates'
 );
 select ok(
   not has_function_privilege(

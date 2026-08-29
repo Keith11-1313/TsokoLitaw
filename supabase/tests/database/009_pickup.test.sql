@@ -24,7 +24,7 @@ select set_config(
   true
 );
 
-select plan(18);
+select plan(19);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -136,7 +136,7 @@ select is(
   'the customer-safe settings reader returns the saved lead time'
 );
 select is(
-  (select count(*) from public.get_public_stocked_pickup_dates() where pickup_date = '2099-03-01'),
+  (select count(*) from public.get_public_pickup_inventory() where pickup_date = '2099-03-01'),
   0::bigint,
   'a Ready Stock date is not customer-sellable before pieces are published'
 );
@@ -150,9 +150,14 @@ select public.set_pickup_date_open(
   (select id from public.pickup_dates where pickup_date = '2099-03-01'), true
 );
 select is(
-  (select count(*) from public.get_public_stocked_pickup_dates() where pickup_date = '2099-03-01'),
+  (select count(*) from public.get_public_pickup_inventory() where pickup_date = '2099-03-01'),
   1::bigint,
   'a Ready Stock date becomes customer-sellable after pieces are published'
+);
+select is(
+  (select available_pieces from public.get_public_pickup_inventory() where pickup_date = '2099-03-01'),
+  20,
+  'customer stock guidance reports the remaining prepared-piece balance'
 );
 select throws_ok(
   $$ select public.upsert_pickup_schedule(

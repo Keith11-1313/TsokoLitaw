@@ -233,7 +233,7 @@ function formatPickupTime(value: string) {
 
 async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
   const supabase = createPublicSupabaseClient();
-  const [datesResult, settingsResult, stockedDatesResult] = await measureServerOperation(
+  const [datesResult, settingsResult, inventoryResult] = await measureServerOperation(
     "commerce.pickup-definitions",
     () => Promise.all([
       supabase
@@ -262,13 +262,13 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
         .order("pickup_date", { ascending: true })
         .order("sort_order", { referencedTable: "pickup_windows", ascending: true }),
       supabase.rpc("get_public_pickup_settings"),
-      supabase.rpc("get_public_stocked_pickup_dates"),
+      supabase.rpc("get_public_pickup_inventory"),
     ]),
   );
 
-  if (datesResult.error || settingsResult.error || stockedDatesResult.error) {
+  if (datesResult.error || settingsResult.error || inventoryResult.error) {
     throw new Error("Pickup availability could not be loaded.", {
-      cause: datesResult.error ?? settingsResult.error ?? stockedDatesResult.error,
+      cause: datesResult.error ?? settingsResult.error ?? inventoryResult.error,
     });
   }
 
@@ -286,16 +286,18 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
     today,
     Number(settings.minimum_lead_days) + (currentTime >= cutoff ? 1 : 0),
   );
-  const stockedDates = new Set(
-    (stockedDatesResult.data ?? []).map((row: { pickup_date: string }) => String(row.pickup_date)),
+  const remainingPiecesByDate = new Map<string, number>(
+    (inventoryResult.data ?? []).map((row: { pickup_date: string; available_pieces: number }): [string, number] => [
+      String(row.pickup_date), Number(row.available_pieces),
+    ]),
   );
 
   const dates = (datesResult.data ?? []) as unknown as PickupDateRow[];
   const checkoutDates = dates.flatMap((date) => {
     if (date.pickup_date === today && date.availability_mode === "MADE_TO_ORDER") return [];
-    if (date.availability_mode === "READY_STOCK" && !stockedDates.has(date.pickup_date)) return [];
+    if (date.availability_mode === "READY_STOCK" && !remainingPiecesByDate.has(date.pickup_date)) return [];
     if (date.pickup_date === today && date.availability_mode === "HYBRID"
-      && !stockedDates.has(date.pickup_date)) return [];
+      && !remainingPiecesByDate.has(date.pickup_date)) return [];
     if (date.pickup_date > today
       && (date.availability_mode === "MADE_TO_ORDER" || date.availability_mode === "HYBRID")
       && date.pickup_date < earliestAdvanceDate) return [];
@@ -324,6 +326,10 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
       value: date.pickup_date,
       label: formatPickupDate(date.pickup_date),
       availabilityMode: date.availability_mode,
+      remainingPieces: date.availability_mode === "READY_STOCK"
+        || (date.availability_mode === "HYBRID" && date.pickup_date === today)
+        ? remainingPiecesByDate.get(date.pickup_date) ?? null
+        : null,
       windows: checkoutWindows,
     }];
   });

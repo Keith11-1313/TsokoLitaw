@@ -15,6 +15,7 @@ export interface CheckoutPickupDate {
   value: string;
   label: string;
   availabilityMode: "MADE_TO_ORDER" | "READY_STOCK" | "HYBRID";
+  remainingPieces: number | null;
   windows: readonly CheckoutPickupWindow[];
 }
 

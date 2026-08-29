@@ -106,7 +106,6 @@ values
   ('pickup_slot_interval_minutes', '60'::jsonb),
   ('pickup_operating_days', '["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"]'::jsonb),
   ('pickup_operating_hours', '{"start":"07:00","end":"19:00"}'::jsonb),
-  ('support_email', '"tsokolitaw@gmail.com"'::jsonb),
   ('loyalty_threshold', '7'::jsonb)
 on conflict (key) do update set value = excluded.value, updated_at = now();
 

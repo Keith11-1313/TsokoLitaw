@@ -203,7 +203,7 @@ Current frontend cart supports:
 - browser-local persistence
 - checkout navigation
 
-The browser cart is a UI convenience only. Builder and cart quantities use provisional safety limits until date-specific stock guidance is exposed in the customer UI. Checkout remains authoritative: it must reject manipulated prices, quantities, stock, pickup eligibility, and payment values using the selected pickup date and each variant's piece count.
+The browser cart is a UI convenience only and does not know the eventual pickup date. Builder and cart quantities retain a defensive client cap; after the customer selects a pickup date, Checkout displays that date's remaining prepared pieces, compares them with the selected cart's total piece demand, and prevents an obviously oversized submission. The transactional checkout writer remains authoritative against manipulated or concurrently stale prices, quantities, stock, pickup eligibility, and payment values.
 
 ## 9. Checkout and Pickup
 
@@ -368,9 +368,8 @@ Admin pages:
 - Pickup
 - Customers
 - Journal & Reviews
-- Settings
 
-Admin may eventually manage boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, loyalty, orders, reviews, Journal posts, and operational settings.
+Admin may eventually manage boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, loyalty, orders, reviews, and Journal posts. Pickup Management owns pickup-related operational rules; a separate Settings page is intentionally omitted until genuine cross-feature configuration exists.
 
 The Admin Catalog coating form collects name, description, a validated 1:1 image, allergen information, availability, and the coating's additional-type price. Publication uses authenticated server-side persistence, controlled public media storage, cache invalidation, and Admin audit logging.
 

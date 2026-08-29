@@ -388,7 +388,6 @@ Every admin section must correspond to a real customer or operational need.
 | Pickup | Publish serviceable dates, times, and locations | Feeds Checkout pickup controls |
 | Customers | Support accounts and loyalty | Uses email-first account records |
 | Journal & Reviews | Publish updates and moderate order-linked reviews | Feeds public Journal posts and Community highlights |
-| Settings | Centralize cross-feature operational defaults | Affects contact, pickup, email, and loyalty |
 
 ### Reason
 

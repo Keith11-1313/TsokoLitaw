@@ -89,7 +89,6 @@ Phase 11 Orders, Reviews, Journal, and Admin CRUD is active. Phase 10 PayMongo T
 - [x] Customers
 - [x] Review Management
 - [x] Journal Management
-- [x] Settings
 - [x] Remove editable Store Name
 - [x] Add responsive tables and mobile navigation drawer
 - [x] Disable backend-dependent actions with explanations
@@ -230,8 +229,9 @@ Do not begin without explicit approval.
 - [x] Clarify selected-date Inventory UI, shared piece limits, accounted-piece lower bounds, and removal of redundant online-availability/cash-sale controls
 - [x] Connect Admin Pickup CRUD so Admin can create, publish, close, and edit dates, modes, windows, locations, lead time, cutoff, grace period, and operating hours without SQL
 - [x] Make newly published Ready Stock and Hybrid dates appear automatically in Admin Inventory; Made to order dates must not request prepared stock
-- [ ] Implement customer and settings administration
-- [ ] Replace provisional builder/cart quantity caps with remaining date-specific piece-stock guidance; retain transactional checkout enforcement
+- [x] Connect bounded Admin customer summaries to real profiles and completed-order aggregates; defer loyalty earning/redemption to Phase 12
+- [x] Remove the redundant Admin Settings page; Pickup owns pickup rules and no separate page returns until genuine global configuration exists
+- [x] Show selected-date remaining prepared pieces in Checkout, compare them with selected cart piece demand, and retain transactional enforcement
 - [x] Add auditability for fulfillment, Catalog mutations, review moderation, and Journal publication actions
 
 ## Phase 12 — Loyalty and Notifications

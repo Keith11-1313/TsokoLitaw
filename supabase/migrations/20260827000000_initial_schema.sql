@@ -1960,8 +1960,10 @@ declare
   audit_action text;
 begin
   if not exists (
-    select 1 from public.profiles
-    where id = target_admin_id and role = 'admin' and is_active
+    select 1 from public.profiles as admin_profile
+    where admin_profile.id = target_admin_id
+      and admin_profile.role = 'admin'
+      and admin_profile.is_active
   ) then
     raise exception 'Active administrator access is required';
   end if;
@@ -2134,20 +2136,89 @@ as $$
     coalesce((select (value ->> 'end')::time from public.business_settings where key = 'pickup_operating_hours'), '19:00'::time);
 $$;
 
-create or replace function public.get_public_stocked_pickup_dates()
-returns table (pickup_date date)
+create or replace function public.get_public_pickup_inventory()
+returns table (
+  pickup_date date,
+  available_pieces integer
+)
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select distinct daily_inventory.pickup_date
+  select
+    daily_inventory.pickup_date,
+    daily_inventory.stock_total - daily_inventory.stock_reserved - daily_inventory.stock_sold
   from public.daily_inventory
   join public.pickup_dates on pickup_dates.pickup_date = daily_inventory.pickup_date
   where pickup_dates.is_open
     and pickup_dates.availability_mode in ('READY_STOCK', 'HYBRID')
     and daily_inventory.is_available
+    and daily_inventory.product_id = (
+      select products.id from public.products
+      where products.is_active
+      order by products.created_at
+      limit 1
+    )
     and daily_inventory.stock_total - daily_inventory.stock_reserved - daily_inventory.stock_sold > 0;
+$$;
+
+create or replace function public.get_admin_customer_summaries(
+  target_admin_id uuid,
+  search_value text default null,
+  result_limit integer default 100
+)
+returns table (
+  user_id uuid,
+  full_name text,
+  email text,
+  mobile_number text,
+  is_active boolean,
+  joined_at timestamptz,
+  completed_orders bigint,
+  completed_spend numeric,
+  last_order_at timestamptz
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1 from public.profiles as admin_profile
+    where admin_profile.id = target_admin_id
+      and admin_profile.role = 'admin'
+      and admin_profile.is_active
+  ) then
+    raise exception 'Active Admin access required';
+  end if;
+
+  return query
+  select
+    profiles.id,
+    profiles.full_name,
+    profiles.email,
+    profiles.mobile_number,
+    profiles.is_active,
+    profiles.created_at,
+    count(orders.id) filter (where orders.status = 'COMPLETED'),
+    coalesce(sum(orders.total) filter (
+      where orders.status = 'COMPLETED' and orders.payment_status = 'PAID'
+    ), 0::numeric),
+    max(orders.created_at)
+  from public.profiles
+  left join public.orders on orders.user_id = profiles.id
+  where profiles.role = 'customer'
+    and (
+      nullif(btrim(search_value), '') is null
+      or profiles.full_name ilike '%' || btrim(search_value) || '%'
+      or profiles.email ilike '%' || btrim(search_value) || '%'
+    )
+  group by profiles.id
+  order by max(orders.created_at) desc nulls last, profiles.created_at desc
+  limit greatest(1, least(coalesce(result_limit, 100), 500));
+end;
 $$;
 
 create or replace function public.upsert_pickup_schedule(
@@ -3127,7 +3198,7 @@ grant usage on schema public to anon, authenticated;
 grant execute on function public.is_active_user() to anon, authenticated;
 grant execute on function public.is_admin() to anon, authenticated;
 grant execute on function public.get_public_pickup_settings() to anon, authenticated;
-grant execute on function public.get_public_stocked_pickup_dates() to anon, authenticated;
+grant execute on function public.get_public_pickup_inventory() to anon, authenticated;
 grant execute on function public.promote_admin_by_email(text) to service_role;
 grant execute on function public.request_account_deletion() to authenticated;
 grant execute on function public.cancel_account_deletion() to authenticated;
@@ -3191,6 +3262,7 @@ grant execute on function public.set_pickup_date_open(uuid, uuid, boolean) to se
 grant execute on function public.update_pickup_settings(
   uuid, integer, time, integer, time, time
 ) to service_role;
+grant execute on function public.get_admin_customer_summaries(uuid, text, integer) to service_role;
 
 grant select on public.products, public.product_variants, public.coatings, public.addons,
   public.pickup_locations, public.pickup_dates, public.pickup_windows,
@@ -3364,8 +3436,10 @@ comment on function public.transition_order_status(
   'Service-role-only fulfillment transition with active-Admin validation, optimistic status matching, and audit logging.';
 comment on function public.get_public_pickup_settings() is
   'Returns only customer-safe lead-time, cutoff, grace-period, and operating-hour settings used by Checkout.';
-comment on function public.get_public_stocked_pickup_dates() is
-  'Returns only published dates that currently have at least one sellable prepared piece; exact stock balances remain private.';
+comment on function public.get_public_pickup_inventory() is
+  'Returns remaining prepared pieces by published pickup date and product for customer checkout guidance; transactional reservation remains authoritative.';
+comment on function public.get_admin_customer_summaries(uuid, text, integer) is
+  'Service-role-only bounded customer and completed-order aggregate with active-Admin validation.';
 comment on function public.upsert_pickup_schedule(
   uuid, uuid, date, public.pickup_availability_mode, boolean, text, jsonb
 ) is

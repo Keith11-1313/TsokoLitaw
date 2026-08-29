@@ -198,7 +198,7 @@ This join lets Admin offer one window at one or both campus pickup locations wit
 
 `pickup_dates` is the source of truth for whether a date exists and whether it is published. Every mode requires a row plus at least one eligible window/location combination. Admin Pickup owns these records. Admin Inventory must not create them; it may attach prepared stock only to an upcoming `READY_STOCK` or `HYBRID` date. `MADE_TO_ORDER` needs no `daily_inventory` record.
 
-Pickup writes use service-role-only `upsert_pickup_schedule`, `set_pickup_date_open`, and `update_pickup_settings` functions. Each rechecks the active Admin and writes `admin_audit_logs`. A schedule with an order or `daily_inventory` dependency cannot have its date, mode, windows, or locations rewritten; its publication state may still be closed or restored. `get_public_pickup_settings` exposes only customer-safe lead-time, cutoff, grace-period, and operating-hour values to Checkout. The atomic order writer independently rechecks those rules so cached or manipulated browser options cannot bypass them.
+Pickup writes use service-role-only `upsert_pickup_schedule`, `set_pickup_date_open`, and `update_pickup_settings` functions. Each rechecks the active Admin and writes `admin_audit_logs`. A schedule with an order or `daily_inventory` dependency cannot have its date, mode, windows, or locations rewritten; its publication state may still be closed or restored. `get_public_pickup_settings` exposes customer-safe lead-time, cutoff, grace-period, and operating-hour values. `get_public_pickup_inventory` exposes the active product's remaining prepared pieces by eligible date for Checkout guidance. The atomic order writer independently rechecks all rules and stock so cached guidance cannot authorize an oversell.
 
 ## 7. Inventory
 
@@ -539,7 +539,7 @@ created_at timestamptz
 
 Initial loyalty seed: seven completed orders earn one free 4-piece reward.
 
-## 14. Terms and Settings
+## 14. Terms and Operational Configuration
 
 ### `terms_versions`
 
@@ -560,17 +560,16 @@ value jsonb
 updated_at timestamptz
 ```
 
-Possible keys:
+Internal keys owned by their operational feature:
 
 - `payment_expiry_minutes`
 - `pickup_grace_minutes`
 - `minimum_lead_days`
 - `daily_cutoff_time`
-- `support_email`
 - `extra_coating_type_price`
 - `loyalty_threshold`
 
-Do not store provider secrets or the fixed TsokoLitaw brand identity here.
+Do not expose this table as a generic Admin Settings form. Pickup Management owns pickup keys; future Loyalty work owns its threshold. Do not store provider secrets or the fixed TsokoLitaw brand identity here.
 
 ### `mutation_rate_limit_buckets`
 

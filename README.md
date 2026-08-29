@@ -181,7 +181,6 @@ The main navigation contains Home, Our Creations, and Journal. My Orders is acco
 /admin/pickup
 /admin/customers
 /admin/journal
-/admin/settings
 ```
 
 Admin pages remain under `/admin` until subdomain routing, authentication, and server authorization are implemented. `/admin/reviews` redirects to the completed-order review section of `/admin/journal`; other compatibility redirects remain for older admin URLs.
