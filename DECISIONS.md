@@ -343,7 +343,7 @@ Binding a review to a completed order reduces spam, prevents unrelated submissio
 - customer email is not displayed publicly
 - public cards show the customer display name without the phrase “Verified completed order”
 - the completed-order detail opens review entry in a modal that repeats the ordered items, centers the rating controls, and shows the enforced comment limit
-- Admin Journal & Reviews moderates visibility and featured status in the same operational area as public Journal publishing
+- Admin Journal moderates visibility and featured status in the same operational area as public Journal publishing
 
 ## 14. Journal Instead of Vlog
 
@@ -387,7 +387,7 @@ Every admin section must correspond to a real customer or operational need.
 | Inventory | Prevent overselling | Controls available and sold-out states |
 | Pickup | Publish serviceable dates, times, and locations | Feeds Checkout pickup controls |
 | Customers | Support accounts and loyalty | Uses email-first account records |
-| Journal & Reviews | Publish updates and moderate order-linked reviews | Feeds public Journal posts and Community highlights |
+| Journal | Publish updates and moderate order-linked reviews | Feeds public Journal posts and Community highlights |
 
 ### Reason
 

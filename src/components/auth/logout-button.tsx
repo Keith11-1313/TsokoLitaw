@@ -10,12 +10,14 @@ interface LogoutButtonProps {
   className: string;
   iconSize?: number;
   menuItem?: boolean;
+  hideLabel?: boolean;
 }
 
 export function LogoutButton({
   className,
   iconSize = 16,
   menuItem = false,
+  hideLabel = false,
 }: LogoutButtonProps) {
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
@@ -69,7 +71,7 @@ export function LogoutButton({
         onClick={() => setOpen(true)}
       >
         <LogOut aria-hidden="true" size={iconSize} />
-        Log out
+        <span className={hideLabel ? "sr-only" : undefined}>Log out</span>
       </button>
 
       {open ? createPortal(

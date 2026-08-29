@@ -9,7 +9,7 @@ import { getAdminJournalPosts } from "@/lib/server-journal";
 import { getAdminReviews } from "@/lib/server-reviews";
 
 export const metadata: Metadata = {
-  title: "Journal & Reviews | TsokoLitaw Admin",
+  title: "Journal | TsokoLitaw Admin",
   description: "Publish Journal updates and moderate completed-order reviews.",
 };
 
@@ -26,16 +26,7 @@ export default async function AdminJournalPage() {
   return (
     <AdminShell activePath="/admin/journal">
       <AdminContent>
-        <header>
-          <h1 className="font-display text-[2.25rem] leading-tight text-foreground">Journal & Reviews</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Publish customer updates and choose verified order reviews for Community highlights.</p>
-        </header>
-
-        <section className="mt-8" aria-labelledby="journal-posts-title">
-          <div>
-            <h2 id="journal-posts-title" className="font-display text-3xl">Journal posts</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Create drafts or publish announcements, stories, product features, and videos.</p>
-          </div>
+        <section aria-labelledby="journal-posts-title">
           <JournalManager posts={posts} />
         </section>
 

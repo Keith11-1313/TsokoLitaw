@@ -92,7 +92,7 @@ Phase 11 customer-order work started by product-owner request:
 - completed-order owners can submit one persisted 1–5 star review with a validated comment
 - new reviews remain hidden from public reads until an Admin explicitly shows or features them
 - completed-order review entry opens in a modal with ordered items, centered stars, and a strict live 1,000-character counter
-- Admin Journal & Reviews loads real submissions and audits visibility/featured moderation changes
+- Admin Journal loads real submissions and audits visibility/featured moderation changes
 - Admin can persist draft/published Journal posts with type, icon, display date, copy, an optional 3 MB cover image, and a secure video link
 - the public Journal loads published posts and only visible, featured completed-order reviews
 

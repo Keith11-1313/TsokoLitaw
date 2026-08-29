@@ -5,6 +5,7 @@ interface BrandLockupProps {
   context?: "customer" | "admin";
   inverted?: boolean;
   showMark?: boolean;
+  showTitle?: boolean;
   showSubtitle?: boolean;
   subtitle?: string;
   titleClassName?: string;
@@ -15,6 +16,7 @@ export function BrandLockup({
   context = "customer",
   inverted = false,
   showMark = true,
+  showTitle = true,
   showSubtitle = true,
   subtitle,
   titleClassName,
@@ -36,7 +38,7 @@ export function BrandLockup({
           aria-hidden="true"
         />
       ) : null}
-      <span className="flex flex-col">
+      {showTitle ? <span className="flex flex-col">
         <span
           className={cn(
             "font-display text-2xl leading-none",
@@ -56,7 +58,7 @@ export function BrandLockup({
             {resolvedSubtitle}
           </span>
         ) : null}
-      </span>
+      </span> : null}
     </div>
   );
 }

@@ -39,7 +39,7 @@ Workflow changes must be reflected together in:
 - PayMongo v2 Hosted Checkout test sessions, signed webhooks, provider references, and test payment/refund transitions are the active integration scope
 - Admin Orders reads real order snapshots and advances paid fulfillment through validated, audited server-side transitions
 - completed-order owners can submit one persisted review; new reviews remain non-public until Admin moderation
-- Admin Journal & Reviews combines persisted post publishing with audited review visibility/featured decisions
+- Admin Journal combines persisted post publishing with audited review visibility/featured decisions
 - featured visible reviews and published Journal posts are loaded by the public Journal
 - remaining Admin management areas stay mock/non-persistent until their Phase 11 slices are connected
 
@@ -283,7 +283,7 @@ Journal replaces Vlog and may contain:
 - selected order-linked reviews
 - videos
 
-Admin Journal & Reviews is one operational area. Admin can create or edit draft/published content, select the post type and icon, edit its display date and text, attach an optional cover image or secure video link, and moderate/feature completed-order reviews. Published posts and featured visible reviews must feed the public Journal.
+Admin Journal is one operational area. Admin can create or edit draft/published content, select the post type and icon, edit its display date and text, attach an optional cover image or secure video link, and moderate/feature completed-order reviews. Published posts and featured visible reviews must feed the public Journal.
 
 ## 12. Payment
 
@@ -367,7 +367,7 @@ Admin pages:
 - Inventory
 - Pickup
 - Customers
-- Journal & Reviews
+- Journal
 
 Admin may eventually manage boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, loyalty, orders, reviews, and Journal posts. Pickup Management owns pickup-related operational rules; a separate Settings page is intentionally omitted until genuine cross-feature configuration exists.
 
