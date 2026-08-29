@@ -279,7 +279,7 @@ Delivery addresses and delivery-hour UI did not match the actual operating model
 
 ### UI consequence
 
-Checkout exposes date, time, and location dropdowns. Admin Pickup owns and publishes those customer-facing options, including the availability mode, and explains the operational rules. Admin Inventory only receives existing upcoming Ready Stock and Hybrid dates; it does not create schedules. Until Pickup persistence is connected, another development pickup date requires temporary controlled SQL.
+Checkout exposes date, time, and location dropdowns. Admin Pickup persists and publishes those customer-facing options, including the availability mode and operational rules. Admin Inventory only receives existing upcoming Ready Stock and Hybrid dates; it does not create schedules. Once an order or prepared-stock record depends on a schedule, structural edits are locked while publication may still be closed or restored.
 
 ## 12. Orders and Status Workflow
 

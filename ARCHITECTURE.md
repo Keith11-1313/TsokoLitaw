@@ -30,7 +30,7 @@ Next.js App Router
 └── Local brand and product assets
 ```
 
-The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Phase 11 Admin Orders reads the same persisted snapshots customers see and advances paid fulfillment through an atomic, audited database function. Completed-order owners submit one review from an order-detail modal; submissions remain non-public until audited moderation. Admin Journal & Reviews persists draft/published posts and featured reviews, and the public Journal reads only published posts plus visible featured reviews. Admin Catalog uses service-only audited mutations and public square-media storage. Admin Inventory publishes date-specific prepared-piece totals and records unusable pieces through audited server mutations; checkout consumes the shared piece balance atomically across all box sizes. Email and the remaining Admin CRUD areas remain unconnected.
+The Supabase foundation defines the PostgreSQL schema, RLS policies, tests, controlled seeds, and browser/server/privileged client helpers. Google OAuth and authenticated profile access are connected. Active products, variants, coatings, add-ons, and published pickup options load from Supabase. Phase 9 validates and reprices checkout server-side, evaluates active promotions, reserves inventory, creates immutable pending-order snapshots, records Terms acceptance, prevents duplicate submissions, and expires overdue unpaid reservations. Phase 10 creates idempotent PayMongo test checkout sessions, redirects customers to Hosted Checkout, verifies signed paid webhooks, and treats the browser return as informational only. Provider-bound expiry is coordinated server-side so stock is released only after PayMongo closes the checkout session. Phase 11 Admin Orders reads the same persisted snapshots customers see and advances paid fulfillment through an atomic, audited database function. Completed-order owners submit one review from an order-detail modal; submissions remain non-public until audited moderation. Admin Journal & Reviews persists draft/published posts and featured reviews, and the public Journal reads only published posts plus visible featured reviews. Admin Catalog uses service-only audited mutations and public square-media storage. Admin Inventory publishes date-specific prepared-piece totals and records unusable pieces through audited server mutations; checkout consumes the shared piece balance atomically across all box sizes. Admin Pickup persists schedules and customer-safe operating rules through active-Admin-checked audited functions. Email and the remaining Admin CRUD areas remain unconnected.
 
 Current customer/admin relationship:
 
@@ -39,12 +39,10 @@ Database commerce catalog
 ├── Our Creations
 └── Admin Catalog controlled persistence
 
-Database-published pickup data
-└── Checkout
-
-Shared mock pickup data
-├── Admin Pickup
-└── Admin Settings defaults
+Database-published pickup data and safe rules
+├── Checkout
+├── Admin Pickup controlled persistence
+└── Admin Inventory eligible-date selection
 
 Admin order operations
 ├── Admin Orders real snapshot list and fulfillment transitions
@@ -55,7 +53,7 @@ Authenticated customer order surfaces
 └── Dynamic order/review routes unavailable until their scoped detail reads and mutations exist
 ```
 
-Customer catalog and pickup reads now reflect the linked database. Admin previews remain non-persistent and cannot publish changes yet.
+Customer catalog and pickup reads reflect the linked database. Connected Admin areas write through server-only controlled mutations; remaining Admin previews stay non-persistent.
 
 Client Components are limited to interactions such as:
 
@@ -138,7 +136,7 @@ src/
 
 Commerce business rules belong in server modules and database functions rather than presentation components.
 
-Our Creations consumes the active database catalog, including the saved customer-facing product description, and Checkout consumes published database pickup options. Admin Catalog writes that same catalog through controlled server actions; the primary product remains active while sellability is controlled through box variants, coatings, and add-ons. Admin Pickup remains a preview until its CRUD slice, so Inventory can manage only eligible dates already present in `pickup_dates`; temporary controlled SQL is still required to add another hosted-development date.
+Our Creations consumes the active database catalog, including the saved customer-facing product description, and Checkout consumes published database pickup options plus customer-safe lead/cutoff rules. Admin Catalog and Pickup write their respective records through controlled server actions. Inventory automatically receives eligible Ready Stock and Hybrid dates created in Pickup, while Made to order never requests prepared inventory.
 
 The Admin coating form validates a square 1:1 image in the browser, limits server uploads to approved image types and 3 MB, stores the public asset in `catalog-media`, and publishes the database record only through an active-Admin-checked service mutation.
 

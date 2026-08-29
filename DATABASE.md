@@ -200,6 +200,8 @@ This join lets Admin offer one window at one or both campus pickup locations wit
 
 `pickup_dates` is the source of truth for whether a date exists and whether it is published. Every mode requires a row plus at least one eligible window/location combination. Admin Pickup owns these records. Admin Inventory must not create them; it may attach prepared stock only to an upcoming `READY_STOCK` or `HYBRID` date. `MADE_TO_ORDER` needs no `daily_inventory` record.
 
+Pickup writes use service-role-only `upsert_pickup_schedule`, `set_pickup_date_open`, and `update_pickup_settings` functions. Each rechecks the active Admin and writes `admin_audit_logs`. A schedule with an order or `daily_inventory` dependency cannot have its date, mode, windows, or locations rewritten; its publication state may still be closed or restored. `get_public_pickup_settings` exposes only customer-safe lead-time, cutoff, grace-period, and operating-hour values to Checkout. The atomic order writer independently rechecks those rules so cached or manipulated browser options cannot bypass them.
+
 ## 7. Inventory
 
 ### `daily_inventory`

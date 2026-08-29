@@ -243,7 +243,7 @@ Availability modes always operate on an explicitly published pickup date:
 - `READY_STOCK`: Admin first publishes the pickup date, then publishes the exact number of already prepared pieces in Inventory. That number is the date's upper online-sales limit across all box sizes.
 - `HYBRID`: same-day checkout consumes the published prepared-piece balance while eligible advance orders follow the made-to-order rules.
 
-Admin Pickup owns creation and publication of dates, time windows, locations, mode, cutoff, lead time, and capacity. Admin Inventory cannot invent another pickup date; it lists existing upcoming Ready Stock and Hybrid dates and assigns an independent prepared-piece balance to each. Until the Admin Pickup CRUD slice is connected, creating another hosted-development date requires temporary controlled SQL.
+Admin Pickup owns persisted creation and publication of dates, time windows, locations, mode, cutoff, lead time, grace period, operating hours, and capacity. Admin Inventory cannot invent another pickup date; it lists existing upcoming Ready Stock and Hybrid dates and assigns an independent prepared-piece balance to each. Schedules with an order or published inventory are locked against structural edits, but Admin may close or republish the date without changing existing order snapshots.
 
 Admin changes affect future checkout availability and must not rewrite the pickup snapshot of an existing paid order.
 

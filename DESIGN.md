@@ -272,7 +272,7 @@ Checkout now opens PayMongo Hosted Checkout after the server creates or reloads 
 
 Order references use the short shared kiosk format `TL-0001`. Customer and Admin views must display the same stored order number so it can be spoken and matched quickly at pickup.
 
-Pickup UI must distinguish Made to order, Ready stock, and Hybrid. The Monday–Saturday, 7:00 AM–7:00 PM operating window is guidance only; checkout shows only dates and slots explicitly published by Admin, and no mode appears automatically every day. All three modes use website checkout and online payment. Admin Pickup creates the schedule; Ready Stock and Hybrid dates then become selectable in Admin Inventory.
+Pickup UI must distinguish Made to order, Ready stock, and Hybrid. The configured operating window is guidance only; checkout shows only dates and slots explicitly published by Admin, and no mode appears automatically every day. All three modes use website checkout and online payment. Admin Pickup creates and publishes the schedule; Ready Stock and Hybrid dates then become selectable in Admin Inventory. Schedule cards show mode, publication state, windows, locations, capacity use, and a lock when orders or inventory make structural edits unsafe.
 
 Cancellation confirmation must explain whether the action only releases an unpaid reservation or starts a full refund to the original payment method. Do not ask for a GCash, Maya, or bank destination during the normal PayMongo refund flow; show a restricted fallback form only after the automatic refund is unavailable or has failed.
 

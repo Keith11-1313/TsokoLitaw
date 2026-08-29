@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-The application is currently in **Phase 11: Orders, Reviews, Journal, and Admin CRUD**. Authentication, authorization, Phase 9 server commerce, and the Phase 10 PayMongo test-mode implementation are complete. Real Admin fulfillment, completed-order reviews, featured public reviews, Journal draft/publication, Catalog management, and date-specific prepared-piece Inventory are connected with controlled, audited server mutations. Admin Pickup is still a non-persistent preview; it must be connected before administrators can create additional pickup dates without temporary Supabase SQL. Other Admin areas remain mock until their Phase 11 slice is explicitly started.
+The application is currently in **Phase 11: Orders, Reviews, Journal, and Admin CRUD**. Authentication, authorization, Phase 9 server commerce, and the Phase 10 PayMongo test-mode implementation are complete. Real Admin fulfillment, completed-order reviews, featured public reviews, Journal draft/publication, Catalog management, date-specific prepared-piece Inventory, and Pickup scheduling are connected with controlled, audited server mutations. Other Admin areas remain mock until their Phase 11 slice is explicitly started.
 
 Allowed:
 
