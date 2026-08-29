@@ -57,6 +57,14 @@ interface PickupDateRow {
   }> | null;
 }
 
+interface PublicPickupSettingsRow {
+  minimum_lead_days: number;
+  daily_cutoff_time: string;
+  pickup_grace_minutes: number;
+  operating_start: string;
+  operating_end: string;
+}
+
 function asMoney(value: number | string) {
   const amount = Number(value);
   if (!Number.isFinite(amount) || amount < 0) {
@@ -189,6 +197,25 @@ function getManilaDate() {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
+function getManilaTime() {
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone: "Asia/Manila",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.hour}:${values.minute}`;
+}
+
+function addCalendarDays(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00+08:00`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(date);
+}
+
 function formatPickupDate(value: string) {
   return new Intl.DateTimeFormat("en-PH", {
     timeZone: "Asia/Manila",
@@ -208,42 +235,78 @@ function formatPickupTime(value: string) {
 
 async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
   const supabase = createPublicSupabaseClient();
-  const { data, error } = await measureServerOperation("commerce.pickup-definitions", () => supabase
-    .from("pickup_dates")
-    .select(`
-      id,
-      pickup_date,
-      availability_mode,
-      pickup_windows (
-        id,
-        pickup_date_id,
-        start_time,
-        end_time,
-        capacity,
-        sort_order,
-        pickup_window_locations (
-          capacity_override,
-          pickup_locations (
+  const [datesResult, settingsResult, stockedDatesResult] = await measureServerOperation(
+    "commerce.pickup-definitions",
+    () => Promise.all([
+      supabase
+        .from("pickup_dates")
+        .select(`
+          id,
+          pickup_date,
+          availability_mode,
+          pickup_windows (
             id,
-            name,
-            sort_order
+            pickup_date_id,
+            start_time,
+            end_time,
+            capacity,
+            sort_order,
+            pickup_window_locations (
+              capacity_override,
+              pickup_locations (
+                id,
+                name,
+                sort_order
+              )
+            )
           )
-        )
-      )
-    `)
-    .eq("is_open", true)
-    .gte("pickup_date", getManilaDate())
-    .order("pickup_date", { ascending: true })
-    .order("sort_order", { referencedTable: "pickup_windows", ascending: true }));
+        `)
+        .eq("is_open", true)
+        .gte("pickup_date", getManilaDate())
+        .order("pickup_date", { ascending: true })
+        .order("sort_order", { referencedTable: "pickup_windows", ascending: true }),
+      supabase.rpc("get_public_pickup_settings"),
+      supabase.rpc("get_public_stocked_pickup_dates"),
+    ]),
+  );
 
-  if (error) {
-    throw new Error("Pickup availability could not be loaded.", { cause: error });
+  if (datesResult.error || settingsResult.error || stockedDatesResult.error) {
+    throw new Error("Pickup availability could not be loaded.", {
+      cause: datesResult.error ?? settingsResult.error ?? stockedDatesResult.error,
+    });
   }
 
-  const dates = (data ?? []) as unknown as PickupDateRow[];
+  const settings = ((settingsResult.data ?? [])[0] ?? {
+    minimum_lead_days: 1,
+    daily_cutoff_time: "17:00",
+    pickup_grace_minutes: 15,
+    operating_start: "07:00",
+    operating_end: "19:00",
+  }) as PublicPickupSettingsRow;
+  const today = getManilaDate();
+  const currentTime = getManilaTime();
+  const cutoff = settings.daily_cutoff_time.slice(0, 5);
+  const earliestAdvanceDate = addCalendarDays(
+    today,
+    Number(settings.minimum_lead_days) + (currentTime >= cutoff ? 1 : 0),
+  );
+  const stockedDates = new Set(
+    (stockedDatesResult.data ?? []).map((row: { pickup_date: string }) => String(row.pickup_date)),
+  );
+
+  const dates = (datesResult.data ?? []) as unknown as PickupDateRow[];
   const checkoutDates = dates.flatMap((date) => {
+    if (date.pickup_date === today && date.availability_mode === "MADE_TO_ORDER") return [];
+    if (date.availability_mode === "READY_STOCK" && !stockedDates.has(date.pickup_date)) return [];
+    if (date.pickup_date === today && date.availability_mode === "HYBRID"
+      && !stockedDates.has(date.pickup_date)) return [];
+    if (date.pickup_date > today
+      && (date.availability_mode === "MADE_TO_ORDER" || date.availability_mode === "HYBRID")
+      && date.pickup_date < earliestAdvanceDate) return [];
+
     const checkoutWindows = (date.pickup_windows ?? [])
       .filter((window) => window.capacity === null || window.capacity > 0)
+      .filter((window) => date.pickup_date !== today || window.end_time.slice(0, 5) > currentTime)
       .sort((left, right) => left.sort_order - right.sort_order)
       .flatMap((window) => {
         const locations = (window.pickup_window_locations ?? [])
@@ -273,9 +336,9 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
 
   return {
     dates: checkoutDates,
-    graceMinutes: 15,
+    graceMinutes: Number(settings.pickup_grace_minutes),
     operatingDays: "Monday–Saturday",
-    operatingHours: "7:00 AM–7:00 PM",
+    operatingHours: `${formatPickupTime(settings.operating_start)}–${formatPickupTime(settings.operating_end)}`,
   };
 }
 
