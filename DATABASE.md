@@ -8,6 +8,8 @@ The schema and controlled seed have been applied to the linked hosted developmen
 
 `20260830000000_production_reference_data.sql` installs the minimum launch catalog, box variants, coatings, add-on, pickup locations, business settings, and current Terms required by an empty hosted project. It contains no users, orders, inventory, pickup dates, payments, refunds, reviews, or secrets. Every insert uses conflict-safe initial creation so deploying the migration cannot overwrite values already maintained by an Admin.
 
+The Production project has applied both `20260827000000_initial_schema.sql` and `20260830000000_production_reference_data.sql`; local and remote migration history matched after deployment on August 30, 2026.
+
 ## Decision-to-Schema Mapping
 
 The proposed schema follows `DECISIONS.md` and the current workflow:

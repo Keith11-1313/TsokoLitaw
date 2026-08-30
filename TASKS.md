@@ -256,7 +256,7 @@ Do not begin without explicit approval.
 - [ ] Keep the existing Vercel project on `develop` as `tsokolitaw.vercel.app` Dev, create a separate `main`-tracking Production project for `tsokolitaw.com`, and isolate every environment variable and provider callback
 - [ ] Protect `main` from direct feature work and require the documented `feature/*` → `develop` → `main` release path plus the `hotfix/*` → `main` → `develop` recovery path
 - [x] Require every database change to be represented by a reviewed migration, validated against Dev first, and promoted unchanged to Production
-- [ ] Apply the conflict-safe Production reference-data migration after its local reset, lint, and database tests pass
+- [x] Apply the conflict-safe Production reference-data migration after its local reset, lint, and database tests pass
 - [x] Review RLS and admin authorization
 - [x] Test price, stock, order, and webhook tampering
 - [x] Review secret exposure and logging
