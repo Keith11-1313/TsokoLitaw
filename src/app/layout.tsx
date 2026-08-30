@@ -23,7 +23,7 @@ const italianno = Italianno({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tsokolitaw.com"),
+  metadataBase: new URL("https://www.tsokolitaw.com"),
   title: "TsokoLitaw",
   description:
     "Soft and chewy palitaw filled with warm, melted chocolate and served fresh with your choice of coating.",

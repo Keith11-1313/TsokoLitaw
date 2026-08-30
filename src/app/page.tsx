@@ -28,8 +28,8 @@ export default function Home() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "TsokoLitaw",
-    url: "https://tsokolitaw.com",
-    logo: "https://tsokolitaw.com/brand/logo.png",
+    url: "https://www.tsokolitaw.com",
+    logo: "https://www.tsokolitaw.com/brand/logo.png",
     email: "tsokolitaw@gmail.com",
     address: {
       "@type": "PostalAddress",

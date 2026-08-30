@@ -18,7 +18,7 @@ export default function robots(): MetadataRoute.Robots {
         "/boneyard-preview",
       ],
     },
-    sitemap: "https://tsokolitaw.com/sitemap.xml",
-    host: "https://tsokolitaw.com",
+    sitemap: "https://www.tsokolitaw.com/sitemap.xml",
+    host: "https://www.tsokolitaw.com",
   };
 }

@@ -273,11 +273,11 @@ Do not begin without explicit approval.
 - [x] Review provider timeouts and idempotent retry behavior before PayMongo live mode
 - [ ] Deploy production configuration to Vercel
 - [ ] Copy approved coating assets from the Dev `catalog-media` bucket to production Storage and update production coating `image_url` values
-- [ ] Connect `tsokolitaw.com`
-- [ ] Create a different production `CRON_SECRET` and configure the same value in Vercel Production and the production Supabase Vault
-- [ ] Store the canonical `https://tsokolitaw.com` origin as `tsokolitaw_site_url` in the production Supabase Vault
-- [ ] Create the five-minute payment-expiration and daily account-deletion jobs in production Supabase Cron
-- [ ] Verify both production Cron jobs return authorized HTTP `200` responses before launch
+- [x] Connect `tsokolitaw.com` and make `www.tsokolitaw.com` the canonical public origin
+- [x] Create a different production `CRON_SECRET` and configure the same value in Vercel Production and the production Supabase Vault
+- [x] Store the canonical `https://www.tsokolitaw.com` origin as `tsokolitaw_site_url` in the production Supabase Vault
+- [ ] Create the five-minute payment-expiration and notification-retry jobs plus the daily account-deletion job in production Supabase Cron
+- [ ] Verify all three production Cron jobs return authorized HTTP `200` responses before launch
 - [ ] Upgrade the production Supabase project to a plan that supports the custom-domain add-on
 - [ ] Create the `auth.tsokolitaw.com` CNAME pointing to the Supabase project domain
 - [ ] Register `auth.tsokolitaw.com` with Supabase and publish the required domain-verification TXT records
@@ -289,18 +289,18 @@ Do not begin without explicit approval.
 - [ ] Test login, callback, token refresh, logout, customer route protection, and Admin authorization on the production domain
 - [ ] Retain the default Supabase callback during migration until the branded callback is verified
 - [ ] Configure `admin.tsokolitaw.com` if approved
-- [ ] Replace the temporary `tsokolitaw.vercel.app` PayMongo webhook with the canonical `https://tsokolitaw.com/api/webhooks/paymongo` endpoint after the custom domain is live
+- [x] Add the canonical `https://www.tsokolitaw.com/api/webhooks/paymongo` endpoint alongside the isolated Dev webhook
 - [ ] Configure the new custom-domain PayMongo signing secret in Vercel, redeploy, and verify a signed test delivery before disabling the Vercel-domain webhook
 - [ ] Configure production OAuth and remaining PayMongo URLs
 - [ ] Switch to live keys only after test-mode sign-off
-- [ ] Choose one canonical production origin (`https://tsokolitaw.com` or `https://www.tsokolitaw.com`) and permanently redirect every alternate HTTP/HTTPS host to it
+- [x] Use `https://www.tsokolitaw.com` as the canonical production origin and permanently redirect the root domain to it
 - [x] Audit unique page titles, descriptions, canonical URLs, favicons, Open Graph images, and social-sharing metadata on every public route
 - [x] Mark private and transactional routes such as Admin, Profile, Orders, Checkout, Auth, Payment, and API endpoints as non-indexable
 - [x] Generate production `robots.txt` and a root `sitemap.xml` containing only canonical public URLs with absolute production links
 - [x] Add truthful Organization structured data for TsokoLitaw; validate the deployed page with Google Rich Results Test before launch
 - [ ] Run Lighthouse and production Core Web Vitals checks on Home, Our Creations, Journal, Terms, and Privacy before allowing indexing
 - [ ] Create and DNS-verify the `tsokolitaw.com` domain property in Google Search Console
-- [ ] Submit `https://tsokolitaw.com/sitemap.xml` in Google Search Console after the canonical domain is live
+- [ ] Submit `https://www.tsokolitaw.com/sitemap.xml` in Google Search Console after the canonical domain is live
 - [ ] Inspect the Home, Our Creations, and Journal URLs in Search Console and request initial indexing after confirming they return public `200` responses
 - [ ] Check Search Console indexing, crawl, HTTPS, structured-data, Core Web Vitals, security, and manual-action reports after launch
 - [ ] Monitor search queries, indexed pages, sitemap status, and crawl errors during the first weeks, then correct metadata or technical SEO issues without keyword stuffing

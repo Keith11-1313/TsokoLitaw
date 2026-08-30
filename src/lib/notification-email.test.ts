@@ -17,7 +17,7 @@ describe("buildOrderConfirmationEmail", () => {
       pickupDate: "2026-08-31",
       pickupWindow: "7:00 AM–8:00 AM",
       pickupLocation: "UCC Congress — 3rd Floor",
-      orderUrl: "https://tsokolitaw.com/orders/42",
+      orderUrl: "https://www.tsokolitaw.com/orders/42",
       items: [{
         name: "Box of 4",
         quantity: 1,
@@ -30,7 +30,7 @@ describe("buildOrderConfirmationEmail", () => {
     expect(email.text).toContain("Monday, August 31, 2026");
     expect(email.text).toContain("₱58.00");
     expect(email.html).toContain("UCC Congress — 3rd Floor");
-    expect(email.html).toContain("https://tsokolitaw.com/orders/42");
+    expect(email.html).toContain("https://www.tsokolitaw.com/orders/42");
   });
 
   it("escapes customer and item content in HTML", () => {
@@ -41,7 +41,7 @@ describe("buildOrderConfirmationEmail", () => {
       pickupDate: "2026-09-01",
       pickupWindow: "9:00 AM–10:00 AM",
       pickupLocation: "Campus & Court",
-      orderUrl: "https://tsokolitaw.com/orders/43",
+      orderUrl: "https://www.tsokolitaw.com/orders/43",
       items: [{ name: "Box <4>", quantity: 1, coatings: [], addon: null }],
     });
 
@@ -58,7 +58,7 @@ describe("buildOrderConfirmationEmail", () => {
       pickupDate: "2026-08-31",
       pickupWindow: "7:00 AM–8:00 AM",
       pickupLocation: "UCC Congress — Covered Court",
-      orderUrl: "https://tsokolitaw.com/orders/44",
+      orderUrl: "https://www.tsokolitaw.com/orders/44",
       items: [],
     });
 
@@ -72,7 +72,7 @@ describe("buildOrderConfirmationEmail", () => {
     const base = {
       orderNumber: "TL-0045",
       customerName: "Jerald Esmeria",
-      orderUrl: "https://tsokolitaw.com/orders/45",
+      orderUrl: "https://www.tsokolitaw.com/orders/45",
     };
     expect(buildOrderCancelledEmail({ ...base, refundAmount: null }).text)
       .toContain("No payment was collected");
@@ -84,7 +84,7 @@ describe("buildOrderConfirmationEmail", () => {
     const input = {
       orderNumber: "TL-0046",
       customerName: "Jerald Esmeria",
-      orderUrl: "https://tsokolitaw.com/orders/46",
+      orderUrl: "https://www.tsokolitaw.com/orders/46",
       refundAmount: 80,
     };
 

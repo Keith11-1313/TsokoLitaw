@@ -6,7 +6,7 @@ import {
 
 describe("webhook request body limits", () => {
   it("returns a body within the configured byte limit", async () => {
-    const request = new Request("https://tsokolitaw.com/api/webhooks/test", {
+    const request = new Request("https://www.tsokolitaw.com/api/webhooks/test", {
       method: "POST",
       body: "signed payload",
     });
@@ -14,7 +14,7 @@ describe("webhook request body limits", () => {
   });
 
   it("rejects an oversized declared content length before reading", async () => {
-    const request = new Request("https://tsokolitaw.com/api/webhooks/test", {
+    const request = new Request("https://www.tsokolitaw.com/api/webhooks/test", {
       method: "POST",
       headers: { "content-length": "65" },
       body: "small",
@@ -23,7 +23,7 @@ describe("webhook request body limits", () => {
   });
 
   it("rejects an oversized actual body when content length is absent", async () => {
-    const request = new Request("https://tsokolitaw.com/api/webhooks/test", {
+    const request = new Request("https://www.tsokolitaw.com/api/webhooks/test", {
       method: "POST",
       body: "x".repeat(65),
     });
