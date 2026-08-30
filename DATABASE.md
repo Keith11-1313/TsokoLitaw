@@ -6,6 +6,8 @@ The Phase 7 Supabase baseline is implemented as the canonical production bootstr
 
 The schema and controlled seed have been applied to the linked hosted development project. That project retains the pre-squash migration history; do not replay the repository bootstrap file against it solely to align filenames. Database lint reported no schema errors.
 
+`20260830000000_production_reference_data.sql` installs the minimum launch catalog, box variants, coatings, add-on, pickup locations, business settings, and current Terms required by an empty hosted project. It contains no users, orders, inventory, pickup dates, payments, refunds, reviews, or secrets. Every insert uses conflict-safe initial creation so deploying the migration cannot overwrite values already maintained by an Admin.
+
 ## Decision-to-Schema Mapping
 
 The proposed schema follows `DECISIONS.md` and the current workflow:
