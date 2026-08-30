@@ -16,7 +16,7 @@ export interface AdminCatalogCoating {
   id: string;
   name: string;
   description: string;
-  imageUrl: string;
+  imageUrl: string | null;
   additionalTypePrice: number;
   isActive: boolean;
   isAllergen: boolean;
@@ -57,7 +57,7 @@ export async function getAdminCatalog() {
   };
   const coatings: AdminCatalogCoating[] = (coatingsResult.data ?? []).map((coating) => ({
     id: coating.id, name: coating.name, description: coating.description,
-    imageUrl: coating.image_url ?? "/brand/logo.png",
+    imageUrl: coating.image_url,
     additionalTypePrice: Number(coating.additional_type_price), isActive: coating.is_active,
     isAllergen: coating.is_allergen, allergenNote: coating.allergen_note ?? "", sortOrder: coating.sort_order,
   }));
@@ -104,12 +104,27 @@ export async function saveCatalogAddon(input: { adminId: string; addonId: string
 }
 
 export async function uploadCatalogImage(input: { adminId: string; file: File }) {
-  const extension = input.file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const extensionByType: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+  };
+  const extension = extensionByType[input.file.type];
+  if (!extension) throw new Error("Choose a JPG, PNG, or WebP catalog image.");
   const path = `${input.adminId}/${crypto.randomUUID()}.${extension}`;
   const admin = createAdminSupabaseClient();
   const { error } = await admin.storage.from("catalog-media").upload(path, input.file, {
     contentType: input.file.type, cacheControl: "31536000", upsert: false,
   });
-  if (error) throw new Error("Catalog image could not be uploaded.", { cause: error });
+  if (error) {
+    const detail = error.message.toLowerCase();
+    if (detail.includes("bucket") && (detail.includes("not found") || detail.includes("does not exist"))) {
+      throw new Error("Catalog media storage is not configured in this environment.", { cause: error });
+    }
+    if (detail.includes("unauthorized") || detail.includes("jwt") || detail.includes("permission")) {
+      throw new Error("Catalog media storage is not authorized in this environment.", { cause: error });
+    }
+    throw new Error("Catalog image could not be uploaded.", { cause: error });
+  }
   return admin.storage.from("catalog-media").getPublicUrl(path).data.publicUrl;
 }
