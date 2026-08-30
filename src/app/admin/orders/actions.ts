@@ -45,7 +45,6 @@ export async function transitionOrderStatusAction(input: {
         await dispatchReadyForPickup(input.orderId);
       } catch (notificationError) {
         console.error("[ready-for-pickup] Immediate dispatch failed", {
-          orderId: input.orderId,
           errorType: notificationError instanceof Error ? notificationError.name : "UnknownError",
         });
       }

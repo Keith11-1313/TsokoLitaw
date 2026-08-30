@@ -32,7 +32,6 @@ async function dispatchCancellationNotifications(orderId: string) {
     await dispatchOrderNotifications(orderId);
   } catch (error) {
     console.error("[cancellation-notifications] Immediate dispatch failed", {
-      orderId,
       errorType: error instanceof Error ? error.name : "UnknownError",
     });
   }

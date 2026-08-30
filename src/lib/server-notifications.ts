@@ -9,6 +9,7 @@ import {
   buildRefundProcessingEmail,
 } from "@/lib/notification-email";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { getConfiguredSiteOrigin } from "@/lib/site-url";
 
 interface DeliveryRow {
   id: string;
@@ -51,11 +52,10 @@ const PROCESSING_TIMEOUT_MS = 10 * 60 * 1000;
 function getRequiredEmailEnvironment() {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.EMAIL_FROM_ADDRESS?.trim();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!apiKey || !from || !siteUrl) {
+  if (!apiKey || !from) {
     throw new Error("Transactional email environment is incomplete.");
   }
-  return { apiKey, from, siteUrl: new URL(siteUrl).origin };
+  return { apiKey, from, siteUrl: getConfiguredSiteOrigin() };
 }
 
 async function sendWithResend(input: {
@@ -81,6 +81,7 @@ async function sendWithResend(input: {
       html: input.html,
       text: input.text,
     }),
+    signal: AbortSignal.timeout(15_000),
   });
   const body = await response.json().catch(() => null) as { id?: unknown } | null;
   if (!response.ok || typeof body?.id !== "string" || !body.id) {

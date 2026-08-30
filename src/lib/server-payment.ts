@@ -5,6 +5,7 @@ import {
   expirePayMongoCheckoutSession,
 } from "@/lib/paymongo";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { getConfiguredSiteOrigin } from "@/lib/site-url";
 
 interface PreparedCheckoutRow {
   prepared_payment_id: string;
@@ -19,18 +20,7 @@ interface PreparedCheckoutRow {
 
 interface DueCheckoutRow {
   due_payment_id: string;
-  due_order_id: string;
   due_checkout_id: string;
-}
-
-function getSiteUrl() {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!configured) throw new Error("NEXT_PUBLIC_SITE_URL is required for PayMongo redirects.");
-  const url = new URL(configured);
-  if (url.protocol !== "https:" && url.hostname !== "localhost") {
-    throw new Error("PayMongo redirects require HTTPS outside localhost.");
-  }
-  return url.origin;
 }
 
 export async function getOrCreatePayMongoCheckout(orderId: string, userId: string) {
@@ -44,7 +34,7 @@ export async function getOrCreatePayMongoCheckout(orderId: string, userId: strin
   if (!row) throw new Error("The payment initializer did not return an order.");
   if (row.existing_checkout_url) return row.existing_checkout_url;
 
-  const siteUrl = getSiteUrl();
+  const siteUrl = getConfiguredSiteOrigin();
   const session = await createPayMongoCheckoutSession({
     idempotencyKey: `checkout:${row.prepared_payment_id}`,
     orderId: row.prepared_order_id,
@@ -67,8 +57,7 @@ export async function getOrCreatePayMongoCheckout(orderId: string, userId: strin
       await expirePayMongoCheckoutSession(session.id);
     } catch (expirationError) {
       console.error("[paymongo] Unable to close an unattached checkout session", {
-        checkoutId: session.id,
-        error: expirationError,
+        errorType: expirationError instanceof Error ? expirationError.name : "UnknownError",
       });
     }
     throw new Error("The PayMongo checkout reference could not be retained.", {
@@ -87,7 +76,7 @@ export async function expireDuePayMongoCheckouts(batchLimit = 100) {
 
   let expired = 0;
   let deferred = 0;
-  const failures: string[] = [];
+  let failed = 0;
 
   for (const row of (data ?? []) as DueCheckoutRow[]) {
     try {
@@ -104,11 +93,9 @@ export async function expireDuePayMongoCheckouts(batchLimit = 100) {
       else deferred += 1;
     } catch (expirationError) {
       console.error("[paymongo-expirations] Checkout expiration failed", {
-        orderId: row.due_order_id,
-        checkoutId: row.due_checkout_id,
-        error: expirationError,
+        errorType: expirationError instanceof Error ? expirationError.name : "UnknownError",
       });
-      failures.push(row.due_order_id);
+      failed += 1;
     }
   }
 
@@ -116,6 +103,6 @@ export async function expireDuePayMongoCheckouts(batchLimit = 100) {
     examined: (data ?? []).length,
     expired,
     deferred,
-    failures,
+    failed,
   };
 }

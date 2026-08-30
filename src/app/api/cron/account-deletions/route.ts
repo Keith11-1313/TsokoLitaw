@@ -1,20 +1,10 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { CRON_RESPONSE_HEADERS, isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
-function isAuthorized(request: Request) {
-  const cronSecret = process.env.CRON_SECRET;
-  const authorization = request.headers.get("authorization");
-  if (!cronSecret || !authorization) return false;
-
-  const expected = Buffer.from(`Bearer ${cronSecret}`);
-  const received = Buffer.from(authorization);
-  return expected.length === received.length && timingSafeEqual(expected, received);
-}
-
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAuthorizedCronRequest(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: CRON_RESPONSE_HEADERS });
   }
 
   const supabase = createAdminSupabaseClient();
@@ -29,13 +19,15 @@ export async function GET(request: Request) {
     .limit(100);
 
   if (dueProfilesError) {
-    console.error("[account-deletions] Unable to load due profiles", dueProfilesError);
-    return NextResponse.json({ error: "Unable to load due accounts" }, { status: 500 });
+    console.error("[account-deletions] Unable to load due profiles", {
+      errorCode: dueProfilesError.code,
+    });
+    return NextResponse.json({ error: "Unable to load due accounts" }, { status: 500, headers: CRON_RESPONSE_HEADERS });
   }
 
   let deactivated = 0;
   let deferred = 0;
-  const failures: string[] = [];
+  let failed = 0;
 
   for (const profile of dueProfiles ?? []) {
     const { data: accountDeactivated, error: deactivationError } = await supabase.rpc(
@@ -45,10 +37,9 @@ export async function GET(request: Request) {
 
     if (deactivationError) {
       console.error("[account-deletions] Deactivation failed", {
-        userId: profile.id,
-        error: deactivationError,
+        errorCode: deactivationError.code,
       });
-      failures.push(profile.id);
+      failed += 1;
       continue;
     }
 
@@ -65,14 +56,16 @@ export async function GET(request: Request) {
   );
 
   if (rateLimitPruneError) {
-    console.error("[account-deletions] Unable to prune expired rate-limit buckets", rateLimitPruneError);
+    console.error("[account-deletions] Unable to prune expired rate-limit buckets", {
+      errorCode: rateLimitPruneError.code,
+    });
   }
 
   return NextResponse.json({
     examined: dueProfiles?.length ?? 0,
     deactivated,
     deferred,
-    failures,
+    failed,
     prunedRateLimitBuckets: prunedRateLimitBuckets ?? 0,
-  });
+  }, { headers: CRON_RESPONSE_HEADERS });
 }

@@ -24,4 +24,4 @@ const { data, error } = await supabase.rpc("promote_admin_by_email", {
 
 if (error) throw error;
 
-console.log(`Promoted the approved profile to admin (${data}).`);
+console.log(data ? "Promoted the approved profile to admin." : "The approved profile was already an admin.");

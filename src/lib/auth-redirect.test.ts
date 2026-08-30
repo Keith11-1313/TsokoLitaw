@@ -12,4 +12,10 @@ describe("authentication redirect safety", () => {
     expect(getSafeNextPath("//malicious.example", "/profile")).toBe("/profile");
     expect(getSafeNextPath(null, "/profile")).toBe("/profile");
   });
+
+  it("rejects browser-normalized and control-character redirect targets", () => {
+    expect(getSafeNextPath("/\\malicious.example", "/profile")).toBe("/profile");
+    expect(getSafeNextPath("/orders\r\nLocation: https://malicious.example", "/profile"))
+      .toBe("/profile");
+  });
 });

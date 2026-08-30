@@ -2,11 +2,20 @@ import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { parseResendDeliveryEvent } from "@/lib/resend-webhook";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { readWebhookBody, WebhookBodyTooLargeError } from "@/lib/webhook-request";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const rawBody = await request.text();
+  let rawBody: string;
+  try {
+    rawBody = await readWebhookBody(request);
+  } catch (error) {
+    if (error instanceof WebhookBodyTooLargeError) {
+      return NextResponse.json({ error: "Webhook payload is too large." }, { status: 413 });
+    }
+    throw error;
+  }
   const webhookId = request.headers.get("svix-id");
   const webhookTimestamp = request.headers.get("svix-timestamp");
   const webhookSignature = request.headers.get("svix-signature");

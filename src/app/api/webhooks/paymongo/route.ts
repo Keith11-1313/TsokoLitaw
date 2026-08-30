@@ -9,11 +9,20 @@ import {
   dispatchOrderConfirmation,
   dispatchPendingNotifications,
 } from "@/lib/server-notifications";
+import { readWebhookBody, WebhookBodyTooLargeError } from "@/lib/webhook-request";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const rawBody = await request.text();
+  let rawBody: string;
+  try {
+    rawBody = await readWebhookBody(request);
+  } catch (error) {
+    if (error instanceof WebhookBodyTooLargeError) {
+      return NextResponse.json({ error: "Webhook payload is too large." }, { status: 413 });
+    }
+    throw error;
+  }
   const signature = request.headers.get("paymongo-signature")
     ?? request.headers.get("x-paymongo-signature");
   const secret = process.env.PAYMONGO_WEBHOOK_SECRET?.trim() ?? "";
@@ -69,7 +78,6 @@ export async function POST(request: Request) {
       await dispatchOrderConfirmation(paidEvent.orderId);
     } catch (notificationError) {
       console.error("[order-confirmation] Immediate dispatch failed", {
-        orderId: paidEvent.orderId,
         errorType: notificationError instanceof Error ? notificationError.name : "UnknownError",
       });
     }
@@ -79,7 +87,6 @@ export async function POST(request: Request) {
       await dispatchPendingNotifications({ limit: 10 });
     } catch (notificationError) {
       console.error("[refund-notifications] Immediate dispatch failed", {
-        refundId: refundEvent.refundId,
         errorType: notificationError instanceof Error ? notificationError.name : "UnknownError",
       });
     }

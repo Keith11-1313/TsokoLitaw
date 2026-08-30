@@ -1,29 +1,21 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { CRON_RESPONSE_HEADERS, isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { expireDuePayMongoCheckouts } from "@/lib/server-payment";
 
-function isAuthorized(request: Request) {
-  const cronSecret = process.env.CRON_SECRET;
-  const authorization = request.headers.get("authorization");
-  if (!cronSecret || !authorization) return false;
-
-  const expected = Buffer.from(`Bearer ${cronSecret}`);
-  const received = Buffer.from(authorization);
-  return expected.length === received.length && timingSafeEqual(expected, received);
-}
-
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAuthorizedCronRequest(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: CRON_RESPONSE_HEADERS });
   }
 
   try {
-    return NextResponse.json(await expireDuePayMongoCheckouts());
+    return NextResponse.json(await expireDuePayMongoCheckouts(), { headers: CRON_RESPONSE_HEADERS });
   } catch (error) {
-    console.error("[paymongo-expirations] Scheduled processing failed", error);
+    console.error("[paymongo-expirations] Scheduled processing failed", {
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
     return NextResponse.json(
       { error: "Unable to process payment expirations" },
-      { status: 500 },
+      { status: 500, headers: CRON_RESPONSE_HEADERS },
     );
   }
 }
