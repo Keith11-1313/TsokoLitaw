@@ -23,9 +23,25 @@ const italianno = Italianno({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://tsokolitaw.com"),
   title: "TsokoLitaw",
   description:
     "Soft and chewy palitaw filled with warm, melted chocolate and served fresh with your choice of coating.",
+  applicationName: "TsokoLitaw",
+  icons: { icon: "/icon.png" },
+  openGraph: {
+    type: "website",
+    siteName: "TsokoLitaw",
+    title: "TsokoLitaw",
+    description: "The Filipino chocolate Xiao Long Bao, prepared for campus pickup.",
+    images: [{ url: "/images/home/hero-image.png", alt: "TsokoLitaw chocolate-filled palitaw" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TsokoLitaw",
+    description: "The Filipino chocolate Xiao Long Bao, prepared for campus pickup.",
+    images: ["/images/home/hero-image.png"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

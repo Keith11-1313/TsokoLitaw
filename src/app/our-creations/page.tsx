@@ -5,8 +5,9 @@ import { SiteContainer } from "@/components/layout/site-container";
 import { getPublicCommerceCatalog } from "@/lib/server-commerce";
 
 export const metadata: Metadata = {
-  title: "Our Creations | TsokoLitaw",
+  title: "Build Your TsokoLitaw Box | Our Creations",
   description: "Build a chocolate-filled TsokoLitaw box with your favorite coatings.",
+  alternates: { canonical: "/our-creations" },
 };
 
 export default async function OurCreationsPage() {

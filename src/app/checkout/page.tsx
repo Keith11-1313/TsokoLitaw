@@ -10,6 +10,7 @@ import { getCustomerLoyaltyStatus } from "@/lib/server-loyalty";
 export const metadata: Metadata = {
   title: "Checkout | TsokoLitaw",
   description: "Review a TsokoLitaw order and available campus pickup schedules.",
+  robots: { index: false, follow: false, nocache: true },
 };
 
 export default async function CheckoutPage({ searchParams }: PageProps<"/checkout">) {

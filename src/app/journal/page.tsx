@@ -10,6 +10,7 @@ import { getPublicFeaturedReviews } from "@/lib/server-reviews";
 export const metadata: Metadata = {
   title: "The TsokoLitaw Journal",
   description: "Announcements, kitchen stories, product features, and customer highlights from TsokoLitaw.",
+  alternates: { canonical: "/journal" },
 };
 
 const iconMap = { megaphone: Megaphone, sparkles: Sparkles, file_text: FileText, video: Video } as const;

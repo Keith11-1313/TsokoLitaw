@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 export const metadata: Metadata = {
   title: "Login | TsokoLitaw",
   description: "Sign in to continue with TsokoLitaw.",
+  robots: { index: false, follow: false },
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {

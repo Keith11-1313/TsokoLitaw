@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { LegalDocumentPage, type LegalSection } from "@/components/customer/legal-document-page";
 
-export const metadata: Metadata = { title: "Terms & Conditions | TsokoLitaw" };
+export const metadata: Metadata = {
+  title: "Terms & Conditions | TsokoLitaw",
+  description: "Terms for TsokoLitaw online ordering, payment, cancellation, refund, and campus pickup.",
+  alternates: { canonical: "/terms" },
+};
 
 const sections: readonly LegalSection[] = [
   {

@@ -8,7 +8,10 @@ import { SiteContainer } from "@/components/layout/site-container";
 import { requireCustomer } from "@/lib/auth";
 import { getCustomerLoyaltyStatus } from "@/lib/server-loyalty";
 
-export const metadata: Metadata = { title: "Profile | TsokoLitaw" };
+export const metadata: Metadata = {
+  title: "Profile | TsokoLitaw",
+  robots: { index: false, follow: false, nocache: true },
+};
 
 export default async function ProfilePage() {
   const profile = await requireCustomer("/profile");
