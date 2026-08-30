@@ -5,11 +5,10 @@ import { HomeHero } from "@/components/home/home-hero";
 
 const homeContent = {
   hero: {
-    scriptTitle: "TsokoLitaw",
-    heading: "Filipino Artisanal Chocolate Mochi",
-    tagline: "Sweet treat. Happy beat.",
+    heading: "The Filipino Chocolate\nXiao Long Bao",
+    tagline: "A Filipino favorite, with a chocolate surprise.",
     description:
-      "Experience the softest, chewiest traditional rice cakes, filled with hot oozing local Tsokolate, rolled in grated coconut and toasted sesame seeds. Handmade daily.",
+      "Soft and chewy palitaw filled with warm, melted chocolate and topped with your choice of coating. Served fresh with our signature sea salt cream sauce for a delicious sweet-and-salty bite.",
   },
   featuredVideo: {
     heading: "Featured at TsokoLitaw",
@@ -26,7 +25,7 @@ export default function Home() {
         <FeaturedVideoSection {...homeContent.featuredVideo} />
       </main>
       <CustomerFooter
-        address="University of Caloocan City, Caloocan, Metro Manila, Philippines"
+        address="University of Caloocan City - Congressional Campus"
         supportEmail="tsokolitaw@gmail.com"
       />
     </>

@@ -24,7 +24,8 @@ const italianno = Italianno({
 
 export const metadata: Metadata = {
   title: "TsokoLitaw",
-  description: "Filipino artisanal chocolate mochi made for sharing.",
+  description:
+    "Soft and chewy palitaw filled with warm, melted chocolate and served fresh with your choice of coating.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -5,12 +5,14 @@ import { cn } from "@/lib/cn";
 
 interface CustomerFooterProps {
   address?: string;
+  locationHref?: string;
   supportEmail?: string;
   className?: string;
 }
 
 export function CustomerFooter({
-  address = "UCC Congress, Caloocan",
+  address = "University of Caloocan City - Congressional Campus",
+  locationHref = "https://maps.app.goo.gl/aVPtbAP5cFfZhjML8",
   supportEmail = "tsokolitaw@gmail.com",
   className,
 }: CustomerFooterProps) {
@@ -30,7 +32,7 @@ export function CustomerFooter({
               titleClassName="text-3xl"
             />
             <p className="mt-5 text-sm leading-6 text-surface/80">
-              This online ordering system supports our school entrepreneurship requirement while helping customers reserve TsokoLitaw for scheduled campus pickup.
+              Craving something sweet? Order your TsokoLitaw online and pick it up fresh on campus.
             </p>
           </div>
 
@@ -39,33 +41,40 @@ export function CustomerFooter({
               Location &amp; contact
             </h2>
             <address className="mt-5 space-y-2 text-sm not-italic leading-6 text-surface/80">
-              <p>{address}</p>
+              <a
+                className="block underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface"
+                href={locationHref}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {address}
+              </a>
               <a className="underline-offset-4 hover:underline" href={`mailto:${supportEmail}`}>{supportEmail}</a>
             </address>
           </div>
 
           <div>
             <h2 className="text-xs font-bold uppercase tracking-wide text-surface">
-              Follow our story
+              Stay connected
             </h2>
             <div className="mt-5 flex flex-wrap gap-3">
               <a
                 href="https://www.facebook.com/profile.php?id=61593123463925"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface/10 px-4 text-sm font-bold text-surface transition-colors hover:bg-surface/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface"
+                aria-label="TsokoLitaw on Facebook"
+                className="inline-flex size-11 items-center justify-center rounded-full bg-surface/10 text-surface transition-colors hover:bg-surface/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface"
               >
                 <FacebookIcon />
-                Facebook
               </a>
               <a
                 href="https://www.instagram.com/tsokolitaw/"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface/10 px-4 text-sm font-bold text-surface transition-colors hover:bg-surface/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface"
+                aria-label="TsokoLitaw on Instagram"
+                className="inline-flex size-11 items-center justify-center rounded-full bg-surface/10 text-surface transition-colors hover:bg-surface/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface"
               >
                 <InstagramIcon />
-                Instagram
               </a>
             </div>
           </div>

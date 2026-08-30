@@ -13,7 +13,7 @@ export function CustomerPageShell({ children, activePath }: CustomerPageShellPro
       <CustomerHeader activePath={activePath} />
       <main id="main-content" tabIndex={-1}>{children}</main>
       <CustomerFooter
-        address="University of Caloocan City, Caloocan, Metro Manila, Philippines"
+        address="University of Caloocan City - Congressional Campus"
         supportEmail="tsokolitaw@gmail.com"
       />
     </>
