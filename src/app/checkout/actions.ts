@@ -131,7 +131,6 @@ export async function submitPendingOrderAction(
         await dispatchOrderConfirmation(result.orderId);
       } catch (notificationError) {
         console.error("[order-confirmation] Loyalty order dispatch failed", {
-          orderId: result.orderId,
           errorType: notificationError instanceof Error ? notificationError.name : "UnknownError",
         });
       }
