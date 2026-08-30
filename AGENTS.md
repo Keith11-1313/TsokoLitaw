@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-**Phase 12: Loyalty and Notifications is complete.** Authentication, authorization, Phase 9 server commerce, Phase 10 PayMongo test mode, Phase 11 Admin operations, atomic seven-order loyalty, all six transactional emails, bounded retry processing, and signed Resend delivery tracking are implemented and validated. Phase 13: Security and Production is next but must be explicitly started by the user.
+**Phase 13: Security and Production is active.** Authentication, authorization, Phase 9 server commerce, Phase 10 PayMongo test mode, Phase 11 Admin operations, atomic seven-order loyalty, all six transactional emails, bounded retry processing, and signed Resend delivery tracking are implemented and validated. Current work covers security review, environment isolation, performance validation, production configuration, and launch verification. PayMongo live activation and any real charge remain final user-controlled launch gates.
 
 Allowed:
 
@@ -39,13 +39,15 @@ Allowed:
 - completed-order review submission and Admin visibility/featured moderation
 - Admin Journal draft/publication management and optional cover media
 - Admin Inventory publication and unusable-piece adjustments for existing eligible pickup dates
+- Phase 13 security auditing, tamper testing, rate-limit and performance validation, production-safe metadata, and environment/deployment configuration
+- migration-only Dev-to-Production database promotion using separate Supabase projects
 
-Do not implement unless the user explicitly starts a later phase:
+Do not perform without a separate explicit user confirmation at the final external action:
 
 - PayMongo live-mode keys or charges
 - transactional email events beyond the six completed V1 events
 - Admin CRUD outside the currently approved Phase 11 slice
-- admin subdomain or DNS configuration
+- public DNS cutover or optional admin-subdomain configuration
 
 Never make mock UI look like secure authentication, verified payment, or persisted admin data.
 

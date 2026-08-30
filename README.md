@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-**Phase 12: Loyalty and Notifications is complete.** Loyalty is atomic, and all six agreed customer emails—confirmation, ready, cancellation, refund processing, refund completed, and refund problem—queue exactly once from persisted transitions, retry bounded temporary failures, and record signed Resend delivery callbacks. Hosted Dev smoke tests passed for all six paths and retry recovery; the canonical migration resets cleanly and all 293 pgTAP database tests pass. Phase 13: Security and Production is next but has not been started, and PayMongo live charges remain deferred.
+**Phase 13: Security and Production is active.** Loyalty and all six transactional notification paths are complete and validated. Current work covers security and tamper review, Dev/Production isolation, performance validation, production configuration, legal/SEO readiness, and final launch verification. PayMongo live activation and any real charge remain explicit final launch gates.
 
 The connected Admin Customers page is an account directory: it includes customer and Admin profiles, labels their roles explicitly, and shows their real order and loyalty activity when present.
 
@@ -386,8 +386,16 @@ The six transactional order/refund emails use Resend from server-only code and t
 
 Resend delivery tracking is received at `POST /api/webhooks/resend`. Configure that deployed URL in Resend, subscribe to `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.complained`, `email.failed`, and `email.suppressed`, then copy the endpoint signing secret into the protected `RESEND_WEBHOOK_SECRET` environment variable. The handler verifies the signature against the untouched request body, stores each provider event once, and rejects older events as delivery-state updates when Resend delivers events out of order. API keys and webhook secrets belong only in protected local/Vercel environment settings.
 
+Phase 13 adds a strict trusted-origin rule for OAuth callbacks and provider links, a 1 MiB signed-webhook request limit, a 15-second Resend timeout, shared constant-time Cron authorization, non-cacheable Cron responses, data-minimized operational output, and production response headers for content security, framing, MIME sniffing, referrers, browser permissions, and HTTPS transport. Public metadata uses `https://tsokolitaw.com` as the canonical origin; `robots.txt` and `sitemap.xml` expose only Home, Our Creations, Journal, Terms, and Privacy, while account, order, payment, checkout, Auth, Admin, and API surfaces are non-indexable.
+
+The Privacy page is the active notice rather than preview copy. It identifies collected information, operational purposes, the current Google/Supabase/Vercel/PayMongo/Resend providers, the 90-day eligible account-deactivation window, retained transaction records, security controls, and customer privacy-request options.
+
 Do not add production secrets until the corresponding backend integration begins. Never commit `.env.local`.
 
 ## Git Workflow
 
 The user performs Git operations manually. Agents must report completion, validation results, changed files, and a suggested Conventional Commit message. Agents must not stage, commit, or push.
+
+`develop` is the stable Dev integration branch and `main` is the Production branch. Normal work follows `feature/*` → `develop` → `main`; a production emergency follows `hotfix/*` → `main` and is then merged back into `develop`. The existing Vercel project retains `tsokolitaw.vercel.app` and tracks `develop`. A separate Vercel Production project tracks `main` and owns `tsokolitaw.com`, with an independent Production Supabase project and production-only secrets, webhooks, cron jobs, and provider configuration.
+
+Database changes must be committed migrations. Reset and test them locally, verify them against Dev, then promote the same migration files to Production. Never develop directly against Production, run a linked reset there, or push development seed data to it.

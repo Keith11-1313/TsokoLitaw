@@ -22,7 +22,7 @@ The PNGs in `references/` are retained as early visual context. They are not pix
 
 ### Decision
 
-Phase 12 Loyalty and Notifications is complete. Phase 13 Security and Production is the next gated milestone, with hosted provider-expiry, account-deletion, production-auth, and live-refund checks retained as explicit release follow-ups.
+Phase 12 Loyalty and Notifications is complete. Phase 13 Security and Production is active. Security review, environment isolation, performance validation, production configuration, and launch verification are now in scope; PayMongo live activation and a real charge remain explicit final launch gates.
 
 Allowed now:
 
@@ -46,7 +46,7 @@ Deferred until separately approved:
 
 ### Reason
 
-The customer workflow, authentication boundary, server commerce, test payment lifecycle, Admin operations, loyalty, and six transactional notification paths are connected. Phase 13 security and production work remains separately gated so production credentials and live charges cannot be enabled implicitly.
+The customer workflow, authentication boundary, server commerce, test payment lifecycle, Admin operations, loyalty, and six transactional notification paths are connected. Phase 13 was explicitly started so production-readiness work may proceed, while real payments and irreversible public cutovers still require a deliberate final confirmation.
 
 ### UI consequence
 
@@ -544,3 +544,17 @@ Agents report:
 - suggested Conventional Commit messages and modular commit groups
 
 Agents do not stage, commit, or push.
+
+## 22. Branch and Environment Isolation
+
+### Decision
+
+`main` is the Production branch and `develop` is the stable Dev integration branch. Normal work follows `feature/*` → `develop` → `main`. Emergency production fixes follow `hotfix/*` → `main`, then merge back into `develop` so the branches do not diverge.
+
+The current Vercel project keeps `tsokolitaw.vercel.app` as Dev and tracks `develop`. A separate Production Vercel project connects to the same repository, tracks `main`, and owns `tsokolitaw.com`. Dev and Production use separate Supabase projects and separate environment-specific provider URLs, credentials, webhook secrets, and cron secrets. Production secrets must never be assigned to Dev or general Preview deployments.
+
+Every database change is represented by a version-controlled migration. It is reset and tested locally, applied and verified in Dev, and then promoted unchanged to Production. Dashboard-only schema edits and production seed data are prohibited.
+
+### Reason
+
+The live storefront must remain stable while Phase 14 and later feature work continue safely on Dev. Separate hosting and database boundaries reduce accidental production writes, secret exposure, webhook crossover, and schema drift.

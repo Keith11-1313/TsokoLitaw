@@ -295,16 +295,15 @@ RESEND_API_KEY=
 RESEND_WEBHOOK_SECRET=
 EMAIL_FROM_ADDRESS=
 EMAIL_REPLY_TO_ADDRESS=
-
-NEXT_PUBLIC_SITE_URL=
 ```
 
 Only values intentionally prefixed with `NEXT_PUBLIC_` may be available to the browser. The Supabase secret key, initial admin identity, PayMongo, and Resend secrets remain server-only deployment configuration. Never commit `.env.local` or real secrets.
 
 ## 14. Deployment
 
-- UI preview: GitHub → Vercel
-- production app: Vercel
+- source promotion: `feature/*` → `develop` → `main`
+- Dev app: the existing Vercel project tracks `develop` and retains `tsokolitaw.vercel.app`
+- Production app: a separate Vercel project tracks `main` and owns `tsokolitaw.com`
 - database/auth/storage: Supabase
 - production authentication endpoint: `auth.tsokolitaw.com` through the Supabase custom-domain add-on
 - payments: PayMongo
@@ -313,6 +312,10 @@ Only values intentionally prefixed with `NEXT_PUBLIC_` may be available to the b
 - planned admin domain: `admin.tsokolitaw.com`
 
 Use PayMongo test mode and non-production Supabase configuration before live rollout.
+
+Dev and Production are hard boundaries, not only labels inside one `.env` file. The Dev Vercel project uses the Dev Supabase project, PayMongo test credentials, Dev webhook endpoints/secrets, a Dev `CRON_SECRET`, and the Vercel Dev origin. The Production Vercel project uses the Production Supabase project, production-only secrets, production webhook endpoints/secrets, a different production `CRON_SECRET`, and the canonical custom origin. Feature previews may use Dev-safe configuration but never Production secrets.
+
+All database changes originate as reviewed files under `supabase/migrations`. Reset and test locally, apply to Dev, verify the hosted Dev behavior, and then apply the same migration files to Production. Never run `db reset --linked` against Production and never include development seed data in a Production push.
 
 The default Supabase project domain is accepted for development OAuth. Production custom-domain activation requires DNS verification and TLS readiness, the branded callback in Google Auth Platform, the custom Supabase URL in Vercel, and an end-to-end session/authorization smoke test. Keep the original Supabase callback configured until the branded flow is verified.
 

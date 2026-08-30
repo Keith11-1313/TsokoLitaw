@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Phase 12 Loyalty and Notifications is complete. Phase 13 Security and Production is ready to begin when explicitly approved. Final Privacy wording and the controlled live-provider paid-cancellation/full-refund smoke remain explicit release follow-ups.
+Phase 13 Security and Production is active. Environment isolation, security review, performance validation, production configuration, and launch verification are the current work. Final Privacy wording and the controlled live-provider paid-cancellation/full-refund smoke remain explicit release gates.
 
 ## Decision Baseline
 
@@ -24,7 +24,7 @@ Phase 12 Loyalty and Notifications is complete. Phase 13 Security and Production
 - [x] Add Lucide React
 - [x] Add lint, typecheck, and build scripts
 - [x] Add `.env.example` when the first backend integration begins
-- [ ] Confirm production environment policy before adding secrets
+- [x] Confirm production environment policy before adding secrets
 
 ## Phase 1 — Design Foundation and Assets
 
@@ -252,13 +252,13 @@ Do not begin without explicit approval.
 
 ## Phase 13 — Security and Production
 
-- [ ] Establish the Git/environment policy: `main` deploys Production, `develop` is the stable Dev integration branch, and `feature/*` branches merge into `develop` before production promotion
-- [ ] Configure branch-scoped Vercel environments so Production secrets are available only to `main` and Dev/Preview deployments use development Supabase, PayMongo test-mode, Resend, webhook, and cron configuration
-- [ ] Protect `main` from direct feature work and document the `feature/*` → `develop` → `main` release path plus the `hotfix/*` → `main` → `develop` recovery path
-- [ ] Require every database change to be represented by a reviewed migration, validated against Dev first, and promoted unchanged to Production
-- [ ] Review RLS and admin authorization
-- [ ] Test price, stock, order, and webhook tampering
-- [ ] Review secret exposure and logging
+- [x] Establish and document the Git/environment policy: `main` deploys Production, `develop` is the stable Dev integration branch, and `feature/*` branches merge into `develop` before production promotion
+- [ ] Keep the existing Vercel project on `develop` as `tsokolitaw.vercel.app` Dev, create a separate `main`-tracking Production project for `tsokolitaw.com`, and isolate every environment variable and provider callback
+- [ ] Protect `main` from direct feature work and require the documented `feature/*` → `develop` → `main` release path plus the `hotfix/*` → `main` → `develop` recovery path
+- [x] Require every database change to be represented by a reviewed migration, validated against Dev first, and promoted unchanged to Production
+- [x] Review RLS and admin authorization
+- [x] Test price, stock, order, and webhook tampering
+- [x] Review secret exposure and logging
 - [x] Consolidate My Orders and order detail into RLS-scoped nested reads
 - [x] Add cursor pagination to customer order history
 - [x] Add bounded tagged caching for public catalog previews and pickup definitions while keeping checkout authoritative reads live
@@ -266,10 +266,10 @@ Do not begin without explicit approval.
 - [x] Add an atomic service-only per-user/per-IP mutation rate limiter and daily bucket pruning
 - [x] Configure Vercel Fluid compute and align the current linked Singapore development database with `sin1`
 - [x] Add repeatable k6 smoke, ramp, 100-user hold, and spike scenarios
-- [ ] Apply the performance/rate-limit schema delta to the existing hosted development database before deploying the dependent application code
+- [x] Apply the performance/rate-limit schema delta to the existing hosted development database before deploying the dependent application code
 - [ ] Run the k6 smoke and 100-user staging gates and record warm p50/p95/p99, errors, and database health
 - [ ] Switch the Vercel function region from `sin1` to `icn1` when the Seoul production Supabase project becomes active
-- [ ] Review provider timeouts and idempotent retry behavior before PayMongo live mode
+- [x] Review provider timeouts and idempotent retry behavior before PayMongo live mode
 - [ ] Deploy production configuration to Vercel
 - [ ] Copy approved coating assets from the Dev `catalog-media` bucket to production Storage and update production coating `image_url` values
 - [ ] Connect `tsokolitaw.com`
@@ -293,10 +293,10 @@ Do not begin without explicit approval.
 - [ ] Configure production OAuth and remaining PayMongo URLs
 - [ ] Switch to live keys only after test-mode sign-off
 - [ ] Choose one canonical production origin (`https://tsokolitaw.com` or `https://www.tsokolitaw.com`) and permanently redirect every alternate HTTP/HTTPS host to it
-- [ ] Audit unique page titles, descriptions, canonical URLs, favicons, Open Graph images, and social-sharing metadata on every public route
-- [ ] Mark private and transactional routes such as Admin, Profile, Orders, Checkout, Auth, Payment, and API endpoints as non-indexable
-- [ ] Generate production `robots.txt` and a root `sitemap.xml` containing only canonical public URLs with absolute production links
-- [ ] Add truthful Organization or eligible Local Business structured data for TsokoLitaw and validate it with Google Rich Results Test
+- [x] Audit unique page titles, descriptions, canonical URLs, favicons, Open Graph images, and social-sharing metadata on every public route
+- [x] Mark private and transactional routes such as Admin, Profile, Orders, Checkout, Auth, Payment, and API endpoints as non-indexable
+- [x] Generate production `robots.txt` and a root `sitemap.xml` containing only canonical public URLs with absolute production links
+- [x] Add truthful Organization structured data for TsokoLitaw; validate the deployed page with Google Rich Results Test before launch
 - [ ] Run Lighthouse and production Core Web Vitals checks on Home, Our Creations, Journal, Terms, and Privacy before allowing indexing
 - [ ] Create and DNS-verify the `tsokolitaw.com` domain property in Google Search Console
 - [ ] Submit `https://tsokolitaw.com/sitemap.xml` in Google Search Console after the canonical domain is live

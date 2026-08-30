@@ -23,7 +23,7 @@ Workflow changes must be reflected together in:
 
 ## 2. Delivery Stages
 
-### Completed: Phase 12 — Loyalty and Notifications
+### Active: Phase 13 — Security and Production
 
 - Next.js, React, TypeScript, and Tailwind UI
 - temporary client-side interactions only where persistence is not required
@@ -44,12 +44,15 @@ Workflow changes must be reflected together in:
 - All six V1 Resend customer emails are queued exactly once from committed order/refund transitions: confirmation, ready for pickup, cancellation, refund processing, refund completed, and refund problem; trusted retry processing is shared
 - Signed Resend delivery webhooks are verified against the untouched request body, deduplicated by provider event ID, and update operational delivery state without changing commerce state
 - Hosted Dev smoke testing confirms all six notification transitions, exactly-once queueing, retry recovery, and Resend delivery callbacks; the canonical migration resets cleanly and all 293 pgTAP database tests pass
+- `develop` is the Dev integration branch and `main` is the Production branch; feature work reaches Production only through the reviewed `feature/*` → `develop` → `main` path
+- the existing `tsokolitaw.vercel.app` deployment remains the isolated Dev application, while `tsokolitaw.com` belongs to a separate Production Vercel project connected to the same repository
+- Dev and Production use separate Supabase projects, provider credentials, webhook secrets, cron secrets, and URLs; database changes are tested locally and in Dev before the same reviewed migrations are promoted to Production
 
-### Deferred
+### Launch-gated inside Phase 13
 
 - PayMongo live mode
 - admin subdomain configuration
-- Phase 13 security hardening and production launch work until explicitly started
+- final public DNS cutover and any real charge until explicitly confirmed by the user
 
 UI labels must clearly distinguish mock or unavailable backend actions.
 
