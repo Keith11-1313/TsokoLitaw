@@ -252,6 +252,10 @@ Do not begin without explicit approval.
 
 ## Phase 13 — Security and Production
 
+- [ ] Establish the Git/environment policy: `main` deploys Production, `develop` is the stable Dev integration branch, and `feature/*` branches merge into `develop` before production promotion
+- [ ] Configure branch-scoped Vercel environments so Production secrets are available only to `main` and Dev/Preview deployments use development Supabase, PayMongo test-mode, Resend, webhook, and cron configuration
+- [ ] Protect `main` from direct feature work and document the `feature/*` → `develop` → `main` release path plus the `hotfix/*` → `main` → `develop` recovery path
+- [ ] Require every database change to be represented by a reviewed migration, validated against Dev first, and promoted unchanged to Production
 - [ ] Review RLS and admin authorization
 - [ ] Test price, stock, order, and webhook tampering
 - [ ] Review secret exposure and logging
@@ -301,3 +305,14 @@ Do not begin without explicit approval.
 - [ ] Monitor search queries, indexed pages, sitemap status, and crawl errors during the first weeks, then correct metadata or technical SEO issues without keyword stuffing
 - [ ] Assess Google Business Profile eligibility separately; create one only if TsokoLitaw meets Google's real-world business/location requirements
 - [ ] Complete final smoke test and policy verification
+
+## Phase 14 — UI Overhaul
+
+Do not begin until Phase 13 establishes and verifies the production baseline.
+
+- [ ] Tag the stable Phase 13 production release before beginning the redesign
+- [ ] Create `feature/ui-overhaul` from `develop`; do not redesign directly on `main`
+- [ ] Audit every customer and Admin page for information hierarchy, consistency, responsive behavior, accessibility, loading, empty, error, and success states
+- [ ] Implement the approved UI overhaul without changing established commerce, inventory, pickup, loyalty, payment, refund, notification, privacy, or authorization behavior unintentionally
+- [ ] Validate the overhaul against Dev services with typecheck, lint, application tests, database tests, production build, responsive review, accessibility review, and critical end-to-end flows
+- [ ] Merge the approved overhaul into `develop`, complete a final Dev deployment review, then promote the tested revision to `main`
