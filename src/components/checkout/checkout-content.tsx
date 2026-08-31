@@ -42,11 +42,11 @@ function CoatingBreakdown({ item }: { item: CartLineItem }) {
       <summary className="cursor-pointer list-none rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
         {visible.join(", ")}
         {" "}
-        <span className="whitespace-nowrap font-bold text-brand underline decoration-brand/35 underline-offset-2 group-open:no-underline">
+        <span className="whitespace-nowrap font-semibold text-muted-foreground underline decoration-muted-foreground/35 underline-offset-2 group-open:hidden">
           +{remaining.length} more
         </span>
       </summary>
-      <p className="mt-1 border-l border-border pl-2">{remaining.join(", ")}</p>
+      <p className="mt-1">{remaining.join(", ")}</p>
     </details>
   );
 }
