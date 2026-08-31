@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   FileText,
   Megaphone,
@@ -15,6 +15,10 @@ import {
 } from "@/app/admin/journal/actions";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { FormStatusHint } from "@/components/ui/form-status-hint";
+import { useFormGate } from "@/hooks/use-form-gate";
+import { browserImageError } from "@/lib/form-validation";
 import {
   JOURNAL_CONTENT_TYPES,
   JOURNAL_ICON_KEYS,
@@ -46,6 +50,22 @@ function JournalEditor({
 }) {
   const [state, formAction, pending] = useActionState(saveJournalPostAction, initialState);
   const dialogRef = useRef<HTMLElement>(null);
+  const [imageError, setImageError] = useState("");
+  const [imageChecking, setImageChecking] = useState(false);
+  const { formRef, formProps, canSubmit, statusMessage, refresh } = useFormGate({ requireDirty: Boolean(post), extraValid: !imageError && !imageChecking });
+
+  async function validateCover(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    setImageError("");
+    if (!file) return;
+    setImageChecking(true);
+    const nextError = await browserImageError(file);
+    setImageError(nextError);
+    input.setCustomValidity(nextError);
+    setImageChecking(false);
+    refresh();
+  }
 
   useEffect(() => {
     if (state.status === "success") onClose();
@@ -90,35 +110,32 @@ function JournalEditor({
           </button>
         </div>
 
-        <form action={formAction} className="mt-7 grid gap-5 sm:grid-cols-2">
+        <form ref={formRef} {...formProps} action={formAction} className="mt-7 grid gap-5 sm:grid-cols-2">
           <input type="hidden" name="postId" value={post?.id ?? ""} />
           <input type="hidden" name="existingCoverImageUrl" value={post?.coverImageUrl ?? ""} />
           <FormField
             id="journal-title"
             label="Title"
+            error={state.fieldErrors?.title}
             required
             className="sm:col-span-2"
             inputProps={{ name: "title", defaultValue: post?.title, minLength: 3, maxLength: 120, autoFocus: true }}
           />
-          <FormField id="journal-type" label="Post type" as="select" required selectProps={{ name: "contentType", defaultValue: post?.contentType ?? "announcement" }}>
-            {JOURNAL_CONTENT_TYPES.map((type) => <option key={type} value={type}>{journalContentTypeLabels[type]}</option>)}
-          </FormField>
-          <FormField id="journal-icon" label="Icon" as="select" required selectProps={{ name: "iconKey", defaultValue: post?.iconKey ?? "megaphone" }}>
-            {JOURNAL_ICON_KEYS.map((icon) => <option key={icon} value={icon}>{journalIconLabels[icon]}</option>)}
-          </FormField>
+          <CustomSelect label="Post type" name="contentType" required defaultValue={post?.contentType ?? "announcement"} options={JOURNAL_CONTENT_TYPES.map((type) => ({ value: type, label: journalContentTypeLabels[type] }))} />
+          <CustomSelect label="Icon" name="iconKey" required defaultValue={post?.iconKey ?? "megaphone"} options={JOURNAL_ICON_KEYS.map((icon) => ({ value: icon, label: journalIconLabels[icon] }))} />
           <FormField id="journal-date" label="Display date" required inputProps={{ name: "displayDate", type: "date", defaultValue: post?.displayDate ?? todayInManila() }} />
-          <FormField id="journal-status" label="Publication" as="select" required selectProps={{ name: "status", defaultValue: post?.status ?? "draft" }}>
-            {JOURNAL_STATUSES.map((status) => <option key={status} value={status}>{status === "published" ? "Published" : "Draft"}</option>)}
-          </FormField>
+          <CustomSelect label="Publication" name="status" required defaultValue={post?.status ?? "draft"} options={JOURNAL_STATUSES.map((status) => ({ value: status, label: status === "published" ? "Published" : "Draft" }))} />
           <FormField
             id="journal-excerpt"
             label="Short summary (optional)"
+            error={state.fieldErrors?.excerpt}
             className="sm:col-span-2"
             inputProps={{ name: "excerpt", defaultValue: post?.excerpt ?? "", maxLength: 240 }}
           />
           <FormField
             id="journal-content"
             label="Content"
+            error={state.fieldErrors?.content}
             as="textarea"
             required
             className="sm:col-span-2"
@@ -128,14 +145,16 @@ function JournalEditor({
           <FormField
             id="journal-cover"
             label="Cover image (optional)"
-            hint="JPG, PNG, or WebP up to 3 MB. A new image replaces the current one."
-            inputProps={{ name: "coverImage", type: "file", accept: "image/jpeg,image/png,image/webp" }}
+            hint={imageChecking ? "Checking image…" : "JPG, PNG, or WebP up to 3 MB. A new image replaces the current one."}
+            error={imageError || state.fieldErrors?.coverImage}
+            inputProps={{ name: "coverImage", type: "file", accept: "image/jpeg,image/png,image/webp", onChange: validateCover }}
           />
           <FormField
             id="journal-video"
             label="Video link (optional)"
+            error={state.fieldErrors?.videoUrl}
             hint="Use a secure hosted video URL when the post includes video."
-            inputProps={{ name: "videoUrl", type: "url", defaultValue: post?.videoUrl ?? "", placeholder: "https://…" }}
+            inputProps={{ name: "videoUrl", type: "url", pattern: "https://.*", defaultValue: post?.videoUrl ?? "", placeholder: "https://…" }}
           />
           {post?.coverImageUrl ? (
             <label className="flex min-h-11 items-center gap-3 text-sm sm:col-span-2">
@@ -144,9 +163,10 @@ function JournalEditor({
             </label>
           ) : null}
           {state.status === "error" ? <p role="alert" className="rounded-control bg-danger-background p-4 text-sm text-danger-foreground sm:col-span-2">{state.message}</p> : null}
+          <FormStatusHint className="sm:col-span-2" message={statusMessage} />
           <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
             <SecondaryButton type="button" disabled={pending} onClick={onClose}>Cancel</SecondaryButton>
-            <PrimaryButton type="submit" disabled={pending}>{pending ? "Saving…" : "Save post"}</PrimaryButton>
+            <PrimaryButton type="submit" disabled={pending || !canSubmit}>{pending ? "Saving…" : "Save post"}</PrimaryButton>
           </div>
         </form>
       </section>

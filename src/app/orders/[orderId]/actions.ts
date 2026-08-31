@@ -10,7 +10,7 @@ import {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export type OrderActionResult = { status: "idle" | "success" | "error"; message: string };
+export type OrderActionResult = { status: "idle" | "success" | "error"; message: string; fieldErrors?: Record<string, string> };
 
 export async function cancelOrderAction(orderId: string, orderNumber: string): Promise<OrderActionResult> {
   const profile = await requireCustomer(`/orders/${orderId}`);
@@ -50,12 +50,15 @@ export async function manualRefundFallbackAction(input: {
     return { status: "error", message: "That refund request is unavailable." };
   }
   if (!["GCASH", "MAYA", "BANK"].includes(input.destinationType)) {
-    return { status: "error", message: "Choose a valid refund destination." };
+    return { status: "error", message: "Choose a valid refund destination.", fieldErrors: { destinationType: "Choose a valid destination." } };
   }
   const accountName = input.accountName.trim();
   const accountReference = input.accountReference.trim();
   if (accountName.length < 2 || accountName.length > 100 || accountReference.length < 5 || accountReference.length > 100) {
-    return { status: "error", message: "Enter a valid account name and account number." };
+    return { status: "error", message: "Enter a valid account name and account number.", fieldErrors: {
+      ...(accountName.length < 2 || accountName.length > 100 ? { accountName: "Use between 2 and 100 characters." } : {}),
+      ...(accountReference.length < 5 || accountReference.length > 100 ? { accountReference: "Use between 5 and 100 characters." } : {}),
+    } };
   }
   try {
     await enforceMutationRateLimit({

@@ -9,6 +9,7 @@ import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-r
 export type InventoryActionState = {
   status: "idle" | "success" | "error";
   message: string;
+  fieldErrors?: Record<string, string>;
 };
 
 function refreshInventory() {
@@ -45,13 +46,18 @@ export async function saveInventoryAction(
   const admin = await requireAdmin("/admin/inventory");
   const pickupDate = String(formData.get("pickupDate") ?? "");
   const productId = String(formData.get("productId") ?? "");
-  const stockTotal = Number(formData.get("stockTotal"));
+  const stockTotalValue = String(formData.get("stockTotal") ?? "").trim();
+  const stockTotal = Number(stockTotalValue);
   const notes = String(formData.get("notes") ?? "").trim();
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(pickupDate) || !isUuid(productId)
-    || !Number.isInteger(stockTotal) || stockTotal < 0 || stockTotal > 100000
+    || !stockTotalValue || !Number.isInteger(stockTotal) || stockTotal < 0 || stockTotal > 100000
     || notes.length > 240) {
-    return { status: "error", message: "Check the pickup date, piece total, and notes." };
+    return { status: "error", message: "Check the pickup date, piece total, and notes.", fieldErrors: {
+      ...(!/^\d{4}-\d{2}-\d{2}$/.test(pickupDate) ? { pickupDate: "Choose a valid pickup date." } : {}),
+      ...(!stockTotalValue || !Number.isInteger(stockTotal) || stockTotal < 0 || stockTotal > 100000 ? { stockTotal: "Enter a whole-number total from 0 to 100,000." } : {}),
+      ...(notes.length > 240 ? { notes: "Use 240 characters or fewer." } : {}),
+    } };
   }
 
   try {
@@ -77,13 +83,17 @@ export async function consumeInventoryAction(
 ): Promise<InventoryActionState> {
   const admin = await requireAdmin("/admin/inventory");
   const inventoryId = String(formData.get("inventoryId") ?? "");
-  const quantity = Number(formData.get("quantity"));
+  const quantityValue = String(formData.get("quantity") ?? "").trim();
+  const quantity = Number(quantityValue);
   const reason = String(formData.get("reason") ?? "");
   const notes = String(formData.get("notes") ?? "").trim();
 
-  if (!isUuid(inventoryId) || !Number.isInteger(quantity) || quantity < 1 || quantity > 100000
+  if (!isUuid(inventoryId) || !quantityValue || !Number.isInteger(quantity) || quantity < 1 || quantity > 100000
     || reason !== "WASTE" || notes.length > 240) {
-    return { status: "error", message: "Check the piece quantity, reason, and notes." };
+    return { status: "error", message: "Check the piece quantity, reason, and notes.", fieldErrors: {
+      ...(!quantityValue || !Number.isInteger(quantity) || quantity < 1 || quantity > 100000 ? { quantity: "Enter a whole-number quantity from 1 to 100,000." } : {}),
+      ...(notes.length > 240 ? { notes: "Use 240 characters or fewer." } : {}),
+    } };
   }
 
   try {

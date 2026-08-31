@@ -32,8 +32,9 @@ export type CheckoutSubmissionResult =
     total: number;
     created: boolean;
     checkoutUrl: string;
+    fieldErrors?: undefined;
   }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string; fieldErrors?: Record<string, string> };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -53,25 +54,25 @@ function isValidCartItem(item: CheckoutCartInput) {
   ));
 }
 
-function getValidationMessage(input: CheckoutSubmissionInput) {
-  if (!UUID_PATTERN.test(input.checkoutKey)) return "Start a new checkout attempt and try again.";
+function getValidationFailure(input: CheckoutSubmissionInput): { message: string; fieldErrors?: Record<string, string> } | null {
+  if (!UUID_PATTERN.test(input.checkoutKey)) return { message: "Start a new checkout attempt and try again." };
   if (!UUID_PATTERN.test(input.pickupWindowId) || !UUID_PATTERN.test(input.pickupLocationId)) {
-    return "Choose an available pickup date, time, and location.";
+    return { message: "Choose an available pickup date, time, and location.", fieldErrors: { pickup: "Choose an available pickup option." } };
   }
   const customerName = input.customerName.trim();
   if (customerName.length < 2 || customerName.length > 100) {
-    return "Enter a name between 2 and 100 characters.";
+    return { message: "Enter a name between 2 and 100 characters.", fieldErrors: { customerName: "Enter a name between 2 and 100 characters." } };
   }
-  if (input.customerMobile.trim().length > 30) return "Mobile number must be 30 characters or fewer.";
-  if (input.customerNotes.trim().length > 500) return "Order notes must be 500 characters or fewer.";
-  if (!input.termsAccepted) return "Accept the Terms & Conditions before continuing.";
+  if (input.customerMobile.trim().length > 30) return { message: "Mobile number must be 30 characters or fewer.", fieldErrors: { customerMobile: "Use 30 characters or fewer." } };
+  if (input.customerNotes.trim().length > 500) return { message: "Order notes must be 500 characters or fewer.", fieldErrors: { customerNotes: "Use 500 characters or fewer." } };
+  if (!input.termsAccepted) return { message: "Accept the Terms & Conditions before continuing.", fieldErrors: { termsAccepted: "Acceptance is required." } };
   if (input.loyaltyRewardId !== null && !UUID_PATTERN.test(input.loyaltyRewardId)) {
-    return "Choose a valid loyalty reward.";
+    return { message: "Choose a valid loyalty reward." };
   }
   if (!Array.isArray(input.items) || input.items.length < 1 || input.items.length > 20) {
-    return "Your cart must contain between 1 and 20 configured boxes.";
+    return { message: "Your cart must contain between 1 and 20 configured boxes." };
   }
-  if (!input.items.every(isValidCartItem)) return "One or more cart items are invalid. Rebuild the affected box and try again.";
+  if (!input.items.every(isValidCartItem)) return { message: "One or more cart items are invalid. Rebuild the affected box and try again." };
   return null;
 }
 
@@ -93,8 +94,8 @@ export async function submitPendingOrderAction(
   input: CheckoutSubmissionInput,
 ): Promise<CheckoutSubmissionResult> {
   const profile = await requireCustomer("/checkout");
-  const validationMessage = getValidationMessage(input);
-  if (validationMessage) return { status: "error", message: validationMessage };
+  const validationFailure = getValidationFailure(input);
+  if (validationFailure) return { status: "error", ...validationFailure };
 
   try {
     await enforceMutationRateLimit({

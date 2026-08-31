@@ -9,6 +9,10 @@ import {
 } from "@/app/admin/inventory/actions";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { FormStatusHint } from "@/components/ui/form-status-hint";
+import { NumberStepper } from "@/components/ui/quantity-input";
+import { useFormGate } from "@/hooks/use-form-gate";
 import type {
   AdminInventoryDate,
   AdminInventoryRecord,
@@ -59,12 +63,13 @@ function StockEditor({
 }) {
   const [state, action, pending] = useActionState(saveInventoryAction, initialState);
   const minimum = record ? record.stockReserved + record.stockConsumed : 0;
+  const { formRef, formProps, canSubmit, statusMessage } = useFormGate({ requireDirty: Boolean(record), extraValid: Boolean(record || dates.length) });
   useEffect(() => {
     if (state.status === "success") onSaved?.();
   }, [state.status, onSaved]);
 
   return (
-    <form action={action} className="rounded-card border border-border bg-surface p-5 sm:p-6">
+    <form ref={formRef} {...formProps} action={action} className="rounded-card border border-border bg-surface p-5 sm:p-6">
       <input type="hidden" name="productId" value={product.id} />
       <div>
         <div>
@@ -80,8 +85,8 @@ function StockEditor({
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <label className="space-y-2 text-sm font-bold">
-          <span>Pickup date</span>
+        <div className="space-y-2 text-sm font-bold">
+          <span className="block">Pickup date</span>
           {record ? (
             <>
               <input type="hidden" name="pickupDate" value={record.pickupDate} />
@@ -90,35 +95,18 @@ function StockEditor({
               </span>
             </>
           ) : (
-            <select name="pickupDate" required defaultValue="" className="min-h-12 w-full rounded-control bg-surface-control px-4 font-normal">
-              <option value="" disabled>Choose a published ready-stock date</option>
-              {dates.map((date) => (
-                <option key={date.id} value={date.pickupDate}>
-                  {formatDate(date.pickupDate)} · {modeLabel(date.availabilityMode)}
-                </option>
-              ))}
-            </select>
+            <CustomSelect label="Choose date" name="pickupDate" required placeholder="Choose a published ready-stock date" options={dates.map((date) => ({ value: date.pickupDate, label: `${formatDate(date.pickupDate)} · ${modeLabel(date.availabilityMode)}` }))} />
           )}
-        </label>
+        </div>
 
-        <label className="space-y-2 text-sm font-bold">
-          <span>Total prepared pieces for this date</span>
-          <input
-            name="stockTotal"
-            type="number"
-            min={minimum}
-            max={100000}
-            step={1}
-            required
-            defaultValue={record?.stockTotal ?? 0}
-            className="min-h-12 w-full rounded-control bg-surface-control px-4 font-normal"
-          />
+        <div>
+          <NumberStepper label="Total prepared pieces for this date" error={state.fieldErrors?.stockTotal} name="stockTotal" min={minimum} max={100000} step={1} required defaultValue={record?.stockTotal ?? 0} />
           {minimum > 0 ? (
             <span className="block text-xs font-normal text-muted-foreground">
               {minimum} pieces are already committed or removed. Use another pickup date to start a new independent stock limit.
             </span>
           ) : null}
-        </label>
+        </div>
 
         <label className="space-y-2 text-sm font-bold sm:col-span-2">
           <span>Adjustment note (optional)</span>
@@ -129,7 +117,8 @@ function StockEditor({
 
       <div className="mt-5 space-y-3">
         <ActionMessage state={state} />
-        <PrimaryButton type="submit" disabled={pending || (!record && dates.length === 0)}>
+        <FormStatusHint message={statusMessage} />
+        <PrimaryButton type="submit" disabled={pending || !canSubmit}>
           {pending ? "Saving…" : record ? "Save stock settings" : "Publish stock"}
         </PrimaryButton>
       </div>
@@ -139,17 +128,15 @@ function StockEditor({
 
 function ConsumptionForm({ record }: { record: AdminInventoryRecord }) {
   const [state, action, pending] = useActionState(consumeInventoryAction, initialState);
+  const { formRef, formProps, canSubmit, statusMessage } = useFormGate({ requireDirty: false, extraValid: record.stockAvailable > 0 });
   return (
-    <form action={action}>
+    <form ref={formRef} {...formProps} action={action}>
       <input type="hidden" name="inventoryId" value={record.id} />
       <input type="hidden" name="reason" value="WASTE" />
       <h3 className="font-display text-xl">Record unusable pieces</h3>
       <p className="mt-1 text-xs leading-5 text-muted-foreground">Use this only for damaged, spoiled, or otherwise unsellable pieces. All customer sales are paid through the website.</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1.4fr]">
-        <label className="space-y-2 text-sm font-bold">
-          <span>Unusable pieces</span>
-          <input name="quantity" type="number" min={1} max={record.stockAvailable} step={1} required defaultValue={1} className="min-h-12 w-full rounded-control bg-surface-control px-3 font-normal" />
-        </label>
+        <NumberStepper label="Unusable pieces" error={state.fieldErrors?.quantity} name="quantity" min={1} max={record.stockAvailable} step={1} required defaultValue={1} />
         <label className="space-y-2 text-sm font-bold">
           <span>Note (optional)</span>
           <input name="notes" maxLength={240} placeholder="Short operational note" className="min-h-12 w-full rounded-control bg-surface-control px-3 font-normal" />
@@ -157,7 +144,8 @@ function ConsumptionForm({ record }: { record: AdminInventoryRecord }) {
       </div>
       <div className="mt-4 space-y-3">
         <ActionMessage state={state} />
-        <SecondaryButton type="submit" disabled={pending || record.stockAvailable < 1}>
+        <FormStatusHint message={statusMessage} />
+        <SecondaryButton type="submit" disabled={pending || !canSubmit}>
           {pending ? "Recording…" : "Record consumption"}
         </SecondaryButton>
       </div>
@@ -227,20 +215,7 @@ export function InventoryManager({
               </div>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              {records.length > 1 ? (
-                <label className="space-y-2 text-sm font-bold lg:min-w-72">
-                  <span>Change pickup date</span>
-                  <select
-                    value={selectedRecord.id}
-                    onChange={(event) => setSelectedInventoryId(event.target.value)}
-                    className="min-h-12 w-full rounded-control bg-surface-control px-4 font-normal"
-                  >
-                    {records.map((record) => (
-                      <option key={record.id} value={record.id}>{formatDate(record.pickupDate)}</option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
+              {records.length > 1 ? <CustomSelect className="lg:min-w-72" label="Change pickup date" value={selectedRecord.id} onChange={setSelectedInventoryId} options={records.map((item) => ({ value: item.id, label: formatDate(item.pickupDate) }))} /> : null}
               {unconfiguredDates.length > 0 ? <PrimaryButton onClick={() => setShowPublishModal(true)}><Plus size={17} />Publish stock for another date</PrimaryButton> : null}
             </div>
           </div>

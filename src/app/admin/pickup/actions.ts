@@ -9,7 +9,7 @@ import {
 } from "@/lib/server-pickup";
 import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
 
-export type PickupActionState = { status: "idle" | "success" | "error"; message: string };
+export type PickupActionState = { status: "idle" | "success" | "error"; message: string; fieldErrors?: Record<string, string> };
 const modes = new Set<PickupMode>(["MADE_TO_ORDER", "READY_STOCK", "HYBRID"]);
 
 function refreshPickup() {
@@ -49,7 +49,7 @@ export async function savePickupScheduleAction(
     || windows.some((window) => !validTime(window.startTime) || !validTime(window.endTime)
       || window.endTime <= window.startTime || !Array.isArray(window.locationIds)
       || window.locationIds.length < 1 || window.locationIds.some((id) => !isUuid(id)))) {
-    return { status: "error", message: "Check the date, mode, time windows, and locations." };
+    return { status: "error", message: "Check the date, mode, time windows, and locations.", fieldErrors: { schedule: "Use a valid date, mode, and at least one correctly ordered window with a location." } };
   }
   try {
     await guard(admin.id);
@@ -76,20 +76,26 @@ export async function savePickupSettingsAction(
   formData: FormData,
 ): Promise<PickupActionState> {
   const admin = await requireAdmin("/admin/pickup");
+  const minimumLeadDaysValue = String(formData.get("minimumLeadDays") ?? "").trim();
+  const graceMinutesValue = String(formData.get("graceMinutes") ?? "").trim();
   const settings: AdminPickupSettings = {
-    minimumLeadDays: Number(formData.get("minimumLeadDays")),
+    minimumLeadDays: Number(minimumLeadDaysValue),
     dailyCutoffTime: String(formData.get("dailyCutoffTime") ?? ""),
-    graceMinutes: Number(formData.get("graceMinutes")),
+    graceMinutes: Number(graceMinutesValue),
     operatingStart: String(formData.get("operatingStart") ?? ""),
     operatingEnd: String(formData.get("operatingEnd") ?? ""),
   };
   const validTime = (value: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
-  if (!Number.isInteger(settings.minimumLeadDays) || settings.minimumLeadDays < 0 || settings.minimumLeadDays > 30
-    || !validTime(settings.dailyCutoffTime) || !Number.isInteger(settings.graceMinutes)
+  if (!minimumLeadDaysValue || !Number.isInteger(settings.minimumLeadDays) || settings.minimumLeadDays < 0 || settings.minimumLeadDays > 30
+    || !validTime(settings.dailyCutoffTime) || !graceMinutesValue || !Number.isInteger(settings.graceMinutes)
     || settings.graceMinutes < 0 || settings.graceMinutes > 120
     || !validTime(settings.operatingStart) || !validTime(settings.operatingEnd)
     || settings.operatingEnd <= settings.operatingStart) {
-    return { status: "error", message: "Check the lead time, cutoff, grace period, and operating hours." };
+    return { status: "error", message: "Check the lead time, cutoff, grace period, and operating hours.", fieldErrors: {
+      ...(!minimumLeadDaysValue || !Number.isInteger(settings.minimumLeadDays) || settings.minimumLeadDays < 0 || settings.minimumLeadDays > 30 ? { minimumLeadDays: "Use a whole number from 0 to 30." } : {}),
+      ...(!graceMinutesValue || !Number.isInteger(settings.graceMinutes) || settings.graceMinutes < 0 || settings.graceMinutes > 120 ? { graceMinutes: "Use a whole number from 0 to 120." } : {}),
+      ...(settings.operatingEnd <= settings.operatingStart ? { operatingEnd: "Operating end must be after the start." } : {}),
+    } };
   }
   try {
     await guard(admin.id);
@@ -108,7 +114,10 @@ export async function savePickupLocationAction(
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   if ((idValue && !isUuid(idValue)) || name.length < 2 || name.length > 100 || description.length > 300) {
-    return { status: "error", message: "Use a 2–100 character name and a description no longer than 300 characters." };
+    return { status: "error", message: "Use a 2–100 character name and a description no longer than 300 characters.", fieldErrors: {
+      ...(name.length < 2 || name.length > 100 ? { name: "Use a name between 2 and 100 characters." } : {}),
+      ...(description.length > 300 ? { description: "Use 300 characters or fewer." } : {}),
+    } };
   }
   try {
     await guard(admin.id);

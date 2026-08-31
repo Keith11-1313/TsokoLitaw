@@ -5,6 +5,7 @@ import { ArrowRight, Search, X } from "lucide-react";
 import { transitionOrderStatusAction } from "@/app/admin/orders/actions";
 import type { OrderStatus } from "@/components/ui/status-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { formatPhp } from "@/lib/commerce";
 import {
   fulfillmentActionLabels,
@@ -170,18 +171,7 @@ export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }
             />
           </span>
         </label>
-        <label className="block space-y-2">
-          <span className="block text-sm font-bold text-foreground">Status filter</span>
-          <select
-            value={status}
-            onChange={(event) => setStatus(event.target.value as "ALL" | OrderStatus)}
-            className="min-h-12 w-full rounded-control border border-border bg-surface px-4 text-sm outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
-          >
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        </label>
+        <CustomSelect label="Status filter" value={status} onChange={(next) => setStatus(next as "ALL" | OrderStatus)} options={statusOptions} />
       </div>
 
       <div className="mt-6 rounded-card border border-border bg-surface p-4 sm:p-6">

@@ -18,6 +18,7 @@ export function AccountDangerZone({
   deletionScheduledFor: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
   const [requestState, requestAction, isRequestPending] = useActionState(
     requestAccountDeletionAction,
     initialState,
@@ -154,7 +155,12 @@ export function AccountDangerZone({
                 spellCheck={false}
                 autoFocus
                 required
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value)}
+                pattern="DELETE"
+                aria-invalid={confirmation.length > 0 && confirmation !== "DELETE" || undefined}
               />
+              {confirmation.length > 0 && confirmation !== "DELETE" ? <p className="mt-2 text-xs font-bold text-danger-foreground">Type DELETE exactly as shown.</p> : null}
               {requestState.message ? <ActionMessage state={requestState} /> : null}
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <SecondaryButton className="w-full" type="button" onClick={() => setOpen(false)}>
@@ -163,7 +169,7 @@ export function AccountDangerZone({
                 <PrimaryButton
                   className="w-full bg-danger-foreground hover:bg-danger-foreground/90"
                   type="submit"
-                  disabled={isRequestPending}
+                  disabled={isRequestPending || confirmation !== "DELETE"}
                 >
                   <Trash2 aria-hidden="true" size={17} />
                   {isRequestPending ? "Scheduling…" : "Schedule deletion"}

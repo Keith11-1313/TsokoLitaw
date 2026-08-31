@@ -2,6 +2,7 @@ import "server-only";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { validateUploadedImage } from "@/lib/server-image-validation";
 
 export interface AdminCatalogProduct {
   id: string;
@@ -104,17 +105,11 @@ export async function saveCatalogAddon(input: { adminId: string; addonId: string
 }
 
 export async function uploadCatalogImage(input: { adminId: string; file: File }) {
-  const extensionByType: Record<string, string> = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-  };
-  const extension = extensionByType[input.file.type];
-  if (!extension) throw new Error("Choose a JPG, PNG, or WebP catalog image.");
-  const path = `${input.adminId}/${crypto.randomUUID()}.${extension}`;
+  const validated = await validateUploadedImage(input.file, { requireSquare: true, label: "catalog image" });
+  const path = `${input.adminId}/${crypto.randomUUID()}.${validated.extension}`;
   const admin = createAdminSupabaseClient();
-  const { error } = await admin.storage.from("catalog-media").upload(path, input.file, {
-    contentType: input.file.type, cacheControl: "31536000", upsert: false,
+  const { error } = await admin.storage.from("catalog-media").upload(path, validated.buffer, {
+    contentType: validated.contentType, cacheControl: "31536000", upsert: false,
   });
   if (error) {
     const detail = error.message.toLowerCase();
@@ -126,5 +121,10 @@ export async function uploadCatalogImage(input: { adminId: string; file: File })
     }
     throw new Error("Catalog image could not be uploaded.", { cause: error });
   }
-  return admin.storage.from("catalog-media").getPublicUrl(path).data.publicUrl;
+  return { path, url: admin.storage.from("catalog-media").getPublicUrl(path).data.publicUrl };
+}
+
+export async function removeCatalogImage(path: string) {
+  const { error } = await createAdminSupabaseClient().storage.from("catalog-media").remove([path]);
+  if (error) throw new Error("The newly uploaded catalog image could not be cleaned up.", { cause: error });
 }

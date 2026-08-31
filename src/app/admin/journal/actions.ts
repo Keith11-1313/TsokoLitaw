@@ -10,8 +10,10 @@ import {
 } from "@/lib/journal";
 import {
   saveAdminJournalPost,
+  removeJournalCover,
   uploadJournalCover,
 } from "@/lib/server-journal";
+import { secureUrlError, type FieldErrors } from "@/lib/form-validation";
 import {
   enforceMutationRateLimit,
   MutationRateLimitError,
@@ -20,6 +22,7 @@ import {
 export type JournalActionState = {
   status: "idle" | "success" | "error";
   message: string;
+  fieldErrors?: FieldErrors;
 };
 
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -46,30 +49,28 @@ export async function saveJournalPostAction(
   if (postIdValue && !isUuid(postIdValue)) {
     return { status: "error", message: "That Journal post is unavailable." };
   }
-  if (title.length < 3 || title.length > 120) {
-    return { status: "error", message: "Use a title between 3 and 120 characters." };
-  }
-  if (excerpt.length > 240) {
-    return { status: "error", message: "The summary cannot exceed 240 characters." };
-  }
-  if (content.length < 10 || content.length > 5000) {
-    return { status: "error", message: "Use content between 10 and 5,000 characters." };
-  }
+  const fieldErrors: FieldErrors = {};
+  if (title.length < 3 || title.length > 120) fieldErrors.title = "Use a title between 3 and 120 characters.";
+  if (excerpt.length > 240) fieldErrors.excerpt = "The summary cannot exceed 240 characters.";
+  if (content.length < 10 || content.length > 5000) fieldErrors.content = "Use content between 10 and 5,000 characters.";
+  if (Object.keys(fieldErrors).length) return { status: "error", message: "Check the highlighted Journal fields.", fieldErrors };
   if (!isJournalContentType(contentType) || !isJournalIconKey(iconKey) || !isJournalStatus(status)) {
     return { status: "error", message: "Choose valid Journal type, icon, and publication values." };
   }
   if (!datePattern.test(displayDate) || Number.isNaN(Date.parse(`${displayDate}T00:00:00Z`))) {
     return { status: "error", message: "Choose a valid display date." };
   }
-  if (videoUrl && !/^https:\/\//i.test(videoUrl)) {
-    return { status: "error", message: "Video links must use a secure https:// URL." };
+  const videoUrlError = secureUrlError(videoUrl, "Video link");
+  if (videoUrlError) {
+    return { status: "error", message: "Video links must use a valid secure URL.", fieldErrors: { videoUrl: videoUrlError } };
   }
   if (coverImage instanceof File && coverImage.size > 0) {
     if (!allowedImageTypes.has(coverImage.type) || coverImage.size > 3 * 1024 * 1024) {
-      return { status: "error", message: "Upload a JPG, PNG, or WebP image no larger than 3 MB." };
+      return { status: "error", message: "Upload a JPG, PNG, or WebP image no larger than 3 MB.", fieldErrors: { coverImage: "Choose a JPG, PNG, or WebP image no larger than 3 MB." } };
     }
   }
 
+  let uploadedPath = "";
   try {
     await enforceMutationRateLimit({
       scope: "admin-journal-save",
@@ -80,7 +81,9 @@ export async function saveJournalPostAction(
 
     let coverImageUrl = removeCover ? "" : existingCoverImageUrl;
     if (coverImage instanceof File && coverImage.size > 0) {
-      coverImageUrl = await uploadJournalCover({ adminId: admin.id, file: coverImage });
+      const uploaded = await uploadJournalCover({ adminId: admin.id, file: coverImage });
+      uploadedPath = uploaded.path;
+      coverImageUrl = uploaded.url;
     }
 
     await saveAdminJournalPost({
@@ -101,6 +104,9 @@ export async function saveJournalPostAction(
     revalidatePath("/journal");
     return { status: "success", message: "Journal post saved." };
   } catch (error) {
+    if (uploadedPath) {
+      try { await removeJournalCover(uploadedPath); } catch (cleanupError) { console.error("Journal upload cleanup failed", cleanupError); }
+    }
     return {
       status: "error",
       message: error instanceof MutationRateLimitError

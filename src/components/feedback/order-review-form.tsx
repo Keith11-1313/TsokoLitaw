@@ -91,6 +91,7 @@ export function OrderReviewForm({ orderId, orderNumber, itemSummary, existingRev
         label="Tell us about your box and pickup experience"
         as="textarea"
         required
+        error={state.fieldErrors?.comment}
         className="mt-6"
         textareaProps={{
           name: "comment",
@@ -109,6 +110,7 @@ export function OrderReviewForm({ orderId, orderNumber, itemSummary, existingRev
           {state.message}
         </p>
       ) : null}
+      {state.fieldErrors?.rating ? <p className="mt-3 text-center text-xs font-bold text-danger-foreground">{state.fieldErrors.rating}</p> : null}
       <PrimaryButton className="mt-6 w-full" type="submit" disabled={!rating || comment.trim().length < 10 || pending}>
         {pending ? "Submitting review…" : "Submit review"}
       </PrimaryButton>

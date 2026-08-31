@@ -8,6 +8,10 @@ import {
   manualRefundFallbackAction,
   type OrderActionResult,
 } from "@/app/orders/[orderId]/actions";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { FormField } from "@/components/ui/form-field";
+import { FormStatusHint } from "@/components/ui/form-status-hint";
+import { useFormGate } from "@/hooks/use-form-gate";
 
 const initialResult: OrderActionResult = { status: "idle", message: "" };
 
@@ -29,6 +33,7 @@ export function OrderActions({
   const [result, setResult] = useState(initialResult);
   const [isPending, startTransition] = useTransition();
   const [fallbackResult, setFallbackResult] = useState(initialResult);
+  const { formRef, formProps, canSubmit, statusMessage } = useFormGate({ requireDirty: false });
 
   function confirmCancellation() {
     startTransition(async () => {
@@ -61,23 +66,16 @@ export function OrderActions({
       {result.message ? <p role="status" className={result.status === "error" ? "text-sm text-danger-foreground" : "text-sm text-success-foreground"}>{result.message}</p> : null}
 
       {refund?.status === "FAILED" && refund.method === "ORIGINAL_PAYMENT_METHOD" ? (
-        <form action={submitFallback} className="rounded-card border border-warning-foreground/30 bg-warning-background p-5">
+        <form ref={formRef} {...formProps} action={submitFallback} className="rounded-card border border-warning-foreground/30 bg-warning-background p-5">
           <h3 className="font-display text-xl">Manual refund fallback</h3>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">PayMongo could not return the payment automatically. Provide the account where Admin should send the full refund. These details are encrypted and restricted.</p>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <label className="text-sm font-bold">Destination
-              <select name="destinationType" className="mt-2 min-h-11 w-full rounded-control border border-border bg-surface-muted px-4 font-normal" defaultValue="GCASH">
-                <option value="GCASH">GCash</option><option value="MAYA">Maya</option><option value="BANK">Bank account</option>
-              </select>
-            </label>
-            <label className="text-sm font-bold">Account name
-              <input name="accountName" required minLength={2} maxLength={100} className="mt-2 min-h-11 w-full rounded-control border border-border bg-surface-muted px-4 font-normal" />
-            </label>
-            <label className="text-sm font-bold sm:col-span-2">Mobile or account number
-              <input name="accountReference" required minLength={5} maxLength={100} inputMode="numeric" autoComplete="off" className="mt-2 min-h-11 w-full rounded-control border border-border bg-surface-muted px-4 font-normal" />
-            </label>
+            <CustomSelect label="Destination" error={fallbackResult.fieldErrors?.destinationType} name="destinationType" required defaultValue="GCASH" options={[{ value: "GCASH", label: "GCash" }, { value: "MAYA", label: "Maya" }, { value: "BANK", label: "Bank account" }]} />
+            <FormField id="refund-account-name" label="Account name" error={fallbackResult.fieldErrors?.accountName} required inputProps={{ name: "accountName", minLength: 2, maxLength: 100 }} />
+            <FormField id="refund-account-reference" label="Mobile or account number" error={fallbackResult.fieldErrors?.accountReference} required className="sm:col-span-2" inputProps={{ name: "accountReference", minLength: 5, maxLength: 100, inputMode: "numeric", autoComplete: "off" }} />
           </div>
-          <button disabled={isPending} className="mt-5 min-h-11 w-full rounded-full bg-brand px-5 text-sm font-bold text-surface disabled:opacity-60">{isPending ? "Submitting…" : "Submit refund details"}</button>
+          <FormStatusHint className="mt-4" message={statusMessage} />
+          <button disabled={isPending || !canSubmit} className="mt-5 min-h-11 w-full rounded-full bg-brand px-5 text-sm font-bold text-surface disabled:opacity-60">{isPending ? "Submitting…" : "Submit refund details"}</button>
           {fallbackResult.message ? <p role="status" className={fallbackResult.status === "error" ? "mt-3 text-sm text-danger-foreground" : "mt-3 text-sm text-success-foreground"}>{fallbackResult.message}</p> : null}
         </form>
       ) : null}

@@ -7,6 +7,7 @@ import type {
 } from "@/lib/journal";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { validateUploadedImage } from "@/lib/server-image-validation";
 
 export interface JournalPostSummary {
   id: string;
@@ -133,17 +134,22 @@ export async function uploadJournalCover(input: {
   adminId: string;
   file: File;
 }) {
-  const extension = input.file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const path = `${input.adminId}/${crypto.randomUUID()}.${extension}`;
+  const validated = await validateUploadedImage(input.file, { label: "Journal cover" });
+  const path = `${input.adminId}/${crypto.randomUUID()}.${validated.extension}`;
   const admin = createAdminSupabaseClient();
   const { error } = await admin.storage
     .from("journal-media")
-    .upload(path, input.file, {
-      contentType: input.file.type,
+    .upload(path, validated.buffer, {
+      contentType: validated.contentType,
       cacheControl: "31536000",
       upsert: false,
     });
 
   if (error) throw new Error("Journal image could not be uploaded.", { cause: error });
-  return admin.storage.from("journal-media").getPublicUrl(path).data.publicUrl;
+  return { path, url: admin.storage.from("journal-media").getPublicUrl(path).data.publicUrl };
+}
+
+export async function removeJournalCover(path: string) {
+  const { error } = await createAdminSupabaseClient().storage.from("journal-media").remove([path]);
+  if (error) throw new Error("The newly uploaded Journal cover could not be cleaned up.", { cause: error });
 }

@@ -12,6 +12,7 @@ import {
 export type ReviewActionState = {
   status: "idle" | "success" | "error";
   message: string;
+  fieldErrors?: Record<string, string>;
 };
 
 export async function submitReviewAction(
@@ -27,10 +28,10 @@ export async function submitReviewAction(
     return { status: "error", message: "That completed order is unavailable." };
   }
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return { status: "error", message: "Choose a rating from one to five stars." };
+    return { status: "error", message: "Choose a rating from one to five stars.", fieldErrors: { rating: "Choose one to five stars." } };
   }
   if (comment.length < 10 || comment.length > 1000) {
-    return { status: "error", message: "Write a review between 10 and 1000 characters." };
+    return { status: "error", message: "Write a review between 10 and 1000 characters.", fieldErrors: { comment: "Write between 10 and 1,000 characters." } };
   }
 
   try {

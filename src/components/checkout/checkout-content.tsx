@@ -144,6 +144,10 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
     ? Math.min(...eligibleRewardBoxes.map((item) => item.boxPrice))
     : 0;
   const checkoutTotal = Math.max(selectedSubtotal - rewardDiscount, 0);
+  const customerDetailsValid = customerName.trim().length >= 2
+    && customerName.trim().length <= 100
+    && customerMobile.trim().length <= 30
+    && customerNotes.trim().length <= 500;
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[1.25fr_.75fr]">
@@ -152,9 +156,9 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
           <h2 className="font-display text-2xl">Customer information</h2>
           <p className="mt-2 text-sm text-muted-foreground">We’ll use your Google email as the main way to contact you about your order.</p>
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
-            <FormField id="checkout-name" label="Full name" required inputProps={{ value: customerName, onChange: (event) => setCustomerName(event.target.value), autoComplete: "name", maxLength: 100 }} />
+            <FormField id="checkout-name" label="Full name" required error={submission?.fieldErrors?.customerName} inputProps={{ value: customerName, onChange: (event) => setCustomerName(event.target.value), autoComplete: "name", minLength: 2, maxLength: 100 }} />
             <FormField id="checkout-email" label="Google email" inputProps={{ defaultValue: profile.email, readOnly: true }} />
-            <FormField id="checkout-mobile" label="Mobile number (optional)" hint="Add a number only if you also want pickup updates by phone." inputProps={{ value: customerMobile, onChange: (event) => setCustomerMobile(event.target.value), placeholder: "+63 900 000 0000", autoComplete: "tel", maxLength: 30 }} />
+            <FormField id="checkout-mobile" label="Mobile number (optional)" error={submission?.fieldErrors?.customerMobile} hint="Add a number only if you also want pickup updates by phone." inputProps={{ value: customerMobile, onChange: (event) => setCustomerMobile(event.target.value), placeholder: "+63 900 000 0000", autoComplete: "tel", maxLength: 30 }} />
           </div>
         </section>
 
@@ -196,7 +200,7 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
                     : `${remainingPieces} prepared pieces remain for this date. Your selected cart uses ${requestedPieces}.`}
                 </div>
               ) : null}
-              <FormField id="checkout-notes" label="Order notes (optional)" className="sm:col-span-2" inputProps={{ value: customerNotes, onChange: (event) => setCustomerNotes(event.target.value), placeholder: "Pickup or preparation notes", maxLength: 500 }} />
+              <FormField id="checkout-notes" label="Order notes (optional)" error={submission?.fieldErrors?.customerNotes} className="sm:col-span-2" inputProps={{ value: customerNotes, onChange: (event) => setCustomerNotes(event.target.value), placeholder: "Pickup or preparation notes", maxLength: 500 }} />
             </div>
           ) : (
             <div role="status" className="mt-6 rounded-control bg-warning-background p-4 text-sm leading-6 text-warning-foreground">
@@ -212,7 +216,8 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
         {submission?.status === "error" ? (
           <p role="alert" className="rounded-control bg-danger-background p-4 text-sm font-bold text-danger-foreground">{submission.message}</p>
         ) : null}
-        <PrimaryButton type="submit" disabled={!hasPickupAvailability || exceedsPreparedStock || !termsAccepted || isPending || submission?.status === "success"} className="w-full rounded-control!">
+        {!customerDetailsValid ? <p className="text-center text-xs font-bold text-danger-foreground">Complete the customer details before continuing.</p> : null}
+        <PrimaryButton type="submit" disabled={!customerDetailsValid || !hasPickupAvailability || exceedsPreparedStock || !termsAccepted || isPending || submission?.status === "success"} className="w-full rounded-control!">
           {!hasPickupAvailability ? "Pickup unavailable" : exceedsPreparedStock ? "Reduce cart quantities" : isPending ? "Opening secure payment…" : submission?.status === "success" ? "Opening PayMongo…" : "Continue to secure payment"}
         </PrimaryButton>
         <p className="text-center text-xs leading-5 text-muted-foreground">You’ll complete payment on PayMongo’s secure test checkout. Your order is confirmed only after TsokoLitaw receives PayMongo’s signed payment notification.</p>

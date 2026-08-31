@@ -6,6 +6,10 @@ import { saveAddonAction, saveCoatingAction, saveProductAction, saveVariantActio
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
+import { FormStatusHint } from "@/components/ui/form-status-hint";
+import { NumberStepper } from "@/components/ui/quantity-input";
+import { useFormGate } from "@/hooks/use-form-gate";
+import { browserImageError } from "@/lib/form-validation";
 import { formatPhp } from "@/lib/commerce";
 import type { AdminCatalogAddon, AdminCatalogCoating, AdminCatalogProduct } from "@/lib/server-catalog";
 
@@ -19,15 +23,16 @@ function ActionMessage({ state }: { state: CatalogActionState }) {
 
 function ProductSettings({ product }: { product: AdminCatalogProduct }) {
   const [state, action, pending] = useActionState(saveProductAction, initialState);
-  return <form action={action} className="rounded-card border border-border bg-surface p-6">
+  const { formRef, formProps, canSubmit, statusMessage } = useFormGate({ requireDirty: true });
+  return <form ref={formRef} {...formProps} action={action} className="rounded-card border border-border bg-surface p-6">
     <input type="hidden" name="productId" value={product.id} />
     <h2 className="font-display text-2xl">Product pricing</h2>
     <p className="mt-1 text-sm text-muted-foreground">One per-piece price calculates every active box total. Checkout reloads this value from the server.</p>
     <div className="mt-5">
-      <FormField id="catalog-piece-price" label="Price per piece (PHP)" required inputProps={{ name: "pricePerPiece", type: "number", min: 0, max: 10000, step: "0.01", defaultValue: product.pricePerPiece }} />
+      <NumberStepper label="Price per piece (PHP)" name="pricePerPiece" required min={0} max={10000} step={0.01} defaultValue={product.pricePerPiece} />
       <input type="hidden" name="description" value={product.description} />
     </div>
-    <div className="mt-5 space-y-3"><ActionMessage state={state} /><PrimaryButton type="submit" disabled={pending}>{pending ? "Saving…" : "Save product settings"}</PrimaryButton></div>
+    <div className="mt-5 space-y-3"><ActionMessage state={state} /><FormStatusHint message={statusMessage} /><PrimaryButton type="submit" disabled={pending || !canSubmit}>{pending ? "Saving…" : "Save product settings"}</PrimaryButton></div>
   </form>;
 }
 
@@ -41,15 +46,14 @@ function VariantCard({ variant, piecePrice }: { variant: AdminCatalogProduct["va
   </article>;
 }
 
-function readSquareImage(file: File) {
+async function readSquareImage(file: File) {
+  const validationError = await browserImageError(file, true);
+  if (validationError) throw new Error(validationError);
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("The image could not be read."));
     reader.onload = () => {
-      const url = String(reader.result); const image = new window.Image();
-      image.onerror = () => reject(new Error("Choose a valid image."));
-      image.onload = () => image.naturalWidth === image.naturalHeight ? resolve(url) : reject(new Error(`Use a square 1:1 image. This file is ${image.naturalWidth} × ${image.naturalHeight}px.`));
-      image.src = url;
+      resolve(String(reader.result));
     };
     reader.readAsDataURL(file);
   });
@@ -59,25 +63,31 @@ function CoatingEditor({ coating, onClose }: { coating: AdminCatalogCoating | nu
   const [state, action, pending] = useActionState(saveCoatingAction, initialState);
   const [preview, setPreview] = useState(coating?.imageUrl ?? "");
   const [imageError, setImageError] = useState("");
+  const [imageChecking, setImageChecking] = useState(false);
+  const [isAllergen, setIsAllergen] = useState(Boolean(coating?.isAllergen));
+  const { formRef, formProps, canSubmit, statusMessage } = useFormGate({ requireDirty: Boolean(coating), extraValid: !imageError && !imageChecking && Boolean(preview) });
   useEffect(() => { if (state.status === "success") onClose(); }, [state.status, onClose]);
   async function selectImage(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]; setImageError("");
+    const input = event.currentTarget;
+    const file = input.files?.[0]; setImageError("");
     if (!file) return;
-    try { setPreview(await readSquareImage(file)); } catch (error) { setImageError(error instanceof Error ? error.message : "Choose a valid square image."); event.target.value = ""; }
+    setImageChecking(true);
+    try { setPreview(await readSquareImage(file)); } catch (error) { setImageError(error instanceof Error ? error.message : "Choose a valid square image."); }
+    finally { setImageChecking(false); }
   }
   return <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-foreground/40 p-4" onPointerDown={() => !pending && onClose()}>
     <section role="dialog" aria-modal="true" aria-labelledby="coating-editor-title" onPointerDown={(event) => event.stopPropagation()} className="my-auto w-full max-w-2xl rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8">
       <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Catalog coating</p><h2 id="coating-editor-title" className="mt-1 font-display text-3xl">{coating ? "Edit coating" : "Add coating"}</h2></div><button type="button" aria-label="Close coating editor" disabled={pending} onClick={onClose} className="flex size-11 items-center justify-center text-brand focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" /></button></div>
-      <form action={action} className="mt-6 grid gap-5 sm:grid-cols-2">
+      <form ref={formRef} {...formProps} action={action} className="mt-6 grid gap-5 sm:grid-cols-2">
         <input type="hidden" name="coatingId" value={coating?.id ?? ""} /><input type="hidden" name="existingImageUrl" value={coating?.imageUrl ?? ""} />
-        <FormField id="coating-name" label="Name" required inputProps={{ name: "name", defaultValue: coating?.name, minLength: 2, maxLength: 80, autoFocus: true }} />
-        <FormField id="coating-price" label="Additional type price (PHP)" hint="The first coating type remains included." required inputProps={{ name: "additionalTypePrice", type: "number", min: 0, max: 10000, step: "0.01", defaultValue: coating?.additionalTypePrice ?? 5 }} />
-        <FormField id="coating-description" label="Description" required as="textarea" className="sm:col-span-2" textareaProps={{ name: "description", minLength: 10, maxLength: 300, defaultValue: coating?.description }} />
-        <div className="space-y-2 sm:col-span-2"><label htmlFor="coating-image" className="block text-sm font-bold">Square image (1:1){coating?.imageUrl ? "" : " *"}</label><label htmlFor="coating-image" className="flex min-h-32 cursor-pointer items-center gap-4 rounded-card border border-dashed border-border bg-surface-control p-4">{preview ? <span role="img" aria-label="Coating image preview" className="size-24 shrink-0 rounded-control bg-cover bg-center" style={{ backgroundImage: `url(${preview})` }} /> : <ImagePlus aria-hidden="true" className="text-brand" size={30} />}<span className="text-sm"><strong className="block">{preview ? "Choose another square image" : "Choose a square product image"}</strong><span className="text-xs text-muted-foreground">JPG, PNG, or WebP up to 3 MB</span></span><input id="coating-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={selectImage} /></label>{imageError ? <p className="text-xs font-bold text-danger-foreground">{imageError}</p> : null}</div>
+        <FormField id="coating-name" label="Name" required error={state.fieldErrors?.name} inputProps={{ name: "name", defaultValue: coating?.name, minLength: 2, maxLength: 80, autoFocus: true }} />
+        <NumberStepper label="Additional type price (PHP)" error={state.fieldErrors?.additionalTypePrice} hint="The first coating type remains included." name="additionalTypePrice" required min={0} max={10000} step={0.01} defaultValue={coating?.additionalTypePrice ?? 5} />
+        <FormField id="coating-description" label="Description" required error={state.fieldErrors?.description} as="textarea" className="sm:col-span-2" textareaProps={{ name: "description", minLength: 10, maxLength: 300, defaultValue: coating?.description }} />
+        <div className="space-y-2 sm:col-span-2"><label htmlFor="coating-image" className="block text-sm font-bold">Square image (1:1){coating?.imageUrl ? "" : " *"}</label><label htmlFor="coating-image" className="flex min-h-32 cursor-pointer items-center gap-4 rounded-card border border-dashed border-border bg-surface-control p-4">{preview ? <span role="img" aria-label="Coating image preview" className="size-24 shrink-0 rounded-control bg-cover bg-center" style={{ backgroundImage: `url(${preview})` }} /> : <ImagePlus aria-hidden="true" className="text-brand" size={30} />}<span className="text-sm"><strong className="block">{imageChecking ? "Checking image…" : preview ? "Choose another square image" : "Choose a square product image"}</strong><span className="text-xs text-muted-foreground">JPG, PNG, or WebP up to 3 MB</span></span><input id="coating-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={selectImage} /></label>{imageError ? <p className="text-xs font-bold text-danger-foreground">{imageError}</p> : null}</div>
         <label className="flex min-h-11 items-center gap-3 rounded-control bg-surface-control px-4 py-3 text-sm font-bold"><input type="checkbox" name="isActive" defaultChecked={coating?.isActive ?? true} className="size-4 accent-brand" />Available to customers</label>
-        <label className="flex min-h-11 items-center gap-3 rounded-control bg-surface-control px-4 py-3 text-sm font-bold"><input type="checkbox" name="isAllergen" defaultChecked={coating?.isAllergen} className="size-4 accent-brand" />Contains a declared allergen</label>
-        <FormField id="coating-allergen-note" label="Allergen note (required when checked)" className="sm:col-span-2" inputProps={{ name: "allergenNote", defaultValue: coating?.allergenNote, maxLength: 240 }} />
-        <div className="sm:col-span-2"><ActionMessage state={state} /></div><div className="grid gap-3 sm:col-span-2 sm:grid-cols-2"><SecondaryButton disabled={pending} onClick={onClose}>Cancel</SecondaryButton><PrimaryButton type="submit" disabled={pending || Boolean(imageError)}>{pending ? "Saving…" : "Save coating"}</PrimaryButton></div>
+        <label className="flex min-h-11 items-center gap-3 rounded-control bg-surface-control px-4 py-3 text-sm font-bold"><input type="checkbox" name="isAllergen" checked={isAllergen} onChange={(event) => setIsAllergen(event.target.checked)} className="size-4 accent-brand" />Contains a declared allergen</label>
+        <FormField id="coating-allergen-note" label="Allergen note (required when checked)" error={state.fieldErrors?.allergenNote} required={isAllergen} className="sm:col-span-2" inputProps={{ name: "allergenNote", defaultValue: coating?.allergenNote, minLength: isAllergen ? 2 : undefined, maxLength: 240 }} />
+        <div className="sm:col-span-2"><ActionMessage state={state} /><FormStatusHint message={statusMessage} /></div><div className="grid gap-3 sm:col-span-2 sm:grid-cols-2"><SecondaryButton disabled={pending} onClick={onClose}>Cancel</SecondaryButton><PrimaryButton type="submit" disabled={pending || !canSubmit}>{pending ? "Saving…" : "Save coating"}</PrimaryButton></div>
       </form>
     </section>
   </div>;
@@ -85,17 +95,18 @@ function CoatingEditor({ coating, onClose }: { coating: AdminCatalogCoating | nu
 
 function AddonEditor({ addon, onClose }: { addon: AdminCatalogAddon | null; onClose: () => void }) {
   const [state, action, pending] = useActionState(saveAddonAction, initialState);
+  const { formRef, formProps, canSubmit, statusMessage } = useFormGate({ requireDirty: Boolean(addon) });
   useEffect(() => { if (state.status === "success") onClose(); }, [state.status, onClose]);
   return <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-foreground/40 p-4" onPointerDown={() => !pending && onClose()}>
     <section role="dialog" aria-modal="true" aria-labelledby="addon-editor-title" onPointerDown={(event) => event.stopPropagation()} className="my-auto w-full max-w-xl rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8">
       <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Catalog add-on</p><h2 id="addon-editor-title" className="mt-1 font-display text-3xl">{addon ? "Edit add-on" : "Add add-on"}</h2></div><button type="button" aria-label="Close add-on editor" disabled={pending} onClick={onClose} className="flex size-11 items-center justify-center text-brand focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" /></button></div>
-      <form action={action} className="mt-6 grid gap-5 sm:grid-cols-2">
+      <form ref={formRef} {...formProps} action={action} className="mt-6 grid gap-5 sm:grid-cols-2">
         <input type="hidden" name="addonId" value={addon?.id ?? ""} />
         <FormField id="addon-name" label="Name" required inputProps={{ name: "name", defaultValue: addon?.name, minLength: 2, maxLength: 80, autoFocus: true }} />
-        <FormField id="addon-price" label="Price (PHP)" required inputProps={{ name: "price", type: "number", min: 0, max: 10000, step: "0.01", defaultValue: addon?.price ?? 0 }} />
+        <NumberStepper label="Price (PHP)" name="price" required min={0} max={10000} step={0.01} defaultValue={addon?.price ?? 0} />
         <label className="flex min-h-11 items-center gap-3 rounded-control bg-surface-control px-4 py-3 text-sm font-bold sm:col-span-2"><input type="checkbox" name="isActive" defaultChecked={addon?.isActive ?? true} className="size-4 accent-brand" />Available to customers</label>
-        <div className="sm:col-span-2"><ActionMessage state={state} /></div>
-        <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2"><SecondaryButton disabled={pending} onClick={onClose}>Cancel</SecondaryButton><PrimaryButton type="submit" disabled={pending}>{pending ? "Saving…" : "Save add-on"}</PrimaryButton></div>
+        <div className="sm:col-span-2"><ActionMessage state={state} /><FormStatusHint message={statusMessage} /></div>
+        <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2"><SecondaryButton disabled={pending} onClick={onClose}>Cancel</SecondaryButton><PrimaryButton type="submit" disabled={pending || !canSubmit}>{pending ? "Saving…" : "Save add-on"}</PrimaryButton></div>
       </form>
     </section>
   </div>;
