@@ -212,6 +212,10 @@ The Home hero fills at least the first viewport below the fixed-height customer 
 
 Controls use cream surfaces, chocolate text, visible borders, rounded corners, and visible focus rings.
 
+Every real persisted form validates in the browser and again on the server. Field errors appear after blur and update while corrected. Edit actions remain disabled until the form is both valid and changed; creation, Checkout, review, and confirmation actions enable as soon as their required valid state is complete. Pending actions remain disabled and explain what is incomplete nearby.
+
+Quantities, stock, lead days, grace periods, and PHP prices use the shared minus/input/plus stepper. Direct keyboard entry and Arrow Up/Down remain available; invalid, out-of-range, or wrong-step values are never silently clamped into acceptance.
+
 The custom dropdown must support:
 
 - Arrow Up and Arrow Down navigation
@@ -223,6 +227,8 @@ The custom dropdown must support:
 - touch-friendly targets
 
 Do not introduce another UI library solely for dropdowns.
+
+Coating images must decode as JPG, PNG, or WebP, remain at or below 3 MiB, and be exactly square. The UI reports the actual size or dimensions and blocks Save while validation is pending or failed. Journal covers use the same type, size, and decode checks without the square requirement.
 
 ## 8. Responsive Rules
 

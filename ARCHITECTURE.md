@@ -140,7 +140,7 @@ Commerce business rules belong in server modules and database functions rather t
 
 Our Creations consumes the active database catalog, and Checkout consumes published database pickup options plus customer-safe lead/cutoff rules. Admin Catalog and Pickup write their respective records through controlled server actions. Inventory automatically receives eligible Ready Stock and Hybrid dates created in Pickup, while Made to order never requests prepared inventory.
 
-The Admin coating form validates a square 1:1 image in the browser, limits server uploads to approved image types and 3 MB, stores the public asset in `catalog-media`, and publishes the database record only through an active-Admin-checked service mutation.
+The Admin coating form validates a square 1:1 image in the browser before submission, then trusted server code independently checks size, declared type, decodability, actual format, and dimensions before uploading. Approved JPG, PNG, or WebP assets are limited to 3 MiB and stored in `catalog-media`; the database record is published only through an active-Admin-checked service mutation. If that mutation fails after a new upload, only that newly uploaded object is removed. Journal covers follow the same pipeline without the square requirement.
 
 ## 6. Current Cart
 

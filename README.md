@@ -29,6 +29,7 @@ Implemented customer and Admin interface:
 - responsive admin dashboard and management screens
 - admin purpose/customer-impact/connection guidance on every management area
 - connected Admin Catalog with square-image validation, Supabase media, and PHP additional-type pricing
+- application-wide browser and authoritative server form validation, changed-only edit saves, accessible custom listboxes/number steppers, and decoded 3 MiB image checks
 
 Phase 7 backend foundation (deployed and verified):
 

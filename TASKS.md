@@ -260,6 +260,7 @@ Do not begin without explicit approval.
 - [x] Review RLS and admin authorization
 - [x] Test price, stock, order, and webhook tampering
 - [x] Review secret exposure and logging
+- [x] Add application-wide browser/server form validation, changed-only edit actions, accessible custom listboxes and numeric steppers, decoded image verification, and failed-save upload cleanup
 - [x] Consolidate My Orders and order detail into RLS-scoped nested reads
 - [x] Add cursor pagination to customer order history
 - [x] Add bounded tagged caching for public catalog previews and pickup definitions while keeping checkout authoritative reads live

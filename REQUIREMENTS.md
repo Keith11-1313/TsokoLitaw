@@ -409,6 +409,12 @@ The approved recipe/allergen disclosure covers peanuts or other nuts, dairy, coc
 - touch-friendly targets
 - responsive tables
 - no unintended horizontal overflow
+- browser validation with field-level feedback for every real customer and Admin form
+- authoritative server validation for every persisted form regardless of browser state
+- edit actions enabled only for valid changed values; creation and confirmation actions enabled once complete and valid
+- branded keyboard-accessible listboxes instead of native dropdown presentation
+- branded minus/input/plus steppers with direct entry for every numeric form control
+- JPG, PNG, and WebP uploads only, maximum 3 MiB, with successful image decoding required; coating images must be exactly square
 
 ## 18. Security Requirements
 

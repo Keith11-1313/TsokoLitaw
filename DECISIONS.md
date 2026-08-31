@@ -558,3 +558,17 @@ Every database change is represented by a version-controlled migration. It is re
 ### Reason
 
 The live storefront must remain stable while Phase 14 and later feature work continue safely on Dev. Separate hosting and database boundaries reduce accidental production writes, secret exposure, webhook crossover, and schema drift.
+
+## 23. Form Validation and Custom Controls
+
+### Decision
+
+Every real customer and Admin form uses immediate browser safeguards plus authoritative server validation. Browser errors appear after blur and update while corrected. Existing-record edits require a valid change before Save enables; creation, Checkout, review, and confirmation flows enable once their required state is valid. Pending actions remain disabled.
+
+All presented dropdowns use the shared accessible listbox, and all numeric form controls use the shared minus/input/plus stepper while retaining direct keyboard entry. Native controls may remain only as hidden form plumbing when required for standards-compatible submission and constraint validation.
+
+Image selection accepts JPG, PNG, or WebP up to 3 MiB without automatic alteration. Files must decode successfully on both client and server; coating images must be exactly square. Upload occurs only after server validation, and a newly uploaded object is removed if its following database mutation fails.
+
+### Reason
+
+Invalid or incomplete values should be stopped before a costly request, but browser controls can be bypassed. Matching server checks, database rules, authorization, RLS, rate limits, and transactional mutations therefore remain the security boundary. The custom controls provide consistent TsokoLitaw presentation without sacrificing keyboard access, direct entry, or normal form submission.
