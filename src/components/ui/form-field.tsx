@@ -1,10 +1,13 @@
-import type {
-  InputHTMLAttributes,
-  ReactNode,
-  SelectHTMLAttributes,
-  TextareaHTMLAttributes,
+"use client";
+
+import {
+  useState,
+  type ChangeEvent,
+  type FocusEvent,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type TextareaHTMLAttributes,
 } from "react";
-import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const controlClassName =
@@ -38,19 +41,9 @@ type TextareaFieldProps = FieldPresentationProps & {
   >;
 };
 
-type SelectFieldProps = FieldPresentationProps & {
-  as: "select";
-  children: ReactNode;
-  selectProps?: Omit<
-    SelectHTMLAttributes<HTMLSelectElement>,
-    "id" | "className" | "required"
-  >;
-};
-
 export type FormFieldProps =
   | InputFieldProps
-  | TextareaFieldProps
-  | SelectFieldProps;
+  | TextareaFieldProps;
 
 export function FormField(props: FormFieldProps) {
   const {
@@ -63,14 +56,20 @@ export function FormField(props: FormFieldProps) {
     controlClassName: customControlClassName,
   } = props;
   const hintId = hint ? `${id}-hint` : undefined;
-  const errorId = error ? `${id}-error` : undefined;
+  const [touchedError, setTouchedError] = useState("");
+  const shownError = error || touchedError;
+  const errorId = shownError ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
   const sharedControlProps = {
     id,
     required,
     "aria-describedby": describedBy,
-    "aria-invalid": Boolean(error) || undefined,
+    "aria-invalid": Boolean(shownError) || undefined,
   } as const;
+
+  function showNativeError(target: HTMLInputElement | HTMLTextAreaElement) {
+    setTouchedError(target.validationMessage);
+  }
 
   let fieldControl;
 
@@ -79,36 +78,32 @@ export function FormField(props: FormFieldProps) {
       <textarea
         {...props.textareaProps}
         {...sharedControlProps}
+        onBlur={(event: FocusEvent<HTMLTextAreaElement>) => {
+          showNativeError(event.currentTarget);
+          props.textareaProps?.onBlur?.(event);
+        }}
+        onChange={(event: ChangeEvent<HTMLTextAreaElement>) => {
+          const target = event.currentTarget;
+          if (touchedError) queueMicrotask(() => showNativeError(target));
+          props.textareaProps?.onChange?.(event);
+        }}
         className={cn(controlClassName, "min-h-28 resize-y", customControlClassName)}
       />
-    );
-  } else if (props.as === "select") {
-    fieldControl = (
-      <div className="relative">
-        <select
-          {...props.selectProps}
-          {...sharedControlProps}
-          className={cn(
-            controlClassName,
-            "appearance-none pr-11",
-            customControlClassName,
-          )}
-        >
-          {props.children}
-        </select>
-        <ChevronDown
-          aria-hidden="true"
-          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-brand"
-          size={17}
-          strokeWidth={2}
-        />
-      </div>
     );
   } else {
     fieldControl = (
       <input
         {...props.inputProps}
         {...sharedControlProps}
+        onBlur={(event: FocusEvent<HTMLInputElement>) => {
+          showNativeError(event.currentTarget);
+          props.inputProps?.onBlur?.(event);
+        }}
+        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+          const target = event.currentTarget;
+          if (touchedError) queueMicrotask(() => showNativeError(target));
+          props.inputProps?.onChange?.(event);
+        }}
         className={cn(controlClassName, customControlClassName)}
       />
     );
@@ -130,9 +125,9 @@ export function FormField(props: FormFieldProps) {
           {hint}
         </p>
       ) : null}
-      {error ? (
+      {shownError ? (
         <p className="text-xs font-bold text-danger-foreground" id={errorId}>
-          {error}
+          {shownError}
         </p>
       ) : null}
     </div>
