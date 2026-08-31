@@ -51,6 +51,33 @@ export async function POST(request: Request) {
   }
 
   const supabase = createAdminSupabaseClient();
+
+  // A PayMongo test account can send the same signed event to both the Dev and
+  // Production webhook endpoints. Only the environment that created the
+  // checkout/payment has a matching local row. Acknowledge the event in the
+  // other environment so PayMongo does not retry it until the endpoint is
+  // disabled; matching events still go through the strict RPC checks below.
+  const localTarget = paidEvent
+    ? await supabase
+      .from("payments")
+      .select("id")
+      .eq("provider", "paymongo")
+      .eq("provider_checkout_id", paidEvent.checkoutId)
+      .maybeSingle()
+    : await supabase
+      .from("payments")
+      .select("id")
+      .eq("provider", "paymongo")
+      .eq("provider_payment_id", refundEvent!.paymentId)
+      .maybeSingle();
+
+  if (localTarget.error) {
+    return NextResponse.json({ error: "Payment processing is temporarily unavailable." }, { status: 500 });
+  }
+  if (!localTarget.data) {
+    return NextResponse.json({ received: true, processed: false, ignored: "other_environment" });
+  }
+
   const { data, error } = paidEvent
     ? await supabase.rpc("process_paymongo_paid_event", {
       event_key: paidEvent.eventKey,
