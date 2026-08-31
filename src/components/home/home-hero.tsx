@@ -50,7 +50,8 @@ export function HomeHero({
               src="/images/home/hero-image.png"
               alt="TsokoLitaw Mode switched on beside a chocolate-filled Palitaw dessert"
               fill
-              priority
+              preload
+              fetchPriority="high"
               sizes="(min-width: 1024px) 32.5rem, calc(100vw - 2rem)"
               className="object-cover"
             />
