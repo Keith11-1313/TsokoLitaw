@@ -14,6 +14,7 @@ import { FormField } from "@/components/ui/form-field";
 import { calculateCartLineTotal, formatPhp } from "@/lib/commerce";
 import type { AuthProfile } from "@/lib/auth";
 import type { CustomerLoyaltyStatus } from "@/lib/server-loyalty";
+import type { CartLineItem } from "@/types/commerce";
 import type { CheckoutAvailability } from "@/types/pickup";
 
 interface CheckoutContentProps {
@@ -21,6 +22,33 @@ interface CheckoutContentProps {
   profile: AuthProfile;
   loyalty: CustomerLoyaltyStatus;
   resumeOrderId: string | null;
+}
+
+function CoatingBreakdown({ item }: { item: CartLineItem }) {
+  const coatings = Object.entries(item.coatingCounts)
+    .filter(([, count]) => count > 0)
+    .map(([id, count]) => `${item.coatingNames[id]} × ${count}`);
+
+  if (coatings.length <= 4) {
+    return <p className="mt-1 text-xs leading-5 text-muted-foreground">{coatings.join(", ")}</p>;
+  }
+
+  const visibleCount = Math.ceil(coatings.length / 2);
+  const visible = coatings.slice(0, visibleCount);
+  const remaining = coatings.slice(visibleCount);
+
+  return (
+    <details className="group mt-1 text-xs leading-5 text-muted-foreground">
+      <summary className="cursor-pointer list-none rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
+        {visible.join(", ")}
+        {" "}
+        <span className="whitespace-nowrap font-semibold text-muted-foreground underline decoration-muted-foreground/35 underline-offset-2 group-open:hidden">
+          +{remaining.length} more
+        </span>
+      </summary>
+      <p className="mt-1">{remaining.join(", ")}</p>
+    </details>
+  );
 }
 
 export function CheckoutContent({ availability, profile, loyalty, resumeOrderId }: CheckoutContentProps) {
@@ -235,12 +263,7 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
                 <span className="font-bold">Box of {item.pieceCount} × {item.quantity}</span>
                 <span>{formatPhp(calculateCartLineTotal(item))}</span>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {Object.entries(item.coatingCounts)
-                  .filter(([, count]) => count > 0)
-                  .map(([id, count]) => `${item.coatingNames[id]} × ${count}`)
-                  .join(", ")}
-              </p>
+              <CoatingBreakdown item={item} />
             </li>
           ))}
         </ul>
