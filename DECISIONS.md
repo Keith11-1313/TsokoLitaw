@@ -41,11 +41,10 @@ Deferred until separately approved:
 
 - transactional email events beyond the six completed V1 events
 - Admin CRUD areas not yet reached by the current Phase 11 slice
-- admin subdomain and DNS configuration
 
 ### Reason
 
-The customer workflow, authentication boundary, server commerce, test payment lifecycle, Admin operations, loyalty, and six transactional notification paths are connected. Phase 13 was explicitly started so production-readiness work may proceed, while real payments and irreversible public cutovers still require a deliberate final confirmation.
+The customer workflow, authentication boundary, server commerce, payment lifecycle, Admin operations, loyalty, and six transactional notification paths are connected. Phase 13 was explicitly started so production-readiness work could proceed. Live QR Ph verification and the canonical-domain cutover are complete; future real charges or external configuration changes still require deliberate confirmation.
 
 ### UI consequence
 
@@ -449,7 +448,7 @@ Shared frontend constants prevent UI drift; they are not database persistence. A
 
 ### Decision
 
-Admin remains under `/admin` during UI development. `admin.tsokolitaw.com` is planned but deferred.
+Admin remains under `/admin` for V1. A separate Admin subdomain is unnecessary for the campus-scale launch.
 
 ### Reason
 
@@ -463,9 +462,7 @@ V1 has one admin permission role shared by up to five approved Google accounts. 
 
 ### Production authentication domain
 
-Production Google authentication will use the branded Supabase custom domain `auth.tsokolitaw.com` so Google account selection does not display the opaque Supabase project reference. The default Supabase domain remains acceptable during development.
-
-Custom-domain activation is deferred until production DNS and a compatible paid Supabase plan are available. Before activation, the branded callback must be added to the Google OAuth client alongside the existing Supabase callback. The old callback remains available until the branded login, refresh, logout, and authorization flows pass production verification.
+V1 uses the default environment-specific Supabase authentication domains for both Dev and Production. The paid Supabase custom-domain add-on and `auth.tsokolitaw.com` are intentionally not part of the campus-scale launch. Google OAuth still uses separate approved callbacks for the isolated Dev and Production Supabase projects.
 
 ## 18. Assets and Visual Direction
 
@@ -548,9 +545,9 @@ Agents do not stage, commit, or push.
 
 ### Decision
 
-`main` is the Production branch and `develop` is the stable Dev integration branch. Normal work follows `feature/*` → `develop` → `main`. Emergency production fixes follow `hotfix/*` → `main`, then merge back into `develop` so the branches do not diverge.
+`main` is the Production branch and `development` is the stable Dev integration branch. Routine work is completed and tested on `development`, then promoted through one reviewed `development` → `main` pull request. Separate feature branches are used only for risky or large changes.
 
-The current Vercel project keeps `tsokolitaw.vercel.app` as Dev and tracks `develop`. A separate Production Vercel project connects to the same repository, tracks `main`, and owns `tsokolitaw.com`. Dev and Production use separate Supabase projects and separate environment-specific provider URLs, credentials, webhook secrets, and cron secrets. Production secrets must never be assigned to Dev or general Preview deployments.
+The current Vercel project keeps `tsokolitaw.vercel.app` as Dev and tracks `development`. A separate Production Vercel project connects to the same repository, tracks `main`, and owns `tsokolitaw.com`. Dev and Production use separate Supabase projects and separate environment-specific provider URLs, credentials, webhook secrets, and cron secrets. Production secrets must never be assigned to Dev or general Preview deployments.
 
 Every database change is represented by a version-controlled migration. It is reset and tested locally, applied and verified in Dev, and then promoted unchanged to Production. Dashboard-only schema edits and production seed data are prohibited.
 

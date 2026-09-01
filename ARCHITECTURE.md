@@ -302,15 +302,15 @@ Only values intentionally prefixed with `NEXT_PUBLIC_` may be available to the b
 
 ## 14. Deployment
 
-- source promotion: `feature/*` → `develop` → `main`
-- Dev app: the existing Vercel project tracks `develop` and retains `tsokolitaw.vercel.app`
+- source promotion: routine work uses `development` → `main`; separate feature branches are reserved for risky or large changes and merge into `development` first
+- Dev app: the existing Vercel project tracks `development` and retains `tsokolitaw.vercel.app`
 - Production app: a separate Vercel project tracks `main` and owns `tsokolitaw.com`
 - database/auth/storage: Supabase
-- production authentication endpoint: `auth.tsokolitaw.com` through the Supabase custom-domain add-on
+- authentication endpoints: each environment uses its default Supabase project domain
 - payments: PayMongo
 - transactional email: Resend using a verified domain or sending subdomain
 - customer domain: `tsokolitaw.com`
-- planned admin domain: `admin.tsokolitaw.com`
+- Admin remains under the canonical site's `/admin` path for V1
 
 Use PayMongo test mode and non-production Supabase configuration before live rollout. `PAYMONGO_MODE` is an explicit environment boundary: `test` accepts only test keys, resources, events, and `te` webhook signatures; `live` accepts only live keys, resources, events, and `li` webhook signatures.
 
@@ -318,7 +318,7 @@ Dev and Production are hard boundaries, not only labels inside one `.env` file. 
 
 All database changes originate as reviewed files under `supabase/migrations`. Reset and test locally, apply to Dev, verify the hosted Dev behavior, and then apply the same migration files to Production. Never run `db reset --linked` against Production and never include development seed data in a Production push.
 
-The default Supabase project domain is accepted for development OAuth. Production custom-domain activation requires DNS verification and TLS readiness, the branded callback in Google Auth Platform, the custom Supabase URL in Vercel, and an end-to-end session/authorization smoke test. Keep the original Supabase callback configured until the branded flow is verified.
+Dev and Production retain their default Supabase project domains for OAuth. Google Auth Platform must allow the callback for each isolated Supabase project; no paid authentication-domain add-on or additional DNS workflow is required for V1.
 
 ## 15. Performance and Concurrency
 
@@ -367,8 +367,8 @@ The current implementation uses tagged `unstable_cache` entries for deliberately
 
 ### Deployment topology
 
-- Run Vercel Functions in the region closest to the Supabase project. Static assets may remain globally cached, but dynamic server-to-database distance directly affects every uncached request.
-- The linked development Supabase project is in Singapore (`ap-southeast-1`), so the current Vercel configuration uses `sin1`. The planned production Supabase project is in Seoul (`ap-northeast-2`); switch Vercel to `icn1` when that database becomes the active production target. Do not leave the application and database in different Asian regions by accident.
+- The shared Vercel configuration keeps Dev and Production functions in `sin1`. Although Production Supabase is in Seoul, the staged 100-user test passed with zero request failures and a 372.6 ms p95, so separate per-environment region configuration is unnecessary for the campus-scale target.
+- Revisit region placement only if production measurements show persistent database latency or timeouts; do not add environment-specific deployment machinery speculatively.
 - Keep the current Supabase Data API/PostgREST client for application reads unless measurement justifies a direct PostgreSQL driver.
 - If a future ORM or direct PostgreSQL client is introduced in Vercel Functions, use Supavisor transaction mode rather than opening unpooled direct connections from each serverless instance.
 - Enable and validate Vercel Fluid compute for the production Node.js deployment when available. It can reduce cold starts and let one instance handle concurrent I/O-bound requests, but it does not replace query optimization or database safeguards.
@@ -414,8 +414,8 @@ If a threshold fails, optimize in this order: remove request fan-out and N+1 wor
 1. **Instrumentation implemented:** structured duration logging wraps the consolidated commerce and order reads. Warm/cold staging measurements remain a release task.
 2. **Read consolidation implemented:** My Orders and order detail use one RLS-scoped nested read each, and order history is cursor-paginated.
 3. **Safe caching implemented:** public catalog previews and published schedule definitions use bounded tagged caches; authoritative checkout data remains live. Journal/legal caching waits for database-backed publication.
-4. **Runtime controls implemented for current scope:** Vercel Fluid compute and the current development region are configured, and expensive customer mutations use an atomic database-backed per-user/per-IP rate limiter. Provider timeout review remains required before live mode.
-5. **Load harness implemented:** repeatable k6 smoke, ramp, 100-user hold, and spike scenarios are in `tests/performance/`. The staging executions and recorded release comparison remain required before production launch.
+4. **Runtime controls validated for current scope:** Vercel Fluid compute and the shared `sin1` region are configured, expensive mutations use an atomic database-backed per-user/per-IP rate limiter, and provider timeout behavior was reviewed before live activation.
+5. **Load gates passed:** repeatable k6 smoke, ramp, 100-user hold, and spike scenarios are in `tests/performance/`; the staged capacity run completed 55,801 requests with zero failures and a 372.6 ms p95.
 
 Research basis: [Next.js shared caching](https://nextjs.org/docs/app/api-reference/functions/unstable_cache), [React request-scoped cache](https://react.dev/reference/react/cache), [Supabase nested relational reads](https://supabase.com/docs/guides/database/joins-and-nesting), [Supabase RLS performance rules](https://supabase.com/docs/guides/database/postgres/row-level-security), [Supabase query optimization](https://supabase.com/docs/guides/database/query-optimization), [Supabase serverless connection pooling](https://supabase.com/docs/guides/database/connecting-to-postgres), [Vercel function regions](https://vercel.com/docs/functions/configuring-functions/region), [Vercel Fluid compute](https://vercel.com/docs/fluid-compute), and [k6 website load-testing guidance](https://grafana.com/docs/k6/latest/testing-guides/load-testing-websites/).
 

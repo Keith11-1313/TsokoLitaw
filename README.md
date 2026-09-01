@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-**Phase 13: Security and Production is active.** Security, performance, environment isolation, live QR Ph payment, and signed webhook verification have been exercised. Current work covers final deployment of the QR Ph-only/unpaid-cancellation policy, legal wording, and launch verification. Paid-order settlements occur in person; the website does not create refunds.
+**Phase 13: Security and Production is in final closeout.** Security, performance, environment isolation, live QR Ph payment, signed webhook verification, production Cron, Search Console, and sitemap verification have been exercised. Paid-order settlements occur in person; the website does not create refunds.
 
 The connected Admin Customers page is an account directory: it includes customer and Admin profiles, labels their roles explicitly, and shows their real order and loyalty activity when present.
 
@@ -105,17 +105,9 @@ Performance and concurrency hardening implemented for the current storefront:
 - checkout, resume-payment, and unpaid-cancellation mutations use atomic database-backed per-user and per-IP limits shared across Vercel instances
 - structured server timing reports slow commerce/order reads without logging contact details, cookies, tokens, or provider secrets
 - Vercel Fluid compute is enabled and the current linked Singapore development database is paired with the `sin1` function region
-- repeatable k6 smoke and staged 100-concurrent-user scenarios are available under `tests/performance/`; hosted baseline execution is still required
+- repeatable k6 smoke and staged 100-concurrent-user scenarios are available under `tests/performance/`; the capacity run completed 55,801 requests with zero failures and a 372.6 ms p95
 
-Not yet implemented or externally configured:
-
-- remaining live authorization checks
-- hosted PayMongo schema deployment, webhook registration, and customer redirection
-- production scheduling for payment expiry and hosted QR Ph payment verification
-- email or real CRUD other than the approved account-deletion lifecycle
-- admin authorization or admin subdomain routing
-
-Customer identity, account state, catalog, published pickup options, orders, test payments, and the Phase 11 Admin areas use live Supabase data. Later-phase features remain unavailable until their secure server workflows are implemented.
+The production baseline is connected: customer identity, account state, catalog, published pickup options, orders, QR Ph payments, transactional email, scheduled processing, and the Phase 11 Admin areas use isolated live services. Admin remains under `/admin`; no Admin or paid Supabase authentication subdomain is required for V1.
 
 Our Creations and Checkout now read customer-safe commerce, Pickup schedules, and operating rules from Supabase. Admin Orders, Catalog, Inventory, Pickup, Customers, Journal, Reviews, and the cross-feature Dashboard are connected.
 
@@ -374,9 +366,9 @@ Each current PayMongo webhook endpoint should subscribe only to `checkout_sessio
 
 The public GitHub repository can be connected to Vercel. Supabase URL and key values are now required for authenticated pages and must also be configured in Vercel before deployment.
 
-`vercel.json` currently enables Fluid compute and places dynamic functions in `sin1` because the linked development Supabase project is in Singapore. When the Seoul production Supabase project becomes the active database, change the region to `icn1` in the same deployment so dynamic requests do not make an unnecessary cross-region round trip.
+`vercel.json` enables Fluid compute and keeps both deployments in `sin1`. The staged 100-user test passed with zero request failures and a 372.6 ms p95, so the campus-scale V1 does not need separate per-environment Vercel region configuration. Revisit this only if production measurements show persistent latency or timeouts.
 
-Production authentication will use `auth.tsokolitaw.com` through Supabase’s paid custom-domain add-on. The production checklist includes DNS and certificate verification, Google branding and callback updates, Vercel environment changes, and end-to-end authentication/authorization testing. Development continues to use the default Supabase project domain.
+Dev and Production use their default environment-specific Supabase authentication domains and separately approved Google OAuth callbacks. The paid Supabase custom-domain add-on and `auth.tsokolitaw.com` are intentionally excluded from V1.
 
 Transactional emails use Resend from server-only code and the verified `updates.tsokolitaw.com` sending subdomain. Current flows queue confirmation, ready-for-pickup, and unpaid-cancellation messages. Legacy refund deliveries remain for historical reconciliation only. `/api/cron/notifications` retries bounded local send failures with the shared `CRON_SECRET`.
 
@@ -392,6 +384,6 @@ Do not add production secrets until the corresponding backend integration begins
 
 The user performs Git operations manually. Agents must report completion, validation results, changed files, and a suggested Conventional Commit message. Agents must not stage, commit, or push.
 
-`develop` is the stable Dev integration branch and `main` is the Production branch. Normal work follows `feature/*` → `develop` → `main`; a production emergency follows `hotfix/*` → `main` and is then merged back into `develop`. The existing Vercel project retains `tsokolitaw.vercel.app` and tracks `develop`. A separate Vercel Production project tracks `main` and owns `tsokolitaw.com`, with an independent Production Supabase project and production-only secrets, webhooks, cron jobs, and provider configuration.
+`development` is the stable Dev integration branch and `main` is the Production branch. Routine work is completed and tested on `development`, then promoted through one reviewed `development` → `main` pull request. Separate feature branches are reserved for risky or large work. The existing Vercel project retains `tsokolitaw.vercel.app` and tracks `development`; the separate Production project tracks `main` and owns `tsokolitaw.com`, with an independent Production Supabase project and production-only secrets, webhooks, cron jobs, and provider configuration.
 
 Database changes must be committed migrations. Reset and test them locally, verify them against Dev, then promote the same migration files to Production. Never develop directly against Production, run a linked reset there, or push development seed data to it.

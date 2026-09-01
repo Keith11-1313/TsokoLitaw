@@ -43,16 +43,15 @@ Workflow changes must be reflected together in:
 - completed-order loyalty earning, customer/Admin progress, and single-use checkout redemption are implemented
 - confirmation, ready-for-pickup, and unpaid-cancellation emails are queued exactly once from committed transitions; legacy refund notifications remain available only to reconcile historical records
 - Signed Resend delivery webhooks are verified against the untouched request body, deduplicated by provider event ID, and update operational delivery state without changing commerce state
-- Hosted Dev smoke testing confirms all six notification transitions, exactly-once queueing, retry recovery, and Resend delivery callbacks; the canonical migration resets cleanly and all 293 pgTAP database tests pass
-- `develop` is the Dev integration branch and `main` is the Production branch; feature work reaches Production only through the reviewed `feature/*` → `develop` → `main` path
+- Hosted Dev smoke testing confirms all six notification transitions, exactly-once queueing, retry recovery, and Resend delivery callbacks; the canonical migration resets cleanly and all 294 pgTAP database tests pass
+- `development` is the Dev integration branch and `main` is the Production branch; routine work is tested on `development` and promoted through one reviewed `development` → `main` pull request, while separate feature branches are reserved for risky or large work
 - the existing `tsokolitaw.vercel.app` deployment remains the isolated Dev application, while `tsokolitaw.com` belongs to a separate Production Vercel project connected to the same repository
 - Dev and Production use separate Supabase projects, provider credentials, webhook secrets, cron secrets, and URLs; database changes are tested locally and in Dev before the same reviewed migrations are promoted to Production
 
-### Launch-gated inside Phase 13
+### External changes requiring explicit approval
 
-- PayMongo live mode
-- admin subdomain configuration
-- final public DNS cutover and any real charge until explicitly confirmed by the user
+- future PayMongo key changes or real charges
+- any later public DNS change outside the already-active canonical domain
 
 UI labels must clearly distinguish mock or unavailable backend actions.
 
@@ -429,7 +428,6 @@ When backend work begins:
 - avoid duplicate checkout submissions
 - never log or expose secrets
 - preserve order-item snapshots
-- use `auth.tsokolitaw.com` as the production Supabase authentication domain once the paid custom-domain add-on and DNS are configured
-- keep the original Supabase OAuth callback during migration and remove it only after the branded production flow is verified
-- verify the branded domain across Google login, callback exchange, token refresh, logout, customer protection, and Admin authorization
+- use the default environment-specific Supabase authentication domains for Dev and Production; a paid custom authentication domain is not required for V1
+- verify Google login, callback exchange, token refresh, logout, customer protection, and Admin authorization against each environment's configured Supabase callback
 - protect the scheduled account-deletion processor with a server-only secret and recheck eligibility immediately before permanent deactivation
