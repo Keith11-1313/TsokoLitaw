@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Phase 13 Security and Production is active. Environment isolation, security review, performance validation, production configuration, and launch verification are the current work. Final Privacy wording and the controlled live-provider paid-cancellation/full-refund smoke remain explicit release gates.
+Phase 13 Security and Production is active. Environment isolation, security review, performance validation, production configuration, and launch verification are the current work. PayMongo Live QR Ph payment was verified on September 1, 2026. Online refunds were removed by product-owner decision; paid-order concerns are settled in person.
 
 ## Decision Baseline
 
@@ -201,9 +201,9 @@ Do not begin without explicit approval.
 - [x] Apply and validate the coordinated-expiry schema upgrade on hosted development
 - [x] Complete the hosted test payment and signed paid-webhook smoke test
 - [x] Complete a clean hosted provider-expiry smoke test after the development-order reset
-- [ ] Complete the hosted paid-cancellation and full-refund smoke test
-- [x] Implement full original-method refunds and verified refund webhooks
-- [x] Track refund state separately from order cancellation
+- [x] Verify a hosted live QR Ph payment and signed paid webhook
+- [x] Preserve the earlier full-refund implementation as historical schema/event compatibility (superseded September 1, 2026)
+- [x] Track historical refund state separately from order cancellation
 - [x] Never infer payment success from browser redirects
 
 ## Phase 11 — Orders, Reviews, Journal, and Admin CRUD
@@ -215,7 +215,9 @@ Do not begin without explicit approval.
 - [x] Record Admin fulfillment transitions in the audit log
 - [x] Implement cancellation eligibility
 - [x] Close customer cancellation at `PREPARING` and enforce no-show non-refund policy
-- [x] Add encrypted, restricted manual-refund fallback after provider failure
+- [x] Retire the encrypted manual-refund fallback from the active application while preserving historical schema
+- [x] Restrict new PayMongo Hosted Checkout sessions to QR Ph
+- [x] Restrict website cancellation to pending unpaid orders and direct paid-order concerns to in-person settlement
 - [x] Enforce completed-order review eligibility, ownership, and uniqueness
 - [x] Persist one customer review per completed order through a controlled server mutation
 - [x] Connect Admin review reads, visibility/featured moderation, and audit records

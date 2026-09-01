@@ -39,13 +39,6 @@ export interface CustomerOrderDetail extends CustomerOrderSummary {
     lineTotal: number;
     coatings: string;
   }>;
-  refund: null | {
-    id: string;
-    status: "REQUESTED" | "PROCESSING" | "REFUNDED" | "FAILED";
-    method: "ORIGINAL_PAYMENT_METHOD" | "MANUAL_FALLBACK";
-    amount: number;
-    failureMessage: string | null;
-  };
   canCancel: boolean;
 }
 
@@ -90,13 +83,6 @@ interface CustomerOrderDetailRow extends CustomerOrderRow {
   customer_mobile: string | null;
   customer_notes: string | null;
   cancelled_at: string | null;
-  refunds: Array<{
-    id: string;
-    status: NonNullable<CustomerOrderDetail["refund"]>["status"];
-    method: NonNullable<CustomerOrderDetail["refund"]>["method"];
-    amount: number | string;
-    failure_message: string | null;
-  }> | null;
 }
 
 interface OrdersCursor {
@@ -240,21 +226,11 @@ export async function getCustomerOrderDetail(
           coating_name_snapshot,
           piece_count
         )
-      ),
-      refunds (
-        id,
-        status,
-        method,
-        amount,
-        failure_message,
-        created_at
       )
     `)
     .eq("id", orderId)
     .eq("user_id", userId)
     .order("created_at", { referencedTable: "order_items", ascending: true })
-    .order("created_at", { referencedTable: "refunds", ascending: false })
-    .limit(1, { referencedTable: "refunds" })
     .maybeSingle());
 
   if (error) throw new Error("Order detail could not be loaded.", { cause: error });
@@ -262,8 +238,6 @@ export async function getCustomerOrderDetail(
 
   const order = data as unknown as CustomerOrderDetailRow;
   const summary = toOrderSummary(order);
-  const refund = order.refunds?.[0] ?? null;
-
   return {
     ...summary,
     itemSummary: "",
@@ -282,14 +256,7 @@ export async function getCustomerOrderDetail(
         .map((coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`)
         .join(", "),
     })),
-    refund: refund ? {
-      id: refund.id,
-      status: refund.status,
-      method: refund.method,
-      amount: Number(refund.amount),
-      failureMessage: refund.failure_message,
-    } : null,
-    canCancel: ["PENDING_PAYMENT", "PAID", "CONFIRMED"].includes(order.status),
+    canCancel: order.status === "PENDING_PAYMENT" && order.payment_status === "PENDING",
   };
 }
 

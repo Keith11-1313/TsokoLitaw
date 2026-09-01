@@ -22,7 +22,7 @@ The PNGs in `references/` are retained as early visual context. They are not pix
 
 ### Decision
 
-Phase 12 Loyalty and Notifications is complete. Phase 13 Security and Production is active. Security review, environment isolation, performance validation, production configuration, and launch verification are now in scope. PayMongo Live Mode activation was explicitly approved on September 1, 2026; the first real charge remains a separate user-controlled launch gate.
+Phase 12 Loyalty and Notifications is complete. Phase 13 Security and Production is active. Security review, environment isolation, performance validation, production configuration, and launch verification are now in scope. PayMongo Live Mode activation and the first real QR Ph charge were explicitly completed on September 1, 2026.
 
 Allowed now:
 
@@ -33,7 +33,7 @@ Allowed now:
 - responsive and keyboard-accessible interaction
 - disabled or temporary mock admin controls
 - server-side cart validation, pricing, inventory reservation, Terms acceptance, immutable order snapshots, and idempotent pending-order creation
-- environment-bound PayMongo v2 test or live checkout sessions, signed/idempotent webhooks, and payment/refund transitions
+- environment-bound PayMongo v2 test or live QR Ph checkout sessions and signed/idempotent paid transitions
 - real Admin order reads and audited, forward-only paid fulfillment transitions
 - one persisted review per completed order, initially non-public until Admin moderation
 
@@ -139,7 +139,7 @@ Google Sign-In already supplies a stable account email. Requiring a phone number
 - Google email is read-only in Profile and Checkout
 - mobile fields are labeled optional
 - customer summaries prioritize email
-- order confirmation, ready-for-pickup, cancellation, and refund updates are planned as email events
+- order confirmation, ready-for-pickup, and unpaid-cancellation updates are active email events
 
 ### Transactional email provider
 
@@ -149,7 +149,7 @@ Order confirmation is the first active event. It is queued from the committed da
 
 Ready-for-pickup is the second active event. It is queued only from the committed Admin transition to `READY_FOR_PICKUP` and carries the stored pickup date, window, location, and order-detail link. It does not act as a reminder scheduler or change fulfillment state when delivery fails.
 
-Cancellation and refund communication follows persisted state rather than browser actions. Cancellation explains whether no payment was collected or a refund was requested. Separate processing, completed, and problem messages are queued only when the exact refund row reaches `PROCESSING`, `REFUNDED`, or `FAILED`; the problem message links to the authenticated secure fallback form and never asks the customer to email financial details.
+Cancellation communication follows persisted state rather than browser actions and is sent only for unpaid orders, explaining that no payment was collected. Legacy refund messages remain implemented only so historical refund records and delayed signed provider events can be reconciled without losing audit history; the current website creates no new refund requests.
 
 Production sending requires a verified domain or sending subdomain. Resend API keys and webhook signing secrets must never be exposed to the browser or stored in Admin settings.
 
@@ -327,9 +327,9 @@ Payment and fulfillment answer different questions and must not be collapsed int
 
 ### Cancellation and refund policy
 
-Customers may request cancellation through `CONFIRMED`. If the order is unpaid, cancellation releases the stock reservation. If it is paid, cancellation creates a full PayMongo refund to the original payment method. Once the order enters `PREPARING`, the standard cancellation and refund path is closed. Prepared orders and no-shows are non-refundable because the product has already been made.
+Customers may cancel through the website only while an order and its payment are still pending. If a PayMongo checkout is attached, the server expires that checkout before releasing the stock reservation. Paid orders cannot be cancelled or refunded through the website. A customer with a paid-order cancellation or settlement concern coordinates directly with TsokoLitaw in person. Prepared orders and no-shows are non-refundable because the product has already been made, subject to rights that cannot legally be waived.
 
-Order cancellation and refund settlement are separate facts. An order may already be `CANCELLED` while its refund is `REQUESTED` or `PROCESSING`; only a verified PayMongo response or webhook may move the refund to `REFUNDED`. A manual transfer destination is collected only as a restricted fallback when the provider refund is unsupported or fails.
+The current application does not collect refund destinations or call the provider refund API. Historical refund tables, statuses, notification templates, and signed-event reconciliation remain intact only for transactions created under the earlier workflow. This preserves audit history without exposing a new online refund path.
 
 PayMongo checkout sessions must be closed at the provider before an overdue provider-bound order becomes `EXPIRED` and releases ready-stock reservations. The browser return URL never performs this transition. A secret-protected server job coordinates provider expiry first and the atomic database transition second; a provider error leaves the order pending and its stock reserved for a later retry.
 

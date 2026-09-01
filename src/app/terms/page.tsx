@@ -3,7 +3,7 @@ import { LegalDocumentPage, type LegalSection } from "@/components/customer/lega
 
 export const metadata: Metadata = {
   title: "Terms & Conditions | TsokoLitaw",
-  description: "Terms for TsokoLitaw online ordering, payment, cancellation, refund, and campus pickup.",
+  description: "Terms for TsokoLitaw online ordering, QR Ph payment, cancellation, and campus pickup.",
   alternates: { canonical: "/terms" },
 };
 
@@ -25,7 +25,7 @@ const sections: readonly LegalSection[] = [
   {
     heading: "Payments and transaction status",
     paragraphs: [
-      "Payment channels may include sandbox testing during development and live payment processing when clearly enabled. A sandbox or test transaction has no cash value and does not create a real order. A live order is confirmed only after the payment provider and TsokoLitaw verify payment.",
+      "Website checkout accepts QR Ph through PayMongo. Sandbox testing may be used during development; a sandbox or test transaction has no cash value and does not create a real order. A live order is confirmed only after the payment provider and TsokoLitaw verify payment.",
       "A browser redirect, screenshot, email, or on-screen message alone is not proof of payment. Customers are responsible for reviewing the amount and pickup details before authorizing a live transaction.",
     ],
   },
@@ -39,8 +39,8 @@ const sections: readonly LegalSection[] = [
   {
     heading: "Cancellations, refunds, and no-shows",
     paragraphs: [
-      "A customer may request cancellation while an eligible order has not entered Preparing. An unpaid cancellation releases the reservation. An eligible paid cancellation starts a full refund to the original payment method, or an approved manual fallback when an automatic provider refund is unavailable.",
-      "Cancellation and standard refund eligibility end once the order enters Preparing because ingredients and labor have already been committed. Prepared, ready-for-pickup, completed, and missed-pickup orders are non-refundable. A refund is complete only after the payment provider or approved manual process confirms it.",
+      "A customer may cancel through the website only while an order is still awaiting payment. An unpaid cancellation releases the reservation. Once an order is paid through QR Ph, cancellation or settlement concerns must be coordinated directly with TsokoLitaw in person; the website does not initiate or process refunds.",
+      "Prepared, ready-for-pickup, completed, and missed-pickup orders are non-refundable because ingredients and labor have already been committed, subject to customer rights that cannot legally be waived. Any settlement approved for a paid order is handled directly by TsokoLitaw outside the website.",
     ],
   },
   {
@@ -97,7 +97,7 @@ export default function TermsPage() {
       title="Terms & Conditions"
       introduction="These terms govern use of the TsokoLitaw academic e-commerce platform, including live food orders, payments, and campus pickup."
       sections={sections}
-      documentNote="Educational project terms · Last updated August 27, 2026"
+      documentNote="Educational project terms · Last updated September 1, 2026"
     />
   );
 }

@@ -24,8 +24,6 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
     : null;
 
   const pickupDate = new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", year: "numeric", month: "long", day: "numeric" }).format(new Date(`${order.pickupDate}T00:00:00+08:00`));
-  const refundLabels = { REQUESTED: "Refund requested", PROCESSING: "Refund processing", REFUNDED: "Refunded", FAILED: "Refund needs attention" } as const;
-
   return (
     <CustomerPageShell activePath="/orders">
       <SiteContainer className="py-10 sm:py-14">
@@ -45,9 +43,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
           </section>
 
           <aside className="space-y-5">
-            <section className="rounded-card border border-border bg-surface p-6"><h2 className="font-display text-2xl">Payment & refund</h2><dl className="mt-4 space-y-3 text-sm"><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Payment</dt><dd className="font-bold">{order.paymentStatus.toLowerCase()}</dd></div>{order.refund ? <><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Refund</dt><dd className="text-right font-bold">{refundLabels[order.refund.status]}</dd></div><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Amount</dt><dd className="font-bold">{formatPhp(order.refund.amount)}</dd></div></> : null}</dl>{order.refund?.failureMessage ? <p className="mt-4 rounded-control bg-warning-background p-3 text-xs leading-5 text-warning-foreground">{order.refund.failureMessage}</p> : null}</section>
+            <section className="rounded-card border border-border bg-surface p-6"><h2 className="font-display text-2xl">Payment</h2><dl className="mt-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Status</dt><dd className="font-bold">{order.paymentStatus.toLowerCase()}</dd></div></dl></section>
             {reviewContext ? <section className="rounded-card border border-border bg-surface p-6"><h2 className="font-display text-2xl">Share your experience</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Each completed order can receive one customer review.</p><OrderReviewModal orderId={reviewContext.orderId} orderNumber={reviewContext.orderNumber} itemSummary={reviewContext.itemSummary} existingReview={reviewContext.existingReview} /></section> : null}
-            {order.canCancel ? <section className="rounded-card border border-danger-foreground/30 bg-surface p-6"><h2 className="font-display text-2xl text-danger-foreground">Cancel order</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Cancellation is available until preparation begins.</p><div className="mt-5"><OrderActions orderId={order.id} orderNumber={order.orderNumber} paymentStatus={order.paymentStatus} refund={order.refund} /></div></section> : order.refund?.status === "FAILED" ? <OrderActions orderId={order.id} orderNumber={order.orderNumber} paymentStatus={order.paymentStatus} refund={order.refund} allowCancellation={false} /> : null}
+            {order.canCancel ? <section className="rounded-card border border-danger-foreground/30 bg-surface p-6"><h2 className="font-display text-2xl text-danger-foreground">Cancel unpaid order</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">You may cancel while payment is still pending.</p><div className="mt-5"><OrderActions orderId={order.id} orderNumber={order.orderNumber} /></div></section> : order.paymentStatus === "PAID" ? <section className="rounded-card border border-border bg-surface p-6"><h2 className="font-display text-2xl">Paid-order concerns</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">For cancellation or settlement concerns involving a paid order, coordinate directly with TsokoLitaw in person. The website does not process refunds.</p></section> : null}
           </aside>
         </div>
       </SiteContainer>

@@ -115,7 +115,7 @@ where is_current;
 
 insert into public.terms_versions (version, content, effective_at, is_current)
 values (
-  '2026-08-27',
+  '2026-09-01',
   $terms$
 TsokoLitaw Terms & Conditions — educational project terms
 
@@ -123,11 +123,11 @@ TsokoLitaw is an academic e-commerce project for demonstration, testing, and eva
 
 Product descriptions, coatings, prices, availability, and pickup schedules may change. The server confirms the final payable amount and availability during checkout. Customers must provide accurate account, contact, order, and pickup information.
 
-A live order is confirmed only after the payment provider and TsokoLitaw verify payment. A redirect, screenshot, email, or browser message alone is not proof of payment. Sandbox transactions have no cash value.
+Website checkout accepts QR Ph through PayMongo. A live order is confirmed only after PayMongo and TsokoLitaw verify payment. A redirect, screenshot, email, or browser message alone is not proof of payment. Sandbox transactions have no cash value.
 
 Orders are prepared only for the selected available UCC Congressional Campus pickup location and window. Customers must follow campus access requirements and arrive during the communicated window. Products are perishable and fulfilled when released to the customer or authorized recipient.
 
-Cancellation is available only before an eligible order enters Preparing. An eligible paid cancellation starts a full refund to the original payment method, or an approved manual fallback if an automatic refund is unavailable. Prepared, ready-for-pickup, completed, and missed-pickup orders are non-refundable.
+A customer may cancel through the website only while an order is still awaiting payment. An unpaid cancellation releases the reservation. Once an order is paid through QR Ph, cancellation or settlement concerns must be coordinated directly with TsokoLitaw in person; the website does not initiate or process refunds. Prepared, ready-for-pickup, completed, and missed-pickup orders are non-refundable, subject to customer rights that cannot legally be waived. Any approved paid-order settlement is handled directly by TsokoLitaw outside the website.
 
 Products may contain or contact milk, cocoa or chocolate ingredients, sesame, peanuts or other nuts, coconut, and cookie ingredients. Handmade products may reasonably differ in appearance, coating distribution, size, and presentation.
 
@@ -141,7 +141,7 @@ Order or payment concerns should first be sent to tsokolitaw@gmail.com. These te
 
 Selecting the Terms & Conditions checkbox and continuing records electronic acceptance of these terms, the Privacy Policy, allergen notice, pickup window, and no-show policy.
   $terms$,
-  '2026-08-27 00:00:00+08'::timestamptz,
+  '2026-09-01 00:00:00+08'::timestamptz,
   true
 )
 on conflict (version) do update set
