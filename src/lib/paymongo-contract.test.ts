@@ -67,7 +67,7 @@ describe("PayMongo checkout contract", () => {
           livemode: false,
         },
       },
-    })).toEqual({
+    }, "test")).toEqual({
       id: "cs_test_session",
       checkoutUrl: "https://checkout.paymongo.com/cs_test_session",
       livemode: false,
@@ -81,7 +81,17 @@ describe("PayMongo checkout contract", () => {
           livemode: true,
         },
       },
-    })).toThrow("test mode");
+    }, "test")).toThrow("mode did not match");
+
+    expect(parsePayMongoCheckoutSession({
+      data: {
+        id: "cs_live_session",
+        attributes: {
+          checkout_url: "https://checkout.paymongo.com/cs_live_session",
+          livemode: true,
+        },
+      },
+    }, "live")).toMatchObject({ id: "cs_live_session", livemode: true });
   });
 
   it("builds and validates a full original-method refund", () => {
@@ -105,13 +115,29 @@ describe("PayMongo checkout contract", () => {
         payment_id: "pay_test_payment",
         status: "processing",
       },
-    } })).toEqual({
+    } }, "test")).toEqual({
       id: "ref_test_refund",
       paymentId: "pay_test_payment",
       amountPhp: 60,
       currency: "PHP",
       status: "processing",
       livemode: false,
+    });
+
+    expect(parsePayMongoRefund({ data: {
+      id: "ref_live_refund",
+      type: "refund",
+      attributes: {
+        amount: 6000,
+        currency: "PHP",
+        livemode: true,
+        payment_id: "pay_live_payment",
+        status: "succeeded",
+      },
+    } }, "live")).toMatchObject({
+      id: "ref_live_refund",
+      paymentId: "pay_live_payment",
+      livemode: true,
     });
   });
 });

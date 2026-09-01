@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import type { PayMongoMode } from "@/lib/paymongo-mode";
 
 const SIGNATURE_TOLERANCE_SECONDS = 5 * 60;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -16,7 +17,7 @@ export interface PayMongoPaidEvent {
   paymentId: string;
   amountPhp: number;
   summary: {
-    livemode: false;
+    livemode: boolean;
     checkout_id: string;
     payment_id: string;
     reference_number: string;
@@ -32,7 +33,7 @@ export interface PayMongoRefundEvent {
   amountPhp: number;
   status: "pending" | "processing" | "succeeded" | "failed";
   summary: {
-    livemode: false;
+    livemode: boolean;
     event_type: string;
     refund_id: string;
     payment_id: string;
@@ -58,17 +59,18 @@ function parseSignatureHeader(header: string) {
   return parts;
 }
 
-export function verifyPayMongoTestWebhookSignature(
+export function verifyPayMongoWebhookSignature(
   rawBody: string,
   signatureHeader: string | null,
   secret: string,
+  mode: PayMongoMode,
   nowMilliseconds = Date.now(),
 ) {
   if (!signatureHeader || !secret) return false;
   const parts = parseSignatureHeader(signatureHeader);
   const timestamp = parts.get("t");
-  const testSignature = parts.get("te");
-  if (!timestamp || !testSignature || !/^\d+$/.test(timestamp) || !/^[a-f0-9]{64}$/i.test(testSignature)) {
+  const signature = parts.get(mode === "live" ? "li" : "te");
+  if (!timestamp || !signature || !/^\d+$/.test(timestamp) || !/^[a-f0-9]{64}$/i.test(signature)) {
     return false;
   }
 
@@ -80,11 +82,14 @@ export function verifyPayMongoTestWebhookSignature(
   const expected = createHmac("sha256", secret)
     .update(`${timestamp}.${rawBody}`, "utf8")
     .digest();
-  const provided = Buffer.from(testSignature, "hex");
+  const provided = Buffer.from(signature, "hex");
   return expected.length === provided.length && timingSafeEqual(expected, provided);
 }
 
-export function parsePayMongoPaidEvent(payload: unknown): PayMongoPaidEvent | null {
+export function parsePayMongoPaidEvent(
+  payload: unknown,
+  mode: PayMongoMode,
+): PayMongoPaidEvent | null {
   const envelope = asRecord(payload as PayMongoWebhookEnvelope);
   if (!envelope) return null;
 
@@ -104,7 +109,10 @@ export function parsePayMongoPaidEvent(payload: unknown): PayMongoPaidEvent | nu
   const session = isDirectCheckout ? envelope : asRecord(event?.data);
   const attributes = asRecord(session?.attributes);
   const livemode = event?.livemode ?? attributes?.livemode;
-  if (livemode !== false) throw new Error("Live PayMongo events are not accepted in test mode.");
+  const expectedLivemode = mode === "live";
+  if (livemode !== expectedLivemode) {
+    throw new Error(`PayMongo ${mode} mode was expected but the event mode did not match.`);
+  }
 
   const metadata = asRecord(attributes?.metadata);
   const payments = Array.isArray(attributes?.payments) ? attributes.payments : [];
@@ -145,7 +153,7 @@ export function parsePayMongoPaidEvent(payload: unknown): PayMongoPaidEvent | nu
     paymentId,
     amountPhp,
     summary: {
-      livemode: false,
+      livemode: expectedLivemode,
       checkout_id: checkoutId,
       payment_id: paymentId,
       reference_number: orderNumber,
@@ -155,7 +163,10 @@ export function parsePayMongoPaidEvent(payload: unknown): PayMongoPaidEvent | nu
   };
 }
 
-export function parsePayMongoRefundEvent(payload: unknown): PayMongoRefundEvent | null {
+export function parsePayMongoRefundEvent(
+  payload: unknown,
+  mode: PayMongoMode,
+): PayMongoRefundEvent | null {
   const envelope = asRecord(payload as PayMongoWebhookEnvelope);
   if (!envelope) return null;
   const envelopeData = asRecord(envelope.data);
@@ -170,7 +181,10 @@ export function parsePayMongoRefundEvent(payload: unknown): PayMongoRefundEvent 
   if (!["payment.refunded", "payment.refund.updated", "refund.succeeded"].includes(String(eventType))) {
     return null;
   }
-  if (event.livemode !== false) throw new Error("Live PayMongo events are not accepted in test mode.");
+  const expectedLivemode = mode === "live";
+  if (event.livemode !== expectedLivemode) {
+    throw new Error(`PayMongo ${mode} mode was expected but the event mode did not match.`);
+  }
 
   const resource = asRecord(event.data);
   const resourceAttributes = asRecord(resource?.attributes);
@@ -221,7 +235,7 @@ export function parsePayMongoRefundEvent(payload: unknown): PayMongoRefundEvent 
     amountPhp,
     status,
     summary: {
-      livemode: false,
+      livemode: expectedLivemode,
       event_type: String(eventType),
       refund_id: refundId,
       payment_id: paymentId,

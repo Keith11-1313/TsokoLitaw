@@ -22,7 +22,7 @@ The PNGs in `references/` are retained as early visual context. They are not pix
 
 ### Decision
 
-Phase 12 Loyalty and Notifications is complete. Phase 13 Security and Production is active. Security review, environment isolation, performance validation, production configuration, and launch verification are now in scope; PayMongo live activation and a real charge remain explicit final launch gates.
+Phase 12 Loyalty and Notifications is complete. Phase 13 Security and Production is active. Security review, environment isolation, performance validation, production configuration, and launch verification are now in scope. PayMongo Live Mode activation was explicitly approved on September 1, 2026; the first real charge remains a separate user-controlled launch gate.
 
 Allowed now:
 
@@ -33,13 +33,12 @@ Allowed now:
 - responsive and keyboard-accessible interaction
 - disabled or temporary mock admin controls
 - server-side cart validation, pricing, inventory reservation, Terms acceptance, immutable order snapshots, and idempotent pending-order creation
-- PayMongo v2 test checkout sessions, signed/idempotent webhooks, and test payment/refund transitions
+- environment-bound PayMongo v2 test or live checkout sessions, signed/idempotent webhooks, and payment/refund transitions
 - real Admin order reads and audited, forward-only paid fulfillment transitions
 - one persisted review per completed order, initially non-public until Admin moderation
 
 Deferred until separately approved:
 
-- PayMongo live mode and live keys
 - transactional email events beyond the six completed V1 events
 - Admin CRUD areas not yet reached by the current Phase 11 slice
 - admin subdomain and DNS configuration

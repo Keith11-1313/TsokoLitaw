@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import {
   parsePayMongoPaidEvent,
   parsePayMongoRefundEvent,
-  verifyPayMongoTestWebhookSignature,
+  verifyPayMongoWebhookSignature,
 } from "@/lib/paymongo-webhook";
+import { getPayMongoMode } from "@/lib/paymongo-mode";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import {
   dispatchOrderConfirmation,
@@ -26,8 +27,9 @@ export async function POST(request: Request) {
   const signature = request.headers.get("paymongo-signature")
     ?? request.headers.get("x-paymongo-signature");
   const secret = process.env.PAYMONGO_WEBHOOK_SECRET?.trim() ?? "";
+  const mode = getPayMongoMode();
 
-  if (!verifyPayMongoTestWebhookSignature(rawBody, signature, secret)) {
+  if (!verifyPayMongoWebhookSignature(rawBody, signature, secret, mode)) {
     return NextResponse.json({ error: "Invalid webhook signature." }, { status: 401 });
   }
 
@@ -41,8 +43,8 @@ export async function POST(request: Request) {
   let paidEvent;
   let refundEvent;
   try {
-    paidEvent = parsePayMongoPaidEvent(payload);
-    refundEvent = paidEvent ? null : parsePayMongoRefundEvent(payload);
+    paidEvent = parsePayMongoPaidEvent(payload, mode);
+    refundEvent = paidEvent ? null : parsePayMongoRefundEvent(payload, mode);
   } catch {
     return NextResponse.json({ error: "Invalid payment event." }, { status: 400 });
   }

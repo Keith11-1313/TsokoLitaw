@@ -10,6 +10,7 @@ import {
   type PayMongoCheckoutSession,
   type PayMongoRefund,
 } from "@/lib/paymongo-contract";
+import { getPayMongoMode, requirePayMongoSecretKey } from "@/lib/paymongo-mode";
 
 const PAYMONGO_CHECKOUT_URL = "https://api.paymongo.com/v2/checkout_sessions";
 const PAYMONGO_LEGACY_CHECKOUT_URL = "https://api.paymongo.com/v1/checkout_sessions";
@@ -31,14 +32,6 @@ export class PayMongoApiError extends Error {
     super(message);
     this.name = "PayMongoApiError";
   }
-}
-
-function getPayMongoSecretKey() {
-  const key = process.env.PAYMONGO_SECRET_KEY?.trim();
-  if (!key?.startsWith("sk_test_")) {
-    throw new Error("PAYMONGO_SECRET_KEY must be a PayMongo test secret key.");
-  }
-  return key;
 }
 
 function getAuthorizationHeader(secretKey: string) {
@@ -63,7 +56,8 @@ async function readPayMongoError(response: Response) {
 export async function createPayMongoCheckoutSession(
   input: PayMongoCheckoutInput,
 ): Promise<PayMongoCheckoutSession> {
-  const secretKey = getPayMongoSecretKey();
+  const mode = getPayMongoMode();
+  const secretKey = requirePayMongoSecretKey(mode);
   const response = await fetch(PAYMONGO_CHECKOUT_URL, {
     method: "POST",
     headers: {
@@ -82,7 +76,7 @@ export async function createPayMongoCheckoutSession(
     throw new PayMongoApiError(error.detail, response.status, error.code);
   }
 
-  return parsePayMongoCheckoutSession(await response.json());
+  return parsePayMongoCheckoutSession(await response.json(), mode);
 }
 
 export async function expirePayMongoCheckoutSession(checkoutId: string): Promise<void> {
@@ -90,7 +84,7 @@ export async function expirePayMongoCheckoutSession(checkoutId: string): Promise
     throw new Error("A valid PayMongo checkout ID is required.");
   }
 
-  const secretKey = getPayMongoSecretKey();
+  const secretKey = requirePayMongoSecretKey();
   const response = await fetch(
     `${PAYMONGO_LEGACY_CHECKOUT_URL}/${encodeURIComponent(checkoutId)}/expire`,
     {
@@ -118,7 +112,8 @@ export async function createPayMongoRefund(input: {
   amountPhp: number;
   orderNumber: string;
 }): Promise<PayMongoRefund> {
-  const secretKey = getPayMongoSecretKey();
+  const mode = getPayMongoMode();
+  const secretKey = requirePayMongoSecretKey(mode);
   const response = await fetch(PAYMONGO_REFUND_URL, {
     method: "POST",
     headers: {
@@ -136,5 +131,5 @@ export async function createPayMongoRefund(input: {
     const error = await readPayMongoError(response);
     throw new PayMongoApiError(error.detail, response.status, error.code);
   }
-  return parsePayMongoRefund(await response.json());
+  return parsePayMongoRefund(await response.json(), mode);
 }
