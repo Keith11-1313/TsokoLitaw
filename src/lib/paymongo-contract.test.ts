@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPayMongoCheckoutPayload,
-  buildPayMongoRefundPayload,
   parsePayMongoCheckoutSession,
-  parsePayMongoRefund,
   phpToCentavos,
   requirePayMongoIdempotencyKey,
 } from "./paymongo-contract";
@@ -30,7 +28,7 @@ describe("PayMongo checkout contract", () => {
 
     expect(payload.data.attributes).toMatchObject({
       reference_number: "TL-0003",
-      payment_method_types: ["card", "gcash", "qrph"],
+      payment_method_types: ["qrph"],
       send_email_receipt: false,
       line_items: [{ amount: 4000, currency: "PHP", quantity: 1 }],
       metadata: { order_id: "order-id", order_number: "TL-0003" },
@@ -94,50 +92,4 @@ describe("PayMongo checkout contract", () => {
     }, "live")).toMatchObject({ id: "cs_live_session", livemode: true });
   });
 
-  it("builds and validates a full original-method refund", () => {
-    expect(buildPayMongoRefundPayload({
-      paymentId: "pay_test_payment",
-      amountPhp: 60,
-      orderNumber: "TL-0012",
-    })).toEqual({ data: { attributes: {
-      amount: 6000,
-      payment_id: "pay_test_payment",
-      reason: "requested_by_customer",
-      notes: "Customer cancellation for TL-0012",
-    } } });
-    expect(parsePayMongoRefund({ data: {
-      id: "ref_test_refund",
-      type: "refund",
-      attributes: {
-        amount: 6000,
-        currency: "PHP",
-        livemode: false,
-        payment_id: "pay_test_payment",
-        status: "processing",
-      },
-    } }, "test")).toEqual({
-      id: "ref_test_refund",
-      paymentId: "pay_test_payment",
-      amountPhp: 60,
-      currency: "PHP",
-      status: "processing",
-      livemode: false,
-    });
-
-    expect(parsePayMongoRefund({ data: {
-      id: "ref_live_refund",
-      type: "refund",
-      attributes: {
-        amount: 6000,
-        currency: "PHP",
-        livemode: true,
-        payment_id: "pay_live_payment",
-        status: "succeeded",
-      },
-    } }, "live")).toMatchObject({
-      id: "ref_live_refund",
-      paymentId: "pay_live_payment",
-      livemode: true,
-    });
-  });
 });

@@ -18,28 +18,28 @@ const sections: readonly LegalSection[] = [
     heading: "Information we collect",
     paragraphs: [
       "When you sign in, we receive the account identifiers and basic profile details supplied through Google and Supabase authentication, including your name and email address. You may also provide a mobile number.",
-      "When you shop or contact us, we process cart selections, order and pickup details, customer notes, Terms acceptance, payment and refund references and statuses, loyalty activity, reviews, account-deletion requests, and technical security or delivery records needed to operate the service. TsokoLitaw does not store your full card, e-wallet, or online-banking credentials.",
+      "When you shop or contact us, we process cart selections, order and pickup details, customer notes, Terms acceptance, payment references and statuses, loyalty activity, reviews, account-deletion requests, and technical security or delivery records needed to operate the service. Historical refund records may remain where needed for transactions created under an earlier workflow. TsokoLitaw does not store your full e-wallet or online-banking credentials.",
     ],
   },
   {
     heading: "Why we use information",
     paragraphs: [
-      "We use personal information to authenticate accounts; price, accept, prepare, and release orders; reserve inventory; process and reconcile payments, cancellations, refunds, and loyalty rewards; send transactional updates; provide support; prevent misuse; maintain security and audit records; and comply with applicable legal or accounting duties.",
+      "We use personal information to authenticate accounts; price, accept, prepare, and release orders; reserve inventory; process and reconcile payments, unpaid cancellations, and loyalty rewards; send transactional updates; provide support; prevent misuse; maintain security and audit records; and comply with applicable legal or accounting duties.",
       "We do not use transactional email enrollment as consent for unrelated marketing. If TsokoLitaw later offers marketing messages, that use will require a separate, clear choice where applicable.",
     ],
   },
   {
     heading: "Service providers and disclosures",
     paragraphs: [
-      "TsokoLitaw uses Google for sign-in, Supabase for authentication and application data, Vercel for application hosting, PayMongo for payment and refund processing, and Resend for transactional email delivery. These providers receive only the information needed for their service and process it under their own terms and privacy commitments.",
-      "Authorized TsokoLitaw administrators may access customer and order information only for fulfillment, support, refund, moderation, security, and operational purposes. We may also disclose information when required by law or necessary to protect customers, the service, or legal rights.",
+      "TsokoLitaw uses Google for sign-in, Supabase for authentication and application data, Vercel for application hosting, PayMongo for QR Ph payment processing, and Resend for transactional email delivery. These providers receive only the information needed for their service and process it under their own terms and privacy commitments.",
+      "Authorized TsokoLitaw administrators may access customer and order information only for fulfillment, support, moderation, security, and operational purposes. We may also disclose information when required by law or necessary to protect customers, the service, or legal rights.",
     ],
   },
   {
     heading: "Retention, account deletion, and security",
     paragraphs: [
-      "We retain information only while it is needed for the stated purposes, legitimate operational or legal requirements, dispute resolution, security, and recordkeeping. An eligible customer may schedule account deletion from Profile; the current service provides a 90-day cancellation period before deactivation. Active orders or refunds may delay the request, and historical transaction records may be retained where necessary even after account access is deactivated.",
-      "We use access controls, server-side authorization, database row-level security, encryption for manual refund destination details, signed provider webhooks, rate limits, and restricted administrative access. No internet service can promise absolute security, but suspected incidents are assessed and handled under applicable requirements.",
+      "We retain information only while it is needed for the stated purposes, legitimate operational or legal requirements, dispute resolution, security, and recordkeeping. An eligible customer may schedule account deletion from Profile; the current service provides a 90-day cancellation period before deactivation. Active orders or unresolved historical transaction records may delay the request, and transaction records may be retained where necessary even after account access is deactivated.",
+      "We use access controls, server-side authorization, database row-level security, signed provider webhooks, rate limits, and restricted administrative access. No internet service can promise absolute security, but suspected incidents are assessed and handled under applicable requirements.",
     ],
   },
   {
@@ -61,9 +61,9 @@ export default function PrivacyPage() {
   return (
     <LegalDocumentPage
       title="Privacy"
-      introduction="This notice explains how TsokoLitaw handles personal information when you use the website, place an order, pay, request a refund, or contact us."
+      introduction="This notice explains how TsokoLitaw handles personal information when you use the website, place an order, pay through QR Ph, or contact us."
       sections={sections}
-      documentNote="Privacy notice · Last updated August 30, 2026"
+      documentNote="Privacy notice · Last updated September 1, 2026"
     />
   );
 }

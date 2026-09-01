@@ -272,8 +272,8 @@ Future data-connected work must add consistent states for:
 - unauthorized admin access
 - payment processing, success, failure, and expiry
 - cancellation available through Confirmed, with a clear warning that eligibility ends at Preparing
-- separate refund-requested, refund-processing, refunded, and refund-failed feedback
-- a visible no-refund notice for Preparing, Ready for Pickup, completed, and no-show orders
+- a clear unpaid-cancellation action only while payment is pending
+- a visible in-person-settlement notice for paid orders and a no-refund notice for Preparing, Ready for Pickup, completed, and no-show orders
 - network/server failure
 
 Current backend-dependent actions should remain disabled or clearly identified as mock behavior.
@@ -284,12 +284,12 @@ Order references use the short shared kiosk format `TL-0001`. Customer and Admin
 
 Pickup UI must distinguish Made to order, Ready stock, and Hybrid. The configured operating window is guidance only; checkout shows only dates and slots explicitly published by Admin, and no mode appears automatically every day. All three modes use website checkout and online payment. Admin Pickup creates and publishes the schedule; Ready Stock and Hybrid dates then become selectable in Admin Inventory. Schedule cards show mode, publication state, windows, locations, and a lock when orders or inventory make structural edits unsafe. Long date lists use a selector and one focused schedule card instead of an indefinitely growing stack.
 
-Cancellation confirmation must explain whether the action only releases an unpaid reservation or starts a full refund to the original payment method. Do not ask for a GCash, Maya, or bank destination during the normal PayMongo refund flow; show a restricted fallback form only after the automatic refund is unavailable or has failed.
+Cancellation confirmation explains that the action releases an unpaid reservation and that no payment was collected. Paid orders never show an online cancellation or refund form. They show concise guidance to coordinate a concern directly with TsokoLitaw in person.
 
-The connected order detail displays the immutable item and pickup snapshots, payment state, and separately labelled refund state. Eligible orders expose one confirmation-based cancellation action. After cancellation, requested or processing refunds remain visibly unsettled; failed automatic refunds reveal the encrypted manual destination form, while successful refunds display the confirmed amount without asking for destination details.
+The connected order detail displays the immutable item and pickup snapshots and payment state. Only a pending unpaid order exposes the confirmation-based cancellation action. Paid orders show no refund status or destination controls in the active UI; historical database records remain outside the current customer workflow.
 
 Transactional order-confirmation email uses the same plain-language hierarchy as order detail: stored order number, item summary, paid total, and immutable pickup date, time, and location. It includes a direct authenticated order-detail link and the approved allergen notice. Both HTML and plain-text versions must remain readable; delivery failure never changes the customer's order or payment state.
 
 Ready-for-pickup email leads with the ready state, repeats the immutable campus pickup date, time, and location, asks the customer to bring the short order number, and links to authenticated order details. It must not imply that the order is already completed or introduce a separate reminder schedule.
 
-Cancellation email states whether payment was never collected or a full original-method refund was requested. Refund processing and completion show the exact stored amount without promising bank posting time. Refund-problem email links to the authenticated secure fallback form and explicitly warns the customer not to send account details by email. These messages remain separate so customers can distinguish order cancellation from money movement.
+The active cancellation email states that payment was never collected. Historical refund email templates remain only for delivery records created under the earlier workflow and must not be presented as a current customer capability.

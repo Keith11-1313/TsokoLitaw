@@ -2,19 +2,15 @@ import "server-only";
 
 import {
   buildPayMongoCheckoutPayload,
-  buildPayMongoRefundPayload,
   parsePayMongoCheckoutSession,
-  parsePayMongoRefund,
   requirePayMongoIdempotencyKey,
   type PayMongoCheckoutInput,
   type PayMongoCheckoutSession,
-  type PayMongoRefund,
 } from "@/lib/paymongo-contract";
 import { getPayMongoMode, requirePayMongoSecretKey } from "@/lib/paymongo-mode";
 
 const PAYMONGO_CHECKOUT_URL = "https://api.paymongo.com/v2/checkout_sessions";
 const PAYMONGO_LEGACY_CHECKOUT_URL = "https://api.paymongo.com/v1/checkout_sessions";
-const PAYMONGO_REFUND_URL = "https://api.paymongo.com/v1/refunds";
 
 interface PayMongoErrorDocument {
   errors?: Array<{
@@ -104,32 +100,4 @@ export async function expirePayMongoCheckoutSession(checkoutId: string): Promise
     const error = await readPayMongoError(response);
     throw new PayMongoApiError(error.detail, response.status, error.code);
   }
-}
-
-export async function createPayMongoRefund(input: {
-  refundId: string;
-  paymentId: string;
-  amountPhp: number;
-  orderNumber: string;
-}): Promise<PayMongoRefund> {
-  const mode = getPayMongoMode();
-  const secretKey = requirePayMongoSecretKey(mode);
-  const response = await fetch(PAYMONGO_REFUND_URL, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      Authorization: getAuthorizationHeader(secretKey),
-      "Content-Type": "application/json",
-      "Idempotency-Key": requirePayMongoIdempotencyKey(`refund:${input.refundId}`),
-    },
-    body: JSON.stringify(buildPayMongoRefundPayload(input)),
-    cache: "no-store",
-    signal: AbortSignal.timeout(15_000),
-  });
-
-  if (!response.ok) {
-    const error = await readPayMongoError(response);
-    throw new PayMongoApiError(error.detail, response.status, error.code);
-  }
-  return parsePayMongoRefund(await response.json(), mode);
 }

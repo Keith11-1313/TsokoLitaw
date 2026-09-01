@@ -20,6 +20,7 @@
     "db:test": "supabase test db",
     "db:lint:linked": "supabase db lint --linked --level error --fail-on error",
     "db:test:linked": "supabase test db --linked",
+    "db:test:linked:cancellation": "supabase test db supabase/tests/database/003_refunds.test.sql --linked",
     "admin:bootstrap": "node --env-file=.env.local scripts/bootstrap-admin.mjs"
   },
   "dependencies": {

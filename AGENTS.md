@@ -18,7 +18,7 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-**Phase 13: Security and Production is active.** Authentication, authorization, Phase 9 server commerce, Phase 10 PayMongo test mode, Phase 11 Admin operations, atomic seven-order loyalty, all six transactional emails, bounded retry processing, and signed Resend delivery tracking are implemented and validated. Current work covers security review, environment isolation, performance validation, production configuration, and launch verification. PayMongo live activation and any real charge remain final user-controlled launch gates.
+**Phase 13: Security and Production is active.** Authentication, authorization, Phase 9 server commerce, Phase 10 PayMongo integration, Phase 11 Admin operations, atomic seven-order loyalty, transactional emails, bounded retry processing, and signed Resend delivery tracking are implemented and validated. PayMongo live QR Ph payment was verified on September 1, 2026. Current work covers launch verification and the approved QR Ph-only, unpaid-online-cancellation policy; paid-order settlements occur in person and the website does not create refunds.
 
 Allowed:
 
@@ -34,7 +34,7 @@ Allowed:
 - server-side guards for checkout, account/order, review, and Admin routes
 - runtime reads for active catalog, pickup availability, and inventory
 - server-only commerce validation, pricing, inventory reservation/release, Terms acceptance, and pending-order creation
-- PayMongo test-mode API helpers, hosted checkout sessions, signed webhooks, and payment/refund persistence
+- environment-bound PayMongo QR Ph Hosted Checkout, signed paid webhooks, and historical refund-event reconciliation
 - authenticated Admin reads and server-validated order fulfillment mutations
 - completed-order review submission and Admin visibility/featured moderation
 - Admin Journal draft/publication management and optional cover media

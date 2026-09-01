@@ -34,14 +34,14 @@ Workflow changes must be reflected together in:
 - active catalog and published pickup availability are loaded from Supabase
 - server-authoritative pricing, inventory reservation/release, immutable order snapshots, Terms acceptance, and duplicate-submit protection are implemented and validated against hosted development
 - active Admin identities may place their own customer-storefront orders, and all new orders use one shared kiosk-style number such as `TL-0001`
-- PayMongo v2 Hosted Checkout test sessions, signed webhooks, provider references, and test payment/refund transitions are the active integration scope
+- environment-bound PayMongo v2 Hosted Checkout accepts QR Ph only; signed paid webhooks and provider references are authoritative
 - Admin Orders reads real order snapshots and advances paid fulfillment through validated, audited server-side transitions
 - completed-order owners can submit one persisted review; new reviews remain non-public until Admin moderation
 - Admin Journal combines persisted post publishing with audited review visibility/featured decisions
 - featured visible reviews and published Journal posts are loaded by the public Journal
 - the Admin dashboard combines bounded live order, Catalog, Pickup, Inventory, customer, Journal, and review summaries
 - completed-order loyalty earning, customer/Admin progress, and single-use checkout redemption are implemented
-- All six V1 Resend customer emails are queued exactly once from committed order/refund transitions: confirmation, ready for pickup, cancellation, refund processing, refund completed, and refund problem; trusted retry processing is shared
+- confirmation, ready-for-pickup, and unpaid-cancellation emails are queued exactly once from committed transitions; legacy refund notifications remain available only to reconcile historical records
 - Signed Resend delivery webhooks are verified against the untouched request body, deduplicated by provider event ID, and update operational delivery state without changing commerce state
 - Hosted Dev smoke testing confirms all six notification transitions, exactly-once queueing, retry recovery, and Resend delivery callbacks; the canonical migration resets cleanly and all 293 pgTAP database tests pass
 - `develop` is the Dev integration branch and `main` is the Production branch; feature work reaches Production only through the reviewed `feature/*` → `develop` → `main` path
@@ -139,7 +139,7 @@ Authentication and authorization must never rely on frontend state alone.
 
 The five planned V1 admin accounts have the same permissions. One Google identity may bootstrap Admin initially, with four more added later through controlled backend data. Every protected page and mutation must verify the admin role server-side. A signed-in customer who attempts to open an Admin route receives the existing global Not Found page without changing the requested Admin URL or exposing administrator approval-list or account details.
 
-Transactional order emails use Resend from server-only code. Initial events include order confirmation, ready-for-pickup, cancellation, and refund updates. Email delivery must not determine order or payment status, and failed sends must be retryable without duplicating messages.
+Transactional order emails use Resend from server-only code. Active events include order confirmation, ready-for-pickup, and unpaid cancellation. Historical refund events may still be delivered for records created under the superseded workflow. Email delivery must not determine order or payment status, and failed sends must be retryable without duplicating messages.
 
 ## 6. Product and Pricing
 
@@ -292,7 +292,7 @@ Admin Journal is one operational area. Admin can create or edit draft/published 
 
 ## 12. Payment
 
-Use PayMongo only in a later approved phase.
+Website checkout offers QR Ph only through PayMongo Hosted Checkout. Card, GCash, and other provider methods are not offered by this application.
 
 ```text
 Checkout
@@ -329,14 +329,14 @@ Keep fulfillment and payment state separate.
 
 Cancellation and refund rules:
 
-- customers may request cancellation while an order is `PENDING_PAYMENT`, `PAID`, or `CONFIRMED`
+- customers may cancel online only while an order is `PENDING_PAYMENT` with payment status `PENDING`
 - an unpaid cancellation releases reserved stock and requires no refund
-- a paid cancellation creates a full refund to the original PayMongo payment method
-- customer cancellation and refund eligibility end when the order enters `PREPARING`
-- `PREPARING`, `READY_FOR_PICKUP`, completed, and no-show orders are non-refundable under the standard policy
+- an attached PayMongo checkout must be expired before the unpaid reservation is released
+- paid-order cancellation or settlement concerns are coordinated directly with TsokoLitaw in person; the website does not initiate or process refunds
+- `PAID`, `CONFIRMED`, `PREPARING`, `READY_FOR_PICKUP`, completed, and no-show orders are not customer-cancellable through the website
 - no-show orders receive no refund because the product has already been prepared
-- the order may be `CANCELLED` while its refund remains `REQUESTED` or `PROCESSING`; refund completion requires provider confirmation
-- manual refund destination details may be requested only when an automatic provider refund is unsupported or fails, and must be handled as restricted personal data
+- applicable non-waivable customer rights remain unaffected
+- historical refund rows, states, and signed-event reconciliation remain only for integrity of transactions created under the earlier workflow
 
 ## 13. Inventory
 

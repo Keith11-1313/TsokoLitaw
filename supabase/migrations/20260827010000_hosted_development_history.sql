@@ -1,0 +1,6 @@
+-- Historical hosted-development migration marker.
+--
+-- This version was applied to the existing Dev project before the schema was
+-- consolidated into 20260827000000_initial_schema.sql. Its changes are already
+-- present in the canonical bootstrap, so a fresh database intentionally has no
+-- additional work to perform at this version.

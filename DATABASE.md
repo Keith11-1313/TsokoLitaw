@@ -2,11 +2,11 @@
 
 ## 1. Status
 
-The Phase 7 Supabase baseline is implemented as the canonical production bootstrap schema in `supabase/migrations/20260827000000_initial_schema.sql`, with controlled data in `supabase/seed.sql` and pgTAP checks in `supabase/tests/database/000_schema.test.sql`. The repository intentionally keeps one squashed migration for a fresh production project.
+The Phase 7 Supabase baseline is implemented as the canonical production bootstrap schema in `supabase/migrations/20260827000000_initial_schema.sql`, with controlled data in `supabase/seed.sql` and pgTAP checks in `supabase/tests/database/000_schema.test.sql`. The repository keeps the squashed bootstrap plus later reviewed migrations for fresh projects.
 
-The schema and controlled seed have been applied to the linked hosted development project. That project retains the pre-squash migration history; do not replay the repository bootstrap file against it solely to align filenames. Database lint reported no schema errors.
+The schema and controlled seed have been applied to the linked hosted development project. That project retains the pre-squash `20260827010000` and `20260827020000` migration versions. Matching no-op history-marker files remain in the repository because their schema changes are already folded into the canonical bootstrap. Do not mark those real remote versions as reverted or replay the repository bootstrap solely to align history. Database lint reported no schema errors.
 
-`20260830000000_production_reference_data.sql` installs the minimum launch catalog, box variants, coatings, add-on, pickup locations, business settings, and current Terms required by an empty hosted project. It contains no users, orders, inventory, pickup dates, payments, refunds, reviews, or secrets. Every insert uses conflict-safe initial creation so deploying the migration cannot overwrite values already maintained by an Admin.
+`20260830000000_production_reference_data.sql` installs the minimum launch catalog, box variants, coatings, add-on, pickup locations, business settings, and initial Terms required by an empty hosted project. `20260901000000_unpaid_only_online_cancellation.sql` installs the current QR Ph-only, unpaid-cancellation Terms version. `20260901010000_harden_cancellation_function_privileges.sql` explicitly reasserts service-only execution grants for existing hosted projects whose history predates the squashed bootstrap. These migrations contain no users, orders, inventory, pickup dates, payments, refunds, reviews, or secrets. Reference inserts use conflict-safe initial creation so deployment cannot overwrite values already maintained by an Admin.
 
 The Production project has applied both `20260827000000_initial_schema.sql` and `20260830000000_production_reference_data.sql`; local and remote migration history matched after deployment on August 30, 2026.
 
@@ -24,7 +24,7 @@ The proposed schema follows `DECISIONS.md` and the current workflow:
 | Admin-managed seed pricing | ₱10 seeds the product's active per-piece price; checkout derives each box total server-side and orders preserve snapshots |
 | Campus pickup only | admin-managed dates, windows, locations, lead/cutoff settings, and historical order snapshots; no delivery address |
 | Five admins share one role | bootstrap one approved Google-backed admin now and add up to four later; all authorization remains server-side |
-| Cancellation closes at preparation | cancel through `CONFIRMED`; paid cancellation creates a separately tracked refund; prepared/no-show orders are non-refundable |
+| Online cancellation is unpaid-only | only pending unpaid orders can be cancelled online; paid-order concerns are settled in person; prepared/no-show orders are non-refundable |
 | Reviews require completed orders | unique review per order plus ownership/status validation |
 | Review publication is moderated | new reviews are hidden by default; service-only Admin moderation controls visibility/featured state and creates audit records |
 | Journal supports multiple content types | `journal_posts.content_type`, publication state, and optional media |
@@ -410,9 +410,9 @@ created_at timestamptz
 updated_at timestamptz
 ```
 
-An eligible paid cancellation creates a full refund to the original payment method. The order may already be `CANCELLED` while the refund remains pending. Only a verified provider result may set `REFUNDED`. Manual fallback destination details are collected only after an unsupported or failed PayMongo refund, stored separately with restricted access, and masked in Admin UI.
+The table is retained for historical transactions created before the September 1, 2026 workflow change. The current application does not create refund rows or expose online refund actions. Only verified provider results may change historical records to `REFUNDED`.
 
-Service-only cancellation functions lock and recheck ownership, fulfillment state, payment state, and provider references. An attached unpaid checkout must be expired through PayMongo before `cancel_unpaid_order` releases its reservation. A paid cancellation atomically sets the order to `CANCELLED` and creates one full `REQUESTED` refund while leaving payment state `PAID`. The authenticated PayMongo create-refund response or an idempotently processed signed refund webhook may advance the refund to `PROCESSING`, `REFUNDED`, or `FAILED`; terminal success also changes the payment and order payment snapshot to `REFUNDED`.
+Service-only cancellation functions lock and recheck ownership, fulfillment state, payment state, and provider references. `prepare_order_cancellation` now returns only an unpaid preparation and rejects paid orders. An attached unpaid checkout must be expired through PayMongo before `cancel_unpaid_order` releases its reservation. Legacy refund transition functions remain only so existing rows and delayed signed provider events can be reconciled idempotently.
 
 ### `manual_refund_destinations`
 
@@ -427,7 +427,7 @@ created_at timestamptz
 deleted_at timestamptz nullable
 ```
 
-The account reference is encrypted with AES-256-GCM by server-only code and is never customer-readable through RLS. The fallback writer accepts a destination only for an owned, cancelled order whose original-method refund has already failed.
+This table is retained only as historical schema for earlier transactions. The current application has no writer or customer form for manual refund destinations; RLS continues to prevent customer reads of any historical values.
 
 ### `payment_webhook_events`
 

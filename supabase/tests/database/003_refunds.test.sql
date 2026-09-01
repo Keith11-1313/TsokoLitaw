@@ -18,7 +18,7 @@ select set_config(
    where pg_extension.extname = 'pgtap'),
   true
 );
-select plan(40);
+select plan(41);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -88,6 +88,12 @@ insert into public.orders (
 );
 insert into public.payments (id, order_id, provider_payment_id, amount, status, paid_at)
 values ('b6000000-0000-4000-8000-000000000002', 'b5000000-0000-4000-8000-000000000002', 'pay_refund_9102', 60, 'PAID', now());
+
+select throws_ok(
+  $$select public.prepare_order_cancellation('b5000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000001')$$,
+  'P0001', 'Paid-order concerns must be settled directly with TsokoLitaw in person',
+  'the website cancellation preparation rejects a paid order'
+);
 
 select is((select refund_status_value from public.request_paid_order_refund('b5000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000001')), 'REQUESTED'::public.refund_status, 'paid cancellation creates a refund request');
 select is((select status from public.orders where id = 'b5000000-0000-4000-8000-000000000002'), 'CANCELLED'::public.order_status, 'paid order is cancelled immediately');

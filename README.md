@@ -10,7 +10,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-**Phase 13: Security and Production is active.** Loyalty and all six transactional notification paths are complete and validated. Current work covers security and tamper review, Dev/Production isolation, performance validation, production configuration, legal/SEO readiness, and final launch verification. PayMongo live activation and any real charge remain explicit final launch gates.
+**Phase 13: Security and Production is active.** Security, performance, environment isolation, live QR Ph payment, and signed webhook verification have been exercised. Current work covers final deployment of the QR Ph-only/unpaid-cancellation policy, legal wording, and launch verification. Paid-order settlements occur in person; the website does not create refunds.
 
 The connected Admin Customers page is an account directory: it includes customer and Admin profiles, labels their roles explicitly, and shows their real order and loyalty activity when present.
 
@@ -69,26 +69,25 @@ Phase 9 server-commerce work completed so far:
 Phase 10 payment foundation completed so far:
 
 - PayMongo test credentials are loaded only from local server environment variables
-- the server-only client targets PayMongo v2 Hosted Checkout and rejects live secret keys or live checkout responses
+- the server-only client targets PayMongo v2 Hosted Checkout, offers QR Ph only, and rejects provider responses from the wrong environment mode
 - checkout requests carry a stable idempotency key so a safe retry cannot create a duplicate provider session
 - the canonical schema creates at most one payment per order and immutably stores its checkout and payment references
 - the test webhook verifies PayMongo's timestamped raw-body signature and atomically deduplicates exact paid-order transitions
 - Checkout creates or reloads one idempotent PayMongo test session and redirects to Hosted Checkout
 - the success return reloads the owned order and never treats the browser redirect as payment proof
 - overdue provider-bound orders close the PayMongo checkout before the database releases reserved stock
-- eligible order details support server-validated cancellation through `CONFIRMED`; unpaid checkouts expire before reservation release
-- paid cancellations create a separately tracked, idempotent full PayMongo refund to the stored original payment
-- authenticated PayMongo responses and signed refund webhooks drive requested, processing, refunded, and failed states
-- failed automatic refunds expose an AES-256-GCM-encrypted manual destination fallback with restricted database access
+- eligible order details support server-validated cancellation only while both order and payment are pending; attached unpaid checkouts expire before reservation release
+- paid orders expose no online cancellation or refund workflow; related concerns are coordinated with TsokoLitaw in person
+- historical refund tables, signed-event reconciliation, and notification records remain intact for transactions created under the earlier workflow
 - local and hosted validation cover provider-reference persistence, paid-webhook processing, and coordinated expiry; the end-to-end hosted payment smoke test remains pending
 
 Phase 11 customer-order work started by product-owner request:
 
 - My Orders now loads only the authenticated profile's persisted order snapshots
 - My Orders loads at most 20 records through one RLS-scoped nested query and uses stable cursor pagination for older history
-- order detail loads its owned order graph and latest refund through one RLS-scoped nested query
+- order detail loads its owned order graph through one RLS-scoped nested query
 - All, Received, Preparing, Ready for pickup, and Completed filters organize real statuses without changing them in the browser
-- order details now load only the authenticated customer's immutable snapshots and show cancellation/refund eligibility
+- order details load only the authenticated customer's immutable snapshots, show unpaid cancellation when eligible, and direct paid-order concerns to in-person settlement
 - Admin Orders loads recent real order snapshots with local search and status filtering
 - active Admins can advance `CONFIRMED → PREPARING → READY_FOR_PICKUP → COMPLETED` through an atomic service-only database function
 - every successful fulfillment transition records the acting Admin, order, previous status, and next status in `admin_audit_logs`
@@ -103,7 +102,7 @@ Performance and concurrency hardening implemented for the current storefront:
 
 - shared public catalog previews use a five-minute tagged cache, while published pickup definitions use a 30-second tagged cache
 - authoritative checkout continues to reload live prices, inventory, and pickup state
-- checkout, resume-payment, cancellation, and manual-refund mutations use atomic database-backed per-user and per-IP limits shared across Vercel instances
+- checkout, resume-payment, and unpaid-cancellation mutations use atomic database-backed per-user and per-IP limits shared across Vercel instances
 - structured server timing reports slow commerce/order reads without logging contact details, cookies, tokens, or provider secrets
 - Vercel Fluid compute is enabled and the current linked Singapore development database is paired with the `sin1` function region
 - repeatable k6 smoke and staged 100-concurrent-user scenarios are available under `tests/performance/`; hosted baseline execution is still required
@@ -112,7 +111,7 @@ Not yet implemented or externally configured:
 
 - remaining live authorization checks
 - hosted PayMongo schema deployment, webhook registration, and customer redirection
-- frequent production scheduling for payment expiry and hosted refund smoke testing
+- production scheduling for payment expiry and hosted QR Ph payment verification
 - email or real CRUD other than the approved account-deletion lifecycle
 - admin authorization or admin subdomain routing
 
@@ -220,7 +219,7 @@ Pickup is centered at UCC Congress: 3rd Floor and Covered Court. Monday–Saturd
 
 The provisional made-to-order defaults are one day of lead time, a 5:00 PM daily cutoff, and hourly slots. These are operational Admin settings, not permanent storefront rules.
 
-V1 uses one equal-permission admin role supporting five approved Google accounts. One account may be configured first and four added later. Customers may cancel through `CONFIRMED`; paid cancellations receive a full refund to the original PayMongo payment method. Cancellation and standard refund eligibility end at `PREPARING`, and no-shows are non-refundable. Order cancellation and refund processing remain separately tracked.
+V1 uses one equal-permission admin role supporting five approved Google accounts. One account may be configured first and four added later. Customers may cancel online only while an order is unpaid and pending. Paid-order cancellation or settlement concerns are coordinated directly with TsokoLitaw in person; the website does not initiate refunds. Prepared orders and no-shows are non-refundable, subject to applicable non-waivable rights. Historical refund records remain separately tracked for audit integrity.
 
 ## Project Structure
 
@@ -319,14 +318,16 @@ npm run db:lint
 npm run db:test
 ```
 
-To verify the linked hosted development project without resetting it, start Docker Desktop first. The CLI still uses a local container for the pgTAP runner even though the database target is remote:
+The full pgTAP suite assumes a freshly reset database and must run locally, not against a populated hosted project. To lint the linked hosted Dev schema, provide its database password through `SUPABASE_DB_PASSWORD`. Use only deliberately data-independent focused tests against hosted Dev; the cancellation-policy test is exposed as a separate command:
 
 ```bash
 npm run db:lint:linked
-npm run db:test:linked
+npm run db:test:linked:cancellation
 ```
 
-To connect a fresh production project, authenticate the CLI, link the project reference, review a dry run, and then push the single bootstrap migration. Seed data is appropriate for local/development environments; review it before applying to production. Do not push the squashed bootstrap file to the existing hosted development project merely to align migration history. The approved initial Google identity must sign in once before trusted server-side setup invokes `promote_admin_by_email`.
+Do not use `npm run db:test:linked` on populated Dev or Production. Its clean-database count assertions will collide with real operational rows even though every test file rolls its writes back.
+
+To connect a fresh production project, authenticate the CLI, link the project reference, review a dry run, and then push the reviewed migrations. Seed data is appropriate for local/development environments; review it before applying to production. The `20260827010000` and `20260827020000` files are intentional no-op markers for migrations already applied to hosted Dev before their changes were folded into the canonical bootstrap. They keep CLI history aligned without replaying schema changes. Do not repair those real remote versions as reverted or push the squashed bootstrap file to existing hosted Dev merely to align history. The approved initial Google identity must sign in once before trusted server-side setup invokes `promote_admin_by_email`.
 
 ### Google authentication setup
 
@@ -356,15 +357,9 @@ Account-deletion tables and functions are included in the canonical bootstrap sc
 
 `/api/cron/notifications` uses the same `CRON_SECRET` bearer protection and processes at most 20 due deliveries per call. Order confirmation is attempted immediately after verified payment or zero-total loyalty settlement; a Supabase Cron HTTP job should invoke this endpoint every five minutes (`*/5 * * * *`) to retry transient failures. Each provider request reuses the stored event idempotency key, attempts are capped at five, and a stale processing claim may be recovered after ten minutes.
 
-### Refund security and webhooks
+### PayMongo payment webhooks
 
-Generate a different 32-byte encryption key for each environment and store its base64 value as the server-only `REFUND_DESTINATION_ENCRYPTION_KEY` in `.env.local` and Vercel. Never expose it with a `NEXT_PUBLIC_` prefix:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
-
-The PayMongo webhook endpoint must subscribe to `checkout_session.payment.paid`, `payment.refunded`, and `payment.refund.updated`. The handler also understands PayMongo's newer `refund.succeeded` event shape when the dashboard makes that event available. Test and live webhook secrets are separate. Keep local, Dev, and Preview on `PAYMONGO_MODE=test`; set Production to `PAYMONGO_MODE=live` only with matching live keys and the live endpoint's signing secret. The application rejects keys, API responses, events, and webhook signatures whose mode does not match.
+Each current PayMongo webhook endpoint should subscribe only to `checkout_session.payment.paid`. Checkout sessions offer QR Ph only. Test and live webhook secrets are separate: keep local, Dev, and Preview on `PAYMONGO_MODE=test`, and keep Production on `PAYMONGO_MODE=live` only with matching live keys and the live endpoint's signing secret. The application rejects keys, API responses, events, and webhook signatures whose mode does not match. Historical refund event parsing remains in the route only to reconcile an already-existing record if an older signed event is delivered; do not enable refund events for new endpoints.
 
 ## Assets and References
 
@@ -383,7 +378,7 @@ The public GitHub repository can be connected to Vercel. Supabase URL and key va
 
 Production authentication will use `auth.tsokolitaw.com` through Supabase’s paid custom-domain add-on. The production checklist includes DNS and certificate verification, Google branding and callback updates, Vercel environment changes, and end-to-end authentication/authorization testing. Development continues to use the default Supabase project domain.
 
-The six transactional order/refund emails use Resend from server-only code and the verified `updates.tsokolitaw.com` sending subdomain. Database triggers queue committed order and refund transitions; immediate dispatch follows PayMongo, loyalty settlement, Admin fulfillment, cancellation, and verified refund updates, while `/api/cron/notifications` retries bounded local send failures with the shared `CRON_SECRET`.
+Transactional emails use Resend from server-only code and the verified `updates.tsokolitaw.com` sending subdomain. Current flows queue confirmation, ready-for-pickup, and unpaid-cancellation messages. Legacy refund deliveries remain for historical reconciliation only. `/api/cron/notifications` retries bounded local send failures with the shared `CRON_SECRET`.
 
 Resend delivery tracking is received at `POST /api/webhooks/resend`. Configure that deployed URL in Resend, subscribe to `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.complained`, `email.failed`, and `email.suppressed`, then copy the endpoint signing secret into the protected `RESEND_WEBHOOK_SECRET` environment variable. The handler verifies the signature against the untouched request body, stores each provider event once, and rejects older events as delivery-state updates when Resend delivers events out of order. API keys and webhook secrets belong only in protected local/Vercel environment settings.
 
