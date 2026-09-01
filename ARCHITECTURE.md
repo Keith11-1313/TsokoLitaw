@@ -287,6 +287,7 @@ NEXT_PUBLIC_SITE_URL=
 # Local .env.local only; used by npm run admin:bootstrap
 INITIAL_ADMIN_EMAIL=
 
+PAYMONGO_MODE=test
 PAYMONGO_SECRET_KEY=
 PAYMONGO_PUBLIC_KEY=
 PAYMONGO_WEBHOOK_SECRET=
@@ -311,7 +312,7 @@ Only values intentionally prefixed with `NEXT_PUBLIC_` may be available to the b
 - customer domain: `tsokolitaw.com`
 - planned admin domain: `admin.tsokolitaw.com`
 
-Use PayMongo test mode and non-production Supabase configuration before live rollout.
+Use PayMongo test mode and non-production Supabase configuration before live rollout. `PAYMONGO_MODE` is an explicit environment boundary: `test` accepts only test keys, resources, events, and `te` webhook signatures; `live` accepts only live keys, resources, events, and `li` webhook signatures.
 
 Dev and Production are hard boundaries, not only labels inside one `.env` file. The Dev Vercel project uses the Dev Supabase project, PayMongo test credentials, Dev webhook endpoints/secrets, a Dev `CRON_SECRET`, and the Vercel Dev origin. The Production Vercel project uses the Production Supabase project, production-only secrets, production webhook endpoints/secrets, a different production `CRON_SECRET`, and the canonical custom origin. Feature previews may use Dev-safe configuration but never Production secrets.
 

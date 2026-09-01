@@ -1,3 +1,5 @@
+import type { PayMongoMode } from "@/lib/paymongo-mode";
+
 export const PAYMONGO_PAYMENT_METHOD_TYPES = ["card", "gcash", "qrph"] as const;
 
 export type PayMongoPaymentMethodType = typeof PAYMONGO_PAYMENT_METHOD_TYPES[number];
@@ -26,7 +28,7 @@ export function requirePayMongoIdempotencyKey(value: string) {
 export interface PayMongoCheckoutSession {
   id: string;
   checkoutUrl: string;
-  livemode: false;
+  livemode: boolean;
 }
 
 export type PayMongoRefundStatus = "pending" | "processing" | "succeeded" | "failed";
@@ -37,7 +39,7 @@ export interface PayMongoRefund {
   amountPhp: number;
   currency: "PHP";
   status: PayMongoRefundStatus;
-  livemode: false;
+  livemode: boolean;
 }
 
 interface PayMongoCheckoutResponse {
@@ -121,6 +123,7 @@ export function buildPayMongoCheckoutPayload(input: PayMongoCheckoutInput) {
 
 export function parsePayMongoCheckoutSession(
   response: PayMongoCheckoutResponse,
+  mode: PayMongoMode,
 ): PayMongoCheckoutSession {
   const id = response.data?.id;
   const checkoutUrl = response.data?.attributes?.checkout_url;
@@ -131,8 +134,9 @@ export function parsePayMongoCheckoutSession(
   if (typeof checkoutUrl !== "string" || !checkoutUrl.startsWith("https://checkout.paymongo.com/")) {
     throw new Error("PayMongo did not return a valid checkout URL.");
   }
-  if (livemode !== false) {
-    throw new Error("PayMongo test mode was expected but a live resource was returned.");
+  const expectedLivemode = mode === "live";
+  if (livemode !== expectedLivemode) {
+    throw new Error(`PayMongo ${mode} mode was expected but the response mode did not match.`);
   }
   return { id, checkoutUrl, livemode };
 }
@@ -160,7 +164,7 @@ export function buildPayMongoRefundPayload(input: {
   };
 }
 
-export function parsePayMongoRefund(response: unknown): PayMongoRefund {
+export function parsePayMongoRefund(response: unknown, mode: PayMongoMode): PayMongoRefund {
   const document = response as {
     data?: {
       id?: unknown;
@@ -187,8 +191,9 @@ export function parsePayMongoRefund(response: unknown): PayMongoRefund {
   if (!["pending", "processing", "succeeded", "failed"].includes(String(status))) {
     throw new Error("PayMongo returned an invalid refund status.");
   }
-  if (livemode !== false) {
-    throw new Error("PayMongo test mode was expected but a live refund was returned.");
+  const expectedLivemode = mode === "live";
+  if (livemode !== expectedLivemode) {
+    throw new Error(`PayMongo ${mode} mode was expected but the refund mode did not match.`);
   }
   return {
     id,

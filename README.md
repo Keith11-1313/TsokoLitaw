@@ -364,7 +364,7 @@ Generate a different 32-byte encryption key for each environment and store its b
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
-The PayMongo webhook endpoint must subscribe to `checkout_session.payment.paid`, `payment.refunded`, and `payment.refund.updated`. The handler also understands PayMongo's newer `refund.succeeded` event shape when the dashboard makes that event available. Test and live webhook secrets are separate; keep the project in Test Mode until the hosted cancellation/refund smoke test is complete.
+The PayMongo webhook endpoint must subscribe to `checkout_session.payment.paid`, `payment.refunded`, and `payment.refund.updated`. The handler also understands PayMongo's newer `refund.succeeded` event shape when the dashboard makes that event available. Test and live webhook secrets are separate. Keep local, Dev, and Preview on `PAYMONGO_MODE=test`; set Production to `PAYMONGO_MODE=live` only with matching live keys and the live endpoint's signing secret. The application rejects keys, API responses, events, and webhook signatures whose mode does not match.
 
 ## Assets and References
 

@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/paymongo-webhook", () => ({
-  verifyPayMongoTestWebhookSignature: mocks.verifySignature,
+  verifyPayMongoWebhookSignature: mocks.verifySignature,
   parsePayMongoPaidEvent: mocks.parsePaidEvent,
   parsePayMongoRefundEvent: mocks.parseRefundEvent,
 }));
@@ -57,6 +57,7 @@ function adminClient(localPayment: { id: string } | null) {
 describe("PayMongo webhook environment routing", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.PAYMONGO_MODE = "test";
     process.env.PAYMONGO_WEBHOOK_SECRET = "whsk_test";
     mocks.verifySignature.mockReturnValue(true);
     mocks.parsePaidEvent.mockReturnValue(paidEvent);
@@ -76,6 +77,12 @@ describe("PayMongo webhook environment routing", () => {
       ignored: "other_environment",
     });
     expect(client.rpc).not.toHaveBeenCalled();
+    expect(mocks.verifySignature).toHaveBeenCalledWith(
+      expect.any(String),
+      "test-signature",
+      "whsk_test",
+      "test",
+    );
   });
 
   it("still applies strict processing to a locally owned checkout", async () => {

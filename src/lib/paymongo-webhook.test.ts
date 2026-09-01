@@ -3,18 +3,20 @@ import { describe, expect, it } from "vitest";
 import {
   parsePayMongoPaidEvent,
   parsePayMongoRefundEvent,
-  verifyPayMongoTestWebhookSignature,
+  verifyPayMongoWebhookSignature,
 } from "./paymongo-webhook";
 
 const NOW = 1_800_000_000_000;
 const TIMESTAMP = String(NOW / 1000);
 const SECRET = "whsk_test_secret";
 
-function signatureFor(body: string) {
+function signatureFor(body: string, mode: "test" | "live" = "test") {
   const signature = createHmac("sha256", SECRET)
     .update(`${TIMESTAMP}.${body}`)
     .digest("hex");
-  return `t=${TIMESTAMP},te=${signature},li=`;
+  return mode === "live"
+    ? `t=${TIMESTAMP},te=,li=${signature}`
+    : `t=${TIMESTAMP},te=${signature},li=`;
 }
 
 function paidPayload(amount = 4000) {
@@ -64,15 +66,17 @@ function directCheckoutPayload(amount = 4000) {
 describe("PayMongo webhook verification", () => {
   it("verifies the timestamped test signature against the untouched body", () => {
     const body = JSON.stringify(paidPayload());
-    expect(verifyPayMongoTestWebhookSignature(body, signatureFor(body), SECRET, NOW)).toBe(true);
-    expect(verifyPayMongoTestWebhookSignature(`${body} `, signatureFor(body), SECRET, NOW)).toBe(false);
+    expect(verifyPayMongoWebhookSignature(body, signatureFor(body), SECRET, "test", NOW)).toBe(true);
+    expect(verifyPayMongoWebhookSignature(`${body} `, signatureFor(body), SECRET, "test", NOW)).toBe(false);
   });
 
   it("rejects stale and live-only signatures", () => {
     const body = JSON.stringify(paidPayload());
     const digest = signatureFor(body).split("te=")[1].split(",")[0];
-    expect(verifyPayMongoTestWebhookSignature(body, signatureFor(body), SECRET, NOW + 301_000)).toBe(false);
-    expect(verifyPayMongoTestWebhookSignature(body, `t=${TIMESTAMP},te=,li=${digest}`, SECRET, NOW)).toBe(false);
+    expect(verifyPayMongoWebhookSignature(body, signatureFor(body), SECRET, "test", NOW + 301_000)).toBe(false);
+    expect(verifyPayMongoWebhookSignature(body, `t=${TIMESTAMP},te=,li=${digest}`, SECRET, "test", NOW)).toBe(false);
+    expect(verifyPayMongoWebhookSignature(body, signatureFor(body, "live"), SECRET, "live", NOW)).toBe(true);
+    expect(verifyPayMongoWebhookSignature(body, signatureFor(body), SECRET, "live", NOW)).toBe(false);
   });
 
   it("extracts only the trusted payment identifiers and amount", () => {
@@ -93,17 +97,20 @@ describe("PayMongo webhook verification", () => {
       },
     };
 
-    expect(parsePayMongoPaidEvent(paidPayload())).toEqual(expected);
-    expect(parsePayMongoPaidEvent(standardEventPayload())).toEqual(expected);
-    expect(parsePayMongoPaidEvent(directCheckoutPayload())).toEqual(expected);
+    expect(parsePayMongoPaidEvent(paidPayload(), "test")).toEqual(expected);
+    expect(parsePayMongoPaidEvent(standardEventPayload(), "test")).toEqual(expected);
+    expect(parsePayMongoPaidEvent(directCheckoutPayload(), "test")).toEqual(expected);
   });
 
   it("ignores unrelated events and rejects live or malformed paid events", () => {
-    expect(parsePayMongoPaidEvent({ event_type: "send.webhook", data: { type: "payment.failed" } })).toBeNull();
+    expect(parsePayMongoPaidEvent({ event_type: "send.webhook", data: { type: "payment.failed" } }, "test")).toBeNull();
     const live = paidPayload();
     live.data.livemode = true;
-    expect(() => parsePayMongoPaidEvent(live)).toThrow("Live PayMongo events");
-    expect(() => parsePayMongoPaidEvent(paidPayload(0))).toThrow("payment amount");
+    expect(() => parsePayMongoPaidEvent(live, "test")).toThrow("mode did not match");
+    expect(parsePayMongoPaidEvent(live, "live")).toMatchObject({
+      summary: { livemode: true },
+    });
+    expect(() => parsePayMongoPaidEvent(paidPayload(0), "test")).toThrow("payment amount");
   });
 
   it("extracts a signed refund lifecycle event without trusting order metadata", () => {
@@ -126,7 +133,7 @@ describe("PayMongo webhook verification", () => {
           },
         },
       },
-    })).toEqual({
+    }, "test")).toEqual({
       eventKey: "payment.refund.updated:evt_test_refund",
       refundId: "ref_test_refund",
       paymentId: "pay_test_payment",
