@@ -259,7 +259,7 @@ After a valid Add to cart action, an accessible modal confirms the addition with
 
 ## 10. Required UI States
 
-Future data-connected work must add consistent states for:
+Connected customer and Admin views must provide consistent states for:
 
 - loading
 - empty catalog or cart
@@ -271,12 +271,11 @@ Future data-connected work must add consistent states for:
 - authentication required
 - unauthorized admin access
 - payment processing, success, failure, and expiry
-- cancellation available through Confirmed, with a clear warning that eligibility ends at Preparing
 - a clear unpaid-cancellation action only while payment is pending
 - a visible in-person-settlement notice for paid orders and a no-refund notice for Preparing, Ready for Pickup, completed, and no-show orders
 - network/server failure
 
-Current backend-dependent actions should remain disabled or clearly identified as mock behavior.
+Any deliberately unconnected action must remain disabled or be clearly identified as unavailable; it must not imitate a successful persisted change.
 
 Checkout now opens PayMongo Hosted Checkout after the server creates or reloads the idempotent pending order. The return screen must say that payment is being verified unless the owned database order already records `payment_status = PAID`; the redirect itself never displays an unverified success claim. A confirmed paid return clears the matching browser cart.
 

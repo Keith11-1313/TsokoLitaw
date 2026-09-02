@@ -50,7 +50,7 @@ Admin order operations
 
 Authenticated customer order surfaces
 ├── My Orders ownership-scoped database list and status filters
-└── Dynamic order/review routes unavailable until their scoped detail reads and mutations exist
+└── Ownership-scoped order detail and completed-order review mutations
 ```
 
 Customer catalog and pickup reads reflect the linked database. Connected Admin areas write through server-only controlled mutations; the Dashboard remains read-only and links to those authoritative management surfaces.
@@ -65,11 +65,11 @@ Client Components are limited to interactions such as:
 - custom dropdowns
 - authenticated account menu and shared confirmation-based logout
 - admin mobile drawer
-- mock forms and dialogs
-- square-image validation and in-memory coating previews
+- connected forms and confirmation dialogs
+- square-image validation and pre-submit coating previews
 - Home feature-carousel state, muted autoplay, and video-ended slide transition
 
-## 3. Future Production Architecture
+## 3. Production Architecture
 
 ```text
 Customer or Admin Browser
@@ -108,7 +108,7 @@ Supabase Cron is the single scheduler for trusted maintenance HTTP jobs. It call
 
 Customer routes are public under the main application. Account, checkout, order, and review routes require a verified Supabase session.
 
-Admin routes remain under `/admin` and require both a verified Supabase session and a server-loaded `profiles.role = 'admin'`. Signed-in non-Admins receive the global Not Found boundary at the requested Admin URL, without a dedicated authorization redirect or disclosed administrator approval details. The planned `admin.tsokolitaw.com` host is deferred. Future host routing may map the subdomain to `/admin`, but must not replace server-side admin authorization.
+Admin routes intentionally remain under `/admin` for campus-scale V1 and require both a verified Supabase session and a server-loaded `profiles.role = 'admin'`. Signed-in non-Admins receive the global Not Found boundary at the requested Admin URL, without a dedicated authorization redirect or disclosed administrator approval details. No Admin subdomain is planned for V1.
 
 Legacy compatibility redirects:
 
@@ -122,9 +122,9 @@ Legacy compatibility redirects:
 src/
 ├── app/                 # Routes, metadata, page composition
 ├── components/
-│   ├── admin/           # Admin shells, tables, cards, mock actions
+│   ├── admin/           # Connected Admin shells, tables, forms, and actions
 │   ├── cart/            # Provider and cart UI
-│   ├── checkout/        # Static checkout UI
+│   ├── checkout/        # Connected checkout and Hosted Checkout handoff
 │   ├── creations/       # Product catalog/configurator
 │   ├── customer/        # Header, footer, page shells
 │   ├── feedback/        # Order-linked review UI
@@ -132,7 +132,7 @@ src/
 │   ├── layout/          # Content containers
 │   ├── orders/          # Order list/detail UI
 │   └── ui/              # Shared controls and tokens
-├── lib/                 # Server commerce reads plus remaining mock domain data
+├── lib/                 # Domain rules, server services, and Supabase helpers
 └── types/               # Explicit domain types
 ```
 
@@ -148,7 +148,7 @@ The UI cart is exposed through `CartProvider` and persisted under a browser-loca
 
 It supports add, remove, bounded numeric quantity editing, per-line checkout selection, subtotal, and clear operations. Cart lines and their selected IDs persist under separate browser-local keys. When hosted checkout starts, the selected line IDs are snapshotted under a pending-checkout key; verified payment removes only that snapshot so unchecked lines remain in Cart. Builder and Cart caps protect the client surface from extreme values but do not claim live stock knowledge because no pickup date has been selected yet. Checkout reports the selected date's remaining prepared-piece balance, compares it with total cart pieces, and still rechecks inventory and pickup eligibility transactionally.
 
-Future checkout flow:
+Server checkout flow:
 
 1. Send configuration identifiers and quantities to the server.
 2. Reload active product, coating, add-on, and stock records.
@@ -166,7 +166,7 @@ Phase 7 foundation:
 - pgTAP authorization checks under `supabase/tests/database/`
 - separate browser, server, and service/admin client helpers under `src/lib/supabase/`
 
-Google authentication and profile integration are active. Live commerce data integration remains deferred. Local/Vercel product assets remain sufficient, so Supabase Storage is not currently required.
+Google authentication, profile integration, live commerce data, controlled Catalog media in Supabase Storage, and separate Dev/Production projects are active.
 
 Never expose privileged Supabase credentials. RLS is defined on every exposed table before customer data is connected. Direct customer-facing commerce mutations remain unavailable until later server-commerce work can validate authorization, pricing, stock, and snapshots.
 
@@ -206,7 +206,7 @@ V1 supports five approved Google identities under one shared admin role. One ide
 
 Store IDs and counts from the client, then calculate money from database records on the server. Preserve names, counts, and prices as order snapshots.
 
-The current ₱10-per-piece mock amount becomes the provisional database seed, producing initial 4-, 6-, and 8-piece totals of ₱40, ₱60, and ₱80. Admin edits update the active per-piece catalog price for future carts and checkouts only; box-size labels do not carry permanent fixed prices, and edits never mutate historical order snapshots.
+The current ₱10-per-piece amount is the provisional database seed, producing initial 4-, 6-, and 8-piece totals of ₱40, ₱60, and ₱80. Admin edits update the active per-piece catalog price for future carts and checkouts only; box-size labels do not carry permanent fixed prices, and edits never mutate historical order snapshots.
 
 ## 10. Payments
 
@@ -340,12 +340,12 @@ React `cache()` may continue to deduplicate authentication/profile work inside o
 
 | Data | Shared cache | Rule |
 | --- | --- | --- |
-| Active public catalog, coating descriptions, Journal posts, legal content | Yes | Use explicit Next.js cache lifetimes and tags. Future Admin publication invalidates the matching tag. |
+| Active public catalog, coating descriptions, Journal posts, legal content | Yes | Use explicit Next.js cache lifetimes and tags. Connected Admin publication invalidates the matching tag. |
 | Published pickup date/time/location definitions | Short-lived only | Tag and revalidate after Admin publication. A stale definition may be displayed briefly, but checkout must revalidate it live. |
 | Ready stock and current prices used for checkout | No authoritative cache | Browser display may be a preview. Every order mutation reloads and validates current database state inside the existing transactional boundary. |
 | Profile, My Orders, order detail, payment, refund, account-deletion state, and Admin data | No shared cache | These are user-specific or sensitive. Use RLS-scoped live reads and request-only memoization where useful. |
 
-The current implementation uses tagged `unstable_cache` entries for deliberately shared read-mostly catalog previews and published pickup definitions because Cache Components are not enabled. Public catalog previews revalidate after five minutes and published pickup definitions after 30 seconds. Future Admin publication must invalidate the matching tag. If the application later enables Cache Components, these entries may move to `use cache`, `cacheLife`, and `cacheTag`. Cache keys and values must not contain secrets, payment data, refund destinations, or unnecessary PII. Checkout always reloads live catalog, price, inventory, and schedule state; webhook paths never trust cached payment or order state.
+The current implementation uses tagged `unstable_cache` entries for deliberately shared read-mostly catalog previews and published pickup definitions because Cache Components are not enabled. Public catalog previews revalidate after five minutes and published pickup definitions after 30 seconds. Connected Admin publication invalidates the matching tag. If the application later enables Cache Components, these entries may move to `use cache`, `cacheLife`, and `cacheTag`. Cache keys and values must not contain secrets, payment data, refund destinations, or unnecessary PII. Checkout always reloads live catalog, price, inventory, and schedule state; webhook paths never trust cached payment or order state.
 
 ### Database query and index rules
 
@@ -440,6 +440,6 @@ The APK does not provide offline commerce. Auth, Checkout, Payment, Orders, Admi
 5. Configurable operational values.
 6. Minimal dependencies.
 7. Accessible, mobile-first UI.
-8. Explicit mock/deferred behavior during the UI phase.
+8. Explicit status for any deliberately deferred behavior.
 9. Measure before scaling; reduce work per request before buying more compute.
 10. Shared caches contain only deliberately public, non-authoritative data.
