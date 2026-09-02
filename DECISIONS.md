@@ -568,3 +568,19 @@ Image selection accepts JPG, PNG, or WebP up to 3 MiB without automatic alterati
 ### Reason
 
 Invalid or incomplete values should be stopped before a costly request, but browser controls can be bypassed. Matching server checks, database rules, authorization, RLS, rate limits, and transactional mutations therefore remain the security boundary. The custom controls provide consistent TsokoLitaw presentation without sacrificing keyboard access, direct entry, or normal form submission.
+
+## 24. Android APK Packaging
+
+### Decision
+
+Phase 15 packages the canonical Production website as a signed Android APK using a PWABuilder/Bubblewrap Trusted Web Activity. The APK is distributed from a clearly labeled download action on the TsokoLitaw website rather than Google Play. The website remains the single application and receives normal updates through Vercel.
+
+The Android package uses Digital Asset Links to prove that the signed APK and `www.tsokolitaw.com` share an owner. Its signing key and passwords remain outside Git and must be backed up because all future APK updates must use the same identity.
+
+The launcher icon and startup artwork are separate assets. Android may first show its brief system-controlled icon splash; the Trusted Web Activity then shows a custom centered Palitaw-themed illustration on the branded background only while the browser surface initializes. It must not delay startup artificially.
+
+Capacitor and a basic embedded WebView are rejected because the dynamic Next.js application would still depend on Vercel while Google OAuth and PayMongo browser redirects would require additional native handling. React Native and native commerce screens are also rejected as duplicate application implementations.
+
+### Reason
+
+An APK is an explicit project requirement, but a native rewrite is not. A Trusted Web Activity satisfies the deliverable with the smallest maintainable Android wrapper, preserves the existing supported browser authentication/payment flows, and keeps commerce security and updates in one deployed codebase.

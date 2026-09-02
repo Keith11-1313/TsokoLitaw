@@ -378,6 +378,12 @@ Phase 13 adds a strict trusted-origin rule for OAuth callbacks and provider link
 
 The Privacy page is the active notice rather than preview copy. It identifies collected information, operational purposes, the current Google/Supabase/Vercel/PayMongo/Resend providers, the 90-day eligible account-deactivation window, retained transaction records, security controls, and customer privacy-request options.
 
+### Planned Android APK
+
+Phase 15 will package the canonical Production website as a signed Android APK using a PWABuilder/Bubblewrap Trusted Web Activity. The APK will be downloaded through the TsokoLitaw website rather than Google Play and will not contain a separate native commerce implementation. Digital Asset Links will bind the signed package to `www.tsokolitaw.com`; the signing key remains outside Git and must be preserved for updates.
+
+The Android launcher icon and startup artwork are separate. After Android's brief system-controlled launch screen, the wrapper will show a dedicated centered Palitaw-themed illustration on the branded background only while the Trusted Web Activity initializes. Google OAuth and PayMongo remain browser-based, and no offline ordering or payment behavior is planned.
+
 Do not add production secrets until the corresponding backend integration begins. Never commit `.env.local`.
 
 ## Git Workflow

@@ -419,7 +419,19 @@ If a threshold fails, optimize in this order: remove request fan-out and N+1 wor
 
 Research basis: [Next.js shared caching](https://nextjs.org/docs/app/api-reference/functions/unstable_cache), [React request-scoped cache](https://react.dev/reference/react/cache), [Supabase nested relational reads](https://supabase.com/docs/guides/database/joins-and-nesting), [Supabase RLS performance rules](https://supabase.com/docs/guides/database/postgres/row-level-security), [Supabase query optimization](https://supabase.com/docs/guides/database/query-optimization), [Supabase serverless connection pooling](https://supabase.com/docs/guides/database/connecting-to-postgres), [Vercel function regions](https://vercel.com/docs/functions/configuring-functions/region), [Vercel Fluid compute](https://vercel.com/docs/fluid-compute), and [k6 website load-testing guidance](https://grafana.com/docs/k6/latest/testing-guides/load-testing-websites/).
 
-## 16. Principles
+## 16. Android APK Packaging
+
+Phase 15 adds a generated Android wrapper rather than a second frontend. PWABuilder/Bubblewrap consumes the Production web app manifest and builds a Trusted Web Activity whose launch scope remains under `https://www.tsokolitaw.com`. The deployed Next.js application, Supabase, PayMongo, and Resend boundaries do not move into the APK.
+
+The canonical site serves `/.well-known/assetlinks.json` containing the Android package name and SHA-256 fingerprint of the release signing certificate. A failed association must be detected during physical-device testing because Android otherwise falls back to a Custom Tab with browser controls.
+
+The release keystore, aliases, and passwords are deployment artifacts and must never enter the repository, Vercel variables, browser bundle, or generated download. A versioned signed APK is published as a release asset and linked from the website. Wrapper updates reuse the same signing key and increment the Android version; ordinary website deployments require no APK rebuild.
+
+Startup consists of Android's system-controlled splash followed, where supported by the Trusted Web Activity wrapper, by a branded background and a dedicated centered Palitaw illustration while the browser initializes. This splash is distinct from the launcher icon and must yield immediately when the web surface is ready. Existing route loading UI handles any later server navigation.
+
+The APK does not provide offline commerce. Auth, Checkout, Payment, Orders, Admin, API, Supabase, and PayMongo traffic remains online and must not be replaced with cached transactional state. Google OAuth and hosted payment continue through supported browser contexts rather than an embedded WebView.
+
+## 17. Principles
 
 1. One codebase for V1.
 2. Server-authoritative money, stock, permissions, and payment state.

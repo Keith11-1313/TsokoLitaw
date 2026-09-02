@@ -281,7 +281,7 @@ Do not begin without explicit approval.
 - [x] Create the five-minute payment-expiration and notification-retry jobs plus the daily account-deletion job in production Supabase Cron
 - [x] Verify all three production Cron jobs return authorized HTTP `200` responses before launch
 - [x] Keep the default environment-specific Supabase authentication domains; do not purchase or configure the custom-domain add-on for campus-scale V1
-- [ ] Configure and submit TsokoLitaw name, logo, homepage, privacy policy, and authorized domain under Google Auth Platform Branding
+- [x] Verify the Google OAuth app is External and In production with the correct Production callback, minimal `openid email profile` scopes, and current support/developer contacts; optional brand verification is not required for V1
 - [x] Test login, callback, logout, customer route protection, and Admin authorization on the production domain using the default Production Supabase callback
 - [x] Keep Admin under `/admin`; do not add an Admin subdomain for V1
 - [x] Add the canonical `https://www.tsokolitaw.com/api/webhooks/paymongo` endpoint alongside the isolated Dev webhook
@@ -300,7 +300,7 @@ Do not begin without explicit approval.
 - [ ] Check Search Console indexing, crawl, HTTPS, structured-data, Core Web Vitals, security, and manual-action reports after launch
 - [ ] Monitor search queries, indexed pages, sitemap status, and crawl errors during the first weeks, then correct metadata or technical SEO issues without keyword stuffing
 - [ ] Assess Google Business Profile eligibility separately; create one only if TsokoLitaw meets Google's real-world business/location requirements
-- [ ] Complete final smoke test and policy verification
+- [x] Complete final smoke test and policy verification
 - [ ] During the separately approved post-Phase-13 database cleanup, remove the inactive historical refund subsystem only after preserving any required transaction evidence; do not run this removal before that reset
 
 ## Phase 14 — UI Overhaul
@@ -313,3 +313,19 @@ Do not begin until Phase 13 establishes and verifies the production baseline.
 - [ ] Implement the approved UI overhaul without changing established commerce, inventory, pickup, loyalty, payment, refund, notification, privacy, or authorization behavior unintentionally
 - [ ] Validate the overhaul against Dev services with typecheck, lint, application tests, database tests, production build, responsive review, accessibility review, and critical end-to-end flows
 - [ ] Complete the approved overhaul on `development`, review the Dev deployment, then promote it through one `development` → `main` pull request
+
+## Phase 15 — Android APK Packaging
+
+Do not begin until the approved Phase 14 interface is stable. The APK is a thin distribution wrapper around the canonical Production website, not a second implementation.
+
+- [ ] Add the Production web app manifest with TsokoLitaw name, canonical start URL and scope, standalone presentation, brand colors, and Android-compatible icons
+- [ ] Create separate launcher/maskable icons and a custom centered Palitaw-themed splash illustration with density-safe spacing
+- [ ] Generate the Trusted Web Activity Android project with PWABuilder/Bubblewrap; do not add Capacitor, a basic embedded WebView, or native commerce screens
+- [ ] Choose and reserve the Android package name before the first signed distribution
+- [ ] Generate the release signing key outside Git, create secure backups, and document the private recovery procedure without recording secrets in the repository
+- [ ] Publish the matching release certificate association at `/.well-known/assetlinks.json` and verify the APK opens without Custom Tab browser controls
+- [ ] Build a versioned signed APK for direct distribution; Google Play and an Android App Bundle are outside the approved scope
+- [ ] Publish the APK as a versioned release asset and add a clear **Download Android APK** action to the website with Android sideloading guidance
+- [ ] Test installation and upgrade on physical Android devices, including launcher icon, system/custom splash transition, back navigation, external links, and unsupported/offline behavior
+- [ ] Test Google OAuth, Supabase session persistence, cart persistence, customer/Admin authorization, and PayMongo QR Ph redirect/return from the installed APK
+- [ ] Run the normal web validation suite and scan the release APK before publishing its download link

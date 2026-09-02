@@ -431,3 +431,18 @@ When backend work begins:
 - use the default environment-specific Supabase authentication domains for Dev and Production; a paid custom authentication domain is not required for V1
 - verify Google login, callback exchange, token refresh, logout, customer protection, and Admin authorization against each environment's configured Supabase callback
 - protect the scheduled account-deletion processor with a server-only secret and recheck eligibility immediately before permanent deactivation
+
+## 19. Android APK Distribution
+
+Phase 15 must produce a signed Android APK without rewriting the application or publishing through Google Play. The approved approach is a PWABuilder/Bubblewrap-generated Trusted Web Activity that opens the canonical Production site in a supported browser context.
+
+- retain the Next.js/Vercel application as the only storefront and commerce codebase
+- add a standards-based web app manifest, Android launcher icons, and only the minimal installability support required by the wrapper
+- verify the APK-to-site relationship through `https://www.tsokolitaw.com/.well-known/assetlinks.json`
+- keep the signing keystore and passwords outside Git and preserve secure backups for future updates
+- provide a clearly labeled website action that downloads the versioned signed APK; Android still controls user confirmation and permission to install from the browser
+- use a separate custom Palitaw-themed splash illustration on a branded background while the Trusted Web Activity initializes; do not reuse only the launcher logo or add an artificial delay
+- accept Android's brief system-controlled launch screen on newer versions before the custom Trusted Web Activity splash appears
+- keep Google OAuth and PayMongo in supported browser flows; do not place them inside a developer-controlled embedded WebView
+- do not add Capacitor, React Native, native commerce screens, offline ordering/payment, or Google Play publication unless a later requirement explicitly changes the scope
+- test installation, Digital Asset Links verification, authentication, cart/session behavior, payment redirection and return, navigation, and upgrade signing on physical Android hardware
