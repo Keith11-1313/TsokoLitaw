@@ -48,9 +48,9 @@ Workflow changes must be reflected together in:
 - the existing `tsokolitaw.vercel.app` deployment remains the isolated Dev application, while `tsokolitaw.com` belongs to a separate Production Vercel project connected to the same repository
 - Dev and Production use separate Supabase projects, provider credentials, webhook secrets, cron secrets, and URLs; database changes are tested locally and in Dev before the same reviewed migrations are promoted to Production
 
-### Planned next stages
+### Current and planned next stages
 
-- Phase 14 overhauls the customer and Admin interface without changing the established commerce, payment, authorization, notification, or operational rules.
+- Phase 14 is in progress and overhauls the customer and Admin interface without changing the established commerce, payment, authorization, notification, or operational rules.
 - Phase 15 packages the stable Phase 14 Production website as a directly distributed Android APK through a Trusted Web Activity.
 
 ### External changes requiring explicit approval

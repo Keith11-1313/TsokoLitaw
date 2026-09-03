@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Phase 13 Security and Production is complete. The Production baseline, live QR Ph payment, signed webhooks, Cron jobs, OAuth, transactional email, Search Console setup, and final smoke test are verified. Phase 14 UI Overhaul is the next planned implementation stage. Phase 15 Android APK Packaging follows only after the Phase 14 interface is stable. Post-launch Search Console monitoring and the separately approved historical-refund database cleanup remain operational follow-up work.
+Phase 13 Security and Production is complete. The Production baseline, live QR Ph payment, signed webhooks, Cron jobs, OAuth, transactional email, Search Console setup, and final smoke test are verified. Phase 14 UI Overhaul is in progress on `development`. Phase 15 Android APK Packaging follows only after the Phase 14 interface is stable. Post-launch Search Console monitoring and the separately approved historical-refund database cleanup remain operational follow-up work.
 
 ## Decision Baseline
 
@@ -307,8 +307,9 @@ Do not begin without explicit approval.
 
 Do not begin until Phase 13 establishes and verifies the production baseline.
 
-- [ ] Tag the stable Phase 13 production release before beginning the redesign
-- [ ] Use `development` for the UI overhaul, creating a separate feature branch only if the work becomes risky or too large to review safely
+- [x] Tag the stable Phase 13 production release before beginning the redesign
+- [x] Use `development` for the UI overhaul, creating a separate feature branch only if the work becomes risky or too large to review safely
+- [x] Complete the first approved customer-facing pass: photo background, two-font typography, tighter page spacing, mobile builder return action, and mobile-first checkout summary
 - [ ] Audit every customer and Admin page for information hierarchy, consistency, responsive behavior, accessibility, loading, empty, error, and success states
 - [ ] Implement the approved UI overhaul without changing established commerce, inventory, pickup, loyalty, payment, refund, notification, privacy, or authorization behavior unintentionally
 - [ ] Validate the overhaul against Dev services with typecheck, lint, application tests, database tests, production build, responsive review, accessibility review, and critical end-to-end flows

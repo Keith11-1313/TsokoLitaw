@@ -46,11 +46,10 @@ The storefront should feel warm, appetizing, calm, and recognizably Filipino.
 
 Use:
 
-- cream page backgrounds
+- the supplied low-contrast cream photo background on customer page canvases
 - white-cream elevated surfaces
 - chocolate-brown text and actions
 - serif display headings
-- script typography as restrained decorative emphasis
 - soft borders and rounded cards
 - clear product photography
 - generous but consistent whitespace
@@ -64,7 +63,11 @@ The main customer navigation is:
 
 Account/Profile and Cart are actions. My Orders belongs inside the account experience and must not appear as a main navigation item. When the server confirms the Admin role, the account menu and Profile shortcuts also expose the Admin dashboard.
 
-Our Creations and legal-page heading blocks use the full available content width. The Home featured-media carousel relies on its previous/next controls and does not repeat slide-selector pills or visible explanatory copy beneath the media.
+Our Creations and legal-page heading blocks use the full available content width. The Home featured-media carousel relies on its previous/next controls and does not repeat slide-selector pills or visible explanatory copy beneath the media. On mobile, the Home hero places its image before the Order now action so the primary action remains easy to reach after scanning the product.
+
+Customer pages use `public/images/photo-bg.png` on their main canvas while keeping cards and navigation on opaque cream surfaces for readability. Admin pages retain their denser flat operational background. Customer page top spacing is compact on mobile and increases at larger breakpoints rather than leaving a large empty band below the header.
+
+Our Creations keeps one authoritative box configurator. After a mobile customer scrolls past it, a compact bottom shortcut shows the current total and returns to the existing builder; it does not duplicate the form or its state. Checkout places the existing order summary before the form on mobile and keeps it as a sticky right column on desktop.
 
 Footer social links use recognizable Facebook and Instagram marks inside the established pill controls. The global Not Found state keeps its centered message and actions without an enclosing card, border, or shadow.
 
@@ -125,9 +128,8 @@ Semantic success, information, warning, and danger token pairs are also defined 
 
 - Body: Lato
 - Display: DM Serif Display
-- Decorative script: Italianno
 
-Use the script face sparingly. Body copy, controls, tables, and long-form legal content must remain highly readable.
+The interface intentionally uses only these two type families. Headings that previously used decorative script now use DM Serif Display. Body copy, controls, tables, and long-form legal content remain in Lato for readability.
 
 ### Radius
 

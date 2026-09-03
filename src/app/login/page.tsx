@@ -20,7 +20,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
   return (
     <CustomerPageShell>
-      <SiteContainer className="py-16 sm:py-24">
+      <SiteContainer className="py-8 sm:py-12">
         <section className="mx-auto max-w-md rounded-card border border-border bg-surface p-7 text-center sm:p-10">
           <LoginPreview nextPath={nextPath} />
         </section>

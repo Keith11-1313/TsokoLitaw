@@ -7,4 +7,4 @@ export const metadata: Metadata = {
   title: "Cart | TsokoLitaw",
   robots: { index: false, follow: false },
 };
-export default function CartPage() { return <CustomerPageShell><SiteContainer className="py-12 sm:py-16"><CartPageContent /></SiteContainer></CustomerPageShell>; }
+export default function CartPage() { return <CustomerPageShell><SiteContainer className="py-8 sm:py-12"><CartPageContent /></SiteContainer></CustomerPageShell>; }

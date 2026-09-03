@@ -17,7 +17,7 @@ export function HomeHero({
 }: HomeHeroProps) {
   return (
     <section
-      className="flex min-h-[calc(100vh-5.5rem)] items-center bg-background py-10 sm:min-h-[calc(100svh-5.5rem)] sm:py-14 lg:py-16"
+      className="flex min-h-[calc(100vh-5.5rem)] items-center py-10 sm:min-h-[calc(100svh-5.5rem)] sm:py-14 lg:py-16"
       aria-labelledby="home-heading"
     >
       <SiteContainer className="w-full">
@@ -35,7 +35,7 @@ export function HomeHero({
             <p className="mt-7 max-w-2xl text-base leading-7 text-muted-foreground">
               {description}
             </p>
-            <div className="mt-8">
+            <div className="mt-8 hidden lg:block">
               <Link
                 className={cn(primaryButtonClassName, "w-full min-[420px]:w-auto")}
                 href="/our-creations"
@@ -56,6 +56,13 @@ export function HomeHero({
               className="object-cover"
             />
           </div>
+
+          <Link
+            className={cn(primaryButtonClassName, "w-full min-[420px]:w-auto lg:hidden")}
+            href="/our-creations"
+          >
+            Order now
+          </Link>
         </div>
       </SiteContainer>
     </section>

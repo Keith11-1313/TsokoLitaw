@@ -179,7 +179,7 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[1.25fr_.75fr]">
-      <form className="min-w-0 space-y-6" aria-label="Checkout information" onSubmit={submitOrder}>
+      <form className="order-2 min-w-0 space-y-6 lg:order-1" aria-label="Checkout information" onSubmit={submitOrder}>
         <section className="rounded-card border border-border bg-surface p-6 sm:p-8">
           <h2 className="font-display text-2xl">Customer information</h2>
           <p className="mt-2 text-sm text-muted-foreground">We’ll use your Google email as the main way to contact you about your order.</p>
@@ -246,12 +246,11 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
         ) : null}
         {!customerDetailsValid ? <p className="text-center text-xs font-bold text-danger-foreground">Complete the customer details before continuing.</p> : null}
         <PrimaryButton type="submit" disabled={!customerDetailsValid || !hasPickupAvailability || exceedsPreparedStock || !termsAccepted || isPending || submission?.status === "success"} className="w-full rounded-control!">
-          {!hasPickupAvailability ? "Pickup unavailable" : exceedsPreparedStock ? "Reduce cart quantities" : isPending ? "Opening secure payment…" : submission?.status === "success" ? "Opening PayMongo…" : "Continue to secure payment"}
+          {!hasPickupAvailability ? "Pickup unavailable" : exceedsPreparedStock ? "Reduce cart quantities" : isPending ? "Opening secure payment…" : submission?.status === "success" ? "Opening PayMongo…" : "Continue to payment"}
         </PrimaryButton>
-        <p className="text-center text-xs leading-5 text-muted-foreground">You’ll complete payment on PayMongo’s secure test checkout. Your order is confirmed only after TsokoLitaw receives PayMongo’s signed payment notification.</p>
       </form>
 
-      <aside className="min-w-0 overflow-hidden rounded-card border border-border bg-surface lg:sticky lg:top-6">
+      <aside className="order-1 min-w-0 overflow-hidden rounded-card border border-border bg-surface lg:order-2 lg:sticky lg:top-6">
         <div className="border-b border-border bg-surface-muted px-6 py-5">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Secure checkout</p>
           <h2 className="mt-1 font-display text-3xl">Order summary</h2>

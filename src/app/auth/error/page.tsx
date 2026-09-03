@@ -20,7 +20,7 @@ export default async function AuthErrorPage({ searchParams }: AuthErrorPageProps
 
   return (
     <CustomerPageShell>
-      <SiteContainer className="py-20">
+      <SiteContainer className="py-8 sm:py-12">
         <section className="mx-auto max-w-lg rounded-card border border-border bg-surface p-8 text-center">
           <h1 className="font-display text-3xl text-brand">Sign-in could not be completed</h1>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">

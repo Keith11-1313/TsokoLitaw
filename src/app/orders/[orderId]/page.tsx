@@ -26,7 +26,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
   const pickupDate = new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", year: "numeric", month: "long", day: "numeric" }).format(new Date(`${order.pickupDate}T00:00:00+08:00`));
   return (
     <CustomerPageShell activePath="/orders">
-      <SiteContainer className="py-10 sm:py-14">
+      <SiteContainer className="py-8 sm:py-12">
         <Link href="/orders" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-brand"><ArrowLeft aria-hidden="true" size={18} />My orders</Link>
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-wrap items-center gap-3"><h1 className="font-display text-4xl sm:text-5xl">{order.orderNumber}</h1><StatusBadge status={order.status} label={["PAID", "CONFIRMED"].includes(order.status) ? "Received" : undefined} /></div>

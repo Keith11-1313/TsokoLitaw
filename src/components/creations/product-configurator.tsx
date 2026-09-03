@@ -1,8 +1,8 @@
 "use client";
 
-import { Check, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Check, ChevronUp, Minus, Plus, ShoppingBag } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { AddToCartModal } from "@/components/creations/add-to-cart-modal";
 import { calculateConfiguredExtraCoatingCharge, calculateItemUnitTotal, formatPhp, hasCompleteCoatingAllocation, MAX_ADDON_QUANTITY, MAX_CART_LINE_QUANTITY } from "@/lib/commerce";
@@ -15,6 +15,7 @@ import type { CommerceCatalog } from "@/types/commerce";
 export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
   const { variants, coatings, addons } = catalog;
   const { addItem } = useCart();
+  const builderRef = useRef<HTMLElement>(null);
   const [variantId, setVariantId] = useState(variants[0].id);
   const [mode, setMode] = useState<"single" | "mixed">("single");
   const [singleCoating, setSingleCoating] = useState(coatings[0].id);
@@ -27,6 +28,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
     quantity: number;
     total: number;
   } | null>(null);
+  const [showMobileBuilderShortcut, setShowMobileBuilderShortcut] = useState(false);
 
   const variant = variants.find((item) => item.id === variantId) ?? variants[0];
   const selectedCoating = coatings.find((coating) => coating.id === singleCoating) ?? coatings[0];
@@ -41,6 +43,20 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
   const hasValidAllocation = mode === "single" || hasCompleteCoatingAllocation(variant.pieceCount, counts);
   const error = !hasValidAllocation ? `Assign ${remainingPieces} more ${remainingPieces === 1 ? "piece" : "pieces"}.` : "";
   const coatingNames = useMemo(() => Object.fromEntries(coatings.map((coating) => [coating.id, coating.name])), [coatings]);
+
+  useEffect(() => {
+    const builder = builderRef.current;
+    if (!builder) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setShowMobileBuilderShortcut(
+        !entry.isIntersecting && entry.boundingClientRect.bottom < 0,
+      );
+    });
+    observer.observe(builder);
+    return () => observer.disconnect();
+  }, []);
+
   function closeAddedItem() {
     setAddedItem(null);
   }
@@ -86,6 +102,10 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
     });
   }
 
+  function returnToBuilder() {
+    builderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_27rem]">
       <section className="order-2 min-w-0 lg:order-1" aria-labelledby="coatings-heading">
@@ -110,7 +130,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
         </div>
       </section>
 
-      <aside className="order-1 self-start lg:order-2 lg:sticky lg:top-6">
+      <aside ref={builderRef} className="order-1 scroll-mt-4 self-start lg:order-2 lg:sticky lg:top-6">
         <section className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-7" aria-labelledby="build-box-heading">
           <h2 id="build-box-heading" className="font-display text-3xl">Build your box</h2>
 
@@ -143,6 +163,23 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
           total={addedItem.total}
           onClose={closeAddedItem}
         />
+      ) : null}
+      {showMobileBuilderShortcut && !addedItem ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-12px_30px_-22px_rgba(54,30,10,0.7)] backdrop-blur lg:hidden"
+          aria-label="Box builder shortcut"
+        >
+          <div className="mx-auto flex max-w-md items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Current box</p>
+              <p className="font-display text-xl text-brand">{formatPhp(unitTotal * quantity)}</p>
+            </div>
+            <PrimaryButton type="button" onClick={returnToBuilder} className="shrink-0">
+              <ChevronUp aria-hidden="true" size={18} />
+              Review box
+            </PrimaryButton>
+          </div>
+        </div>
       ) : null}
     </div>
   );

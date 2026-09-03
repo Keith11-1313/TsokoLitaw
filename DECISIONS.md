@@ -22,7 +22,7 @@ The PNGs in `references/` are retained as early visual context. They are not pix
 
 ### Decision
 
-Phase 13 Security and Production is complete. Security review, environment isolation, performance validation, production configuration, launch verification, PayMongo Live Mode activation, and the first real QR Ph charge were completed. Phase 14 UI Overhaul is the next planned implementation stage; Phase 15 Android APK packaging follows only after the Phase 14 interface is stable.
+Phase 13 Security and Production is complete. Security review, environment isolation, performance validation, production configuration, launch verification, PayMongo Live Mode activation, and the first real QR Ph charge were completed. Phase 14 UI Overhaul is now in progress; Phase 15 Android APK packaging follows only after the Phase 14 interface is stable.
 
 Allowed now:
 

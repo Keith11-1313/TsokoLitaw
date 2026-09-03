@@ -19,7 +19,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
 
   return (
     <CustomerPageShell activePath="/orders">
-      <SiteContainer className="py-12 sm:py-16">
+      <SiteContainer className="py-8 sm:py-12">
         <div className="mb-9 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="font-display text-4xl sm:text-5xl">My orders</h1>

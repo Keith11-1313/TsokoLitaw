@@ -12,7 +12,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 **Phase 13: Security and Production is complete.** The isolated Dev and Production environments, live QR Ph payment, signed webhooks, production Cron jobs, transactional email, Search Console, sitemap, security controls, and production smoke tests have been verified. Remaining Phase 13 entries are post-launch monitoring, an optional Google Business Profile assessment, and the separately approved future database cleanup. Paid-order settlements occur in person; the website does not create refunds.
 
-**Phase 14: UI Overhaul is next but has not started.** Phase 15 will package the stable Phase 14 website as a directly distributed Android APK; it will not introduce a second storefront implementation.
+**Phase 14: UI Overhaul is in progress.** Its first approved customer-facing pass introduces the supplied photo background, simpler typography, tighter page spacing, and focused mobile builder and checkout improvements without changing commerce behavior. Phase 15 will package the stable Phase 14 website as a directly distributed Android APK; it will not introduce a second storefront implementation.
 
 The connected Admin Customers page is an account directory: it includes customer and Admin profiles, labels their roles explicitly, and shows their real order and loyalty activity when present.
 

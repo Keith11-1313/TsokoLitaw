@@ -93,7 +93,7 @@ function JournalEmptyState() {
           <div className="relative mx-auto flex h-full max-w-md items-center justify-center">
             <div className="w-full rotate-[-2deg] rounded-card border border-surface/20 bg-[#fffaf3] p-6 text-foreground shadow-2xl sm:p-8">
               <div className="flex items-center justify-between border-b border-border pb-4">
-                <span className="font-script text-4xl leading-none text-brand">TsokoLitaw</span>
+                <span className="font-display text-3xl leading-tight text-brand">TsokoLitaw</span>
                 <span className="rounded-full bg-surface-muted px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-brand">Journal</span>
               </div>
               <div className="mt-6 space-y-3">
@@ -128,10 +128,9 @@ export default async function JournalPage() {
 
   return (
     <CustomerPageShell activePath="/journal">
-      <SiteContainer className="py-12 sm:py-16">
+      <SiteContainer className="py-8 sm:py-12">
         <header className="w-full">
-          <p className="font-script text-5xl text-brand">From our kitchen</p>
-          <h1 className="mt-3 font-display text-4xl sm:text-5xl">The TsokoLitaw Journal</h1>
+          <h1 className="font-display text-4xl sm:text-5xl">The TsokoLitaw Journal</h1>
           <p className="mt-4 leading-7 text-muted-foreground">Announcements, kitchen stories, product features, and moments shared by our community.</p>
         </header>
 
