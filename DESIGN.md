@@ -259,7 +259,7 @@ After a valid Add to cart action, an accessible modal confirms the addition with
 
 ## 10. Required UI States
 
-Future data-connected work must add consistent states for:
+Connected customer and Admin views must provide consistent states for:
 
 - loading
 - empty catalog or cart
@@ -271,12 +271,11 @@ Future data-connected work must add consistent states for:
 - authentication required
 - unauthorized admin access
 - payment processing, success, failure, and expiry
-- cancellation available through Confirmed, with a clear warning that eligibility ends at Preparing
 - a clear unpaid-cancellation action only while payment is pending
 - a visible in-person-settlement notice for paid orders and a no-refund notice for Preparing, Ready for Pickup, completed, and no-show orders
 - network/server failure
 
-Current backend-dependent actions should remain disabled or clearly identified as mock behavior.
+Any deliberately unconnected action must remain disabled or be clearly identified as unavailable; it must not imitate a successful persisted change.
 
 Checkout now opens PayMongo Hosted Checkout after the server creates or reloads the idempotent pending order. The return screen must say that payment is being verified unless the owned database order already records `payment_status = PAID`; the redirect itself never displays an unverified success claim. A confirmed paid return clears the matching browser cart.
 
@@ -293,3 +292,16 @@ Transactional order-confirmation email uses the same plain-language hierarchy as
 Ready-for-pickup email leads with the ready state, repeats the immutable campus pickup date, time, and location, asks the customer to bring the short order number, and links to authenticated order details. It must not imply that the order is already completed or introduce a separate reminder schedule.
 
 The active cancellation email states that payment was never collected. Historical refund email templates remain only for delivery records created under the earlier workflow and must not be presented as a current customer capability.
+
+## Android APK Presentation
+
+The Phase 15 Android package has two intentionally different visual assets:
+
+- the launcher icon uses the recognizable TsokoLitaw mark and remains legible under Android icon masking
+- the Trusted Web Activity splash uses a dedicated square Palitaw-themed illustration, not merely an enlarged launcher logo
+
+The splash places the illustration at the center of the warm cream brand background with generous safe space for different Android densities and crops. Any TsokoLitaw wordmark included inside the artwork must remain readable at small sizes. The splash contains no fake percentage, spinner, interaction, or forced minimum duration and fades as soon as the web surface is ready.
+
+Android 12 and newer may briefly show the system-controlled launcher-icon splash first. The design must make its background color visually compatible with the following custom illustration so the transition feels intentional rather than like two unrelated screens.
+
+The public website exposes a direct, touch-friendly **Download Android APK** action with the current version and a short notice that Android will ask the customer to approve installation from their browser. It must not claim Google Play availability or imply that installation can bypass Android's confirmation.

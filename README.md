@@ -10,7 +10,9 @@ Read it before changing established workflows. The rough PNG references do not o
 
 ## Current Status
 
-**Phase 13: Security and Production is active.** Security, performance, environment isolation, live QR Ph payment, and signed webhook verification have been exercised. Current work covers final deployment of the QR Ph-only/unpaid-cancellation policy, legal wording, and launch verification. Paid-order settlements occur in person; the website does not create refunds.
+**Phase 13: Security and Production is complete.** The isolated Dev and Production environments, live QR Ph payment, signed webhooks, production Cron jobs, transactional email, Search Console, sitemap, security controls, and production smoke tests have been verified. Remaining Phase 13 entries are post-launch monitoring, an optional Google Business Profile assessment, and the separately approved future database cleanup. Paid-order settlements occur in person; the website does not create refunds.
+
+**Phase 14: UI Overhaul is next but has not started.** Phase 15 will package the stable Phase 14 website as a directly distributed Android APK; it will not introduce a second storefront implementation.
 
 The connected Admin Customers page is an account directory: it includes customer and Admin profiles, labels their roles explicitly, and shows their real order and loyalty activity when present.
 
@@ -23,7 +25,7 @@ Implemented customer and Admin interface:
 - single-coating and mixed-box selection
 - browser-local cart with bounded numeric quantity editing, per-line checkout selection, and selected totals
 - add-to-cart confirmation with a static cart icon, Continue shopping, and Check cart actions
-- static order, review, payment, and legal commerce screens
+- connected order, review, payment-status, and legal commerce screens
 - authenticated account, profile, and logout interfaces
 - Journal for announcements, stories, product features, and community highlights
 - responsive admin dashboard and management screens
@@ -52,7 +54,7 @@ Phase 8 authentication foundation:
 - secret-protected daily processing that permanently deactivates due profiles while preserving Auth identities and relational records
 - deleted-account login bounce that clears the new session and explains the disabled access
 
-Phase 9 server-commerce work completed so far:
+Phase 9 server commerce completed:
 
 - active products, box variants, coatings, add-ons, and their current prices load from Supabase
 - box totals derive from the database product price per piece
@@ -66,22 +68,22 @@ Phase 9 server-commerce work completed so far:
 - the controlled seed includes the current Terms version required for checkout acceptance snapshots
 - active Admin identities can place their own storefront orders, and new orders use a shared short number such as `TL-0001`
 
-Phase 10 payment foundation completed so far:
+Phase 10 PayMongo integration completed:
 
-- PayMongo test credentials are loaded only from local server environment variables
+- PayMongo credentials are loaded only from server environment variables and checked against the configured test/live mode
 - the server-only client targets PayMongo v2 Hosted Checkout, offers QR Ph only, and rejects provider responses from the wrong environment mode
 - checkout requests carry a stable idempotency key so a safe retry cannot create a duplicate provider session
 - the canonical schema creates at most one payment per order and immutably stores its checkout and payment references
-- the test webhook verifies PayMongo's timestamped raw-body signature and atomically deduplicates exact paid-order transitions
-- Checkout creates or reloads one idempotent PayMongo test session and redirects to Hosted Checkout
+- the webhook handler verifies PayMongo's timestamped raw-body signature, enforces the configured environment mode, and atomically deduplicates exact paid-order transitions
+- Checkout creates or reloads one idempotent environment-matched PayMongo session and redirects to Hosted Checkout
 - the success return reloads the owned order and never treats the browser redirect as payment proof
 - overdue provider-bound orders close the PayMongo checkout before the database releases reserved stock
 - eligible order details support server-validated cancellation only while both order and payment are pending; attached unpaid checkouts expire before reservation release
 - paid orders expose no online cancellation or refund workflow; related concerns are coordinated with TsokoLitaw in person
 - historical refund tables, signed-event reconciliation, and notification records remain intact for transactions created under the earlier workflow
-- local and hosted validation cover provider-reference persistence, paid-webhook processing, and coordinated expiry; the end-to-end hosted payment smoke test remains pending
+- local, hosted Dev, and live Production validation cover provider-reference persistence, paid-webhook processing, coordinated expiry, and a successful ₱1 QR Ph payment
 
-Phase 11 customer-order work started by product-owner request:
+Phase 11 customer and Admin operations completed:
 
 - My Orders now loads only the authenticated profile's persisted order snapshots
 - My Orders loads at most 20 records through one RLS-scoped nested query and uses stable cursor pagination for older history
@@ -105,17 +107,9 @@ Performance and concurrency hardening implemented for the current storefront:
 - checkout, resume-payment, and unpaid-cancellation mutations use atomic database-backed per-user and per-IP limits shared across Vercel instances
 - structured server timing reports slow commerce/order reads without logging contact details, cookies, tokens, or provider secrets
 - Vercel Fluid compute is enabled and the current linked Singapore development database is paired with the `sin1` function region
-- repeatable k6 smoke and staged 100-concurrent-user scenarios are available under `tests/performance/`; hosted baseline execution is still required
+- repeatable k6 smoke and staged 100-concurrent-user scenarios are available under `tests/performance/`; the capacity run completed 55,801 requests with zero failures and a 372.6 ms p95
 
-Not yet implemented or externally configured:
-
-- remaining live authorization checks
-- hosted PayMongo schema deployment, webhook registration, and customer redirection
-- production scheduling for payment expiry and hosted QR Ph payment verification
-- email or real CRUD other than the approved account-deletion lifecycle
-- admin authorization or admin subdomain routing
-
-Customer identity, account state, catalog, published pickup options, orders, test payments, and the Phase 11 Admin areas use live Supabase data. Later-phase features remain unavailable until their secure server workflows are implemented.
+The production baseline is connected: customer identity, account state, catalog, published pickup options, orders, QR Ph payments, transactional email, scheduled processing, and the Phase 11 Admin areas use isolated live services. Admin remains under `/admin`; no Admin or paid Supabase authentication subdomain is required for V1.
 
 Our Creations and Checkout now read customer-safe commerce, Pickup schedules, and operating rules from Supabase. Admin Orders, Catalog, Inventory, Pickup, Customers, Journal, Reviews, and the cross-feature Dashboard are connected.
 
@@ -141,14 +135,13 @@ Customers may schedule account deletion from Profile. The request remains cancel
 - Supabase CLI
 - Next.js fonts and image optimization
 
-Future services:
+Connected services:
 
-- Supabase PostgreSQL and Google authentication
-- PayMongo payments
-- Resend transactional email
-- Vercel hosting
-- `tsokolitaw.com`
-- planned admin host: `admin.tsokolitaw.com`
+- separate Supabase PostgreSQL/Auth projects for Dev and Production
+- Google OAuth through each environment's default Supabase authentication domain
+- PayMongo QR Ph Hosted Checkout in test mode on Dev and live mode on Production
+- Resend transactional email and signed delivery tracking
+- separate Vercel projects for `tsokolitaw.vercel.app` and `www.tsokolitaw.com`
 
 ## Customer Routes
 
@@ -185,11 +178,11 @@ The main navigation contains Home, Our Creations, and Journal. My Orders is acco
 /admin/journal
 ```
 
-Admin pages remain under `/admin` until subdomain routing, authentication, and server authorization are implemented. `/admin/reviews` redirects to the completed-order review section of `/admin/journal`; other compatibility redirects remain for older admin URLs.
+Admin pages intentionally remain under `/admin` for campus-scale V1 and are protected by implemented server-side session and role checks. No Admin subdomain is planned for V1. `/admin/reviews` redirects to the completed-order review section of `/admin/journal`; other compatibility redirects remain for older Admin URLs.
 
 ## Current Product Model
 
-Temporary UI prices:
+Current configurable seed prices:
 
 - Base price per piece — ₱10
 - Box of 4 — ₱40 (`4 × ₱10`)
@@ -211,9 +204,9 @@ Coatings:
 
 Mixed boxes allocate every piece to a coating. The allocated piece count must equal the selected box size.
 
-These catalog values now come from Supabase, but browser totals remain estimates. Phase 9 must recalculate the final checkout price from current database values on the server.
+These catalog values come from Supabase, and browser totals remain estimates. Checkout already reloads the current database values and recalculates the authoritative final price on the server.
 
-The ₱10 per-piece amount is approved as the provisional database seed. Authorized admins will manage the active base piece price, and each box total will be derived from its piece count. The ₱5 additional-coating charge is also only a seed and will come from the coating price configured in Admin. Completed orders preserve immutable price snapshots. Pickup locations, schedules, lead time, cutoff, and availability will likewise be admin-managed without rewriting existing paid-order pickup snapshots.
+The ₱10 per-piece amount is the provisional database seed. Authorized Admins manage the active base piece price, and each box total is derived from its piece count. The ₱5 additional-coating charge is also a seed and comes from the coating price configured in Admin. Completed orders preserve immutable price snapshots. Admin-managed pickup locations, schedules, lead time, cutoff, and availability do not rewrite existing paid-order pickup snapshots.
 
 Pickup is centered at UCC Congress: 3rd Floor and Covered Court. Monday–Saturday, 7:00 AM–7:00 PM is the operating window, but Admin publishes every actual date and slot; nothing is made available automatically each day. Made to order uses a published schedule plus lead-time/cutoff rules without prepared inventory. Ready stock uses a published date plus a prepared-piece upper limit. Hybrid consumes prepared pieces for same-day checkout while allowing eligible advance made-to-order checkout. Every mode uses the website and online payment.
 
@@ -252,7 +245,7 @@ src/
 │   ├── layout/
 │   ├── orders/
 │   └── ui/
-├── lib/                 # Mock domain data and Supabase client helpers
+├── lib/                 # Domain rules, server services, and Supabase helpers
 └── types/
 
 supabase/
@@ -372,11 +365,11 @@ Each current PayMongo webhook endpoint should subscribe only to `checkout_sessio
 
 ## Deployment
 
-The public GitHub repository can be connected to Vercel. Supabase URL and key values are now required for authenticated pages and must also be configured in Vercel before deployment.
+The public GitHub repository is connected to separate Vercel projects: `development` deploys to `tsokolitaw.vercel.app`, while `main` deploys to the canonical `https://www.tsokolitaw.com`. Each project uses its matching Supabase and provider configuration.
 
-`vercel.json` currently enables Fluid compute and places dynamic functions in `sin1` because the linked development Supabase project is in Singapore. When the Seoul production Supabase project becomes the active database, change the region to `icn1` in the same deployment so dynamic requests do not make an unnecessary cross-region round trip.
+`vercel.json` enables Fluid compute and keeps both deployments in `sin1`. The staged 100-user test passed with zero request failures and a 372.6 ms p95, so the campus-scale V1 does not need separate per-environment Vercel region configuration. Revisit this only if production measurements show persistent latency or timeouts.
 
-Production authentication will use `auth.tsokolitaw.com` through Supabase’s paid custom-domain add-on. The production checklist includes DNS and certificate verification, Google branding and callback updates, Vercel environment changes, and end-to-end authentication/authorization testing. Development continues to use the default Supabase project domain.
+Dev and Production use their default environment-specific Supabase authentication domains and separately approved Google OAuth callbacks. The paid Supabase custom-domain add-on and `auth.tsokolitaw.com` are intentionally excluded from V1.
 
 Transactional emails use Resend from server-only code and the verified `updates.tsokolitaw.com` sending subdomain. Current flows queue confirmation, ready-for-pickup, and unpaid-cancellation messages. Legacy refund deliveries remain for historical reconciliation only. `/api/cron/notifications` retries bounded local send failures with the shared `CRON_SECRET`.
 
@@ -386,12 +379,18 @@ Phase 13 adds a strict trusted-origin rule for OAuth callbacks and provider link
 
 The Privacy page is the active notice rather than preview copy. It identifies collected information, operational purposes, the current Google/Supabase/Vercel/PayMongo/Resend providers, the 90-day eligible account-deactivation window, retained transaction records, security controls, and customer privacy-request options.
 
-Do not add production secrets until the corresponding backend integration begins. Never commit `.env.local`.
+### Planned Android APK
+
+Phase 15 will package the canonical Production website as a signed Android APK using a PWABuilder/Bubblewrap Trusted Web Activity. The APK will be downloaded through the TsokoLitaw website rather than Google Play and will not contain a separate native commerce implementation. Digital Asset Links will bind the signed package to `www.tsokolitaw.com`; the signing key remains outside Git and must be preserved for updates.
+
+The Android launcher icon and startup artwork are separate. After Android's brief system-controlled launch screen, the wrapper will show a dedicated centered Palitaw-themed illustration on the branded background only while the Trusted Web Activity initializes. Google OAuth and PayMongo remain browser-based, and no offline ordering or payment behavior is planned.
+
+Keep all provider keys, webhook secrets, database secrets, and Cron secrets in the appropriate protected local or deployment environment. Never commit `.env.local` or copy Production values into Dev.
 
 ## Git Workflow
 
 The user performs Git operations manually. Agents must report completion, validation results, changed files, and a suggested Conventional Commit message. Agents must not stage, commit, or push.
 
-`develop` is the stable Dev integration branch and `main` is the Production branch. Normal work follows `feature/*` → `develop` → `main`; a production emergency follows `hotfix/*` → `main` and is then merged back into `develop`. The existing Vercel project retains `tsokolitaw.vercel.app` and tracks `develop`. A separate Vercel Production project tracks `main` and owns `tsokolitaw.com`, with an independent Production Supabase project and production-only secrets, webhooks, cron jobs, and provider configuration.
+`development` is the stable Dev integration branch and `main` is the Production branch. Routine work is completed and tested on `development`, then promoted through one reviewed `development` → `main` pull request. Separate feature branches are reserved for risky or large work. The existing Vercel project retains `tsokolitaw.vercel.app` and tracks `development`; the separate Production project tracks `main` and owns `tsokolitaw.com`, with an independent Production Supabase project and production-only secrets, webhooks, cron jobs, and provider configuration.
 
 Database changes must be committed migrations. Reset and test them locally, verify them against Dev, then promote the same migration files to Production. Never develop directly against Production, run a linked reset there, or push development seed data to it.

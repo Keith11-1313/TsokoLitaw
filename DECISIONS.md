@@ -22,7 +22,7 @@ The PNGs in `references/` are retained as early visual context. They are not pix
 
 ### Decision
 
-Phase 12 Loyalty and Notifications is complete. Phase 13 Security and Production is active. Security review, environment isolation, performance validation, production configuration, and launch verification are now in scope. PayMongo Live Mode activation and the first real QR Ph charge were explicitly completed on September 1, 2026.
+Phase 13 Security and Production is complete. Security review, environment isolation, performance validation, production configuration, launch verification, PayMongo Live Mode activation, and the first real QR Ph charge were completed. Phase 14 UI Overhaul is the next planned implementation stage; Phase 15 Android APK packaging follows only after the Phase 14 interface is stable.
 
 Allowed now:
 
@@ -31,7 +31,7 @@ Allowed now:
 - local component state
 - browser-local cart state as a non-authoritative convenience
 - responsive and keyboard-accessible interaction
-- disabled or temporary mock admin controls
+- honest disabled states for any deliberately unconnected control
 - server-side cart validation, pricing, inventory reservation, Terms acceptance, immutable order snapshots, and idempotent pending-order creation
 - environment-bound PayMongo v2 test or live QR Ph checkout sessions and signed/idempotent paid transitions
 - real Admin order reads and audited, forward-only paid fulfillment transitions
@@ -40,12 +40,12 @@ Allowed now:
 Deferred until separately approved:
 
 - transactional email events beyond the six completed V1 events
-- Admin CRUD areas not yet reached by the current Phase 11 slice
-- admin subdomain and DNS configuration
+- any expansion of Admin responsibilities beyond the connected V1 operational areas
+- the separately controlled post-Phase-13 cleanup of the inactive historical refund subsystem
 
 ### Reason
 
-The customer workflow, authentication boundary, server commerce, test payment lifecycle, Admin operations, loyalty, and six transactional notification paths are connected. Phase 13 was explicitly started so production-readiness work may proceed, while real payments and irreversible public cutovers still require a deliberate final confirmation.
+The customer workflow, authentication boundary, server commerce, payment lifecycle, Admin operations, loyalty, and six transactional notification paths are connected. The production-readiness baseline, live QR Ph verification, and canonical-domain cutover are complete; future real charges or external configuration changes still require deliberate confirmation.
 
 ### UI consequence
 
@@ -226,7 +226,7 @@ Customers need freedom to mix coatings without turning each coating into a separ
 - the item total updates before adding
 - different configurations become separate cart line items
 
-### Future server rule
+### Server rule
 
 The browser is never authoritative. The server must reload current records, count distinct positive coating allocations, validate the piece total, and recalculate the charge.
 
@@ -246,7 +246,7 @@ Home or Our Creations
 → Checkout
 → Select campus pickup
 → Accept Terms and Privacy
-→ Future PayMongo payment
+→ PayMongo QR Ph payment
 ```
 
 ### Reason
@@ -255,9 +255,9 @@ Cart and checkout serve different jobs: Cart edits the order; Checkout collects 
 
 ### Current connection
 
-The cart persists in browser local storage. A successful Add to cart action opens a confirmation modal with a static cart icon, a Continue shopping dismissal, and a Check cart action. Invalid configurations never open the modal. Checkout reads the same local cart but does not create a real order or payment.
+The cart persists in browser local storage. A successful Add to cart action opens a confirmation modal with a static cart icon, a Continue shopping dismissal, and a Check cart action. Invalid configurations never open the modal. Checkout submits selected cart identifiers and counts to the server, which creates or resumes the authoritative pending order and matching payment flow.
 
-### Future server rule
+### Server rule
 
 Submit identifiers, counts, and quantities—not trusted prices. The server validates the session, product availability, stock, terms acceptance, and final total before creating an order.
 
@@ -292,11 +292,11 @@ Checkout exposes date, time, and location dropdowns. Admin Pickup persists and p
 
 ### Decision
 
-Customer Orders will show current orders and history after Phase 9 creates ownership-scoped order records. Until that write path is complete, authenticated customer order surfaces must not display mock records as if they belong to the signed-in Google identity. My Orders keeps its honest unconnected state, while dynamic order and review routes remain unavailable. Future order detail explains fulfillment progress, pickup, payment summary, cancellation eligibility, and review eligibility.
+Customer Orders shows ownership-scoped current orders and history from persisted order snapshots. Dynamic order detail explains fulfillment progress, pickup, payment summary, unpaid cancellation eligibility, and completed-order review eligibility without displaying another customer's data.
 
 Active Admin identities may also use the customer storefront to place orders for themselves. Checkout always derives the order owner from the signed-in session, so this does not permit an Admin storefront submission on behalf of another customer. Every new order receives one shared kiosk-style number from a database sequence, beginning with `TL-0001`; Customer and Admin surfaces display the same stored number.
 
-Primary future order flow:
+Primary order flow:
 
 ```text
 PENDING_PAYMENT
@@ -318,7 +318,7 @@ EXPIRED
 
 Payment and fulfillment answer different questions and must not be collapsed into one vague “processing” state.
 
-### Future server rule
+### Server rule
 
 - order status and payment status remain separate
 - transitions are validated server-side
@@ -416,26 +416,23 @@ Every admin page shows:
 
 Controls that are not connected must not imply that a live customer change occurred.
 
-## 16. Shared Mock Data
+## 16. Shared Domain Data
 
 ### Decision
 
-Customer and admin UI use shared constants when they represent the same domain values.
+Customer and Admin surfaces use the same persisted records and shared domain rules when they represent the same concepts.
 
-Currently shared:
+Shared sources include:
 
 - box variants
-- base piece price and derived box totals
-- coatings and images
-- coating/add-on prices
-- pickup dates
-- pickup times
-- pickup locations
+- server-loaded base piece price and derived box totals
+- persisted coatings, images, and coating/add-on prices
+- persisted pickup dates, times, locations, and modes
 - pickup lead time and grace period
 - operating days and hours
 - ready-stock versus made-to-order availability
 
-Admin Orders and the dashboard order summary now read the same persisted order snapshots available through the protected customer workflow. Other shared operational previews remain explicitly non-persistent until connected.
+Admin Orders and the dashboard order summary read the same persisted order snapshots available through the protected customer workflow. Catalog, Pickup, Inventory, Customers, Journal, and Reviews likewise use their connected server-backed sources.
 
 ### Reason
 
@@ -443,19 +440,19 @@ Duplicated page-local mock data caused Admin and Customer to show different prod
 
 ### Boundary
 
-Shared frontend constants prevent UI drift; they are not database persistence. Admin fulfillment is the first connected mutation surface; other Admin edits remain disabled until their server mutation slice exists.
+Shared TypeScript rules prevent presentation drift, while Supabase records and controlled server mutations remain authoritative for persisted operational state.
 
 ## 17. Admin Hosting and Security
 
 ### Decision
 
-Admin remains under `/admin` during UI development. `admin.tsokolitaw.com` is planned but deferred.
+Admin remains under `/admin` for V1. A separate Admin subdomain is unnecessary for the campus-scale launch.
 
 ### Reason
 
 Subdomain routing is deployment configuration, not authorization. Moving the UI to a subdomain before authentication does not secure it.
 
-### Future requirement
+### Security requirement
 
 The server must verify the admin identity/role for every protected page and mutation regardless of hostname.
 
@@ -463,9 +460,7 @@ V1 has one admin permission role shared by up to five approved Google accounts. 
 
 ### Production authentication domain
 
-Production Google authentication will use the branded Supabase custom domain `auth.tsokolitaw.com` so Google account selection does not display the opaque Supabase project reference. The default Supabase domain remains acceptable during development.
-
-Custom-domain activation is deferred until production DNS and a compatible paid Supabase plan are available. Before activation, the branded callback must be added to the Google OAuth client alongside the existing Supabase callback. The old callback remains available until the branded login, refresh, logout, and authorization flows pass production verification.
+V1 uses the default environment-specific Supabase authentication domains for both Dev and Production. The paid Supabase custom-domain add-on and `auth.tsokolitaw.com` are intentionally not part of the campus-scale launch. Google OAuth still uses separate approved callbacks for the isolated Dev and Production Supabase projects.
 
 ## 18. Assets and Visual Direction
 
@@ -548,9 +543,9 @@ Agents do not stage, commit, or push.
 
 ### Decision
 
-`main` is the Production branch and `develop` is the stable Dev integration branch. Normal work follows `feature/*` → `develop` → `main`. Emergency production fixes follow `hotfix/*` → `main`, then merge back into `develop` so the branches do not diverge.
+`main` is the Production branch and `development` is the stable Dev integration branch. Routine work is completed and tested on `development`, then promoted through one reviewed `development` → `main` pull request. Separate feature branches are used only for risky or large changes.
 
-The current Vercel project keeps `tsokolitaw.vercel.app` as Dev and tracks `develop`. A separate Production Vercel project connects to the same repository, tracks `main`, and owns `tsokolitaw.com`. Dev and Production use separate Supabase projects and separate environment-specific provider URLs, credentials, webhook secrets, and cron secrets. Production secrets must never be assigned to Dev or general Preview deployments.
+The current Vercel project keeps `tsokolitaw.vercel.app` as Dev and tracks `development`. A separate Production Vercel project connects to the same repository, tracks `main`, and owns `tsokolitaw.com`. Dev and Production use separate Supabase projects and separate environment-specific provider URLs, credentials, webhook secrets, and cron secrets. Production secrets must never be assigned to Dev or general Preview deployments.
 
 Every database change is represented by a version-controlled migration. It is reset and tested locally, applied and verified in Dev, and then promoted unchanged to Production. Dashboard-only schema edits and production seed data are prohibited.
 
@@ -571,3 +566,19 @@ Image selection accepts JPG, PNG, or WebP up to 3 MiB without automatic alterati
 ### Reason
 
 Invalid or incomplete values should be stopped before a costly request, but browser controls can be bypassed. Matching server checks, database rules, authorization, RLS, rate limits, and transactional mutations therefore remain the security boundary. The custom controls provide consistent TsokoLitaw presentation without sacrificing keyboard access, direct entry, or normal form submission.
+
+## 24. Android APK Packaging
+
+### Decision
+
+Phase 15 packages the canonical Production website as a signed Android APK using a PWABuilder/Bubblewrap Trusted Web Activity. The APK is distributed from a clearly labeled download action on the TsokoLitaw website rather than Google Play. The website remains the single application and receives normal updates through Vercel.
+
+The Android package uses Digital Asset Links to prove that the signed APK and `www.tsokolitaw.com` share an owner. Its signing key and passwords remain outside Git and must be backed up because all future APK updates must use the same identity.
+
+The launcher icon and startup artwork are separate assets. Android may first show its brief system-controlled icon splash; the Trusted Web Activity then shows a custom centered Palitaw-themed illustration on the branded background only while the browser surface initializes. It must not delay startup artificially.
+
+Capacitor and a basic embedded WebView are rejected because the dynamic Next.js application would still depend on Vercel while Google OAuth and PayMongo browser redirects would require additional native handling. React Native and native commerce screens are also rejected as duplicate application implementations.
+
+### Reason
+
+An APK is an explicit project requirement, but a native rewrite is not. A Trusted Web Activity satisfies the deliverable with the smallest maintainable Android wrapper, preserves the existing supported browser authentication/payment flows, and keeps commerce security and updates in one deployed codebase.

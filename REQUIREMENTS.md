@@ -4,7 +4,7 @@
 
 TsokoLitaw is a mobile-first B2C storefront for a student-operated Filipino dessert business. It sells chocolate-filled Litaw in configurable boxes for campus pickup.
 
-The product must eventually support browsing, customization, cart, checkout, online payment, order tracking, completed-order-linked reviews, loyalty, and administration.
+The product supports browsing, customization, cart, checkout, online payment, order tracking, completed-order-linked reviews, loyalty, and administration.
 
 ## Decision Governance
 
@@ -23,10 +23,10 @@ Workflow changes must be reflected together in:
 
 ## 2. Delivery Stages
 
-### Active: Phase 13 — Security and Production
+### Completed baseline: Phase 13 — Security and Production
 
 - Next.js, React, TypeScript, and Tailwind UI
-- temporary client-side interactions only where persistence is not required
+- client-side interactions only where persistence or server authority is not required
 - Google OAuth, cookie-backed sessions, protected customer routes, authenticated profile updates, and server-side Admin role checks
 - browser-local cart persistence
 - one reviewed production bootstrap schema, RLS policies, pgTAP tests, controlled seed data, and Supabase client helpers
@@ -43,16 +43,20 @@ Workflow changes must be reflected together in:
 - completed-order loyalty earning, customer/Admin progress, and single-use checkout redemption are implemented
 - confirmation, ready-for-pickup, and unpaid-cancellation emails are queued exactly once from committed transitions; legacy refund notifications remain available only to reconcile historical records
 - Signed Resend delivery webhooks are verified against the untouched request body, deduplicated by provider event ID, and update operational delivery state without changing commerce state
-- Hosted Dev smoke testing confirms all six notification transitions, exactly-once queueing, retry recovery, and Resend delivery callbacks; the canonical migration resets cleanly and all 293 pgTAP database tests pass
-- `develop` is the Dev integration branch and `main` is the Production branch; feature work reaches Production only through the reviewed `feature/*` → `develop` → `main` path
+- Hosted Dev smoke testing confirms all six notification transitions, exactly-once queueing, retry recovery, and Resend delivery callbacks; the canonical migration resets cleanly and all 294 pgTAP database tests pass
+- `development` is the Dev integration branch and `main` is the Production branch; routine work is tested on `development` and promoted through one reviewed `development` → `main` pull request, while separate feature branches are reserved for risky or large work
 - the existing `tsokolitaw.vercel.app` deployment remains the isolated Dev application, while `tsokolitaw.com` belongs to a separate Production Vercel project connected to the same repository
 - Dev and Production use separate Supabase projects, provider credentials, webhook secrets, cron secrets, and URLs; database changes are tested locally and in Dev before the same reviewed migrations are promoted to Production
 
-### Launch-gated inside Phase 13
+### Planned next stages
 
-- PayMongo live mode
-- admin subdomain configuration
-- final public DNS cutover and any real charge until explicitly confirmed by the user
+- Phase 14 overhauls the customer and Admin interface without changing the established commerce, payment, authorization, notification, or operational rules.
+- Phase 15 packages the stable Phase 14 Production website as a directly distributed Android APK through a Trusted Web Activity.
+
+### External changes requiring explicit approval
+
+- future PayMongo key changes or real charges
+- any later public DNS change outside the already-active canonical domain
 
 UI labels must clearly distinguish mock or unavailable backend actions.
 
@@ -65,14 +69,13 @@ UI labels must clearly distinguish mock or unavailable backend actions.
 - Lucide React
 - Vercel
 
-Future integrations:
+Connected integrations:
 
-- Supabase PostgreSQL and Auth
-- Google Sign-In
-- PayMongo
-- Resend transactional email
-- `tsokolitaw.com`
-- planned `admin.tsokolitaw.com`
+- separate Supabase PostgreSQL/Auth projects for Dev and Production
+- Google Sign-In through each environment's default Supabase authentication domain
+- PayMongo QR Ph Hosted Checkout
+- Resend transactional email and signed delivery tracking
+- separate Vercel projects for `tsokolitaw.vercel.app` and `www.tsokolitaw.com`
 
 ## 4. Customer Navigation and Routes
 
@@ -212,7 +215,7 @@ The browser cart is a UI convenience only and does not know the eventual pickup 
 
 ## 9. Checkout and Pickup
 
-Future checkout collects:
+Checkout collects:
 
 - full name
 - Google account email
@@ -230,7 +233,7 @@ Launch pickup locations:
 - UCC Congress — 3rd Floor
 - UCC Congress — Covered Court
 
-Pickup locations, dates, time windows, lead time, cutoff time, and availability must be database-backed and admin-controlled. Current mock values may be used as provisional launch seeds until operations replaces them. Initial business rules:
+Pickup locations, dates, time windows, lead time, cutoff time, and availability are database-backed and Admin-controlled. Current reference values are provisional launch seeds that operations may replace. Initial business rules:
 
 - operating window: Monday–Saturday, 7:00 AM–7:00 PM
 - Admin publishes only the dates and time slots the team can actually serve; the operating window does not promise that every slot is available
@@ -376,7 +379,7 @@ Admin pages:
 
 The Dashboard is a read-only operational overview of every connected Admin area. It shows bounded recent-order metrics, seven-day paid revenue, the current fulfillment-status mix, linked area summaries, recent orders, and real quick actions. Charts must label their values, remain useful without color alone, and state when a metric comes from the bounded recent-order set rather than lifetime data.
 
-Admin may eventually manage boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, loyalty, orders, reviews, and Journal posts. Pickup Management owns pickup-related operational rules; a separate Settings page is intentionally omitted until genuine cross-feature configuration exists.
+Admin manages boxes, PHP prices, coatings, add-ons, product images, stock, pickup schedules and locations, orders, reviews, and Journal posts. Admin also reads customer loyalty progress; the loyalty rule itself is not an editable V1 setting. Pickup Management owns pickup-related operational rules, and a separate Settings page is intentionally omitted until genuine cross-feature configuration exists.
 
 Admin Customers is an account-support directory. It includes every customer and Admin profile, labels each role explicitly, and shows zero order or loyalty activity when an account has not purchased yet.
 
@@ -386,7 +389,7 @@ The TsokoLitaw brand/store name is fixed and must not appear as an editable sett
 
 The Home page may feature approved local promotional photography and video. Its feature carousel starts with an autoplaying muted video, allows sound to be toggled, and advances to the promotional image when playback ends. Media must use responsive presentation, accessible descriptions or captions, and browser-compatible delivery formats.
 
-Admin currently lives under `/admin`. A future `admin.tsokolitaw.com` mapping must still enforce server-side authorization.
+Admin intentionally remains under `/admin` for campus-scale V1 and enforces server-side authorization on every protected page and mutation. No Admin subdomain is planned for V1.
 
 ## 16. Terms, Privacy, and Allergens
 
@@ -418,7 +421,7 @@ The approved recipe/allergen disclosure covers peanuts or other nuts, dairy, coc
 
 ## 18. Security Requirements
 
-When backend work begins:
+The implemented backend and every later backend change must:
 
 - protect customer and admin data with RLS
 - verify admin authorization server-side
@@ -429,7 +432,21 @@ When backend work begins:
 - avoid duplicate checkout submissions
 - never log or expose secrets
 - preserve order-item snapshots
-- use `auth.tsokolitaw.com` as the production Supabase authentication domain once the paid custom-domain add-on and DNS are configured
-- keep the original Supabase OAuth callback during migration and remove it only after the branded production flow is verified
-- verify the branded domain across Google login, callback exchange, token refresh, logout, customer protection, and Admin authorization
+- use the default environment-specific Supabase authentication domains for Dev and Production; a paid custom authentication domain is not required for V1
+- verify Google login, callback exchange, token refresh, logout, customer protection, and Admin authorization against each environment's configured Supabase callback
 - protect the scheduled account-deletion processor with a server-only secret and recheck eligibility immediately before permanent deactivation
+
+## 19. Android APK Distribution
+
+Phase 15 must produce a signed Android APK without rewriting the application or publishing through Google Play. The approved approach is a PWABuilder/Bubblewrap-generated Trusted Web Activity that opens the canonical Production site in a supported browser context.
+
+- retain the Next.js/Vercel application as the only storefront and commerce codebase
+- add a standards-based web app manifest, Android launcher icons, and only the minimal installability support required by the wrapper
+- verify the APK-to-site relationship through `https://www.tsokolitaw.com/.well-known/assetlinks.json`
+- keep the signing keystore and passwords outside Git and preserve secure backups for future updates
+- provide a clearly labeled website action that downloads the versioned signed APK; Android still controls user confirmation and permission to install from the browser
+- use a separate custom Palitaw-themed splash illustration on a branded background while the Trusted Web Activity initializes; do not reuse only the launcher logo or add an artificial delay
+- accept Android's brief system-controlled launch screen on newer versions before the custom Trusted Web Activity splash appears
+- keep Google OAuth and PayMongo in supported browser flows; do not place them inside a developer-controlled embedded WebView
+- do not add Capacitor, React Native, native commerce screens, offline ordering/payment, or Google Play publication unless a later requirement explicitly changes the scope
+- test installation, Digital Asset Links verification, authentication, cart/session behavior, payment redirection and return, navigation, and upgrade signing on physical Android hardware

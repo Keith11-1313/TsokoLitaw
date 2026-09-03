@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Phase 13 Security and Production is active. Environment isolation, security review, performance validation, production configuration, and launch verification are the current work. PayMongo Live QR Ph payment was verified on September 1, 2026. Online refunds were removed by product-owner decision; paid-order concerns are settled in person.
+Phase 13 Security and Production is complete. The Production baseline, live QR Ph payment, signed webhooks, Cron jobs, OAuth, transactional email, Search Console setup, and final smoke test are verified. Phase 14 UI Overhaul is the next planned implementation stage. Phase 15 Android APK Packaging follows only after the Phase 14 interface is stable. Post-launch Search Console monitoring and the separately approved historical-refund database cleanup remain operational follow-up work.
 
 ## Decision Baseline
 
@@ -254,9 +254,8 @@ Do not begin without explicit approval.
 
 ## Phase 13 — Security and Production
 
-- [x] Establish and document the Git/environment policy: `main` deploys Production, `develop` is the stable Dev integration branch, and `feature/*` branches merge into `develop` before production promotion
-- [ ] Keep the existing Vercel project on `develop` as `tsokolitaw.vercel.app` Dev, create a separate `main`-tracking Production project for `tsokolitaw.com`, and isolate every environment variable and provider callback
-- [ ] Protect `main` from direct feature work and require the documented `feature/*` → `develop` → `main` release path plus the `hotfix/*` → `main` → `develop` recovery path
+- [x] Establish and document the Git/environment policy: `development` deploys Dev, `main` deploys Production, routine work promotes through one `development` → `main` pull request, and separate feature branches are reserved for risky or large changes
+- [x] Keep the existing Vercel project on `development` as `tsokolitaw.vercel.app` Dev, keep the separate `main`-tracking Production project for `tsokolitaw.com`, and isolate every environment variable and provider callback
 - [x] Require every database change to be represented by a reviewed migration, validated against Dev first, and promoted unchanged to Production
 - [x] Apply the conflict-safe Production reference-data migration after its local reset, lint, and database tests pass
 - [x] Review RLS and admin authorization
@@ -271,52 +270,62 @@ Do not begin without explicit approval.
 - [x] Configure Vercel Fluid compute and align the current linked Singapore development database with `sin1`
 - [x] Add repeatable k6 smoke, ramp, 100-user hold, and spike scenarios
 - [x] Apply the performance/rate-limit schema delta to the existing hosted development database before deploying the dependent application code
-- [ ] Run the k6 smoke and 100-user staging gates and record warm p50/p95/p99, errors, and database health
-- [ ] Switch the Vercel function region from `sin1` to `icn1` when the Seoul production Supabase project becomes active
+- [x] Run the k6 smoke and 100-user staging gates; the capacity run completed 55,801 requests with zero failures, 372.6 ms p95, and 898.33 ms p99
+- [x] Keep the shared Vercel function region in `sin1`; the measured campus-scale target does not justify per-environment region configuration
 - [x] Review provider timeouts and idempotent retry behavior before PayMongo live mode
-- [ ] Deploy production configuration to Vercel
-- [ ] Copy approved coating assets from the Dev `catalog-media` bucket to production Storage and update production coating `image_url` values
+- [x] Deploy production configuration to Vercel
+- [x] Copy approved coating assets to production Storage and verify the production catalog images
 - [x] Connect `tsokolitaw.com` and make `www.tsokolitaw.com` the canonical public origin
 - [x] Create a different production `CRON_SECRET` and configure the same value in Vercel Production and the production Supabase Vault
 - [x] Store the canonical `https://www.tsokolitaw.com` origin as `tsokolitaw_site_url` in the production Supabase Vault
-- [ ] Create the five-minute payment-expiration and notification-retry jobs plus the daily account-deletion job in production Supabase Cron
-- [ ] Verify all three production Cron jobs return authorized HTTP `200` responses before launch
-- [ ] Upgrade the production Supabase project to a plan that supports the custom-domain add-on
-- [ ] Create the `auth.tsokolitaw.com` CNAME pointing to the Supabase project domain
-- [ ] Register `auth.tsokolitaw.com` with Supabase and publish the required domain-verification TXT records
-- [ ] Verify and activate the Supabase custom domain only after its TLS certificate is ready
-- [ ] Add `https://auth.tsokolitaw.com/auth/v1/callback` to the Google OAuth client before activation
-- [ ] Update the production Supabase URL, Google OAuth configuration, and Vercel environment to use `https://auth.tsokolitaw.com`
-- [ ] Configure and submit TsokoLitaw name, logo, homepage, privacy policy, and authorized domain under Google Auth Platform Branding
-- [ ] Verify Google account selection displays `auth.tsokolitaw.com` instead of the Supabase project reference
-- [ ] Test login, callback, token refresh, logout, customer route protection, and Admin authorization on the production domain
-- [ ] Retain the default Supabase callback during migration until the branded callback is verified
-- [ ] Configure `admin.tsokolitaw.com` if approved
+- [x] Create the five-minute payment-expiration and notification-retry jobs plus the daily account-deletion job in production Supabase Cron
+- [x] Verify all three production Cron jobs return authorized HTTP `200` responses before launch
+- [x] Keep the default environment-specific Supabase authentication domains; do not purchase or configure the custom-domain add-on for campus-scale V1
+- [x] Verify the Google OAuth app is External and In production with the correct Production callback, minimal `openid email profile` scopes, and current support/developer contacts; optional brand verification is not required for V1
+- [x] Test login, callback, logout, customer route protection, and Admin authorization on the production domain using the default Production Supabase callback
+- [x] Keep Admin under `/admin`; do not add an Admin subdomain for V1
 - [x] Add the canonical `https://www.tsokolitaw.com/api/webhooks/paymongo` endpoint alongside the isolated Dev webhook
-- [ ] Configure the new custom-domain PayMongo signing secret in Vercel, redeploy, and verify a signed test delivery before disabling the Vercel-domain webhook
-- [ ] Configure production OAuth and remaining PayMongo URLs
-- [ ] Switch to live keys only after test-mode sign-off
+- [x] Configure the production PayMongo signing secret, redeploy, and verify a signed live QR Ph payment webhook
+- [x] Configure production OAuth and PayMongo URLs
+- [x] Switch Production to live keys after test-mode sign-off while keeping Dev in test mode
 - [x] Use `https://www.tsokolitaw.com` as the canonical production origin and permanently redirect the root domain to it
 - [x] Audit unique page titles, descriptions, canonical URLs, favicons, Open Graph images, and social-sharing metadata on every public route
 - [x] Mark private and transactional routes such as Admin, Profile, Orders, Checkout, Auth, Payment, and API endpoints as non-indexable
 - [x] Generate production `robots.txt` and a root `sitemap.xml` containing only canonical public URLs with absolute production links
 - [x] Add truthful Organization structured data for TsokoLitaw; validate the deployed page with Google Rich Results Test before launch
-- [ ] Run Lighthouse and production Core Web Vitals checks on Home, Our Creations, Journal, Terms, and Privacy before allowing indexing
-- [ ] Create and DNS-verify the `tsokolitaw.com` domain property in Google Search Console
-- [ ] Submit `https://www.tsokolitaw.com/sitemap.xml` in Google Search Console after the canonical domain is live
-- [ ] Inspect the Home, Our Creations, and Journal URLs in Search Console and request initial indexing after confirming they return public `200` responses
+- [x] Run Lighthouse checks on Home, Our Creations, Journal, Terms, and Privacy before allowing indexing
+- [x] Create and DNS-verify the `tsokolitaw.com` domain property in Google Search Console
+- [x] Submit `https://www.tsokolitaw.com/sitemap.xml` in Google Search Console after the canonical domain is live
+- [x] Inspect the Home, Our Creations, and Journal URLs in Search Console and request initial indexing after confirming they return public `200` responses
 - [ ] Check Search Console indexing, crawl, HTTPS, structured-data, Core Web Vitals, security, and manual-action reports after launch
 - [ ] Monitor search queries, indexed pages, sitemap status, and crawl errors during the first weeks, then correct metadata or technical SEO issues without keyword stuffing
 - [ ] Assess Google Business Profile eligibility separately; create one only if TsokoLitaw meets Google's real-world business/location requirements
-- [ ] Complete final smoke test and policy verification
+- [x] Complete final smoke test and policy verification
+- [ ] During the separately approved post-Phase-13 database cleanup, remove the inactive historical refund subsystem only after preserving any required transaction evidence; do not run this removal before that reset
 
 ## Phase 14 — UI Overhaul
 
 Do not begin until Phase 13 establishes and verifies the production baseline.
 
 - [ ] Tag the stable Phase 13 production release before beginning the redesign
-- [ ] Create `feature/ui-overhaul` from `develop`; do not redesign directly on `main`
+- [ ] Use `development` for the UI overhaul, creating a separate feature branch only if the work becomes risky or too large to review safely
 - [ ] Audit every customer and Admin page for information hierarchy, consistency, responsive behavior, accessibility, loading, empty, error, and success states
 - [ ] Implement the approved UI overhaul without changing established commerce, inventory, pickup, loyalty, payment, refund, notification, privacy, or authorization behavior unintentionally
 - [ ] Validate the overhaul against Dev services with typecheck, lint, application tests, database tests, production build, responsive review, accessibility review, and critical end-to-end flows
-- [ ] Merge the approved overhaul into `develop`, complete a final Dev deployment review, then promote the tested revision to `main`
+- [ ] Complete the approved overhaul on `development`, review the Dev deployment, then promote it through one `development` → `main` pull request
+
+## Phase 15 — Android APK Packaging
+
+Do not begin until the approved Phase 14 interface is stable. The APK is a thin distribution wrapper around the canonical Production website, not a second implementation.
+
+- [ ] Add the Production web app manifest with TsokoLitaw name, canonical start URL and scope, standalone presentation, brand colors, and Android-compatible icons
+- [ ] Create separate launcher/maskable icons and a custom centered Palitaw-themed splash illustration with density-safe spacing
+- [ ] Generate the Trusted Web Activity Android project with PWABuilder/Bubblewrap; do not add Capacitor, a basic embedded WebView, or native commerce screens
+- [ ] Choose and reserve the Android package name before the first signed distribution
+- [ ] Generate the release signing key outside Git, create secure backups, and document the private recovery procedure without recording secrets in the repository
+- [ ] Publish the matching release certificate association at `/.well-known/assetlinks.json` and verify the APK opens without Custom Tab browser controls
+- [ ] Build a versioned signed APK for direct distribution; Google Play and an Android App Bundle are outside the approved scope
+- [ ] Publish the APK as a versioned release asset and add a clear **Download Android APK** action to the website with Android sideloading guidance
+- [ ] Test installation and upgrade on physical Android devices, including launcher icon, system/custom splash transition, back navigation, external links, and unsupported/offline behavior
+- [ ] Test Google OAuth, Supabase session persistence, cart persistence, customer/Admin authorization, and PayMongo QR Ph redirect/return from the installed APK
+- [ ] Run the normal web validation suite and scan the release APK before publishing its download link

@@ -50,7 +50,7 @@ Admin order operations
 
 Authenticated customer order surfaces
 ├── My Orders ownership-scoped database list and status filters
-└── Dynamic order/review routes unavailable until their scoped detail reads and mutations exist
+└── Ownership-scoped order detail and completed-order review mutations
 ```
 
 Customer catalog and pickup reads reflect the linked database. Connected Admin areas write through server-only controlled mutations; the Dashboard remains read-only and links to those authoritative management surfaces.
@@ -65,11 +65,11 @@ Client Components are limited to interactions such as:
 - custom dropdowns
 - authenticated account menu and shared confirmation-based logout
 - admin mobile drawer
-- mock forms and dialogs
-- square-image validation and in-memory coating previews
+- connected forms and confirmation dialogs
+- square-image validation and pre-submit coating previews
 - Home feature-carousel state, muted autoplay, and video-ended slide transition
 
-## 3. Future Production Architecture
+## 3. Production Architecture
 
 ```text
 Customer or Admin Browser
@@ -108,7 +108,7 @@ Supabase Cron is the single scheduler for trusted maintenance HTTP jobs. It call
 
 Customer routes are public under the main application. Account, checkout, order, and review routes require a verified Supabase session.
 
-Admin routes remain under `/admin` and require both a verified Supabase session and a server-loaded `profiles.role = 'admin'`. Signed-in non-Admins receive the global Not Found boundary at the requested Admin URL, without a dedicated authorization redirect or disclosed administrator approval details. The planned `admin.tsokolitaw.com` host is deferred. Future host routing may map the subdomain to `/admin`, but must not replace server-side admin authorization.
+Admin routes intentionally remain under `/admin` for campus-scale V1 and require both a verified Supabase session and a server-loaded `profiles.role = 'admin'`. Signed-in non-Admins receive the global Not Found boundary at the requested Admin URL, without a dedicated authorization redirect or disclosed administrator approval details. No Admin subdomain is planned for V1.
 
 Legacy compatibility redirects:
 
@@ -122,9 +122,9 @@ Legacy compatibility redirects:
 src/
 ├── app/                 # Routes, metadata, page composition
 ├── components/
-│   ├── admin/           # Admin shells, tables, cards, mock actions
+│   ├── admin/           # Connected Admin shells, tables, forms, and actions
 │   ├── cart/            # Provider and cart UI
-│   ├── checkout/        # Static checkout UI
+│   ├── checkout/        # Connected checkout and Hosted Checkout handoff
 │   ├── creations/       # Product catalog/configurator
 │   ├── customer/        # Header, footer, page shells
 │   ├── feedback/        # Order-linked review UI
@@ -132,7 +132,7 @@ src/
 │   ├── layout/          # Content containers
 │   ├── orders/          # Order list/detail UI
 │   └── ui/              # Shared controls and tokens
-├── lib/                 # Server commerce reads plus remaining mock domain data
+├── lib/                 # Domain rules, server services, and Supabase helpers
 └── types/               # Explicit domain types
 ```
 
@@ -148,7 +148,7 @@ The UI cart is exposed through `CartProvider` and persisted under a browser-loca
 
 It supports add, remove, bounded numeric quantity editing, per-line checkout selection, subtotal, and clear operations. Cart lines and their selected IDs persist under separate browser-local keys. When hosted checkout starts, the selected line IDs are snapshotted under a pending-checkout key; verified payment removes only that snapshot so unchecked lines remain in Cart. Builder and Cart caps protect the client surface from extreme values but do not claim live stock knowledge because no pickup date has been selected yet. Checkout reports the selected date's remaining prepared-piece balance, compares it with total cart pieces, and still rechecks inventory and pickup eligibility transactionally.
 
-Future checkout flow:
+Server checkout flow:
 
 1. Send configuration identifiers and quantities to the server.
 2. Reload active product, coating, add-on, and stock records.
@@ -166,7 +166,7 @@ Phase 7 foundation:
 - pgTAP authorization checks under `supabase/tests/database/`
 - separate browser, server, and service/admin client helpers under `src/lib/supabase/`
 
-Google authentication and profile integration are active. Live commerce data integration remains deferred. Local/Vercel product assets remain sufficient, so Supabase Storage is not currently required.
+Google authentication, profile integration, live commerce data, controlled Catalog media in Supabase Storage, and separate Dev/Production projects are active.
 
 Never expose privileged Supabase credentials. RLS is defined on every exposed table before customer data is connected. Direct customer-facing commerce mutations remain unavailable until later server-commerce work can validate authorization, pricing, stock, and snapshots.
 
@@ -206,7 +206,7 @@ V1 supports five approved Google identities under one shared admin role. One ide
 
 Store IDs and counts from the client, then calculate money from database records on the server. Preserve names, counts, and prices as order snapshots.
 
-The current ₱10-per-piece mock amount becomes the provisional database seed, producing initial 4-, 6-, and 8-piece totals of ₱40, ₱60, and ₱80. Admin edits update the active per-piece catalog price for future carts and checkouts only; box-size labels do not carry permanent fixed prices, and edits never mutate historical order snapshots.
+The current ₱10-per-piece amount is the provisional database seed, producing initial 4-, 6-, and 8-piece totals of ₱40, ₱60, and ₱80. Admin edits update the active per-piece catalog price for future carts and checkouts only; box-size labels do not carry permanent fixed prices, and edits never mutate historical order snapshots.
 
 ## 10. Payments
 
@@ -302,15 +302,15 @@ Only values intentionally prefixed with `NEXT_PUBLIC_` may be available to the b
 
 ## 14. Deployment
 
-- source promotion: `feature/*` → `develop` → `main`
-- Dev app: the existing Vercel project tracks `develop` and retains `tsokolitaw.vercel.app`
+- source promotion: routine work uses `development` → `main`; separate feature branches are reserved for risky or large changes and merge into `development` first
+- Dev app: the existing Vercel project tracks `development` and retains `tsokolitaw.vercel.app`
 - Production app: a separate Vercel project tracks `main` and owns `tsokolitaw.com`
 - database/auth/storage: Supabase
-- production authentication endpoint: `auth.tsokolitaw.com` through the Supabase custom-domain add-on
+- authentication endpoints: each environment uses its default Supabase project domain
 - payments: PayMongo
 - transactional email: Resend using a verified domain or sending subdomain
 - customer domain: `tsokolitaw.com`
-- planned admin domain: `admin.tsokolitaw.com`
+- Admin remains under the canonical site's `/admin` path for V1
 
 Use PayMongo test mode and non-production Supabase configuration before live rollout. `PAYMONGO_MODE` is an explicit environment boundary: `test` accepts only test keys, resources, events, and `te` webhook signatures; `live` accepts only live keys, resources, events, and `li` webhook signatures.
 
@@ -318,7 +318,7 @@ Dev and Production are hard boundaries, not only labels inside one `.env` file. 
 
 All database changes originate as reviewed files under `supabase/migrations`. Reset and test locally, apply to Dev, verify the hosted Dev behavior, and then apply the same migration files to Production. Never run `db reset --linked` against Production and never include development seed data in a Production push.
 
-The default Supabase project domain is accepted for development OAuth. Production custom-domain activation requires DNS verification and TLS readiness, the branded callback in Google Auth Platform, the custom Supabase URL in Vercel, and an end-to-end session/authorization smoke test. Keep the original Supabase callback configured until the branded flow is verified.
+Dev and Production retain their default Supabase project domains for OAuth. Google Auth Platform must allow the callback for each isolated Supabase project; no paid authentication-domain add-on or additional DNS workflow is required for V1.
 
 ## 15. Performance and Concurrency
 
@@ -340,12 +340,12 @@ React `cache()` may continue to deduplicate authentication/profile work inside o
 
 | Data | Shared cache | Rule |
 | --- | --- | --- |
-| Active public catalog, coating descriptions, Journal posts, legal content | Yes | Use explicit Next.js cache lifetimes and tags. Future Admin publication invalidates the matching tag. |
+| Active public catalog, coating descriptions, Journal posts, legal content | Yes | Use explicit Next.js cache lifetimes and tags. Connected Admin publication invalidates the matching tag. |
 | Published pickup date/time/location definitions | Short-lived only | Tag and revalidate after Admin publication. A stale definition may be displayed briefly, but checkout must revalidate it live. |
 | Ready stock and current prices used for checkout | No authoritative cache | Browser display may be a preview. Every order mutation reloads and validates current database state inside the existing transactional boundary. |
 | Profile, My Orders, order detail, payment, refund, account-deletion state, and Admin data | No shared cache | These are user-specific or sensitive. Use RLS-scoped live reads and request-only memoization where useful. |
 
-The current implementation uses tagged `unstable_cache` entries for deliberately shared read-mostly catalog previews and published pickup definitions because Cache Components are not enabled. Public catalog previews revalidate after five minutes and published pickup definitions after 30 seconds. Future Admin publication must invalidate the matching tag. If the application later enables Cache Components, these entries may move to `use cache`, `cacheLife`, and `cacheTag`. Cache keys and values must not contain secrets, payment data, refund destinations, or unnecessary PII. Checkout always reloads live catalog, price, inventory, and schedule state; webhook paths never trust cached payment or order state.
+The current implementation uses tagged `unstable_cache` entries for deliberately shared read-mostly catalog previews and published pickup definitions because Cache Components are not enabled. Public catalog previews revalidate after five minutes and published pickup definitions after 30 seconds. Connected Admin publication invalidates the matching tag. If the application later enables Cache Components, these entries may move to `use cache`, `cacheLife`, and `cacheTag`. Cache keys and values must not contain secrets, payment data, refund destinations, or unnecessary PII. Checkout always reloads live catalog, price, inventory, and schedule state; webhook paths never trust cached payment or order state.
 
 ### Database query and index rules
 
@@ -367,8 +367,8 @@ The current implementation uses tagged `unstable_cache` entries for deliberately
 
 ### Deployment topology
 
-- Run Vercel Functions in the region closest to the Supabase project. Static assets may remain globally cached, but dynamic server-to-database distance directly affects every uncached request.
-- The linked development Supabase project is in Singapore (`ap-southeast-1`), so the current Vercel configuration uses `sin1`. The planned production Supabase project is in Seoul (`ap-northeast-2`); switch Vercel to `icn1` when that database becomes the active production target. Do not leave the application and database in different Asian regions by accident.
+- The shared Vercel configuration keeps Dev and Production functions in `sin1`. Although Production Supabase is in Seoul, the staged 100-user test passed with zero request failures and a 372.6 ms p95, so separate per-environment region configuration is unnecessary for the campus-scale target.
+- Revisit region placement only if production measurements show persistent database latency or timeouts; do not add environment-specific deployment machinery speculatively.
 - Keep the current Supabase Data API/PostgREST client for application reads unless measurement justifies a direct PostgreSQL driver.
 - If a future ORM or direct PostgreSQL client is introduced in Vercel Functions, use Supavisor transaction mode rather than opening unpooled direct connections from each serverless instance.
 - Enable and validate Vercel Fluid compute for the production Node.js deployment when available. It can reduce cold starts and let one instance handle concurrent I/O-bound requests, but it does not replace query optimization or database safeguards.
@@ -414,12 +414,24 @@ If a threshold fails, optimize in this order: remove request fan-out and N+1 wor
 1. **Instrumentation implemented:** structured duration logging wraps the consolidated commerce and order reads. Warm/cold staging measurements remain a release task.
 2. **Read consolidation implemented:** My Orders and order detail use one RLS-scoped nested read each, and order history is cursor-paginated.
 3. **Safe caching implemented:** public catalog previews and published schedule definitions use bounded tagged caches; authoritative checkout data remains live. Journal/legal caching waits for database-backed publication.
-4. **Runtime controls implemented for current scope:** Vercel Fluid compute and the current development region are configured, and expensive customer mutations use an atomic database-backed per-user/per-IP rate limiter. Provider timeout review remains required before live mode.
-5. **Load harness implemented:** repeatable k6 smoke, ramp, 100-user hold, and spike scenarios are in `tests/performance/`. The staging executions and recorded release comparison remain required before production launch.
+4. **Runtime controls validated for current scope:** Vercel Fluid compute and the shared `sin1` region are configured, expensive mutations use an atomic database-backed per-user/per-IP rate limiter, and provider timeout behavior was reviewed before live activation.
+5. **Load gates passed:** repeatable k6 smoke, ramp, 100-user hold, and spike scenarios are in `tests/performance/`; the staged capacity run completed 55,801 requests with zero failures and a 372.6 ms p95.
 
 Research basis: [Next.js shared caching](https://nextjs.org/docs/app/api-reference/functions/unstable_cache), [React request-scoped cache](https://react.dev/reference/react/cache), [Supabase nested relational reads](https://supabase.com/docs/guides/database/joins-and-nesting), [Supabase RLS performance rules](https://supabase.com/docs/guides/database/postgres/row-level-security), [Supabase query optimization](https://supabase.com/docs/guides/database/query-optimization), [Supabase serverless connection pooling](https://supabase.com/docs/guides/database/connecting-to-postgres), [Vercel function regions](https://vercel.com/docs/functions/configuring-functions/region), [Vercel Fluid compute](https://vercel.com/docs/fluid-compute), and [k6 website load-testing guidance](https://grafana.com/docs/k6/latest/testing-guides/load-testing-websites/).
 
-## 16. Principles
+## 16. Android APK Packaging
+
+Phase 15 adds a generated Android wrapper rather than a second frontend. PWABuilder/Bubblewrap consumes the Production web app manifest and builds a Trusted Web Activity whose launch scope remains under `https://www.tsokolitaw.com`. The deployed Next.js application, Supabase, PayMongo, and Resend boundaries do not move into the APK.
+
+The canonical site serves `/.well-known/assetlinks.json` containing the Android package name and SHA-256 fingerprint of the release signing certificate. A failed association must be detected during physical-device testing because Android otherwise falls back to a Custom Tab with browser controls.
+
+The release keystore, aliases, and passwords are deployment artifacts and must never enter the repository, Vercel variables, browser bundle, or generated download. A versioned signed APK is published as a release asset and linked from the website. Wrapper updates reuse the same signing key and increment the Android version; ordinary website deployments require no APK rebuild.
+
+Startup consists of Android's system-controlled splash followed, where supported by the Trusted Web Activity wrapper, by a branded background and a dedicated centered Palitaw illustration while the browser initializes. This splash is distinct from the launcher icon and must yield immediately when the web surface is ready. Existing route loading UI handles any later server navigation.
+
+The APK does not provide offline commerce. Auth, Checkout, Payment, Orders, Admin, API, Supabase, and PayMongo traffic remains online and must not be replaced with cached transactional state. Google OAuth and hosted payment continue through supported browser contexts rather than an embedded WebView.
+
+## 17. Principles
 
 1. One codebase for V1.
 2. Server-authoritative money, stock, permissions, and payment state.
@@ -428,6 +440,6 @@ Research basis: [Next.js shared caching](https://nextjs.org/docs/app/api-referen
 5. Configurable operational values.
 6. Minimal dependencies.
 7. Accessible, mobile-first UI.
-8. Explicit mock/deferred behavior during the UI phase.
+8. Explicit status for any deliberately deferred behavior.
 9. Measure before scaling; reduce work per request before buying more compute.
 10. Shared caches contain only deliberately public, non-authoritative data.

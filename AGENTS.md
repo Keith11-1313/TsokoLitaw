@@ -18,15 +18,14 @@ Inspect relevant existing code and assets before changing UI.
 
 ## 2. Current Project Stage
 
-**Phase 13: Security and Production is active.** Authentication, authorization, Phase 9 server commerce, Phase 10 PayMongo integration, Phase 11 Admin operations, atomic seven-order loyalty, transactional emails, bounded retry processing, and signed Resend delivery tracking are implemented and validated. PayMongo live QR Ph payment was verified on September 1, 2026. Current work covers launch verification and the approved QR Ph-only, unpaid-online-cancellation policy; paid-order settlements occur in person and the website does not create refunds.
+**Phase 13: Security and Production is complete.** Authentication, authorization, server commerce, PayMongo QR Ph, connected Admin operations, atomic seven-order loyalty, transactional emails, bounded retry processing, signed Resend delivery tracking, production Cron, Search Console setup, and final Production smoke testing are implemented and validated. Paid-order settlements occur in person; the website does not create refunds. Phase 14 UI Overhaul is next but has not started. Phase 15 Android APK Packaging follows only after the Phase 14 interface is stable.
 
 Allowed:
 
 - React and Tailwind UI
-- mock data
 - local component state
 - browser-local cart state
-- static routes and temporary UI interactions
+- existing static content and temporary UI state where no persistence is required
 - local product photography and placeholders
 - Supabase migrations, constraints, indexes, RLS policies, tests, and controlled seed data
 - browser, server, and privileged Supabase client helpers
@@ -39,17 +38,19 @@ Allowed:
 - completed-order review submission and Admin visibility/featured moderation
 - Admin Journal draft/publication management and optional cover media
 - Admin Inventory publication and unusable-piece adjustments for existing eligible pickup dates
-- Phase 13 security auditing, tamper testing, rate-limit and performance validation, production-safe metadata, and environment/deployment configuration
+- maintenance of the completed Phase 13 security, rate-limit, performance, metadata, and environment baseline
 - migration-only Dev-to-Production database promotion using separate Supabase projects
+- the separately approved Phase 14 UI overhaul when requested
+- the documented Phase 15 Trusted Web Activity APK scope after Phase 14 is stable
 
 Do not perform without a separate explicit user confirmation at the final external action:
 
 - PayMongo live-mode keys or charges
 - transactional email events beyond the six completed V1 events
-- Admin CRUD outside the currently approved Phase 11 slice
-- public DNS cutover or optional admin-subdomain configuration
+- Admin capabilities outside the connected V1 operational areas
+- any later public DNS cutover or host expansion
 
-Never make mock UI look like secure authentication, verified payment, or persisted admin data.
+Never make an unconnected prototype look like secure authentication, verified payment, or persisted Admin data.
 
 ## 3. UI References
 
@@ -72,7 +73,7 @@ Use this priority:
 - Coatings: Cocoa, Milk, Palitaw, Crushed Nuts, Plain, Sesame Seeds, Cookies and Cream.
 - Palitaw means sugar, niyog, and sesame seeds.
 - One coating type is included.
-- Each additional coating type currently adds ₱5 in mock UI.
+- Each additional coating type uses its Admin-configured database price; ₱5 is the current seed.
 - Mixed boxes allocate every piece and must total the selected box size.
 - Campus pickup only.
 - Made to order, Ready stock, and Hybrid all require website checkout and online payment; V1 has no cash or untracked walk-in sales.
@@ -82,7 +83,7 @@ Use this priority:
 - Prepared stock is counted in individual Palitaw pieces per pickup date and shared across 4-, 6-, and 8-piece boxes.
 - Admin Inventory edits stock for dates created by Admin Pickup; it must not create pickup dates or expose a separate “Available for online checkout” switch.
 - A prepared total cannot be lowered below pieces already committed to orders or removed as waste. A different date starts an independent balance.
-- Browser pricing is never authoritative for future real checkout.
+- Browser pricing is never authoritative; checkout reloads and recalculates current values on the server.
 
 ## 5. Navigation Decisions
 
@@ -103,7 +104,7 @@ Journal replaces Vlog and contains announcements, stories, features, community h
 
 Reviews are available only from eligible completed order details. Do not add public Feedback navigation.
 
-Admin stays under `/admin` until subdomain configuration is explicitly authorized.
+Admin stays under `/admin` for campus-scale V1; no Admin subdomain is planned.
 
 ## 6. Assets
 
@@ -120,7 +121,7 @@ Admin stays under `/admin` until subdomain configuration is explicitly authorize
 
 1. Inspect existing files and relevant assets.
 2. Identify the smallest affected surface.
-3. Understand current component and mock-data flow.
+3. Understand the current component, domain-data, and persistence flow.
 4. Explain the intended change briefly.
 5. Identify future schema/security implications when relevant.
 6. Preserve unrelated user changes.
@@ -132,8 +133,8 @@ Admin stays under `/admin` until subdomain configuration is explicitly authorize
 - Prefer Server Components unless interaction requires a Client Component.
 - Use Tailwind CSS and existing tokens.
 - Reuse existing components before adding variants.
-- Use shared mock/domain constants when customer and admin UI represent the same data; do not maintain contradictory page-local copies.
-- Every admin feature must have a clear operational purpose and customer impact. Mark unconnected controls as mock UI.
+- Use shared domain constants or persisted sources when customer and Admin UI represent the same data; do not maintain contradictory page-local copies.
+- Every Admin feature must have a clear operational purpose and customer impact. Mark any unconnected control as unavailable.
 - Keep Pickup scheduling and Inventory responsibility separate: Pickup creates/publishes dates, windows, locations, modes, cutoffs, and capacity; Inventory assigns prepared pieces only to existing Ready Stock or Hybrid dates.
 - Admin coating creation collects name, description, square image, allergen information, and additional-type price, then persists through the connected audited Catalog mutation. Do not restore the obsolete session-only preview workflow.
 - When an approved product decision changes workflow or domain meaning, update `DECISIONS.md` and every affected root specification in the same task.
@@ -141,9 +142,9 @@ Admin stays under `/admin` until subdomain configuration is explicitly authorize
 - Semantic HTML, labels, keyboard support, visible focus, and meaningful alt text.
 - Avoid unnecessary dependencies and premature abstraction.
 
-## 9. Future Backend Rules
+## 9. Backend Rules
 
-When backend work is explicitly approved:
+For every backend change:
 
 - Supabase RLS is required.
 - Never expose service-role or PayMongo secret keys.

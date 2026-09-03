@@ -662,6 +662,6 @@ Do not seed production secrets or pretend mock customer/order records are real d
 
 ## 17. Environment Promotion
 
-Development and Production use separate Supabase projects. The Dev project supports integration testing from `develop`; the Production project serves `main` and the canonical domain.
+Development and Production use separate Supabase projects. The Dev project supports integration testing from `development`; the Production project serves `main` and the canonical domain.
 
 Every schema, function, policy, trigger, index, storage declaration, and controlled reference-data change must be represented by a reviewed migration. The promotion order is local reset and pgTAP validation, hosted Dev apply and verification, then the same migration applied to Production. Do not make untracked schema changes in a hosted dashboard, do not run destructive linked resets against Production, and do not push `supabase/seed.sql` to Production.
