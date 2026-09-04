@@ -8,13 +8,13 @@ import {
   type CheckoutSubmissionResult,
 } from "@/app/checkout/actions";
 import { useCart } from "@/components/cart/cart-provider";
+import { OrderLineItems } from "@/components/orders/order-line-items";
 import { PrimaryButton } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { FormField } from "@/components/ui/form-field";
-import { calculateCartLineTotal, calculateItemUnitTotal, formatPhp } from "@/lib/commerce";
+import { calculateCartLineTotal, formatPhp } from "@/lib/commerce";
 import type { AuthProfile } from "@/lib/auth";
 import type { CustomerLoyaltyStatus } from "@/lib/server-loyalty";
-import type { CartLineItem } from "@/types/commerce";
 import type { CheckoutAvailability } from "@/types/pickup";
 
 interface CheckoutContentProps {
@@ -22,67 +22,6 @@ interface CheckoutContentProps {
   profile: AuthProfile;
   loyalty: CustomerLoyaltyStatus;
   resumeOrderId: string | null;
-}
-
-function PricingBreakdown({ item }: { item: CartLineItem }) {
-  const coatings = Object.entries(item.coatingCounts).filter(([, count]) => count > 0);
-  const coatingSummary = coatings
-    .map(([id, count]) => `${item.coatingNames[id] ?? "Coating"} × ${count}`)
-    .join(" · ");
-  const addonTotal = item.addonPrice * item.addonQuantity;
-  const unitTotal = calculateItemUnitTotal(
-    item.boxPrice,
-    item.extraCoatingCharge,
-    item.addonQuantity,
-    item.addonPrice,
-  );
-  const boxQuantity = `${item.quantity} ${item.quantity === 1 ? "box" : "boxes"}`;
-  const contentsLabel = item.quantity === 1 ? "In this box" : "In each box";
-
-  return (
-    <div className="mt-1 text-xs leading-5 text-muted-foreground">
-      <p>
-        {boxQuantity}<span aria-hidden="true"> × </span><span className="sr-only"> at </span>
-        <span className="tabular-nums">{formatPhp(unitTotal)}</span>
-        {item.quantity > 1 ? " each" : null}
-      </p>
-
-      <div className="mt-3">
-        <p className="font-bold text-foreground">{contentsLabel}</p>
-        <p>{coatingSummary}</p>
-      </div>
-
-      {item.addonQuantity > 0 ? (
-        <div className="mt-2">
-          <p className="font-bold text-foreground">Add-on per box</p>
-          <p>{item.addonName ?? "Add-on"} × {item.addonQuantity}</p>
-        </div>
-      ) : null}
-
-      <details className="group mt-3 border-t border-border/70 pt-3">
-        <summary className="w-fit cursor-pointer rounded-sm font-bold text-foreground underline decoration-border underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
-          <span className="group-open:hidden">View price per box</span>
-          <span className="hidden group-open:inline">Hide price per box</span>
-        </summary>
-        <dl className="mt-1 space-y-1">
-          <div className="flex justify-between gap-4">
-            <dt>Base box</dt>
-            <dd className="shrink-0 tabular-nums">{formatPhp(item.boxPrice)}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt>Coatings</dt>
-            <dd className="shrink-0 tabular-nums">{formatPhp(item.extraCoatingCharge)}</dd>
-          </div>
-          {item.addonQuantity > 0 ? (
-            <div className="flex justify-between gap-4">
-              <dt>Add-on</dt>
-              <dd className="shrink-0 tabular-nums">{formatPhp(addonTotal)}</dd>
-            </div>
-          ) : null}
-        </dl>
-      </details>
-    </div>
-  );
 }
 
 export function CheckoutContent({ availability, profile, loyalty, resumeOrderId }: CheckoutContentProps) {
@@ -206,6 +145,22 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
     ? Math.min(...eligibleRewardBoxes.map((item) => item.boxPrice))
     : 0;
   const checkoutTotal = Math.max(selectedSubtotal - rewardDiscount, 0);
+  const orderSummaryItems = selectedItems.map((item) => ({
+    id: item.id,
+    name: item.variantLabel,
+    quantity: item.quantity,
+    lineTotal: calculateCartLineTotal(item),
+    basePrice: item.boxPrice,
+    coatingTotal: item.extraCoatingCharge,
+    coatings: Object.entries(item.coatingCounts)
+      .filter(([, count]) => count > 0)
+      .map(([id, count]) => `${item.coatingNames[id] ?? "Coating"} × ${count}`),
+    addon: item.addonQuantity > 0 ? {
+      name: item.addonName ?? "Add-on",
+      quantity: item.addonQuantity,
+      lineTotal: item.addonPrice * item.addonQuantity,
+    } : null,
+  }));
   const customerDetailsValid = customerName.trim().length >= 2
     && customerName.trim().length <= 100
     && customerMobile.trim().length <= 30
@@ -288,20 +243,9 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
         <div className="border-b border-border bg-surface-muted px-6 py-5">
           <h2 className="font-display text-3xl">Order summary</h2>
         </div>
-        <ul className="divide-y divide-border px-6">
-          {selectedItems.map((item) => (
-            <li key={item.id} className="py-5">
-              <div className="flex items-start justify-between gap-3">
-                <h3 className="font-bold leading-6">{item.variantLabel}</h3>
-                <span className="shrink-0 font-bold tabular-nums">
-                  <span className="sr-only">Line total: </span>
-                  {formatPhp(calculateCartLineTotal(item))}
-                </span>
-              </div>
-              <PricingBreakdown item={item} />
-            </li>
-          ))}
-        </ul>
+        <div className="px-6 py-5">
+          <OrderLineItems items={orderSummaryItems} />
+        </div>
         <div className="border-t border-border bg-surface-muted px-6 py-5">
           <div className="space-y-2 text-sm">
             {rewardDiscount > 0 ? <div className="flex justify-between gap-4 font-bold text-success-foreground"><span>Loyalty reward</span><span>−{formatPhp(rewardDiscount)}</span></div> : null}

@@ -12,10 +12,13 @@ export interface CustomerOrderItemSummary {
   name: string;
   quantity: number;
   lineTotal: number;
+  basePrice: number;
+  coatingTotal: number;
   coatings: string[];
   addon: {
     name: string;
     quantity: number;
+    lineTotal: number;
   } | null;
 }
 
@@ -44,9 +47,7 @@ export interface CustomerOrderDetail extends CustomerOrderSummary {
   customerMobile: string | null;
   notes: string | null;
   cancelledAt: string | null;
-  items: Array<CustomerOrderItemSummary & {
-    unitPrice: number;
-  }>;
+  items: CustomerOrderItemSummary[];
   canCancel: boolean;
 }
 
@@ -66,6 +67,7 @@ interface AddonRow {
   order_item_id: string;
   addon_name_snapshot: string;
   quantity: number;
+  line_total: number | string;
 }
 
 interface NestedOrderItemRow {
@@ -74,6 +76,7 @@ interface NestedOrderItemRow {
   variant_name_snapshot: string;
   quantity: number;
   unit_price_snapshot?: number | string;
+  extra_coating_total_snapshot?: number | string;
   line_subtotal?: number | string;
   order_item_coatings: CoatingRow[] | null;
   order_item_addons: AddonRow[] | null;
@@ -133,11 +136,14 @@ function toItemLine(item: NestedOrderItemRow): CustomerOrderItemSummary {
     name: item.variant_name_snapshot,
     quantity: item.quantity,
     lineTotal: Number(item.line_subtotal ?? 0),
+    basePrice: Number(item.unit_price_snapshot ?? 0),
+    coatingTotal: Number(item.extra_coating_total_snapshot ?? 0),
     coatings: (item.order_item_coatings ?? [])
       .map((coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`),
     addon: addon ? {
       name: addon.addon_name_snapshot,
       quantity: addon.quantity,
+      lineTotal: Number(addon.line_total),
     } : null,
   };
 }
@@ -192,6 +198,8 @@ export async function getCustomerOrders(
         order_id,
         variant_name_snapshot,
         quantity,
+        unit_price_snapshot,
+        extra_coating_total_snapshot,
         line_subtotal,
         order_item_coatings (
           order_item_id,
@@ -201,7 +209,8 @@ export async function getCustomerOrders(
         order_item_addons (
           order_item_id,
           addon_name_snapshot,
-          quantity
+          quantity,
+          line_total
         )
       )
     `)
@@ -260,6 +269,7 @@ export async function getCustomerOrderDetail(
         variant_name_snapshot,
         quantity,
         unit_price_snapshot,
+        extra_coating_total_snapshot,
         line_subtotal,
         order_item_coatings (
           order_item_id,
@@ -269,7 +279,8 @@ export async function getCustomerOrderDetail(
         order_item_addons (
           order_item_id,
           addon_name_snapshot,
-          quantity
+          quantity,
+          line_total
         )
       )
     `)
@@ -291,10 +302,7 @@ export async function getCustomerOrderDetail(
     customerMobile: order.customer_mobile,
     notes: order.customer_notes,
     cancelledAt: order.cancelled_at,
-    items: (order.order_items ?? []).map((item) => ({
-      ...toItemLine(item),
-      unitPrice: Number(item.unit_price_snapshot),
-    })),
+    items: (order.order_items ?? []).map(toItemLine),
     canCancel: order.status === "PENDING_PAYMENT" && order.payment_status === "PENDING",
   };
 }
@@ -320,6 +328,8 @@ export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
         order_id,
         variant_name_snapshot,
         quantity,
+        unit_price_snapshot,
+        extra_coating_total_snapshot,
         line_subtotal,
         order_item_coatings (
           order_item_id,
@@ -329,7 +339,8 @@ export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
         order_item_addons (
           order_item_id,
           addon_name_snapshot,
-          quantity
+          quantity,
+          line_total
         )
       )
     `)

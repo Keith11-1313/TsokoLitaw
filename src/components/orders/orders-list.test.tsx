@@ -25,22 +25,29 @@ const order: CustomerOrderSummary = {
       name: "TsokoMini (4 pcs)",
       quantity: 2,
       lineTotal: 120,
+      basePrice: 40,
+      coatingTotal: 20,
       coatings: ["Milk × 1", "Palitaw × 1", "Crushed Nuts × 1", "Sesame Seeds × 1"],
-      addon: { name: "Sea salt cream", quantity: 10 },
+      addon: { name: "Sea salt cream", quantity: 10, lineTotal: 0 },
     },
   ],
 };
 
 describe("OrdersList", () => {
   it("shows structured item details instead of a flattened order paragraph", () => {
-    render(<OrdersList orders={[order]} nextCursor={null} showingOlderPage={false} />);
+    const { container } = render(<OrdersList orders={[order]} nextCursor={null} showingOlderPage={false} />);
 
     expect(screen.getByText("TsokoMini (4 pcs)")).toBeTruthy();
-    expect(screen.getByText("2 boxes")).toBeTruthy();
-    expect(screen.getByText("Coatings in each box:")).toBeTruthy();
+    expect(Array.from(container.querySelectorAll("p")).some((element) => (
+      element.textContent?.includes("2 boxes")
+      && element.textContent.includes("₱60.00")
+      && element.textContent.includes("each")
+    ))).toBe(true);
+    expect(screen.getByText("In each box")).toBeTruthy();
     expect(screen.getByText("Milk × 1 · Palitaw × 1 · Crushed Nuts × 1 · Sesame Seeds × 1")).toBeTruthy();
-    expect(screen.getByText("Add-on per box:")).toBeTruthy();
+    expect(screen.getByText("Add-on per box")).toBeTruthy();
     expect(screen.getByText("Sea salt cream × 10")).toBeTruthy();
+    expect(screen.getByText("View price per box")).toBeTruthy();
     expect(screen.queryByText(order.itemSummary)).toBeNull();
   });
 
