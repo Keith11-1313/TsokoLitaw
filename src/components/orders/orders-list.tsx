@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { CalendarDays, MapPin, PackageOpen } from "lucide-react";
 import Link from "next/link";
+import { OrderLineItems } from "@/components/orders/order-line-items";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/cn";
 import { formatPhp } from "@/lib/commerce";
@@ -48,6 +50,10 @@ export function OrdersList({
   const [filter, setFilter] = useState<OrderFilter>("all");
   const [openingOrderId, setOpeningOrderId] = useState<string | null>(null);
   const visibleOrders = useMemo(() => orders.filter((order) => matchesFilter(order, filter)), [filter, orders]);
+  const filtersWithCounts = FILTERS.map((item) => ({
+    ...item,
+    count: orders.filter((order) => matchesFilter(order, item.id)).length,
+  }));
 
   if (!orders.length) {
     return (
@@ -73,33 +79,42 @@ export function OrdersList({
 
   return (
     <section aria-label="Order history">
-      <div className="grid w-full grid-cols-5 overflow-hidden rounded-control border border-border bg-surface" role="tablist" aria-label="Filter orders">
-        {FILTERS.map((item) => {
-          const count = orders.filter((order) => matchesFilter(order, item.id)).length;
-          return (
+      <nav aria-label="Filter order history">
+        <div className="sm:hidden">
+          <CustomSelect
+            label="Show orders"
+            value={filter}
+            onChange={(value) => setFilter(value as OrderFilter)}
+            options={filtersWithCounts.map((item) => ({
+              value: item.id,
+              label: `${item.label} (${item.count})`,
+            }))}
+          />
+        </div>
+        <div className="hidden grid-cols-5 gap-2 sm:grid">
+          {filtersWithCounts.map((item) => (
             <button
               key={item.id}
               type="button"
-              role="tab"
-              aria-selected={filter === item.id}
+              aria-pressed={filter === item.id}
               onClick={() => setFilter(item.id)}
               className={cn(
-                "min-h-14 min-w-0 border-l border-border px-1.5 py-2 text-[0.65rem] font-bold leading-tight transition-colors first:border-l-0 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus sm:px-3 sm:text-sm",
-                filter === item.id ? "bg-brand text-surface" : "bg-surface text-foreground hover:bg-surface-muted",
+                "min-h-11 shrink-0 whitespace-nowrap rounded-full border border-border px-4 py-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 sm:min-w-0",
+                filter === item.id ? "border-brand bg-brand text-surface" : "bg-surface text-foreground hover:bg-surface-muted",
               )}
             >
-              {item.label} <span aria-label={`${count} orders`}>({count})</span>
+              {item.label} <span aria-label={`${item.count} orders`}>({item.count})</span>
             </button>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      </nav>
 
       {visibleOrders.length ? (
         <ul className="mt-6 space-y-4">
           {visibleOrders.map((order) => (
             <li key={order.id} className="rounded-card border border-border bg-surface p-5 sm:p-7">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-3">
                     <h2 className="font-display text-2xl">{order.orderNumber}</h2>
                     <StatusBadge
@@ -109,13 +124,19 @@ export function OrdersList({
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">Ordered {formatDate(order.orderedAt, true)}</p>
                 </div>
-                <p className="font-display text-xl">{formatPhp(order.total)}</p>
+                <p className="shrink-0 font-display text-xl tabular-nums">
+                  <span className="sr-only">Order total: </span>
+                  {formatPhp(order.total)}
+                </p>
               </div>
               <div className="mt-5 grid gap-3 border-t border-border pt-5 text-sm text-muted-foreground sm:grid-cols-2">
                 <p className="flex items-start gap-2"><CalendarDays aria-hidden="true" className="mt-0.5 shrink-0" size={17} />{formatDate(order.pickupDate)} · {order.pickupWindow}</p>
                 <p className="flex items-start gap-2"><MapPin aria-hidden="true" className="mt-0.5 shrink-0" size={17} />{order.pickupLocation}</p>
               </div>
-              <p className="mt-4 text-sm leading-6">{order.itemSummary || "Order items unavailable"}</p>
+              <div className="mt-5 border-t border-border pt-5">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Order items</p>
+                <OrderLineItems items={order.itemLines} className="mt-3" />
+              </div>
               <div className="mt-5 flex justify-end">
                 <Link
                   href={`/orders/${order.id}`}
@@ -128,7 +149,7 @@ export function OrdersList({
                     }
                     setOpeningOrderId(order.id);
                   }}
-                  className="inline-flex min-h-11 min-w-32 items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand transition-opacity aria-disabled:pointer-events-none aria-disabled:opacity-60"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand transition-opacity aria-disabled:pointer-events-none aria-disabled:opacity-60 sm:w-auto sm:min-w-32"
                 >
                   {openingOrderId === order.id ? "Opening…" : "View order"}
                 </Link>

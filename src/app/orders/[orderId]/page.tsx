@@ -6,6 +6,7 @@ import { CustomerPageShell } from "@/components/customer/customer-page-shell";
 import { OrderReviewModal } from "@/components/feedback/order-review-modal";
 import { SiteContainer } from "@/components/layout/site-container";
 import { OrderActions } from "@/components/orders/order-actions";
+import { OrderLineItems } from "@/components/orders/order-line-items";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { requireCustomer } from "@/lib/auth";
 import { formatPhp } from "@/lib/commerce";
@@ -34,11 +35,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_22rem]">
-          <section className="rounded-card border border-border bg-surface p-6 sm:p-8" aria-labelledby="items-title">
-            <h2 id="items-title" className="font-display text-2xl">Your box</h2>
-            <ul className="mt-5 divide-y divide-border">
-              {order.items.map((item) => <li key={item.id} className="flex justify-between gap-5 py-4"><div><p className="font-bold">{item.name} × {item.quantity}</p><p className="mt-1 text-sm text-muted-foreground">{item.coatings}</p></div><p className="shrink-0 font-bold">{formatPhp(item.lineTotal)}</p></li>)}
-            </ul>
+          <section className="rounded-card border border-border bg-surface p-5 sm:p-8" aria-labelledby="items-title">
+            <h2 id="items-title" className="font-display text-2xl">Order items</h2>
+            <OrderLineItems items={order.items} className="mt-5" />
             <div className="mt-6 grid gap-4 border-t border-border pt-6 text-sm sm:grid-cols-2"><p className="flex gap-2"><CalendarDays aria-hidden="true" size={18} />{pickupDate} · {order.pickupWindow}</p><p className="flex gap-2"><MapPin aria-hidden="true" size={18} />{order.pickupLocation}</p></div>
           </section>
 
