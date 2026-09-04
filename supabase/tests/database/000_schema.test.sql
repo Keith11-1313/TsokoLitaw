@@ -25,7 +25,7 @@ select set_config(
   true
 );
 
-select plan(55);
+select plan(60);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -39,6 +39,11 @@ select has_column('public', 'profiles', 'deactivated_at', 'profiles record when 
 select has_column('public', 'orders', 'checkout_idempotency_key', 'orders store a customer checkout idempotency key');
 select has_column('public', 'daily_inventory', 'product_id', 'daily inventory tracks shared product pieces');
 select has_sequence('public', 'order_number_sequence', 'orders use a concurrency-safe kiosk number sequence');
+select has_column('public', 'coatings', 'price_per_piece', 'coatings store a per-piece price');
+select has_column('public', 'coatings', 'is_default', 'coatings identify the storefront default');
+select hasnt_column('public', 'coatings', 'additional_type_price', 'obsolete additional-type pricing is removed');
+select hasnt_column('public', 'coatings', 'is_allergen', 'obsolete per-coating allergen flag is removed');
+select hasnt_column('public', 'coatings', 'allergen_note', 'obsolete per-coating allergen note is removed');
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.profiles'::regclass),

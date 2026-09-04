@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { calculateCartLineTotal, MAX_CART_LINE_QUANTITY } from "@/lib/commerce";
+import { calculateCartLineTotal, getBoxVariantLabel, MAX_CART_LINE_QUANTITY } from "@/lib/commerce";
 import type { CartLineItem } from "@/types/commerce";
 
 interface CartContextValue {
@@ -54,6 +54,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           addonName: item.addonName ?? ((item.extraSauceQuantity ?? 0) > 0 ? "Extra sea salt cream" : null),
           addonQuantity: item.addonQuantity ?? item.extraSauceQuantity ?? 0,
           addonPrice: item.addonPrice ?? item.extraSaucePrice ?? 0,
+          coatingPrices: item.coatingPrices ?? {},
+          variantLabel: item.variantLabel ?? getBoxVariantLabel(item.pieceCount ?? 0),
           quantity: normalizeQuantity(item.quantity ?? 1),
         } as CartLineItem))
         : [];

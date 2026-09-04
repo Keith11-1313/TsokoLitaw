@@ -198,10 +198,10 @@ Product cards should:
 
 Admin coating entry should:
 
-- request name, description, additional-type price, and image together
+- request name, description, per-piece coating price, availability, default selection, and image together
 - require and preview a square 1:1 image
-- explain that the first coating remains included
-- present ₱5 as an editable seed for the additional-type charge, not permanent pricing
+- explain that the saved price applies to every piece using the coating
+- present ₱5 as an editable seed for the per-piece coating charge, not permanent pricing
 - distinguish a local image preview from a successfully persisted customer-visible record
 
 Placeholders remain acceptable only when an actual asset is unavailable.

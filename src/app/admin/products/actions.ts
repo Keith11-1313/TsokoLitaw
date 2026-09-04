@@ -64,16 +64,13 @@ export async function saveCoatingAction(_state: CatalogActionState, formData: Fo
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const existingImageUrl = String(formData.get("existingImageUrl") ?? "").trim();
-  const priceValue = String(formData.get("additionalTypePrice") ?? "").trim();
+  const priceValue = String(formData.get("pricePerPiece") ?? "").trim();
   const price = Number(priceValue);
-  const isAllergen = formData.get("isAllergen") === "on";
-  const allergenNote = String(formData.get("allergenNote") ?? "").trim();
   const image = formData.get("image");
   const fieldErrors: FieldErrors = {};
   if (name.length < 2 || name.length > 80) fieldErrors.name = "Use a name between 2 and 80 characters.";
   if (description.length < 10 || description.length > 300) fieldErrors.description = "Use a description between 10 and 300 characters.";
-  if (!priceValue || !Number.isFinite(price) || price < 0 || price > 10000 || !Number.isInteger(price * 100)) fieldErrors.additionalTypePrice = "Enter a PHP price from 0 to 10,000 using cents.";
-  if (isAllergen && allergenNote.length < 2) fieldErrors.allergenNote = "Describe the declared allergen.";
+  if (!priceValue || !Number.isFinite(price) || price < 0 || price > 10000 || !Number.isInteger(price * 100)) fieldErrors.pricePerPiece = "Enter a PHP price from 0 to 10,000 using cents.";
   if ((coatingIdValue && !isUuid(coatingIdValue)) || Object.keys(fieldErrors).length) return { status: "error", message: "Check the highlighted coating details.", fieldErrors };
   if (image instanceof File && image.size > 0 && (!imageTypes.has(image.type) || image.size > 3 * 1024 * 1024)) {
     return { status: "error", message: "Upload a square JPG, PNG, or WebP image no larger than 3 MB.", fieldErrors: { image: "Choose a JPG, PNG, or WebP image no larger than 3 MB." } };
@@ -89,7 +86,7 @@ export async function saveCoatingAction(_state: CatalogActionState, formData: Fo
     }
     if (!imageUrl) return { status: "error", message: "Choose a square coating image.", fieldErrors: { image: "A square coating image is required." } };
     await saveCatalogCoating({ adminId: admin.id, coatingId: coatingIdValue || null, name, description, imageUrl,
-      additionalTypePrice: price, isActive: formData.get("isActive") === "on", isAllergen, allergenNote });
+      pricePerPiece: price, isActive: formData.get("isActive") === "on", isDefault: formData.get("isDefault") === "on" });
     refreshCatalog();
     return { status: "success", message: "Coating saved to the customer catalog." };
   } catch (error) {

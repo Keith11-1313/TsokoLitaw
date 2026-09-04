@@ -18,10 +18,9 @@ export interface AdminCatalogCoating {
   name: string;
   description: string;
   imageUrl: string | null;
-  additionalTypePrice: number;
+  pricePerPiece: number;
+  isDefault: boolean;
   isActive: boolean;
-  isAllergen: boolean;
-  allergenNote: string;
   sortOrder: number;
 }
 
@@ -41,7 +40,7 @@ export async function getAdminCatalog() {
   const supabase = await createServerSupabaseClient();
   const [productResult, coatingsResult, addonsResult] = await Promise.all([
     supabase.from("products").select(`id,name,description,price_per_piece,is_active,product_variants(id,name,piece_count,is_active,sort_order)`).order("created_at").limit(1).maybeSingle(),
-    supabase.from("coatings").select("id,name,description,image_url,additional_type_price,is_active,is_allergen,allergen_note,sort_order").order("sort_order"),
+    supabase.from("coatings").select().order("sort_order"),
     supabase.from("addons").select("id,name,price,is_active").order("created_at"),
   ]);
   if (productResult.error || !productResult.data || coatingsResult.error || addonsResult.error) {
@@ -56,11 +55,12 @@ export async function getAdminCatalog() {
       isActive: variant.is_active, sortOrder: variant.sort_order,
     })),
   };
-  const coatings: AdminCatalogCoating[] = (coatingsResult.data ?? []).map((coating) => ({
+  const coatings: AdminCatalogCoating[] = (coatingsResult.data ?? []).map((coating, index) => ({
     id: coating.id, name: coating.name, description: coating.description,
     imageUrl: coating.image_url,
-    additionalTypePrice: Number(coating.additional_type_price), isActive: coating.is_active,
-    isAllergen: coating.is_allergen, allergenNote: coating.allergen_note ?? "", sortOrder: coating.sort_order,
+    pricePerPiece: Number(coating.price_per_piece ?? coating.additional_type_price),
+    isDefault: coating.is_default ?? index === 0,
+    isActive: coating.is_active, sortOrder: coating.sort_order,
   }));
   const addons: AdminCatalogAddon[] = (addonsResult.data ?? []).map((addon) => ({
     id: addon.id, name: addon.name, price: Number(addon.price), isActive: addon.is_active,
@@ -85,13 +85,13 @@ export async function updateCatalogVariant(input: { adminId: string; variantId: 
 
 export async function saveCatalogCoating(input: {
   adminId: string; coatingId: string | null; name: string; description: string; imageUrl: string;
-  additionalTypePrice: number; isActive: boolean; isAllergen: boolean; allergenNote: string;
+  pricePerPiece: number; isActive: boolean; isDefault: boolean;
 }) {
   const { error } = await createAdminSupabaseClient().rpc("upsert_catalog_coating", {
     target_admin_id: input.adminId, target_coating_id: input.coatingId, name_value: input.name,
     description_value: input.description, image_url_value: input.imageUrl,
-    additional_type_price_value: input.additionalTypePrice, active_value: input.isActive,
-    allergen_value: input.isAllergen, allergen_note_value: input.allergenNote,
+    price_per_piece_value: input.pricePerPiece, active_value: input.isActive,
+    default_value: input.isDefault,
   });
   if (error) throw new Error("Coating could not be saved.", { cause: error });
 }

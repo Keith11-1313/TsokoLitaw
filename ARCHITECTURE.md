@@ -199,9 +199,9 @@ V1 supports five approved Google identities under one shared admin role. One ide
 - Product variants represent 4-, 6-, and 8-piece boxes.
 - Each box base total is `variant piece count × the product's current admin-managed price per piece`.
 - Coatings are selectable per box or per piece.
-- The first distinct coating type is included.
-- Each additional distinct type adds that coating's configurable additional-type charge.
-- The current ₱5 additional-type amount is a seed loaded from catalog data, not a permanent constant.
+- Every allocated piece adds its selected coating's configurable per-piece price.
+- The current ₱5 coating price is a seed loaded from catalog data, not a permanent constant.
+- Exactly one active coating is marked as the storefront default; mixed allocation remains explicit.
 - Add-ons such as extra sea salt cream are separate Admin-managed records. The customer builder lists every active record and may attach one add-on ID plus quantity to a configured box; checkout reloads that record and its current price before creating snapshots.
 
 Store IDs and counts from the client, then calculate money from database records on the server. Preserve names, counts, and prices as order snapshots.

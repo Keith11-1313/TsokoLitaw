@@ -70,7 +70,7 @@ Phase 13 Security and Production is complete. The Production baseline, live QR P
 - [x] Support single-coating selection
 - [x] Support mixed-box piece allocation
 - [x] Validate allocated pieces against box size in UI
-- [x] Calculate additional coating-type charge in UI
+- [x] Calculate per-piece coating charges in UI
 - [x] Add extra sea salt cream option
 - [x] Add, remove, and update local cart items
 - [x] Add an accessible add-to-cart confirmation modal with a cart icon and Check cart action
@@ -97,7 +97,7 @@ Phase 13 Security and Production is complete. The Production baseline, live QR P
 - [x] Remove mock records from authenticated customer order history while retaining clearly labeled Admin operational previews
 - [x] Add purpose, customer-impact, and connection guidance to every admin area
 - [x] Share customer/admin mock commerce and pickup constants
-- [x] Add frontend-only coating-entry preview with name, description, 1:1 image validation, and additional-type price
+- [x] Add coating-entry preview with name, description, 1:1 image validation, per-piece price, and default selection
 - [x] Connect Admin Catalog pricing, box availability, coating CRUD, square media upload, add-on availability, cache invalidation, and audit logging
 - [x] Review dense admin screens at small tablet widths
 
@@ -310,6 +310,7 @@ Do not begin until Phase 13 establishes and verifies the production baseline.
 - [x] Tag the stable Phase 13 production release before beginning the redesign
 - [x] Use `development` for the UI overhaul, creating a separate feature branch only if the work becomes risky or too large to review safely
 - [x] Complete the first approved customer-facing pass: photo background, two-font typography, tighter page spacing, mobile builder return action, and mobile-first checkout summary
+- [x] Apply the approved box names, per-piece coating pricing, persisted default coating, simplified builder controls, receipt-style checkout summary, and full-width order filters
 - [ ] Audit every customer and Admin page for information hierarchy, consistency, responsive behavior, accessibility, loading, empty, error, and success states
 - [ ] Implement the approved UI overhaul without changing established commerce, inventory, pickup, loyalty, payment, refund, notification, privacy, or authorization behavior unintentionally
 - [ ] Validate the overhaul against Dev services with typecheck, lint, application tests, database tests, production build, responsive review, accessibility review, and critical end-to-end flows

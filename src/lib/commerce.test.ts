@@ -4,8 +4,8 @@ import {
   INITIAL_PIECE_PRICE,
   calculateBoxPrice,
   calculateCartLineTotal,
-  calculateConfiguredExtraCoatingCharge,
-  calculateExtraCoatingCharge,
+  calculateConfiguredCoatingCharge,
+  calculateCoatingCharge,
   calculateItemUnitTotal,
   createBoxVariants,
   hasCompleteCoatingAllocation,
@@ -25,25 +25,25 @@ describe("box pricing", () => {
 });
 
 describe("configuration calculations", () => {
-  it("charges only coating types after the first", () => {
-    expect(calculateExtraCoatingCharge({ cocoa: 2, milk: 2 })).toBe(5);
-    expect(calculateExtraCoatingCharge({ cocoa: 4 }, 7)).toBe(0);
-    expect(calculateExtraCoatingCharge({ cocoa: 2, milk: 2 }, 7)).toBe(7);
-    expect(calculateExtraCoatingCharge({ cocoa: 2, milk: 2, plain: 2 }, 7)).toBe(14);
+  it("charges the configured coating price for every allocated piece", () => {
+    expect(calculateCoatingCharge({ cocoa: 2, milk: 2 })).toBe(20);
+    expect(calculateCoatingCharge({ cocoa: 4 }, 7)).toBe(28);
+    expect(calculateCoatingCharge({ cocoa: 2, milk: 2 }, 7)).toBe(28);
+    expect(calculateCoatingCharge({ cocoa: 2, milk: 2, plain: 2 }, 7)).toBe(42);
   });
 
-  it("uses each additional coating type's current catalog price", () => {
+  it("uses each coating's current per-piece catalog price", () => {
     const coatings = [
-      { id: "cocoa", additionalTypePrice: 4 },
-      { id: "milk", additionalTypePrice: 6 },
-      { id: "plain", additionalTypePrice: 2 },
+      { id: "cocoa", pricePerPiece: 4 },
+      { id: "milk", pricePerPiece: 6 },
+      { id: "plain", pricePerPiece: 2 },
     ];
 
-    expect(calculateConfiguredExtraCoatingCharge(
+    expect(calculateConfiguredCoatingCharge(
       { cocoa: 2, milk: 2, plain: 2 },
       coatings,
-    )).toBe(8);
-    expect(calculateConfiguredExtraCoatingCharge({ milk: 4 }, coatings)).toBe(0);
+    )).toBe(24);
+    expect(calculateConfiguredCoatingCharge({ milk: 4 }, coatings)).toBe(24);
   });
 
   it("accepts only complete, whole-piece allocations", () => {
@@ -76,8 +76,8 @@ describe("server-authoritative cart pricing", () => {
     piecePrice: 10,
     variants: [{ id: "variant-4", label: "Box of 4", pieceCount: 4 as const, price: 40 }],
     coatings: [
-      { id: "cocoa", name: "Cocoa", description: "", imageSrc: "", additionalTypePrice: 4, tone: "cocoa-coating" as const },
-      { id: "milk", name: "Milk", description: "", imageSrc: "", additionalTypePrice: 7, tone: "milk" as const },
+      { id: "cocoa", name: "Cocoa", description: "", imageSrc: "", pricePerPiece: 4, isDefault: true, tone: "cocoa-coating" as const },
+      { id: "milk", name: "Milk", description: "", imageSrc: "", pricePerPiece: 7, isDefault: false, tone: "milk" as const },
     ],
     addons: [{ id: "cream", name: "Cream", slug: "cream", price: 18 }],
   };
@@ -91,11 +91,11 @@ describe("server-authoritative cart pricing", () => {
       quantity: 2,
     }], catalog);
 
-    expect(priced.subtotal).toBe(130);
+    expect(priced.subtotal).toBe(160);
     expect(priced.lines[0]).toMatchObject({
       baseUnitPrice: 40,
-      extraCoatingTotal: 7,
-      lineSubtotal: 130,
+      extraCoatingTotal: 22,
+      lineSubtotal: 160,
     });
   });
 

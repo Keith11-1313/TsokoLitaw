@@ -3,9 +3,9 @@ import type { BoxVariant, CartLineItem, CheckoutCartInput, Coating, CommerceCata
 export const INITIAL_PIECE_PRICE = 10;
 
 const BOX_SIZES = [
-  { id: "box-4", label: "Box of 4", pieceCount: 4 },
-  { id: "box-6", label: "Box of 6", pieceCount: 6 },
-  { id: "box-8", label: "Box of 8", pieceCount: 8 },
+  { id: "box-4", label: "TsokoMini (4 pcs)", pieceCount: 4 },
+  { id: "box-6", label: "TsokoMore (6 pcs)", pieceCount: 6 },
+  { id: "box-8", label: "TsokoMuch (8 pcs)", pieceCount: 8 },
 ] as const;
 
 export function calculateBoxPrice(pieceCount: number, piecePrice: number) {
@@ -21,30 +21,35 @@ export function createBoxVariants(piecePrice: number): readonly BoxVariant[] {
 
 export const BOX_VARIANTS = createBoxVariants(INITIAL_PIECE_PRICE);
 
-export const INITIAL_EXTRA_COATING_PRICE = 5;
+export function getBoxVariantLabel(pieceCount: number) {
+  return BOX_SIZES.find((variant) => variant.pieceCount === pieceCount)?.label
+    ?? `Box of ${pieceCount}`;
+}
+
+export const INITIAL_COATING_PRICE = 5;
 export const EXTRA_SAUCE_PRICE = 18;
 export const MAX_ADDON_QUANTITY = 10;
 export const MAX_CART_LINE_QUANTITY = 20;
 
-export function calculateExtraCoatingCharge(
+export function calculateCoatingCharge(
   coatingCounts: Readonly<Record<string, number>>,
-  additionalTypePrice: number = INITIAL_EXTRA_COATING_PRICE,
+  pricePerPiece: number = INITIAL_COATING_PRICE,
 ) {
-  const distinctTypes = Object.values(coatingCounts).filter((count) => count > 0).length;
-  return Math.max(0, distinctTypes - 1) * additionalTypePrice;
+  return Object.values(coatingCounts).reduce(
+    (total, count) => total + Math.max(0, count) * pricePerPiece,
+    0,
+  );
 }
 
-export function calculateConfiguredExtraCoatingCharge(
+export function calculateConfiguredCoatingCharge(
   coatingCounts: Readonly<Record<string, number>>,
-  coatings: ReadonlyArray<Pick<Coating, "id" | "additionalTypePrice">>,
+  coatings: ReadonlyArray<Pick<Coating, "id" | "pricePerPiece">>,
 ) {
-  const selectedCoatings = coatings.filter(
-    (coating) => (coatingCounts[coating.id] ?? 0) > 0,
+  return coatings.reduce(
+    (total, coating) => total
+      + Math.max(0, coatingCounts[coating.id] ?? 0) * coating.pricePerPiece,
+    0,
   );
-
-  return selectedCoatings
-    .slice(1)
-    .reduce((total, coating) => total + coating.additionalTypePrice, 0);
 }
 
 export function hasCompleteCoatingAllocation(
@@ -68,11 +73,11 @@ export function formatPhp(value: number) {
 
 export function calculateItemUnitTotal(
   boxPrice: number,
-  extraCoatingCharge: number,
+  coatingCharge: number,
   addonQuantity: number,
   addonPrice: number = EXTRA_SAUCE_PRICE,
 ) {
-  return boxPrice + extraCoatingCharge + addonQuantity * addonPrice;
+  return boxPrice + coatingCharge + addonQuantity * addonPrice;
 }
 
 type PricedCartLine = Pick<
@@ -124,15 +129,16 @@ export function priceCheckoutCart(
       throw new CommerceValidationError("A selected coating is no longer available.");
     }
 
-    const coatings = selectedCoatings.map((coating, index) => ({
+    const coatings = selectedCoatings.map((coating) => ({
       id: coating.id,
       name: coating.name,
       pieceCount: item.coatingCounts[coating.id],
-      additionalPrice: index === 0 ? 0 : coating.additionalTypePrice,
-      isIncludedType: index === 0,
+      // Snapshot keys are retained for compatibility with historical orders.
+      additionalPrice: coating.pricePerPiece,
+      isIncludedType: false,
     }));
     const extraCoatingTotal = coatings.reduce(
-      (total, coating) => total + coating.additionalPrice,
+      (total, coating) => total + coating.additionalPrice * coating.pieceCount,
       0,
     );
 

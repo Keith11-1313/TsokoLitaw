@@ -73,7 +73,7 @@ export function OrdersList({
 
   return (
     <section aria-label="Order history">
-      <div className="flex gap-2 overflow-x-auto pb-2" role="tablist" aria-label="Filter orders">
+      <div className="grid w-full grid-cols-5 overflow-hidden rounded-control border border-border bg-surface" role="tablist" aria-label="Filter orders">
         {FILTERS.map((item) => {
           const count = orders.filter((order) => matchesFilter(order, item.id)).length;
           return (
@@ -84,8 +84,8 @@ export function OrdersList({
               aria-selected={filter === item.id}
               onClick={() => setFilter(item.id)}
               className={cn(
-                "min-h-11 shrink-0 rounded-full border px-4 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
-                filter === item.id ? "border-brand bg-brand text-surface" : "border-border bg-surface text-foreground hover:bg-surface-muted",
+                "min-h-14 min-w-0 border-l border-border px-1.5 py-2 text-[0.65rem] font-bold leading-tight transition-colors first:border-l-0 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus sm:px-3 sm:text-sm",
+                filter === item.id ? "bg-brand text-surface" : "bg-surface text-foreground hover:bg-surface-muted",
               )}
             >
               {item.label} <span aria-label={`${count} orders`}>({count})</span>

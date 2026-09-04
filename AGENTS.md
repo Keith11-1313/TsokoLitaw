@@ -72,8 +72,8 @@ Use this priority:
 - Products use coatings, not flavors or toppings.
 - Coatings: Cocoa, Milk, Palitaw, Crushed Nuts, Plain, Sesame Seeds, Cookies and Cream.
 - Palitaw means sugar, niyog, and sesame seeds.
-- One coating type is included.
-- Each additional coating type uses its Admin-configured database price; ₱5 is the current seed.
+- Every coated piece uses its coating's Admin-configured per-piece price; ₱5 is the current seed.
+- Exactly one active coating is the Admin-selected storefront default.
 - Mixed boxes allocate every piece and must total the selected box size.
 - Campus pickup only.
 - Made to order, Ready stock, and Hybrid all require website checkout and online payment; V1 has no cash or untracked walk-in sales.
@@ -136,7 +136,7 @@ Admin stays under `/admin` for campus-scale V1; no Admin subdomain is planned.
 - Use shared domain constants or persisted sources when customer and Admin UI represent the same data; do not maintain contradictory page-local copies.
 - Every Admin feature must have a clear operational purpose and customer impact. Mark any unconnected control as unavailable.
 - Keep Pickup scheduling and Inventory responsibility separate: Pickup creates/publishes dates, windows, locations, modes, cutoffs, and capacity; Inventory assigns prepared pieces only to existing Ready Stock or Hybrid dates.
-- Admin coating creation collects name, description, square image, allergen information, and additional-type price, then persists through the connected audited Catalog mutation. Do not restore the obsolete session-only preview workflow.
+- Admin coating creation collects name, description, square image, availability, default selection, and per-piece coating price, then persists through the connected audited Catalog mutation. Use the single general customer allergen notice rather than per-coating allergen controls. Do not restore the obsolete session-only preview workflow.
 - When an approved product decision changes workflow or domain meaning, update `DECISIONS.md` and every affected root specification in the same task.
 - Mobile-first responsive behavior.
 - Semantic HTML, labels, keyboard support, visible focus, and meaningful alt text.
