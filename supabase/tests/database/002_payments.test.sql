@@ -24,7 +24,7 @@ select set_config(
   ),
   true
 );
-select plan(27);
+select plan(28);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -248,6 +248,11 @@ select is(
   (select status from public.orders where id = 'a5000000-0000-4000-8000-000000000002'),
   'EXPIRED'::public.order_status,
   'the coordinated expiry marks the order expired'
+);
+select is(
+  (select payment_status from public.orders where id = 'a5000000-0000-4000-8000-000000000002'),
+  'FAILED'::public.payment_status,
+  'the coordinated expiry marks the order payment snapshot failed'
 );
 select is(
   (select status from public.payments where id = 'a6000000-0000-4000-8000-000000000002'),

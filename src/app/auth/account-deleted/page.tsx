@@ -13,12 +13,12 @@ export const metadata: Metadata = {
 export default function DeletedAccountPage() {
   return (
     <CustomerPageShell>
-      <SiteContainer className="py-16 sm:py-24">
+      <SiteContainer className="py-8 sm:py-12">
         <section className="mx-auto max-w-lg rounded-card border border-border bg-surface p-7 text-center sm:p-10">
           <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-surface-muted text-brand">
             <UserX aria-hidden="true" size={26} />
           </span>
-          <p className="mt-6 font-script text-5xl leading-none text-brand">Account deleted</p>
+          <p className="mt-6 font-display text-4xl leading-tight text-brand">Account deleted</p>
           <h1 className="mt-4 font-display text-3xl text-foreground">This account can no longer sign in</h1>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">
             The 90-day deletion period for this TsokoLitaw account has ended. Its access is permanently disabled, but your Google account was not changed.

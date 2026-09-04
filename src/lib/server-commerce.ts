@@ -102,7 +102,7 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
         .maybeSingle(),
       supabase
         .from("coatings")
-        .select("id, name, slug, description, image_url, additional_type_price")
+        .select()
         .eq("is_active", true)
         .order("sort_order", { ascending: true }),
       supabase
@@ -141,12 +141,13 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
         price: pieceCount * piecePrice,
       }];
     });
-  const coatings = (coatingsResult.data ?? []).map((coating) => ({
+  const coatings = (coatingsResult.data ?? []).map((coating, index) => ({
     id: coating.id,
     name: coating.name,
     description: coating.description,
     imageSrc: coating.image_url ?? "/images/home/placeholder-square.jpg",
-    additionalTypePrice: asMoney(coating.additional_type_price),
+    pricePerPiece: asMoney(coating.price_per_piece ?? coating.additional_type_price),
+    isDefault: coating.is_default ?? index === 0,
     tone: coatingTones[coating.slug] ?? "plain",
   }));
   const addons = (addonsResult.data ?? []).map((addon) => ({
@@ -177,7 +178,7 @@ export const getCommerceCatalog = cache(loadCommerceCatalog);
 // Public browsing can safely reuse a tagged snapshot between requests.
 export const getPublicCommerceCatalog = unstable_cache(
   loadCommerceCatalog,
-  ["public-commerce-catalog-v1"],
+  ["public-commerce-catalog-v2"],
   {
     revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS,
     tags: ["commerce-catalog"],

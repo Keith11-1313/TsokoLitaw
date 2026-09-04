@@ -13,7 +13,7 @@ export function CustomerPageHeading({
 }: CustomerPageHeadingProps) {
   return (
     <header className={centered ? "mx-auto max-w-2xl text-center" : fullWidth ? "w-full" : "max-w-2xl"}>
-      <h1 className="font-script text-[3.25rem] leading-none text-brand sm:text-[3.75rem]">
+      <h1 className="font-display text-4xl leading-tight text-brand sm:text-5xl">
         {title}
       </h1>
       {description ? (

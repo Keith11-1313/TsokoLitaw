@@ -22,7 +22,7 @@ export function LegalDocumentPage({
 }: LegalDocumentPageProps) {
   return (
     <CustomerPageShell>
-      <SiteContainer className="py-16 sm:py-20">
+      <SiteContainer className="py-8 sm:py-12">
         <div className="mx-auto max-w-3xl">
           <CustomerPageHeading title={title} description={introduction} fullWidth />
           <article className="mt-10 rounded-card border border-border bg-surface p-6 sm:p-10">

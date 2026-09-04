@@ -8,13 +8,13 @@ import {
   type CheckoutSubmissionResult,
 } from "@/app/checkout/actions";
 import { useCart } from "@/components/cart/cart-provider";
+import { OrderLineItems } from "@/components/orders/order-line-items";
 import { PrimaryButton } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { FormField } from "@/components/ui/form-field";
 import { calculateCartLineTotal, formatPhp } from "@/lib/commerce";
 import type { AuthProfile } from "@/lib/auth";
 import type { CustomerLoyaltyStatus } from "@/lib/server-loyalty";
-import type { CartLineItem } from "@/types/commerce";
 import type { CheckoutAvailability } from "@/types/pickup";
 
 interface CheckoutContentProps {
@@ -22,33 +22,6 @@ interface CheckoutContentProps {
   profile: AuthProfile;
   loyalty: CustomerLoyaltyStatus;
   resumeOrderId: string | null;
-}
-
-function CoatingBreakdown({ item }: { item: CartLineItem }) {
-  const coatings = Object.entries(item.coatingCounts)
-    .filter(([, count]) => count > 0)
-    .map(([id, count]) => `${item.coatingNames[id]} × ${count}`);
-
-  if (coatings.length <= 4) {
-    return <p className="mt-1 text-xs leading-5 text-muted-foreground">{coatings.join(", ")}</p>;
-  }
-
-  const visibleCount = Math.ceil(coatings.length / 2);
-  const visible = coatings.slice(0, visibleCount);
-  const remaining = coatings.slice(visibleCount);
-
-  return (
-    <details className="group mt-1 text-xs leading-5 text-muted-foreground">
-      <summary className="cursor-pointer list-none rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
-        {visible.join(", ")}
-        {" "}
-        <span className="whitespace-nowrap font-semibold text-muted-foreground underline decoration-muted-foreground/35 underline-offset-2 group-open:hidden">
-          +{remaining.length} more
-        </span>
-      </summary>
-      <p className="mt-1">{remaining.join(", ")}</p>
-    </details>
-  );
 }
 
 export function CheckoutContent({ availability, profile, loyalty, resumeOrderId }: CheckoutContentProps) {
@@ -172,6 +145,22 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
     ? Math.min(...eligibleRewardBoxes.map((item) => item.boxPrice))
     : 0;
   const checkoutTotal = Math.max(selectedSubtotal - rewardDiscount, 0);
+  const orderSummaryItems = selectedItems.map((item) => ({
+    id: item.id,
+    name: item.variantLabel,
+    quantity: item.quantity,
+    lineTotal: calculateCartLineTotal(item),
+    basePrice: item.boxPrice,
+    coatingTotal: item.extraCoatingCharge,
+    coatings: Object.entries(item.coatingCounts)
+      .filter(([, count]) => count > 0)
+      .map(([id, count]) => `${item.coatingNames[id] ?? "Coating"} × ${count}`),
+    addon: item.addonQuantity > 0 ? {
+      name: item.addonName ?? "Add-on",
+      quantity: item.addonQuantity,
+      lineTotal: item.addonPrice * item.addonQuantity,
+    } : null,
+  }));
   const customerDetailsValid = customerName.trim().length >= 2
     && customerName.trim().length <= 100
     && customerMobile.trim().length <= 30
@@ -179,7 +168,7 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[1.25fr_.75fr]">
-      <form className="min-w-0 space-y-6" aria-label="Checkout information" onSubmit={submitOrder}>
+      <form className="order-2 min-w-0 space-y-6 lg:order-1" aria-label="Checkout information" onSubmit={submitOrder}>
         <section className="rounded-card border border-border bg-surface p-6 sm:p-8">
           <h2 className="font-display text-2xl">Customer information</h2>
           <p className="mt-2 text-sm text-muted-foreground">We’ll use your Google email as the main way to contact you about your order.</p>
@@ -193,7 +182,7 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
         {availableReward ? (
           <section className="rounded-card border border-border bg-surface p-6 sm:p-8" aria-labelledby="checkout-reward-title">
             <h2 id="checkout-reward-title" className="font-display text-2xl">Loyalty reward</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">Use one reward for the base price of one 4-piece box. Add-ons and additional coating types remain charged.</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">Use one reward for the base price of one 4-piece box. Coating and add-on charges remain payable.</p>
             <label className="mt-5 flex items-start gap-3 rounded-control bg-success-background p-4 text-sm text-success-foreground">
               <input
                 type="checkbox"
@@ -246,40 +235,25 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
         ) : null}
         {!customerDetailsValid ? <p className="text-center text-xs font-bold text-danger-foreground">Complete the customer details before continuing.</p> : null}
         <PrimaryButton type="submit" disabled={!customerDetailsValid || !hasPickupAvailability || exceedsPreparedStock || !termsAccepted || isPending || submission?.status === "success"} className="w-full rounded-control!">
-          {!hasPickupAvailability ? "Pickup unavailable" : exceedsPreparedStock ? "Reduce cart quantities" : isPending ? "Opening secure payment…" : submission?.status === "success" ? "Opening PayMongo…" : "Continue to secure payment"}
+          {!hasPickupAvailability ? "Pickup unavailable" : exceedsPreparedStock ? "Reduce cart quantities" : isPending ? "Opening secure payment…" : submission?.status === "success" ? "Opening PayMongo…" : "Continue to payment"}
         </PrimaryButton>
-        <p className="text-center text-xs leading-5 text-muted-foreground">You’ll complete payment on PayMongo’s secure test checkout. Your order is confirmed only after TsokoLitaw receives PayMongo’s signed payment notification.</p>
       </form>
 
-      <aside className="min-w-0 overflow-hidden rounded-card border border-border bg-surface lg:sticky lg:top-6">
+      <aside className="order-1 min-w-0 overflow-hidden rounded-card border border-border bg-surface lg:order-2 lg:sticky lg:top-6">
         <div className="border-b border-border bg-surface-muted px-6 py-5">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Secure checkout</p>
-          <h2 className="mt-1 font-display text-3xl">Order summary</h2>
+          <h2 className="font-display text-3xl">Order summary</h2>
         </div>
-        <ul className="divide-y divide-border px-6">
-          {selectedItems.map((item) => (
-            <li key={item.id} className="py-5">
-              <div className="flex justify-between gap-3">
-                <span className="font-bold">Box of {item.pieceCount} × {item.quantity}</span>
-                <span>{formatPhp(calculateCartLineTotal(item))}</span>
-              </div>
-              <CoatingBreakdown item={item} />
-            </li>
-          ))}
-        </ul>
+        <div className="px-6 py-5">
+          <OrderLineItems items={orderSummaryItems} />
+        </div>
         <div className="border-t border-border bg-surface-muted px-6 py-5">
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between gap-4"><span>Subtotal</span><span>{formatPhp(selectedSubtotal)}</span></div>
             {rewardDiscount > 0 ? <div className="flex justify-between gap-4 font-bold text-success-foreground"><span>Loyalty reward</span><span>−{formatPhp(rewardDiscount)}</span></div> : null}
           </div>
-          <div className="mt-4 flex items-end justify-between gap-4 border-t border-border pt-4">
-            <div><span className="block text-xs font-bold uppercase tracking-wide text-muted-foreground">Estimated total</span><span className="mt-1 block text-xs text-muted-foreground">Verified again before payment</span></div>
+          <div className="flex items-end justify-between gap-4 border-t border-border pt-4">
+            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Total</span>
             <strong className="font-display text-3xl text-brand">{formatPhp(checkoutTotal)}</strong>
           </div>
-        </div>
-        <div className="m-6 space-y-2 rounded-control bg-warning-background p-4 text-xs leading-5 text-warning-foreground">
-          <p>May contain peanuts, dairy, coconut, sesame, and chocolate ingredients.</p>
-          <p>Missed pickups are non-refundable because the order has already been prepared.</p>
         </div>
       </aside>
     </div>

@@ -12,7 +12,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 **Phase 13: Security and Production is complete.** The isolated Dev and Production environments, live QR Ph payment, signed webhooks, production Cron jobs, transactional email, Search Console, sitemap, security controls, and production smoke tests have been verified. Remaining Phase 13 entries are post-launch monitoring, an optional Google Business Profile assessment, and the separately approved future database cleanup. Paid-order settlements occur in person; the website does not create refunds.
 
-**Phase 14: UI Overhaul is next but has not started.** Phase 15 will package the stable Phase 14 website as a directly distributed Android APK; it will not introduce a second storefront implementation.
+**Phase 14: UI Overhaul is in progress.** Its first approved customer-facing pass introduces the supplied photo background, simpler typography, tighter page spacing, and focused mobile builder and checkout improvements without changing commerce behavior. Phase 15 will package the stable Phase 14 website as a directly distributed Android APK; it will not introduce a second storefront implementation.
 
 The connected Admin Customers page is an account directory: it includes customer and Admin profiles, labels their roles explicitly, and shows their real order and loyalty activity when present.
 
@@ -30,7 +30,7 @@ Implemented customer and Admin interface:
 - Journal for announcements, stories, product features, and community highlights
 - responsive admin dashboard and management screens
 - admin purpose/customer-impact/connection guidance on every management area
-- connected Admin Catalog with square-image validation, Supabase media, and PHP additional-type pricing
+- connected Admin Catalog with square-image validation, Supabase media, default-coating selection, and PHP per-piece coating pricing
 - application-wide browser and authoritative server form validation, changed-only edit saves, accessible custom listboxes/number steppers, and decoded 3 MiB image checks
 
 Phase 7 backend foundation (deployed and verified):
@@ -58,7 +58,7 @@ Phase 9 server commerce completed:
 
 - active products, box variants, coatings, add-ons, and their current prices load from Supabase
 - box totals derive from the database product price per piece
-- additional coating types use their individual database-configured prices
+- every coated piece uses its coating's individual database-configured price
 - Checkout uses the authenticated profile rather than mock customer details
 - Checkout lists only database-published pickup dates, windows, and locations and shows an honest unavailable state when none are published
 - untrusted cart IDs and counts are validated and repriced against the active catalog on the server
@@ -113,7 +113,7 @@ The production baseline is connected: customer identity, account state, catalog,
 
 Our Creations and Checkout now read customer-safe commerce, Pickup schedules, and operating rules from Supabase. Admin Orders, Catalog, Inventory, Pickup, Customers, Journal, Reviews, and the cross-feature Dashboard are connected.
 
-The Admin Catalog now persists the base per-piece price, approved box-size availability, coatings, square coating media, additional-type prices, and add-on pricing. The primary storefront product remains active; box variants and selectable records control what customers can buy. Controlled service-role mutations recheck active Admin access, write audit records, and invalidate the public catalog cache; checkout still reloads live values and enforces date-specific inventory and pickup eligibility.
+The Admin Catalog now persists the base per-piece price, approved box-size availability, coatings, square coating media, per-piece coating prices, one active default coating, and add-on pricing. The primary storefront product remains active; box variants and selectable records control what customers can buy. Controlled service-role mutations recheck active Admin access, write audit records, and invalidate the public catalog cache; checkout still reloads live values and enforces date-specific inventory and pickup eligibility.
 
 Admin Inventory now persists ready stock as individual prepared Palitaw pieces per pickup date, shared by the 4-, 6-, and 8-piece boxes. Admin can publish an exact total and record unusable pieces. Checkout atomically commits `box quantity × piece count`; expiry and unpaid cancellation release the same number of pieces. Pickup publication and remaining stock determine whether checkout is available. Inventory mutations require an active Admin, enforce non-negative available stock, and write adjustment plus Admin audit records. Made to order, Ready stock, and Hybrid all require website checkout and online payment; V1 does not accept cash or untracked walk-in sales.
 
@@ -185,11 +185,10 @@ Admin pages intentionally remain under `/admin` for campus-scale V1 and are prot
 Current configurable seed prices:
 
 - Base price per piece — ₱10
-- Box of 4 — ₱40 (`4 × ₱10`)
-- Box of 6 — ₱60 (`6 × ₱10`)
-- Box of 8 — ₱80 (`8 × ₱10`)
-- First coating type included
-- Each additional coating type — temporary ₱5 seed, configurable by Admin
+- TsokoMini (4 pcs) base — ₱40 (`4 × ₱10`)
+- TsokoMore (6 pcs) base — ₱60 (`6 × ₱10`)
+- TsokoMuch (8 pcs) base — ₱80 (`8 × ₱10`)
+- Each coated piece — temporary ₱5 coating seed, configurable per coating by Admin
 - Extra sea salt cream — ₱18 per cup
 
 Coatings:

@@ -10,7 +10,8 @@ export interface Coating {
   name: string;
   description: string;
   imageSrc: string;
-  additionalTypePrice: number;
+  pricePerPiece: number;
+  isDefault: boolean;
   tone:
     | "cocoa-coating"
     | "milk"
@@ -45,6 +46,8 @@ export interface CartLineItem {
   boxPrice: number;
   coatingCounts: Record<string, number>;
   coatingNames: Record<string, string>;
+  coatingPrices: Record<string, number>;
+  variantLabel: string;
   extraCoatingCharge: number;
   addonId: string | null;
   addonName: string | null;

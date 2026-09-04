@@ -1,11 +1,11 @@
 "use client";
 
-import { Check, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Check, ChevronUp, Minus, Plus, ShoppingBag, X } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { AddToCartModal } from "@/components/creations/add-to-cart-modal";
-import { calculateConfiguredExtraCoatingCharge, calculateItemUnitTotal, formatPhp, hasCompleteCoatingAllocation, MAX_ADDON_QUANTITY, MAX_CART_LINE_QUANTITY } from "@/lib/commerce";
+import { calculateConfiguredCoatingCharge, calculateItemUnitTotal, formatPhp, hasCompleteCoatingAllocation, MAX_ADDON_QUANTITY, MAX_CART_LINE_QUANTITY } from "@/lib/commerce";
 import { PrimaryButton } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { QuantityInput } from "@/components/ui/quantity-input";
@@ -15,10 +15,12 @@ import type { CommerceCatalog } from "@/types/commerce";
 export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
   const { variants, coatings, addons } = catalog;
   const { addItem } = useCart();
+  const defaultCoating = coatings.find((coating) => coating.isDefault) ?? coatings[0];
+  const builderRef = useRef<HTMLElement>(null);
   const [variantId, setVariantId] = useState(variants[0].id);
   const [mode, setMode] = useState<"single" | "mixed">("single");
-  const [singleCoating, setSingleCoating] = useState(coatings[0].id);
-  const [counts, setCounts] = useState<Record<string, number>>({ [coatings[0].id]: variants[0].pieceCount });
+  const [singleCoating, setSingleCoating] = useState(defaultCoating.id);
+  const [counts, setCounts] = useState<Record<string, number>>({ [defaultCoating.id]: variants[0].pieceCount });
   const [quantity, setQuantity] = useState(1);
   const [addonId, setAddonId] = useState("");
   const [addonQuantity, setAddonQuantity] = useState(0);
@@ -27,20 +29,36 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
     quantity: number;
     total: number;
   } | null>(null);
+  const [showMobileBuilderShortcut, setShowMobileBuilderShortcut] = useState(false);
 
   const variant = variants.find((item) => item.id === variantId) ?? variants[0];
   const selectedCoating = coatings.find((coating) => coating.id === singleCoating) ?? coatings[0];
   const mixedTotal = Object.values(counts).reduce((sum, count) => sum + count, 0);
-  const extraCoatingCharge = calculateConfiguredExtraCoatingCharge(
+  const coatingCharge = calculateConfiguredCoatingCharge(
     mode === "single" ? { [singleCoating]: variant.pieceCount } : counts,
     coatings,
   );
   const selectedAddon = addons.find((addon) => addon.id === addonId) ?? null;
-  const unitTotal = calculateItemUnitTotal(variant.price, extraCoatingCharge, addonQuantity, selectedAddon?.price ?? 0);
+  const unitTotal = calculateItemUnitTotal(variant.price, coatingCharge, addonQuantity, selectedAddon?.price ?? 0);
   const remainingPieces = variant.pieceCount - mixedTotal;
   const hasValidAllocation = mode === "single" || hasCompleteCoatingAllocation(variant.pieceCount, counts);
   const error = !hasValidAllocation ? `Assign ${remainingPieces} more ${remainingPieces === 1 ? "piece" : "pieces"}.` : "";
   const coatingNames = useMemo(() => Object.fromEntries(coatings.map((coating) => [coating.id, coating.name])), [coatings]);
+  const coatingPrices = useMemo(() => Object.fromEntries(coatings.map((coating) => [coating.id, coating.pricePerPiece])), [coatings]);
+
+  useEffect(() => {
+    const builder = builderRef.current;
+    if (!builder) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setShowMobileBuilderShortcut(
+        !entry.isIntersecting && entry.boundingClientRect.bottom < 0,
+      );
+    });
+    observer.observe(builder);
+    return () => observer.disconnect();
+  }, []);
+
   function closeAddedItem() {
     setAddedItem(null);
   }
@@ -74,16 +92,24 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
     });
   }
 
+  function removeMixedCoating(id: string) {
+    setCounts((current) => ({ ...current, [id]: 0 }));
+  }
+
   function submit() {
     if (error) return;
     const coatingCounts = mode === "single" ? { [singleCoating]: variant.pieceCount } : counts;
     const selectedQuantity = quantity;
-    addItem({ variantId: variant.id, pieceCount: variant.pieceCount, boxPrice: variant.price, coatingCounts, coatingNames, extraCoatingCharge, addonId: selectedAddon?.id ?? null, addonName: selectedAddon?.name ?? null, addonQuantity, addonPrice: selectedAddon?.price ?? 0, quantity: selectedQuantity });
+    addItem({ variantId: variant.id, variantLabel: variant.label, pieceCount: variant.pieceCount, boxPrice: variant.price, coatingCounts, coatingNames, coatingPrices, extraCoatingCharge: coatingCharge, addonId: selectedAddon?.id ?? null, addonName: selectedAddon?.name ?? null, addonQuantity, addonPrice: selectedAddon?.price ?? 0, quantity: selectedQuantity });
     setAddedItem({
       variantLabel: variant.label,
       quantity: selectedQuantity,
       total: unitTotal * selectedQuantity,
     });
+  }
+
+  function returnToBuilder() {
+    builderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
@@ -97,36 +123,38 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
           <p className="text-xs font-bold text-subtle-foreground">{coatings.length} choices</p>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {coatings.map((coating, index) => {
+        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+          {coatings.map((coating) => {
             const count = counts[coating.id] ?? 0;
             const selected = mode === "single" ? coating.id === singleCoating : count > 0;
             const cardContent = <><div className="relative aspect-[4/3] overflow-hidden bg-surface-muted"><Image src={coating.imageSrc} alt={`${coating.name} coated chocolate-filled Litaw`} fill sizes="(min-width: 1280px) 18vw, (min-width: 640px) 35vw, 90vw" className="object-cover transition-transform duration-300 group-hover:scale-[1.02]" />{selected ? <span className="absolute left-3 top-3 flex size-8 items-center justify-center rounded-full bg-brand text-surface shadow"><Check aria-hidden="true" size={17} /></span> : null}</div><div className="p-4"><h3 className="font-display text-xl">{coating.name}</h3><p className="mt-1 min-h-10 text-sm leading-5 text-muted-foreground">{coating.description}</p></div></>;
 
-            return <article key={coating.id} className={cn("group overflow-hidden rounded-card border bg-surface transition", selected ? "border-brand ring-2 ring-brand/15" : "border-border", index === coatings.length - 1 && "sm:col-span-2 sm:mx-auto sm:w-[calc(50%-0.5rem)] xl:col-span-1 xl:col-start-2 xl:w-full")}>
+            return <article key={coating.id} className={cn("group overflow-hidden rounded-card border bg-surface transition", selected ? "border-brand ring-2 ring-brand/15" : "border-border")}>
               {mode === "single" ? <button type="button" aria-pressed={selected} onClick={() => chooseSingle(coating.id)} className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus">{cardContent}</button> : <>{cardContent}<div className="flex items-center justify-between border-t border-border px-4 py-3"><span className="text-xs font-bold text-muted-foreground">Pieces</span><div className="flex items-center gap-2"><button type="button" aria-label={`Remove one ${coating.name}`} disabled={count === 0} onClick={() => adjust(coating.id, -1)} className="flex size-10 items-center justify-center rounded-full bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-35"><Minus aria-hidden="true" size={15} /></button><span className="w-5 text-center font-bold">{count}</span><button type="button" aria-label={`Add one ${coating.name}`} disabled={mixedTotal >= variant.pieceCount} onClick={() => adjust(coating.id, 1)} className="flex size-10 items-center justify-center rounded-full bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-35"><Plus aria-hidden="true" size={15} /></button></div></div></>}
             </article>;
           })}
         </div>
       </section>
 
-      <aside className="order-1 self-start lg:order-2 lg:sticky lg:top-6">
+      <aside ref={builderRef} className="order-1 scroll-mt-4 self-start lg:order-2 lg:sticky lg:top-6">
         <section className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-7" aria-labelledby="build-box-heading">
           <h2 id="build-box-heading" className="font-display text-3xl">Build your box</h2>
 
           <div className="mt-5 space-y-5">
-            <CustomSelect label="Box size" value={variantId} onChange={changeVariant} options={variants.map((item) => ({ value: item.id, label: `${item.label} — ${formatPhp(item.price)}` }))} />
+            <CustomSelect label="Box size" value={variantId} onChange={changeVariant} options={variants.map((item) => ({ value: item.id, label: item.label }))} />
 
             <fieldset>
               <legend className="text-sm font-bold">Coating style</legend>
-              <div className="mt-2 grid grid-cols-2 gap-2">{(["single", "mixed"] as const).map((value) => <button type="button" key={value} onClick={() => changeMode(value)} className={cn("min-h-12 rounded-control border px-3 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus", mode === value ? "border-brand bg-brand text-surface" : "border-border bg-surface")}>{value === "single" ? "Single coating" : "Mixed box"}</button>)}</div>
+              <div className="mt-2 grid grid-cols-2 gap-2">{(["single", "mixed"] as const).map((value) => <button type="button" key={value} onClick={() => changeMode(value)} className={cn("min-h-12 rounded-control border px-3 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus", mode === value ? "border-brand bg-brand text-surface" : "border-border bg-surface")}>{value === "single" ? "Single" : "Mixed"}</button>)}</div>
             </fieldset>
 
             <div className="rounded-control bg-surface-control p-4">
               <div className="flex items-center justify-between gap-3"><p className="text-xs font-bold uppercase tracking-wide text-subtle-foreground">Your coating</p>{mode === "mixed" ? <span className={cn("text-xs font-bold", error ? "text-danger-foreground" : "text-success-foreground")}>{mixedTotal}/{variant.pieceCount} pieces</span> : null}</div>
-              {mode === "single" ? <p className="mt-2 font-bold">{selectedCoating.name}</p> : <div className="mt-3 flex flex-wrap gap-2">{coatings.filter((coating) => (counts[coating.id] ?? 0) > 0).map((coating) => <span key={coating.id} className="rounded-full bg-surface px-3 py-1 text-xs font-bold">{coating.name} × {counts[coating.id]}</span>)}</div>}
-              {error ? <p className="mt-2 text-xs font-bold text-danger-foreground">{error}</p> : null}
+              {mode === "single" ? <p className="mt-2 font-bold">{selectedCoating.name}</p> : <div className="mt-3 flex flex-wrap gap-2">{coatings.filter((coating) => (counts[coating.id] ?? 0) > 0).map((coating) => <span key={coating.id} className="inline-flex items-center gap-1 rounded-full bg-surface pl-3 pr-1 py-1 text-xs font-bold">{coating.name} × {counts[coating.id]}<button type="button" onClick={() => removeMixedCoating(coating.id)} aria-label={`Remove ${coating.name} allocation`} className="flex size-7 items-center justify-center rounded-full text-muted-foreground hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" size={13} /></button></span>)}</div>}
+              {error ? <p className="sr-only" role="status" aria-live="polite">{error}</p> : null}
             </div>
+
+            <p className="rounded-control bg-surface-muted p-4 text-xs leading-5 text-muted-foreground">Allergen notice: products may contain peanuts, dairy, coconut, sesame, and chocolate ingredients.</p>
 
             {addons.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"><CustomSelect label="Add-on" value={addonId} onChange={changeAddon} options={[{ value: "", label: "No add-on" }, ...addons.map((addon) => ({ value: addon.id, label: `${addon.name} — ${formatPhp(addon.price)}` }))]} /><QuantityInput label="Add-on quantity per box" value={addonQuantity} onChange={setAddonQuantity} min={selectedAddon ? 1 : 0} max={selectedAddon ? MAX_ADDON_QUANTITY : 0} disabled={!selectedAddon} /></div> : null}
             <QuantityInput label="Box quantity" value={quantity} onChange={setQuantity} min={1} max={MAX_CART_LINE_QUANTITY} />
@@ -143,6 +171,23 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
           total={addedItem.total}
           onClose={closeAddedItem}
         />
+      ) : null}
+      {showMobileBuilderShortcut && !addedItem ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-12px_30px_-22px_rgba(54,30,10,0.7)] backdrop-blur lg:hidden"
+          aria-label="Box builder shortcut"
+        >
+          <div className="mx-auto flex max-w-md items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Current box</p>
+              <p className="font-display text-xl text-brand">{formatPhp(unitTotal * quantity)}</p>
+            </div>
+            <PrimaryButton type="button" onClick={returnToBuilder} className="shrink-0">
+              <ChevronUp aria-hidden="true" size={18} />
+              Review box
+            </PrimaryButton>
+          </div>
+        </div>
       ) : null}
     </div>
   );

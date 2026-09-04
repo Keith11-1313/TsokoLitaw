@@ -7,6 +7,21 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const CUSTOMER_ORDERS_PAGE_SIZE = 20;
 
+export interface CustomerOrderItemSummary {
+  id: string;
+  name: string;
+  quantity: number;
+  lineTotal: number;
+  basePrice: number;
+  coatingTotal: number;
+  coatings: string[];
+  addon: {
+    name: string;
+    quantity: number;
+    lineTotal: number;
+  } | null;
+}
+
 export interface CustomerOrderSummary {
   id: string;
   orderNumber: string;
@@ -18,6 +33,7 @@ export interface CustomerOrderSummary {
   pickupWindow: string;
   pickupLocation: string;
   itemSummary: string;
+  itemLines: CustomerOrderItemSummary[];
 }
 
 export interface CustomerOrdersPage {
@@ -31,14 +47,7 @@ export interface CustomerOrderDetail extends CustomerOrderSummary {
   customerMobile: string | null;
   notes: string | null;
   cancelledAt: string | null;
-  items: Array<{
-    id: string;
-    name: string;
-    quantity: number;
-    unitPrice: number;
-    lineTotal: number;
-    coatings: string;
-  }>;
+  items: CustomerOrderItemSummary[];
   canCancel: boolean;
 }
 
@@ -54,14 +63,23 @@ interface CoatingRow {
   piece_count: number;
 }
 
+interface AddonRow {
+  order_item_id: string;
+  addon_name_snapshot: string;
+  quantity: number;
+  line_total: number | string;
+}
+
 interface NestedOrderItemRow {
   id: string;
   order_id?: string;
   variant_name_snapshot: string;
   quantity: number;
   unit_price_snapshot?: number | string;
+  extra_coating_total_snapshot?: number | string;
   line_subtotal?: number | string;
   order_item_coatings: CoatingRow[] | null;
+  order_item_addons: AddonRow[] | null;
 }
 
 interface CustomerOrderRow {
@@ -111,16 +129,37 @@ function encodeCursor(row: Pick<CustomerOrderRow, "created_at" | "id">) {
   return Buffer.from(JSON.stringify({ createdAt: row.created_at, id: row.id })).toString("base64url");
 }
 
-function summarizeItems(items: NestedOrderItemRow[] | null) {
-  return (items ?? []).map((item) => {
-    const coatingSummary = (item.order_item_coatings ?? [])
-      .map((coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`)
-      .join(", ");
-    return `${item.variant_name_snapshot} × ${item.quantity}${coatingSummary ? ` · ${coatingSummary}` : ""}`;
+function toItemLine(item: NestedOrderItemRow): CustomerOrderItemSummary {
+  const addon = item.order_item_addons?.[0] ?? null;
+  return {
+    id: item.id,
+    name: item.variant_name_snapshot,
+    quantity: item.quantity,
+    lineTotal: Number(item.line_subtotal ?? 0),
+    basePrice: Number(item.unit_price_snapshot ?? 0),
+    coatingTotal: Number(item.extra_coating_total_snapshot ?? 0),
+    coatings: (item.order_item_coatings ?? [])
+      .map((coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`),
+    addon: addon ? {
+      name: addon.addon_name_snapshot,
+      quantity: addon.quantity,
+      lineTotal: Number(addon.line_total),
+    } : null,
+  };
+}
+
+function summarizeItems(items: CustomerOrderItemSummary[]) {
+  return items.map((item) => {
+    const details = [
+      item.coatings.join(", "),
+      item.addon ? `${item.addon.name} × ${item.addon.quantity} per box` : "",
+    ].filter(Boolean).join(" · ");
+    return `${item.name} × ${item.quantity}${details ? ` · ${details}` : ""}`;
   }).join("; ");
 }
 
 function toOrderSummary(order: CustomerOrderRow): CustomerOrderSummary {
+  const itemLines = (order.order_items ?? []).map(toItemLine);
   return {
     id: order.id,
     orderNumber: order.order_number,
@@ -131,7 +170,8 @@ function toOrderSummary(order: CustomerOrderRow): CustomerOrderSummary {
     pickupDate: order.pickup_date,
     pickupWindow: order.pickup_window_snapshot,
     pickupLocation: order.pickup_location_snapshot,
-    itemSummary: summarizeItems(order.order_items),
+    itemSummary: summarizeItems(itemLines),
+    itemLines,
   };
 }
 
@@ -158,10 +198,19 @@ export async function getCustomerOrders(
         order_id,
         variant_name_snapshot,
         quantity,
+        unit_price_snapshot,
+        extra_coating_total_snapshot,
+        line_subtotal,
         order_item_coatings (
           order_item_id,
           coating_name_snapshot,
           piece_count
+        ),
+        order_item_addons (
+          order_item_id,
+          addon_name_snapshot,
+          quantity,
+          line_total
         )
       )
     `)
@@ -220,11 +269,18 @@ export async function getCustomerOrderDetail(
         variant_name_snapshot,
         quantity,
         unit_price_snapshot,
+        extra_coating_total_snapshot,
         line_subtotal,
         order_item_coatings (
           order_item_id,
           coating_name_snapshot,
           piece_count
+        ),
+        order_item_addons (
+          order_item_id,
+          addon_name_snapshot,
+          quantity,
+          line_total
         )
       )
     `)
@@ -246,16 +302,7 @@ export async function getCustomerOrderDetail(
     customerMobile: order.customer_mobile,
     notes: order.customer_notes,
     cancelledAt: order.cancelled_at,
-    items: (order.order_items ?? []).map((item) => ({
-      id: item.id,
-      name: item.variant_name_snapshot,
-      quantity: item.quantity,
-      unitPrice: Number(item.unit_price_snapshot),
-      lineTotal: Number(item.line_subtotal),
-      coatings: (item.order_item_coatings ?? [])
-        .map((coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`)
-        .join(", "),
-    })),
+    items: (order.order_items ?? []).map(toItemLine),
     canCancel: order.status === "PENDING_PAYMENT" && order.payment_status === "PENDING",
   };
 }
@@ -281,10 +328,19 @@ export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
         order_id,
         variant_name_snapshot,
         quantity,
+        unit_price_snapshot,
+        extra_coating_total_snapshot,
+        line_subtotal,
         order_item_coatings (
           order_item_id,
           coating_name_snapshot,
           piece_count
+        ),
+        order_item_addons (
+          order_item_id,
+          addon_name_snapshot,
+          quantity,
+          line_total
         )
       )
     `)

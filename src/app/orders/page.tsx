@@ -19,8 +19,8 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
 
   return (
     <CustomerPageShell activePath="/orders">
-      <SiteContainer className="py-12 sm:py-16">
-        <div className="mb-9 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+      <SiteContainer className="py-8 sm:py-12">
+        <div className="mb-6 flex flex-col gap-5 rounded-card border border-border bg-surface p-5 sm:mb-9 sm:flex-row sm:items-end sm:justify-between sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
           <div>
             <h1 className="font-display text-4xl sm:text-5xl">My orders</h1>
             <p className="mt-3 text-muted-foreground">Track payment, preparation, pickup, and completed orders.</p>

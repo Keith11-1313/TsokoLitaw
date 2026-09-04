@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Serif_Display, Italianno, Lato } from "next/font/google";
+import { DM_Serif_Display, Lato } from "next/font/google";
 import "./globals.css";
 import "@/bones/registry";
 import { CartProvider } from "@/components/cart/cart-provider";
@@ -12,12 +12,6 @@ const lato = Lato({
 
 const dmSerifDisplay = DM_Serif_Display({
   variable: "--font-dm-serif",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-const italianno = Italianno({
-  variable: "--font-italianno",
   subsets: ["latin"],
   weight: "400",
 });
@@ -48,7 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${lato.variable} ${dmSerifDisplay.variable} ${italianno.variable} antialiased`}
+        className={`${lato.variable} ${dmSerifDisplay.variable} antialiased`}
       >
         <a
           href="#main-content"

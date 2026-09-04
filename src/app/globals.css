@@ -49,7 +49,6 @@
 
   --font-sans: var(--font-lato);
   --font-display: var(--font-dm-serif);
-  --font-script: var(--font-italianno);
 
   --radius-control: 0.75rem;
   --radius-image: 1rem;
@@ -79,6 +78,14 @@ body {
   font-family: var(--font-lato), Arial, Helvetica, sans-serif;
   line-height: 1.5;
   text-rendering: optimizeLegibility;
+}
+
+.customer-photo-background {
+  background-color: var(--background);
+  background-image: url("/images/photo-bg.png");
+  background-position: center top;
+  background-repeat: repeat;
+  background-size: 820px 460px;
 }
 
 button,

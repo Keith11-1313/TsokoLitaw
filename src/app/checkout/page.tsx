@@ -24,9 +24,9 @@ export default async function CheckoutPage({ searchParams }: PageProps<"/checkou
 
   return (
     <CustomerPageShell>
-      <SiteContainer className="py-16 sm:py-20">
+      <SiteContainer className="py-8 sm:py-12">
         <h1 className="font-display text-4xl text-foreground">Checkout</h1>
-        <div className="mt-10"><CheckoutContent availability={availability} profile={profile} loyalty={loyalty} resumeOrderId={payment === "cancelled" && typeof order === "string" ? order : null} /></div>
+        <div className="mt-7 sm:mt-9"><CheckoutContent availability={availability} profile={profile} loyalty={loyalty} resumeOrderId={payment === "cancelled" && typeof order === "string" ? order : null} /></div>
       </SiteContainer>
     </CustomerPageShell>
   );

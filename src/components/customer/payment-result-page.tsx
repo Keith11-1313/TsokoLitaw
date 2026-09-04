@@ -28,7 +28,7 @@ export function PaymentResultPage({
 }: PaymentResultPageProps) {
   return (
     <CustomerPageShell>
-      <SiteContainer className="py-16 sm:py-24">
+      <SiteContainer className="py-8 sm:py-12">
         <section className="mx-auto max-w-xl rounded-card border border-border bg-surface p-7 text-center sm:p-12">
           <span
             className={cn(

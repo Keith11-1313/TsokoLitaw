@@ -48,9 +48,9 @@ Workflow changes must be reflected together in:
 - the existing `tsokolitaw.vercel.app` deployment remains the isolated Dev application, while `tsokolitaw.com` belongs to a separate Production Vercel project connected to the same repository
 - Dev and Production use separate Supabase projects, provider credentials, webhook secrets, cron secrets, and URLs; database changes are tested locally and in Dev before the same reviewed migrations are promoted to Production
 
-### Planned next stages
+### Current and planned next stages
 
-- Phase 14 overhauls the customer and Admin interface without changing the established commerce, payment, authorization, notification, or operational rules.
+- Phase 14 is in progress and overhauls the customer and Admin interface without changing the established commerce, payment, authorization, notification, or operational rules.
 - Phase 15 packages the stable Phase 14 Production website as a directly distributed Android APK through a Trusted Web Activity.
 
 ### External changes requiring explicit approval
@@ -152,8 +152,7 @@ Temporary editable seed values:
 - 4-piece box — ₱40 (`4 × ₱10`)
 - 6-piece box — ₱60 (`6 × ₱10`)
 - 8-piece box — ₱80 (`8 × ₱10`)
-- first coating type included
-- each additional coating type — temporary seed price ₱5, configurable by Admin
+- each coated piece — temporary seed price ₱5, configurable per coating by Admin
 - extra sea salt cream — ₱18 per cup
 
 Coatings:
@@ -173,11 +172,12 @@ Each coating catalog record requires:
 - customer-facing name
 - description
 - square 1:1 image
-- configurable additional-type price
+- configurable per-piece coating price
+- default coating selection
 
 Admin coating creation validates and previews the square image before submitting the connected audited Catalog mutation. A coating appears in the customer builder only after successful persistence and cache invalidation; failed or incomplete submissions must never look published.
 
-The temporary prices are approved as initial database seed values. Authorized admins may edit the base price per piece plus each coating's additional-type charge, add-on pricing, and related pricing. The primary product remains customer-facing; availability is controlled at the sellable box-size, coating, and add-on levels rather than with a redundant whole-product switch. Every active add-on created in Admin Catalog must appear in the customer box builder. A configured box may select one add-on type and its quantity; the cart keeps its name for display, while checkout submits its database ID and quantity for server-side availability and price validation. Box totals are derived from the selected variant's piece count and the current base piece price. The ₱5 additional-coating amount is not fixed: checkout must reload its current Admin-managed value and recalculate money on the server, while completed orders retain immutable price snapshots.
+The temporary prices are approved as initial database seed values. Authorized admins may edit the base price per piece plus each coating's per-piece charge, default selection, add-on pricing, and related pricing. The primary product remains customer-facing; availability is controlled at the sellable box-size, coating, and add-on levels rather than with a redundant whole-product switch. Every active add-on created in Admin Catalog must appear in the customer box builder. A configured box may select one add-on type and its quantity; the cart keeps its name for display, while checkout submits its database ID and quantity for server-side availability and price validation. Box base totals are derived from the selected variant's piece count and the current base piece price, then every coating allocation is charged per piece. The ₱5 coating amount is not fixed: checkout must reload its current Admin-managed value and recalculate money on the server, while completed orders retain immutable price snapshots.
 
 ## 7. Product Customization
 
@@ -187,7 +187,7 @@ Customer flow:
 2. Choose single coating or mixed box.
 3. For mixed boxes, allocate each piece to a coating.
 4. Require allocated pieces to exactly equal the selected box size.
-5. Charge the current Admin-configured additional-type price for each distinct coating type after the first; the provisional seed is ₱5.
+5. Charge each allocated piece using its coating's current Admin-configured per-piece price; the provisional seed is ₱5.
 6. Optionally select any active add-on and enter its quantity per box.
 7. Enter the box quantity using a bounded numeric input.
 8. Add configuration to cart.
@@ -363,7 +363,7 @@ Initial loyalty rule:
 
 - every seven completed orders earns a free 4-piece box
 
-Cancelled, expired, unpaid, or failed orders do not count. One reward discounts the current base price of one selected 4-piece box; add-ons and additional coating types remain payable. Redemption is atomic, one reward cannot fund two orders, and a pending redemption returns to available if its order expires or is cancelled. A fully rewarded ₱0 order is recorded as loyalty-settled and confirmed without opening PayMongo.
+Cancelled, expired, unpaid, or failed orders do not count. One reward discounts the current base price of one selected 4-piece box; coating and add-on charges remain payable. Redemption is atomic, one reward cannot fund two orders, and a pending redemption returns to available if its order expires or is cancelled. A fully rewarded ₱0 order is recorded as loyalty-settled and confirmed without opening PayMongo.
 
 ## 15. Admin
 
@@ -383,7 +383,7 @@ Admin manages boxes, PHP prices, coatings, add-ons, product images, stock, picku
 
 Admin Customers is an account-support directory. It includes every customer and Admin profile, labels each role explicitly, and shows zero order or loyalty activity when an account has not purchased yet.
 
-The Admin Catalog coating form collects name, description, a validated 1:1 image, allergen information, availability, and the coating's additional-type price. Publication uses authenticated server-side persistence, controlled public media storage, cache invalidation, and Admin audit logging.
+The Admin Catalog coating form collects name, description, a validated 1:1 image, availability, default selection, and the coating's per-piece price. Customer-facing allergen communication uses one general notice. Publication uses authenticated server-side persistence, controlled public media storage, cache invalidation, and Admin audit logging.
 
 The TsokoLitaw brand/store name is fixed and must not appear as an editable setting. Never expose infrastructure secrets in admin UI.
 

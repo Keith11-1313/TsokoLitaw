@@ -14,6 +14,6 @@ export default async function OurCreationsPage() {
   const catalog = await getPublicCommerceCatalog();
 
   return (
-    <CustomerPageShell activePath="/our-creations"><SiteContainer className="py-12 sm:py-16 lg:py-20"><ProductConfigurator catalog={catalog} /></SiteContainer></CustomerPageShell>
+    <CustomerPageShell activePath="/our-creations"><SiteContainer className="py-8 sm:py-12 lg:py-16"><ProductConfigurator catalog={catalog} /></SiteContainer></CustomerPageShell>
   );
 }

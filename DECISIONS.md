@@ -22,7 +22,7 @@ The PNGs in `references/` are retained as early visual context. They are not pix
 
 ### Decision
 
-Phase 13 Security and Production is complete. Security review, environment isolation, performance validation, production configuration, launch verification, PayMongo Live Mode activation, and the first real QR Ph charge were completed. Phase 14 UI Overhaul is the next planned implementation stage; Phase 15 Android APK packaging follows only after the Phase 14 interface is stable.
+Phase 13 Security and Production is complete. Security review, environment isolation, performance validation, production configuration, launch verification, PayMongo Live Mode activation, and the first real QR Ph charge were completed. Phase 14 UI Overhaul is now in progress; Phase 15 Android APK packaging follows only after the Phase 14 interface is stable.
 
 Allowed now:
 
@@ -171,9 +171,9 @@ The repository keeps one canonical bootstrap migration under `supabase/migration
 
 TsokoLitaw sells chocolate-filled Litaw in:
 
-- Box of 4 — 4 pieces × the current base piece price
-- Box of 6 — 6 pieces × the current base piece price
-- Box of 8 — 8 pieces × the current base piece price
+- TsokoMini (4 pcs) — 4 pieces × the current base piece price
+- TsokoMore (6 pcs) — 6 pieces × the current base piece price
+- TsokoMuch (8 pcs) — 8 pieces × the current base piece price
 
 The temporary base piece price is ₱10, producing initial preview totals of ₱40, ₱60, and ₱80 respectively.
 
@@ -204,8 +204,8 @@ The ₱10 per-piece amount is the approved initial database seed, not a permanen
 
 ### Decision
 
-- one coating type is included in a box
-- each additional distinct coating type uses its Admin-configured additional-type charge; the temporary seed is ₱5
+- every piece uses its selected coating's Admin-configured per-piece price; the temporary seed is ₱5
+- exactly one active coating is the Admin-selected default for a new single-coating box
 - a mixed box allocates every piece to a coating
 - allocated pieces must exactly equal the selected box size
 - extra sea salt cream is the initial optional add-on, temporarily ₱18 per cup
@@ -481,13 +481,13 @@ The Home feature media uses one mobile-first carousel rather than two competing 
 
 ### Admin coating-entry decision
 
-Admin Catalog persists a coating name, customer-facing description, square 1:1 image, allergen information, availability, and additional-type price through controlled audited mutations. The price represents the charge when that coating is used as an additional distinct type; the first coating type in a box remains included.
+Admin Catalog persists a coating name, customer-facing description, square 1:1 image, availability, default selection, and per-piece coating price through controlled audited mutations. Checkout charges that price for every piece allocated to the coating. Customer allergen communication uses one general notice instead of Admin-maintained per-coating declarations.
 
 The connected interaction previews the selected image before upload, then publishes only through authenticated server CRUD, durable storage, cache invalidation, audit logging, and server-authoritative pricing. The obsolete session-only coating preview must not be restored.
 
 ### Reason
 
-A consistent square image keeps coating cards and admin rows predictable across mobile and desktop. Separating the coating's additional-type price from its description prepares the catalog for future price changes without redefining the included-first-coating rule.
+A consistent square image keeps coating cards and admin rows predictable across mobile and desktop. Per-piece prices make single and mixed box totals explicit and predictable, while one persisted default avoids relying on catalog sort order.
 
 ## 19. Legal and Policy Access
 

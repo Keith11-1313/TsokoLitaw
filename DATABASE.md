@@ -20,7 +20,7 @@ The proposed schema follows `DECISIONS.md` and the current workflow:
 | Boxes have 4, 6, or 8 pieces | `product_variants.piece_count`; totals derive from `products.price_per_piece` |
 | Choices are coatings, not flavors | dedicated `coatings` table |
 | Mixed boxes allocate every piece | `order_item_coatings.piece_count` totals must match the item snapshot |
-| First coating type is included | snapshot which type was included and price additional distinct types server-side |
+| Every piece has a priced coating | store each coating's per-piece price, calculate allocation totals server-side, and preserve order snapshots |
 | Admin-managed seed pricing | ₱10 seeds the product's active per-piece price; checkout derives each box total server-side and orders preserve snapshots |
 | Campus pickup only | admin-managed dates, windows, locations, lead/cutoff settings, and historical order snapshots; no delivery address |
 | Five admins share one role | bootstrap one approved Google-backed admin now and add up to four later; all authorization remains server-side |
@@ -110,10 +110,9 @@ name text
 slug text unique
 description text
 image_url text nullable
-additional_type_price numeric(10,2) default 5 check additional_type_price >= 0
+price_per_piece numeric(10,2) default 5 check price_per_piece >= 0
 is_active boolean default true
-is_allergen boolean default false
-allergen_note text nullable
+is_default boolean default false
 sort_order integer
 created_at timestamptz
 updated_at timestamptz
@@ -129,9 +128,9 @@ Initial values:
 - Sesame Seeds
 - Cookies and Cream
 
-Pricing rule: one distinct coating type is included; additional distinct coating types add the configured charge. Server validation must count distinct positive allocations.
+Pricing rule: every allocated piece adds the selected coating's current `price_per_piece`. Server validation multiplies each coating price by its positive piece allocation and requires the allocations to equal the selected box size.
 
-The initial `additional_type_price` is ₱5. It is an Admin-managed seed rather than a fixed business rule, and checkout reloads the active value before calculating the order.
+The initial coating `price_per_piece` is ₱5. It is an Admin-managed seed rather than a fixed business rule, and checkout reloads active values before calculating the order. A partial unique index allows at most one `is_default` coating; the audited writer keeps exactly one active default for storefront initialization. The obsolete additional-type pricing and per-coating allergen columns are removed by the same migration after their values are superseded.
 
 The application validates coating media before upload. Customer catalog images use a square 1:1 presentation; `catalog-media` accepts only JPG, PNG, or WebP files up to 3 MB, while the Admin client rejects non-square dimensions before submission. Database `image_url` stores only the resulting approved asset location, never a browser data URL.
 

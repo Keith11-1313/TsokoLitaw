@@ -33,9 +33,9 @@ insert into public.product_variants (
   sort_order
 )
 values
-  ('11000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000001', 'Box of 4', 4, true, 1),
-  ('11000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000001', 'Box of 6', 6, true, 2),
-  ('11000000-0000-4000-8000-000000000008', '10000000-0000-4000-8000-000000000001', 'Box of 8', 8, true, 3)
+  ('11000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000001', 'TsokoMini (4 pcs)', 4, true, 1),
+  ('11000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000001', 'TsokoMore (6 pcs)', 6, true, 2),
+  ('11000000-0000-4000-8000-000000000008', '10000000-0000-4000-8000-000000000001', 'TsokoMuch (8 pcs)', 8, true, 3)
 on conflict (id) do update set
   name = excluded.name,
   piece_count = excluded.piece_count,
@@ -48,29 +48,27 @@ insert into public.coatings (
   slug,
   description,
   image_url,
-  additional_type_price,
+  price_per_piece,
   is_active,
-  is_allergen,
-  allergen_note,
+  is_default,
   sort_order
 )
 values
-  ('12000000-0000-4000-8000-000000000001', 'Cocoa', 'cocoa', 'A rich cocoa coating over the chocolate-filled base.', null, 5.00, true, false, 'Contains chocolate ingredients.', 1),
-  ('12000000-0000-4000-8000-000000000002', 'Milk', 'milk', 'A creamy milk coating with a soft, mellow finish.', null, 5.00, true, true, 'Contains dairy.', 2),
-  ('12000000-0000-4000-8000-000000000003', 'Palitaw', 'palitaw', 'A combination of sugar, niyog, and sesame seeds.', null, 5.00, true, true, 'Contains coconut and sesame.', 3),
-  ('12000000-0000-4000-8000-000000000004', 'Crushed Nuts', 'crushed-nuts', 'A crunchy crushed-nut coating for added texture.', null, 5.00, true, true, 'Contains peanuts or other nuts.', 4),
-  ('12000000-0000-4000-8000-000000000005', 'Plain', 'plain', 'The soft Litaw exterior with no additional coating.', null, 5.00, true, false, null, 5),
-  ('12000000-0000-4000-8000-000000000006', 'Sesame Seeds', 'sesame-seeds', 'A toasted sesame seed coating with a nutty aroma.', null, 5.00, true, true, 'Contains sesame.', 6),
-  ('12000000-0000-4000-8000-000000000007', 'Cookies and Cream', 'cookies-and-cream', 'Crushed chocolate cookies blended with a creamy coating.', null, 5.00, true, true, 'Contains dairy and cookie ingredients.', 7)
+  ('12000000-0000-4000-8000-000000000001', 'Cocoa', 'cocoa', 'A rich cocoa coating over the chocolate-filled base.', null, 5.00, true, true, 1),
+  ('12000000-0000-4000-8000-000000000002', 'Milk', 'milk', 'A creamy milk coating with a soft, mellow finish.', null, 5.00, true, false, 2),
+  ('12000000-0000-4000-8000-000000000003', 'Palitaw', 'palitaw', 'A combination of sugar, niyog, and sesame seeds.', null, 5.00, true, false, 3),
+  ('12000000-0000-4000-8000-000000000004', 'Crushed Nuts', 'crushed-nuts', 'A crunchy crushed-nut coating for added texture.', null, 5.00, true, false, 4),
+  ('12000000-0000-4000-8000-000000000005', 'Plain', 'plain', 'The soft Litaw exterior with no additional coating.', null, 5.00, true, false, 5),
+  ('12000000-0000-4000-8000-000000000006', 'Sesame Seeds', 'sesame-seeds', 'A toasted sesame seed coating with a nutty aroma.', null, 5.00, true, false, 6),
+  ('12000000-0000-4000-8000-000000000007', 'Cookies and Cream', 'cookies-and-cream', 'Crushed chocolate cookies blended with a creamy coating.', null, 5.00, true, false, 7)
 on conflict (id) do update set
   name = excluded.name,
   slug = excluded.slug,
   description = excluded.description,
   image_url = excluded.image_url,
-  additional_type_price = excluded.additional_type_price,
+  price_per_piece = excluded.price_per_piece,
   is_active = excluded.is_active,
-  is_allergen = excluded.is_allergen,
-  allergen_note = excluded.allergen_note,
+  is_default = excluded.is_default,
   sort_order = excluded.sort_order;
 
 insert into public.addons (id, name, slug, price, is_active)
