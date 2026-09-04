@@ -25,7 +25,7 @@ select set_config(
   true
 );
 
-select plan(60);
+select plan(61);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -38,6 +38,7 @@ select has_column('public', 'profiles', 'is_active', 'profiles track whether acc
 select has_column('public', 'profiles', 'deactivated_at', 'profiles record when access was deactivated');
 select has_column('public', 'orders', 'checkout_idempotency_key', 'orders store a customer checkout idempotency key');
 select has_column('public', 'daily_inventory', 'product_id', 'daily inventory tracks shared product pieces');
+select hasnt_column('public', 'daily_inventory', 'product_variant_id', 'obsolete variant inventory compatibility is absent');
 select has_sequence('public', 'order_number_sequence', 'orders use a concurrency-safe kiosk number sequence');
 select has_column('public', 'coatings', 'price_per_piece', 'coatings store a per-piece price');
 select has_column('public', 'coatings', 'is_default', 'coatings identify the storefront default');
