@@ -11,7 +11,7 @@ import { useCart } from "@/components/cart/cart-provider";
 import { PrimaryButton } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { FormField } from "@/components/ui/form-field";
-import { calculateCartLineTotal, formatPhp } from "@/lib/commerce";
+import { calculateCartLineTotal, calculateItemUnitTotal, formatPhp } from "@/lib/commerce";
 import type { AuthProfile } from "@/lib/auth";
 import type { CustomerLoyaltyStatus } from "@/lib/server-loyalty";
 import type { CartLineItem } from "@/types/commerce";
@@ -26,24 +26,62 @@ interface CheckoutContentProps {
 
 function PricingBreakdown({ item }: { item: CartLineItem }) {
   const coatings = Object.entries(item.coatingCounts).filter(([, count]) => count > 0);
-  const hasCurrentPrices = coatings.every(([id]) => Number.isFinite(item.coatingPrices[id]));
+  const coatingSummary = coatings
+    .map(([id, count]) => `${item.coatingNames[id] ?? "Coating"} × ${count}`)
+    .join(" · ");
+  const addonTotal = item.addonPrice * item.addonQuantity;
+  const unitTotal = calculateItemUnitTotal(
+    item.boxPrice,
+    item.extraCoatingCharge,
+    item.addonQuantity,
+    item.addonPrice,
+  );
+  const boxQuantity = `${item.quantity} ${item.quantity === 1 ? "box" : "boxes"}`;
+  const contentsLabel = item.quantity === 1 ? "In this box" : "In each box";
 
   return (
-    <dl className="mt-3 space-y-1.5 text-xs leading-5 text-muted-foreground">
-      <div className="flex justify-between gap-4"><dt>Base box</dt><dd>{formatPhp(item.boxPrice)}</dd></div>
-      {hasCurrentPrices ? coatings.map(([id, count]) => (
-        <div key={id} className="flex justify-between gap-4">
-          <dt>{item.coatingNames[id]} × {count}</dt>
-          <dd>{formatPhp(item.coatingPrices[id] * count)}</dd>
+    <div className="mt-1 text-xs leading-5 text-muted-foreground">
+      <p>
+        {boxQuantity}<span aria-hidden="true"> × </span><span className="sr-only"> at </span>
+        <span className="tabular-nums">{formatPhp(unitTotal)}</span>
+        {item.quantity > 1 ? " each" : null}
+      </p>
+
+      <div className="mt-3">
+        <p className="font-bold text-foreground">{contentsLabel}</p>
+        <p>{coatingSummary}</p>
+      </div>
+
+      {item.addonQuantity > 0 ? (
+        <div className="mt-2">
+          <p className="font-bold text-foreground">Add-on per box</p>
+          <p>{item.addonName ?? "Add-on"} × {item.addonQuantity}</p>
         </div>
-      )) : (
-        <div className="flex justify-between gap-4"><dt>Coatings</dt><dd>{formatPhp(item.extraCoatingCharge)}</dd></div>
-      )}
-      {item.addonQuantity > 0 && item.addonName ? (
-        <div className="flex justify-between gap-4"><dt>{item.addonName} × {item.addonQuantity}</dt><dd>{formatPhp(item.addonPrice * item.addonQuantity)}</dd></div>
       ) : null}
-      {item.quantity > 1 ? <div className="flex justify-between gap-4 border-t border-border/70 pt-1.5 font-semibold text-foreground"><dt>Per box × {item.quantity}</dt><dd>{formatPhp(calculateCartLineTotal(item))}</dd></div> : null}
-    </dl>
+
+      <details className="group mt-3 border-t border-border/70 pt-3">
+        <summary className="w-fit cursor-pointer rounded-sm font-bold text-foreground underline decoration-border underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
+          <span className="group-open:hidden">View price per box</span>
+          <span className="hidden group-open:inline">Hide price per box</span>
+        </summary>
+        <dl className="mt-1 space-y-1">
+          <div className="flex justify-between gap-4">
+            <dt>Base box</dt>
+            <dd className="shrink-0 tabular-nums">{formatPhp(item.boxPrice)}</dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt>Coatings</dt>
+            <dd className="shrink-0 tabular-nums">{formatPhp(item.extraCoatingCharge)}</dd>
+          </div>
+          {item.addonQuantity > 0 ? (
+            <div className="flex justify-between gap-4">
+              <dt>Add-on</dt>
+              <dd className="shrink-0 tabular-nums">{formatPhp(addonTotal)}</dd>
+            </div>
+          ) : null}
+        </dl>
+      </details>
+    </div>
   );
 }
 
@@ -253,9 +291,12 @@ export function CheckoutContent({ availability, profile, loyalty, resumeOrderId 
         <ul className="divide-y divide-border px-6">
           {selectedItems.map((item) => (
             <li key={item.id} className="py-5">
-              <div className="flex justify-between gap-3">
-                <span className="font-bold">{item.variantLabel} × {item.quantity}</span>
-                <span>{formatPhp(calculateCartLineTotal(item))}</span>
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="font-bold leading-6">{item.variantLabel}</h3>
+                <span className="shrink-0 font-bold tabular-nums">
+                  <span className="sr-only">Line total: </span>
+                  {formatPhp(calculateCartLineTotal(item))}
+                </span>
               </div>
               <PricingBreakdown item={item} />
             </li>
