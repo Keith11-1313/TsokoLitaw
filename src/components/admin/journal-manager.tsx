@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useActionState, useEffect, useState, type ChangeEvent } from "react";
 import {
   FileText,
   Megaphone,
@@ -14,10 +14,12 @@ import {
   type JournalActionState,
 } from "@/app/admin/journal/actions";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
+import { DiscardChangesDialog } from "@/components/admin/discard-changes-dialog";
 import { FormField } from "@/components/ui/form-field";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { FormStatusHint } from "@/components/ui/form-status-hint";
 import { useFormGate } from "@/hooks/use-form-gate";
+import { useEditorDialog } from "@/hooks/use-editor-dialog";
 import { browserImageError } from "@/lib/form-validation";
 import {
   JOURNAL_CONTENT_TYPES,
@@ -49,10 +51,10 @@ function JournalEditor({
   onClose: () => void;
 }) {
   const [state, formAction, pending] = useActionState(saveJournalPostAction, initialState);
-  const dialogRef = useRef<HTMLElement>(null);
   const [imageError, setImageError] = useState("");
   const [imageChecking, setImageChecking] = useState(false);
-  const { formRef, formProps, canSubmit, statusMessage, refresh } = useFormGate({ requireDirty: Boolean(post), extraValid: !imageError && !imageChecking });
+  const { formRef, formProps, canSubmit, statusMessage, refresh, isDirty } = useFormGate({ requireDirty: Boolean(post), extraValid: !imageError && !imageChecking });
+  const { dialogRef, discardDialogRef, confirmDiscard, requestClose, keepEditing, discardChanges } = useEditorDialog({ isDirty, pending, onClose });
 
   async function validateCover(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
@@ -71,24 +73,17 @@ function JournalEditor({
     if (state.status === "success") onClose();
   }, [state.status, onClose]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !pending) onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, pending]);
-
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-foreground/40 p-4"
-      onPointerDown={() => !pending && onClose()}
+      onPointerDown={requestClose}
     >
       <section
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="journal-editor-title"
+        aria-hidden={confirmDiscard || undefined}
         onPointerDown={(event) => event.stopPropagation()}
         className="my-auto w-full max-w-3xl rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8"
       >
@@ -103,7 +98,7 @@ function JournalEditor({
             type="button"
             aria-label="Close Journal editor"
             disabled={pending}
-            onClick={onClose}
+            onClick={requestClose}
             className="flex size-11 shrink-0 items-center justify-center text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50"
           >
             <X aria-hidden="true" size={22} />
@@ -165,11 +160,18 @@ function JournalEditor({
           {state.status === "error" ? <p role="alert" className="rounded-control bg-danger-background p-4 text-sm text-danger-foreground sm:col-span-2">{state.message}</p> : null}
           <FormStatusHint className="sm:col-span-2" message={statusMessage} />
           <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
-            <SecondaryButton type="button" disabled={pending} onClick={onClose}>Cancel</SecondaryButton>
+            <SecondaryButton type="button" disabled={pending} onClick={requestClose}>Cancel</SecondaryButton>
             <PrimaryButton type="submit" disabled={pending || !canSubmit}>{pending ? "Saving…" : "Save post"}</PrimaryButton>
           </div>
         </form>
       </section>
+      {confirmDiscard ? (
+        <DiscardChangesDialog
+          dialogRef={discardDialogRef}
+          onKeepEditing={keepEditing}
+          onDiscard={discardChanges}
+        />
+      ) : null}
     </div>
   );
 }

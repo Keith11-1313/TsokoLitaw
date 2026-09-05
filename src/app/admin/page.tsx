@@ -68,8 +68,10 @@ export default async function AdminDashboardPage() {
   const draftPosts = posts.length - publishedPosts;
   const visibleReviews = reviews.filter((review) => review.isVisible).length;
   const statusDefinitions = [
-    { statuses: ["PENDING_PAYMENT", "PAID"], label: "Awaiting fulfillment", colorClassName: "bg-warning-foreground" },
-    { statuses: ["CONFIRMED", "PREPARING"], label: "Preparing", colorClassName: "bg-brand" },
+    { statuses: ["PENDING_PAYMENT"], label: "Pending payment", colorClassName: "bg-warning-foreground" },
+    { statuses: ["PAID"], label: "Paid", colorClassName: "bg-info-foreground" },
+    { statuses: ["CONFIRMED"], label: "Received", colorClassName: "bg-info-foreground" },
+    { statuses: ["PREPARING"], label: "Preparing", colorClassName: "bg-brand" },
     { statuses: ["READY_FOR_PICKUP"], label: "Ready for pickup", colorClassName: "bg-info-foreground" },
     { statuses: ["COMPLETED"], label: "Completed", colorClassName: "bg-success-foreground" },
     { statuses: ["CANCELLED", "EXPIRED"], label: "Closed without pickup", colorClassName: "bg-muted-foreground" },

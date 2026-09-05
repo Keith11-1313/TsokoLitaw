@@ -156,7 +156,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
                 defaultValue={search}
                 maxLength={100}
                 placeholder="Search by name or email"
-                className="min-h-11 w-full rounded-full border border-border bg-background pl-11 pr-4 outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
+                className="min-h-11 w-full rounded-control border border-border bg-background pl-11 pr-4 outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
               />
             </label>
             <button type="submit" className={cn(primaryButtonClassName, "px-6")}>Search</button>

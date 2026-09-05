@@ -6,6 +6,7 @@ import { transitionOrderStatusAction } from "@/app/admin/orders/actions";
 import type { OrderStatus } from "@/components/ui/status-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { OrderLineItems } from "@/components/orders/order-line-items";
 import { formatPhp } from "@/lib/commerce";
 import {
   fulfillmentActionLabels,
@@ -16,6 +17,7 @@ import type { AdminOrderSummary } from "@/lib/server-orders";
 const statusOptions: Array<{ value: "ALL" | OrderStatus; label: string }> = [
   { value: "ALL", label: "All statuses" },
   { value: "PENDING_PAYMENT", label: "Pending payment" },
+  { value: "PAID", label: "Paid" },
   { value: "CONFIRMED", label: "Received" },
   { value: "PREPARING", label: "Preparing" },
   { value: "READY_FOR_PICKUP", label: "Ready for pickup" },
@@ -23,6 +25,17 @@ const statusOptions: Array<{ value: "ALL" | OrderStatus; label: string }> = [
   { value: "CANCELLED", label: "Cancelled" },
   { value: "EXPIRED", label: "Expired" },
 ];
+
+const statusLabels: Record<OrderStatus, string> = Object.fromEntries(
+  statusOptions.filter((option) => option.value !== "ALL").map((option) => [option.value, option.label]),
+) as Record<OrderStatus, string>;
+
+const paymentLabels: Record<AdminOrderSummary["paymentStatus"], string> = {
+  PENDING: "Pending",
+  PAID: "Paid",
+  FAILED: "Failed",
+  REFUNDED: "Refunded (historical)",
+};
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-PH", {
@@ -33,6 +46,79 @@ function formatDate(value: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function formatPickupDate(value: string) {
+  return new Intl.DateTimeFormat("en-PH", {
+    timeZone: "Asia/Manila",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(`${value}T00:00:00+08:00`));
+}
+
+function PaymentBadge({ status }: { status: AdminOrderSummary["paymentStatus"] }) {
+  const colors = status === "PAID"
+    ? "bg-success-background text-success-foreground"
+    : status === "PENDING"
+      ? "bg-warning-background text-warning-foreground"
+      : status === "FAILED"
+        ? "bg-surface-muted text-muted-foreground"
+        : "bg-info-background text-info-foreground";
+  return <span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-bold ${colors}`}>{paymentLabels[status]}</span>;
+}
+
+function OrderContents({ order }: { order: AdminOrderSummary }) {
+  return (
+    <details className="group">
+      <summary className="w-fit cursor-pointer rounded-sm text-xs font-bold text-brand underline decoration-border underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+        <span className="group-open:hidden">View complete order</span>
+        <span className="hidden group-open:inline">Hide complete order</span>
+      </summary>
+      <div className="mt-4 rounded-control bg-surface-muted p-4">
+        <OrderLineItems items={order.itemLines} />
+        {order.notes ? (
+          <div className="mt-4 border-t border-border pt-4 text-xs leading-5">
+            <p className="font-bold text-foreground">Customer note</p>
+            <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{order.notes}</p>
+          </div>
+        ) : null}
+      </div>
+    </details>
+  );
+}
+
+function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
+  return (
+    <article className="rounded-card border border-border bg-surface p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-display text-2xl text-foreground">{order.orderNumber}</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Ordered {formatDate(order.orderedAt)}</p>
+        </div>
+        <p className="shrink-0 font-bold tabular-nums text-foreground">{formatPhp(order.total)}</p>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <StatusBadge status={order.status} />
+        <PaymentBadge status={order.paymentStatus} />
+      </div>
+      <dl className="mt-5 space-y-4 text-sm">
+        <div>
+          <dt className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Customer</dt>
+          <dd className="mt-1 font-bold text-foreground">{order.customerName}</dd>
+          <dd className="break-all text-xs text-muted-foreground">{order.customerEmail}</dd>
+          {order.customerMobile ? <dd className="text-xs text-muted-foreground">{order.customerMobile}</dd> : null}
+        </div>
+        <div>
+          <dt className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Pickup</dt>
+          <dd className="mt-1 text-foreground">{formatPickupDate(order.pickupDate)} · {order.pickupWindow}</dd>
+          <dd className="text-xs text-muted-foreground">{order.pickupLocation}</dd>
+        </div>
+      </dl>
+      <div className="mt-5 border-t border-border pt-5"><OrderContents order={order} /></div>
+      <div className="mt-5"><FulfillmentAction order={order} /></div>
+    </article>
+  );
 }
 
 function FulfillmentAction({ order }: { order: AdminOrderSummary }) {
@@ -105,8 +191,8 @@ function FulfillmentAction({ order }: { order: AdminOrderSummary }) {
 
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
               This changes the customer-visible order status from{" "}
-              <strong className="text-foreground">{order.status.replaceAll("_", " ")}</strong> to{" "}
-              <strong className="text-foreground">{targetStatus.replaceAll("_", " ")}</strong>.
+              <strong className="text-foreground">{statusLabels[order.status]}</strong> to{" "}
+              <strong className="text-foreground">{statusLabels[targetStatus]}</strong>.
               The action is recorded in the Admin audit log and cannot be reversed here.
             </p>
 
@@ -150,7 +236,7 @@ export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }
     return orders.filter((order) => {
       if (status !== "ALL" && order.status !== status) return false;
       if (!normalizedQuery) return true;
-      return [order.orderNumber, order.customerName, order.customerEmail, order.itemSummary]
+      return [order.orderNumber, order.customerName, order.customerEmail, order.customerMobile ?? "", order.itemSummary, order.notes ?? ""]
         .some((value) => value.toLowerCase().includes(normalizedQuery));
     });
   }, [orders, query, status]);
@@ -167,14 +253,23 @@ export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Order number, name, email, or item"
-              className="min-h-12 w-full rounded-control border border-border bg-surface pl-11 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20"
+              className="min-h-12 w-full rounded-full border border-border bg-surface pl-11 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20"
             />
           </span>
         </label>
         <CustomSelect label="Status filter" value={status} onChange={(next) => setStatus(next as "ALL" | OrderStatus)} options={statusOptions} />
       </div>
 
-      <div className="mt-6 rounded-card border border-border bg-surface p-4 sm:p-6">
+      <div className="mt-6 lg:hidden">
+        {visibleOrders.length ? <div className="space-y-4">{visibleOrders.map((order) => <MobileOrderCard key={order.id} order={order} />)}</div> : (
+          <div className="rounded-card border border-border bg-surface py-16 text-center">
+            <h2 className="font-display text-2xl">No matching orders</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Change the search or status filter to see other orders.</p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 hidden rounded-card border border-border bg-surface p-4 lg:block lg:p-6">
         {visibleOrders.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[72rem] border-collapse text-left text-sm">
@@ -204,12 +299,13 @@ export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }
                     <td className="max-w-72 px-4 py-5 text-muted-foreground">
                       <span className="line-clamp-2">{order.itemSummary || "No item snapshot"}</span>
                       <span className="mt-1 block text-xs">{order.boxQuantity} {order.boxQuantity === 1 ? "box" : "boxes"}</span>
+                      <div className="mt-3"><OrderContents order={order} /></div>
                     </td>
                     <td className="px-4 py-5 font-bold text-foreground">{formatPhp(order.total)}</td>
-                    <td className="px-4 py-5 text-xs font-bold text-foreground">{order.paymentStatus}</td>
+                    <td className="px-4 py-5"><PaymentBadge status={order.paymentStatus} /></td>
                     <td className="px-4 py-5"><StatusBadge status={order.status} /></td>
                     <td className="max-w-56 px-4 py-5 text-xs leading-5 text-muted-foreground">
-                      {order.pickupDate}<br />{order.pickupWindow}<br />{order.pickupLocation}
+                      {formatPickupDate(order.pickupDate)}<br />{order.pickupWindow}<br />{order.pickupLocation}
                     </td>
                     <td className="px-4 py-5 text-center"><FulfillmentAction order={order} /></td>
                   </tr>
@@ -223,10 +319,8 @@ export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }
             <p className="mt-2 text-sm text-muted-foreground">Change the search or status filter to see other orders.</p>
           </div>
         )}
-        <p className="pt-5 text-xs text-muted-foreground">
-          Showing {visibleOrders.length} of {orders.length} most recent orders
-        </p>
       </div>
+      <p className="pt-5 text-xs text-muted-foreground">Showing {visibleOrders.length} of {orders.length} most recent orders</p>
     </section>
   );
 }
