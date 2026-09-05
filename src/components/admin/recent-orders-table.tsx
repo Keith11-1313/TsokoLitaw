@@ -17,7 +17,7 @@ export function RecentOrdersTable({ orders }: { orders: AdminOrderSummary[] }) {
   return (
     <section className="rounded-card border border-border bg-surface p-6 pb-[1.375rem]" aria-labelledby="recent-orders-heading">
       <div className="flex items-center justify-between gap-4">
-        <h2 id="recent-orders-heading" className="font-display text-2xl">Recent Orders</h2>
+        <h2 id="recent-orders-heading" className="font-display text-2xl">Recent orders</h2>
         <Link href="/admin/orders" className="inline-flex min-h-11 items-center gap-2 text-xs font-bold text-muted-foreground hover:text-brand">
           Manage orders
           <ArrowRight aria-hidden="true" size={16} />
@@ -25,8 +25,25 @@ export function RecentOrdersTable({ orders }: { orders: AdminOrderSummary[] }) {
       </div>
 
       {orders.length ? (
-        <div className="mt-2 overflow-x-auto">
-          <table className="w-full min-w-[56rem] table-fixed border-collapse text-left text-sm">
+        <>
+          <div className="mt-4 space-y-3 md:hidden">
+            {orders.slice(0, 5).map((order) => (
+              <article key={order.id} className="rounded-control border border-border bg-background p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-display text-xl text-foreground">{order.orderNumber}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{formatDate(order.orderedAt)}</p>
+                  </div>
+                  <p className="shrink-0 font-bold tabular-nums text-foreground">{formatPhp(order.total)}</p>
+                </div>
+                <div className="mt-3"><StatusBadge status={order.status} /></div>
+                <p className="mt-3 text-sm font-bold text-foreground">{order.customerName}</p>
+                <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{order.itemSummary || "No item snapshot"}</p>
+              </article>
+            ))}
+          </div>
+          <div className="mt-2 hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[56rem] table-fixed border-collapse text-left text-sm">
             <thead>
               <tr className="h-[2.6875rem] bg-surface-muted text-xs text-foreground">
                 <th className="rounded-l-control px-4 font-bold">Order</th>
@@ -49,8 +66,9 @@ export function RecentOrdersTable({ orders }: { orders: AdminOrderSummary[] }) {
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+            </table>
+          </div>
+        </>
       ) : (
         <p className="py-12 text-center text-sm text-muted-foreground">No orders have been created yet.</p>
       )}

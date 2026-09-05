@@ -9,7 +9,10 @@ export function AdminContent({
     <main
       id="main-content"
       tabIndex={-1}
-      className={cn("min-w-0 flex-1 px-6 py-8 lg:px-12 lg:py-10", className)}
+      className={cn(
+        "mx-auto min-w-0 w-full max-w-[var(--container-admin)] flex-1 px-5 py-7 sm:px-8 sm:py-9 lg:px-10 xl:px-12",
+        className,
+      )}
       {...props}
     />
   );

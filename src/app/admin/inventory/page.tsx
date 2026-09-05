@@ -15,12 +15,9 @@ export default async function AdminInventoryPage() {
     <AdminShell activePath="/admin/inventory">
       <AdminContent>
         <header>
-          <h1 className="font-display text-[2.25rem] leading-tight text-foreground">Inventory</h1>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-            Manage the prepared pieces available for each Ready stock or Hybrid pickup date.
-          </p>
+          <h1 className="font-display text-[2rem] leading-tight text-foreground sm:text-[2.25rem]">Inventory</h1>
         </header>
-        <div className="mt-8"><InventoryManager {...inventory} /></div>
+        <div className="mt-7"><InventoryManager {...inventory} /></div>
       </AdminContent>
     </AdminShell>
   );

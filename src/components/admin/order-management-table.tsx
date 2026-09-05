@@ -253,7 +253,7 @@ export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Order number, name, email, or item"
-              className="min-h-12 w-full rounded-full border border-border bg-surface pl-11 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20"
+              className="min-h-12 w-full rounded-control border border-border bg-surface pl-11 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20"
             />
           </span>
         </label>

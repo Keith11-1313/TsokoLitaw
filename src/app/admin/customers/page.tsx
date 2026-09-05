@@ -120,14 +120,8 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
     <AdminPageLayout
       activePath="/admin/customers"
       title="Customers"
-      description="Customer and Admin accounts with completed-purchase and loyalty activity."
-      purpose="Support customers and understand completed-order activity without exposing another customer’s private order details."
-      customerImpact="Uses account email as the primary contact; mobile remains optional."
-      connected
-      currentConnection="Connected to bounded customer, completed-order, and loyalty aggregates."
-      showScopeNote={false}
     >
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <AdminStatCard compact icon={UsersRound} label="Accounts shown" value={String(customers.length)} />
         <AdminStatCard compact icon={Repeat2} label="Returning customers" value={String(returningCustomers)} />
         <AdminStatCard compact icon={Gift} label="Available rewards" value={String(availableRewards)} />

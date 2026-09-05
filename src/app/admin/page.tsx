@@ -110,25 +110,16 @@ export default async function AdminDashboardPage() {
 
   return (
     <AdminShell activePath="/admin">
-      <AdminContent className="lg:px-12 lg:py-12">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="font-display text-[2.25rem] leading-tight">
-              Admin overview
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Customer ordering, pickup, and content operations
-            </p>
-          </div>
-          <span className="mt-4 inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-surface px-4 text-xs font-bold">
-            <span className="size-2 rounded-full bg-success-foreground" aria-hidden="true" />
-            Live operations
-          </span>
+      <AdminContent>
+        <header>
+          <h1 className="font-display text-[2rem] leading-tight sm:text-[2.25rem]">
+            Admin overview
+          </h1>
         </header>
 
-        <section className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-4" aria-label="Dashboard summary">
+        <section className="mt-7 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4" aria-label="Dashboard summary">
           {dashboardStats.map((stat) => (
-            <AdminStatCard key={stat.label} {...stat} />
+            <AdminStatCard key={stat.label} compact {...stat} />
           ))}
         </section>
 
@@ -140,7 +131,6 @@ export default async function AdminDashboardPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 id="operations-overview-heading" className="font-display text-2xl">Operations overview</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Live summaries from every connected Admin area</p>
             </div>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

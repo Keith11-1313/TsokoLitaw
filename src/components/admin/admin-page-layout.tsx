@@ -1,17 +1,10 @@
 import type { ReactNode } from "react";
-import { AdminScopeNote } from "@/components/admin/admin-scope-note";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminContent } from "@/components/layout/admin-content";
 
 interface AdminPageLayoutProps {
   activePath: string;
   title: string;
-  description: string;
-  purpose: string;
-  customerImpact: string;
-  currentConnection?: string;
-  connected?: boolean;
-  showScopeNote?: boolean;
   actions?: ReactNode;
   children: ReactNode;
 }
@@ -19,12 +12,6 @@ interface AdminPageLayoutProps {
 export function AdminPageLayout({
   activePath,
   title,
-  description,
-  purpose,
-  customerImpact,
-  currentConnection,
-  connected,
-  showScopeNote = true,
   actions,
   children,
 }: AdminPageLayoutProps) {
@@ -32,16 +19,12 @@ export function AdminPageLayout({
     <AdminShell activePath={activePath}>
       <AdminContent>
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-display text-[2.25rem] leading-tight text-foreground">
-              {title}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-          </div>
+          <h1 className="font-display text-[2rem] leading-tight text-foreground sm:text-[2.25rem]">
+            {title}
+          </h1>
           {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
         </header>
-        {showScopeNote ? <div className="mt-6"><AdminScopeNote purpose={purpose} customerImpact={customerImpact} currentConnection={currentConnection} connected={connected} /></div> : null}
-        <div className={showScopeNote ? "mt-8" : "mt-6"}>{children}</div>
+        <div className="mt-7">{children}</div>
       </AdminContent>
     </AdminShell>
   );

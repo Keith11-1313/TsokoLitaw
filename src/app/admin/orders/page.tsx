@@ -35,12 +35,9 @@ export default async function AdminOrdersPage() {
 
   return (
     <AdminShell activePath="/admin/orders">
-      <AdminContent className="lg:px-12 lg:py-4!">
-        <header className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <h1 className="font-display text-[2.25rem] leading-tight">Orders</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Search real orders and move paid boxes through campus pickup fulfillment.</p>
-          </div>
+      <AdminContent>
+        <header>
+          <h1 className="font-display text-[2rem] leading-tight sm:text-[2.25rem]">Orders</h1>
         </header>
 
         <section className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4" aria-label="Order summary">

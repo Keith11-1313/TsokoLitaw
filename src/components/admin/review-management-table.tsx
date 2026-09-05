@@ -50,8 +50,30 @@ export function ReviewManagementTable({ reviews }: { reviews: AdminReviewSummary
   return (
     <section className="min-w-0 rounded-card border border-border bg-surface p-4 sm:p-6">
       {reviews.length ? (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[62rem] border-collapse text-left text-sm">
+        <>
+          <div className="space-y-3 md:hidden">
+            {reviews.map((review) => (
+              <article key={review.id} className="rounded-control border border-border bg-background p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-foreground">{review.customerName}</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">{review.orderNumber}</p>
+                  </div>
+                  <span className="inline-flex items-center gap-1 font-bold text-foreground">
+                    <Star aria-hidden="true" className="fill-warning-foreground text-warning-foreground" size={15} />
+                    {review.rating}
+                  </span>
+                </div>
+                <p className="mt-4 text-sm leading-6 text-muted-foreground">{review.comment}</p>
+                <p className="mt-4 text-xs font-bold uppercase tracking-wide text-foreground">
+                  {review.isFeatured ? "Featured" : review.isVisible ? "Visible" : "Hidden"}
+                </p>
+                <div className="mt-4"><ReviewActions review={review} /></div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[62rem] border-collapse text-left text-sm">
             <thead>
               <tr className="h-12 bg-surface-muted text-xs text-foreground">
                 <th className="rounded-l-control px-4 font-bold">Customer</th>
@@ -81,8 +103,9 @@ export function ReviewManagementTable({ reviews }: { reviews: AdminReviewSummary
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+            </table>
+          </div>
+        </>
       ) : (
         <div className="py-14 text-center">
           <h2 className="font-display text-2xl">No customer reviews yet</h2>

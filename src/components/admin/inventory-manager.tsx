@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { PackageCheck, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import Link from "next/link";
 import {
   consumeInventoryAction,
@@ -238,7 +238,7 @@ export function InventoryManager({
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label={`Inventory summary for ${formatDate(selectedRecord.pickupDate)}`}>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4" aria-label={`Inventory summary for ${formatDate(selectedRecord.pickupDate)}`}>
             <AdminStatCard compact label="Prepared" value={String(selectedRecord.stockTotal)} />
             <AdminStatCard compact label="Online committed" value={String(selectedRecord.stockReserved)} accentClassName="text-info-foreground" />
             <AdminStatCard compact label="Unusable" value={String(selectedRecord.stockConsumed)} />
@@ -253,26 +253,18 @@ export function InventoryManager({
           </article>
         </section>
       ) : (
-        <section className="mt-7 rounded-card border border-border bg-surface p-6" aria-labelledby="empty-inventory-title">
-          <div className="flex gap-3">
-            <PackageCheck aria-hidden="true" className="shrink-0 text-brand" size={22} />
-            <div>
-              <h2 id="empty-inventory-title" className="font-display text-2xl">No stock published yet</h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Publish the number of prepared pieces for an upcoming Ready stock or Hybrid pickup date.
-              </p>
-            </div>
-          </div>
-          {unconfiguredDates.length > 0 ? <PrimaryButton className="mt-5" onClick={() => setShowPublishModal(true)}><Plus size={17} />Publish stock</PrimaryButton> : null}
+        <section className="rounded-card border border-border bg-surface p-6 sm:p-8" aria-labelledby="empty-inventory-title">
+          <h2 id="empty-inventory-title" className="font-display text-2xl">No stock published yet</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            {unconfiguredDates.length > 0
+              ? "Choose an upcoming Ready stock or Hybrid pickup date and publish the number of prepared pieces."
+              : "Create an upcoming Ready stock or Hybrid date in Pickup before publishing prepared pieces."}
+          </p>
+          {unconfiguredDates.length > 0
+            ? <PrimaryButton className="mt-5" onClick={() => setShowPublishModal(true)}><Plus size={17} />Publish stock</PrimaryButton>
+            : <Link href="/admin/pickup" className={`${secondaryButtonClassName} mt-5`}>Go to Pickup</Link>}
         </section>
       )}
-
-      {dates.length === 0 ? (
-        <div className="mt-7 rounded-card border border-warning-border bg-warning-background p-5 text-sm leading-6 text-warning-foreground">
-          <p>No eligible pickup date exists. Create an upcoming Ready stock or Hybrid date in Pickup before publishing prepared pieces.</p>
-          <Link href="/admin/pickup" className={`${secondaryButtonClassName} mt-4 border-warning-foreground text-warning-foreground`}>Go to Pickup</Link>
-        </div>
-      ) : null}
 
       {showPublishModal ? <PublishStockModal product={product} dates={unconfiguredDates} onClose={() => setShowPublishModal(false)} /> : null}
 

@@ -142,7 +142,7 @@ The interface intentionally uses only these two type families. Headings that pre
 
 - Customer container: `80rem`
 - Reading container: `48rem`
-- Admin content: `66.5rem`
+- Admin content: fluid within the available shell, capped at `90rem`, with shared responsive gutters
 
 ### Spacing
 
@@ -173,11 +173,10 @@ Admin:
 - `AdminPageLayout`
 - `AdminStatCard`
 - `AdminDataTable`
-- `AdminScopeNote`
 
 Reuse these before adding page-local alternatives. Do not abstract tiny one-use fragments without a concrete reuse case.
 
-Every admin area should explain its purpose, customer impact, and current connection state. Do not use “active,” “open,” or similar live-system language for behavior that is only a mock preview.
+Keep Admin page headings concise and consistent with their navigation labels. Put operational guidance beside the control or section where it is needed instead of repeating page-level descriptions. Do not use “active,” “open,” or similar live-system language for behavior that is only a mock preview.
 
 Admin Inventory should lead with the selected pickup date and its operational controls. Avoid repeating instructional cards, helper captions, or arithmetic already communicated by clear labels. Inventory may record unusable pieces, but it must not expose a walk-in cash-sale workflow because every customer purchase uses website checkout and online payment. Do not add a separate online-availability checkbox; pickup publication and remaining stock determine checkout availability.
 
@@ -239,7 +238,7 @@ Design mobile first, then enhance for tablet and desktop.
 - minimum practical touch target: 44px
 - stack forms and cards on narrow screens
 - use the admin drawer below desktop width
-- keep tables within responsive overflow containers
+- use stacked cards for content-heavy Admin lists on mobile; reserve horizontal table scrolling for data that must be compared by column
 - avoid page-level horizontal scrolling
 - keep primary actions close to their related content
 - maintain readable line lengths

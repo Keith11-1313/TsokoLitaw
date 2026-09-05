@@ -189,8 +189,7 @@ export function JournalManager({ posts }: { posts: JournalPostSummary[] }) {
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 id="journal-posts-title" className="font-display text-[2.25rem] leading-tight text-foreground">Journal posts</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Create drafts or publish announcements, stories, product features, and videos.</p>
+          <h1 id="journal-posts-title" className="font-display text-[2rem] leading-tight text-foreground sm:text-[2.25rem]">Journal</h1>
         </div>
         <PrimaryButton type="button" onClick={() => openEditor(null)}><Plus aria-hidden="true" size={17} />New post</PrimaryButton>
       </div>
