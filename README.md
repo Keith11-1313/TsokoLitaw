@@ -12,7 +12,7 @@ Read it before changing established workflows. The rough PNG references do not o
 
 **Phase 13: Security and Production is complete.** The isolated Dev and Production environments, live QR Ph payment, signed webhooks, production Cron jobs, transactional email, Search Console, sitemap, security controls, and production smoke tests have been verified. Remaining Phase 13 entries are post-launch monitoring, an optional Google Business Profile assessment, and the separately approved future database cleanup. Paid-order settlements occur in person; the website does not create refunds.
 
-**Phase 14: UI Overhaul is in progress.** Its first approved customer-facing pass introduces the supplied photo background, simpler typography, tighter page spacing, and focused mobile builder and checkout improvements without changing commerce behavior. Phase 15 will package the stable Phase 14 website as a directly distributed Android APK; it will not introduce a second storefront implementation.
+**Phase 14: UI Overhaul is in progress.** Its first approved customer-facing pass introduces the supplied photo background, simpler typography, tighter page spacing, and focused mobile builder and checkout improvements without changing commerce behavior. Phase 15 will package the stable Phase 14 website as a directly distributed Android APK; it will not introduce a second storefront implementation. Optional Phase 16 may add basic public-page Vercel Web Analytics only after the website and APK are stable.
 
 The connected Admin Customers page is an account directory: it includes customer and Admin profiles, labels their roles explicitly, and shows their real order and loyalty activity when present.
 
@@ -383,6 +383,12 @@ The Privacy page is the active notice rather than preview copy. It identifies co
 Phase 15 will package the canonical Production website as a signed Android APK using a PWABuilder/Bubblewrap Trusted Web Activity. The APK will be downloaded through the TsokoLitaw website rather than Google Play and will not contain a separate native commerce implementation. Digital Asset Links will bind the signed package to `www.tsokolitaw.com`; the signing key remains outside Git and must be preserved for updates.
 
 The Android launcher icon and startup artwork are separate. After Android's brief system-controlled launch screen, the wrapper will show a dedicated centered Palitaw-themed illustration on the branded background only while the Trusted Web Activity initializes. Google OAuth and PayMongo remain browser-based, and no offline ordering or payment behavior is planned.
+
+### Optional Basic Web Analytics
+
+Phase 16 may add Vercel Web Analytics after Phase 15. Its scope is default aggregate page views for Home, Our Creations, Journal, Terms, and Privacy only. A strict client-side `beforeSend` allowlist will reject events for customer-specific, transactional, Admin, authentication, API, and unknown routes before transmission, and the Privacy notice will be updated before Production collection starts.
+
+The installed Trusted Web Activity uses the same website integration and needs no native analytics SDK. Speed Insights, Google Analytics, custom events, conversion funnels, session replay, advertising tracking, and a separate analytics database are intentionally outside this phase.
 
 Keep all provider keys, webhook secrets, database secrets, and Cron secrets in the appropriate protected local or deployment environment. Never commit `.env.local` or copy Production values into Dev.
 

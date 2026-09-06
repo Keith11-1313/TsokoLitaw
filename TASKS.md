@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Phase 13 Security and Production is complete. The Production baseline, live QR Ph payment, signed webhooks, Cron jobs, OAuth, transactional email, Search Console setup, and final smoke test are verified. Phase 14 UI Overhaul is in progress on `development`. Phase 15 Android APK Packaging follows only after the Phase 14 interface is stable. Post-launch Search Console monitoring and the separately approved historical-refund database cleanup remain operational follow-up work.
+Phase 13 Security and Production is complete. The Production baseline, live QR Ph payment, signed webhooks, Cron jobs, OAuth, transactional email, Search Console setup, and final smoke test are verified. Phase 14 UI Overhaul is in progress on `development`. Phase 15 Android APK Packaging follows only after the Phase 14 interface is stable. Optional Phase 16 Basic Web Analytics follows only after the website and APK are stable. Post-launch Search Console monitoring and the separately approved historical-refund database cleanup remain operational follow-up work.
 
 ## Decision Baseline
 
@@ -331,3 +331,15 @@ Do not begin until the approved Phase 14 interface is stable. The APK is a thin 
 - [ ] Test installation and upgrade on physical Android devices, including launcher icon, system/custom splash transition, back navigation, external links, and unsupported/offline behavior
 - [ ] Test Google OAuth, Supabase session persistence, cart persistence, customer/Admin authorization, and PayMongo QR Ph redirect/return from the installed APK
 - [ ] Run the normal web validation suite and scan the release APK before publishing its download link
+
+## Phase 16 — Basic Web Analytics (Optional)
+
+Do not begin until Phase 15 is complete and the website and installed APK are stable. Keep this phase observational and independent from commerce behavior.
+
+- [ ] Enable Vercel Web Analytics for Dev and install `@vercel/analytics`
+- [ ] Add default page-view tracking with a strict allowlist for Home, Our Creations, Journal, Terms, and Privacy
+- [ ] Return `null` before transmission for Cart, Checkout, Login/Auth, Profile, Orders, Payment, Admin, API, and every route outside the public allowlist
+- [ ] Keep custom events, conversion funnels, session replay, Google Analytics, Speed Insights, advertising tracking, and an analytics database out of scope
+- [ ] Update the Privacy notice to describe the active aggregate Vercel analytics before Production collection begins
+- [ ] Validate included and excluded routes through browser network traffic on Dev, then promote through the normal `development` → `main` pull request
+- [ ] Confirm public page views from the Production website and installed Trusted Web Activity without adding a native Android analytics SDK or requiring APK/browser traffic separation

@@ -22,7 +22,7 @@ The PNGs in `references/` are retained as early visual context. They are not pix
 
 ### Decision
 
-Phase 13 Security and Production is complete. Security review, environment isolation, performance validation, production configuration, launch verification, PayMongo Live Mode activation, and the first real QR Ph charge were completed. Phase 14 UI Overhaul is now in progress; Phase 15 Android APK packaging follows only after the Phase 14 interface is stable.
+Phase 13 Security and Production is complete. Security review, environment isolation, performance validation, production configuration, launch verification, PayMongo Live Mode activation, and the first real QR Ph charge were completed. Phase 14 UI Overhaul is now in progress; Phase 15 Android APK packaging follows only after the Phase 14 interface is stable. Optional Phase 16 basic Web Analytics follows only after the website and APK are stable.
 
 Allowed now:
 
@@ -582,3 +582,15 @@ Capacitor and a basic embedded WebView are rejected because the dynamic Next.js 
 ### Reason
 
 An APK is an explicit project requirement, but a native rewrite is not. A Trusted Web Activity satisfies the deliverable with the smallest maintainable Android wrapper, preserves the existing supported browser authentication/payment flows, and keeps commerce security and updates in one deployed codebase.
+
+## 25. Basic Web Analytics
+
+### Decision
+
+Phase 16 may add `@vercel/analytics` after Phase 15 is complete and stable. Tracking is limited to Vercel's default aggregate page views on an explicit allowlist of public content routes: Home, Our Creations, Journal, Terms, and Privacy. A `beforeSend` filter rejects every other route before an event is transmitted.
+
+The phase does not add Speed Insights, Google Analytics, custom events, conversion funnels, session replay, advertising tracking, or a separate analytics store. The Privacy notice must describe the enabled analytics before Production collection begins. The Trusted Web Activity uses the same deployed website integration; no Android analytics SDK is added, and installed-app traffic does not need to be distinguished from ordinary Android browser traffic.
+
+### Reason
+
+Basic aggregate traffic can help the campus business understand which public pages are used without expanding the operational system or collecting customer/order activity. Deferring it until after the required APK prevents optional observability work from delaying UI stabilization or Android delivery.

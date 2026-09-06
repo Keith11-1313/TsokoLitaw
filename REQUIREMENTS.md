@@ -52,6 +52,7 @@ Workflow changes must be reflected together in:
 
 - Phase 14 is in progress and overhauls the customer and Admin interface without changing the established commerce, payment, authorization, notification, or operational rules.
 - Phase 15 packages the stable Phase 14 Production website as a directly distributed Android APK through a Trusted Web Activity.
+- Phase 16 optionally adds basic Vercel Web Analytics after the website and APK are stable. It records only aggregate page views for approved public routes and does not add product-event tracking.
 
 ### External changes requiring explicit approval
 
@@ -450,3 +451,14 @@ Phase 15 must produce a signed Android APK without rewriting the application or 
 - keep Google OAuth and PayMongo in supported browser flows; do not place them inside a developer-controlled embedded WebView
 - do not add Capacitor, React Native, native commerce screens, offline ordering/payment, or Google Play publication unless a later requirement explicitly changes the scope
 - test installation, Digital Asset Links verification, authentication, cart/session behavior, payment redirection and return, navigation, and upgrade signing on physical Android hardware
+
+## 20. Basic Web Analytics
+
+Phase 16 may add Vercel Web Analytics only after Phase 15 is complete and stable.
+
+- collect default aggregate page-view traffic only for `/`, `/our-creations`, `/journal`, `/terms`, and `/privacy`
+- reject analytics events for Cart, Checkout, Login/Auth, Profile, Orders, Payment, Admin, API, and any other route not on the public allowlist before transmission
+- do not include customer identifiers, order identifiers, email addresses, payment data, form values, or custom-event payloads
+- update the Privacy notice before enabling collection in Production
+- validate tracking separately on the Dev website, Production website, and installed Trusted Web Activity; APK traffic may appear as Android browser traffic and does not need a separate native analytics SDK
+- do not add Vercel Speed Insights, Google Analytics, custom events, conversion funnels, session replay, advertising tracking, or a separate analytics database unless a later requirement explicitly approves them

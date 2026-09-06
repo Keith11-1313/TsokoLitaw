@@ -431,7 +431,15 @@ Startup consists of Android's system-controlled splash followed, where supported
 
 The APK does not provide offline commerce. Auth, Checkout, Payment, Orders, Admin, API, Supabase, and PayMongo traffic remains online and must not be replaced with cached transactional state. Google OAuth and hosted payment continue through supported browser contexts rather than an embedded WebView.
 
-## 17. Principles
+## 17. Basic Web Analytics
+
+Optional Phase 16 adds the Vercel Web Analytics component to the existing Next.js application; it does not add another backend or an Android-native SDK. The integration uses a strict public-route allowlist in `beforeSend`. Events for Cart, Checkout, Login/Auth, Profile, Orders, Payment, Admin, API, and unknown routes return `null` before transmission.
+
+Only default page views are enabled. No custom event properties, user or order identifiers, form values, session replay, advertising tracker, or analytics database is introduced. Because the Trusted Web Activity renders the canonical Production website, it naturally uses the same web integration and may be represented as Android browser traffic.
+
+Dev must be enabled and validated first. Production collection begins only after the Privacy notice is updated, the reviewed change is promoted through the normal `development` → `main` workflow, and public-route inclusion plus private-route exclusion are verified in browser network traffic.
+
+## 18. Principles
 
 1. One codebase for V1.
 2. Server-authoritative money, stock, permissions, and payment state.
