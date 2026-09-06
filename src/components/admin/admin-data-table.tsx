@@ -20,7 +20,27 @@ export function AdminDataTable({
 }: AdminDataTableProps) {
   return (
     <section className="min-w-0 rounded-card border border-border bg-surface p-4 sm:p-6">
-      <div className="overflow-x-auto">
+      {rows.length ? (
+        <div className="space-y-3 md:hidden">
+          {rows.map((row, rowIndex) => (
+            <article key={rowIndex} className="rounded-control border border-border bg-background p-4">
+              <dl className="space-y-4">
+                {columns.map((column) => (
+                  <div key={column.key} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
+                    <dt className="mb-1.5 text-[0.6875rem] font-bold uppercase tracking-wide text-muted-foreground">
+                      {column.label}
+                    </dt>
+                    <dd className="min-w-0 text-sm text-foreground">{row[column.key]}</dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="py-12 text-center text-muted-foreground md:hidden">No records are available yet.</p>
+      )}
+      <div className="hidden overflow-x-auto md:block">
         <table
           className="w-full table-auto border-collapse text-left text-sm"
           style={{ minWidth: minimumWidth }}

@@ -26,7 +26,7 @@ export function QuickOperations() {
   return (
     <section aria-labelledby="quick-operations-heading">
       <h2 id="quick-operations-heading" className="font-display text-2xl">
-        Quick Operations
+        Quick operations
       </h2>
       <div className="mt-3 grid gap-4 md:grid-cols-3">
         {operations.map((operation) => {

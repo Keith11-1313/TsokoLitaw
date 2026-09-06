@@ -1,18 +1,21 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { PackageCheck, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
+import Link from "next/link";
 import {
   consumeInventoryAction,
   saveInventoryAction,
   type InventoryActionState,
 } from "@/app/admin/inventory/actions";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
-import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
+import { DiscardChangesDialog } from "@/components/admin/discard-changes-dialog";
+import { PrimaryButton, SecondaryButton, secondaryButtonClassName } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { FormStatusHint } from "@/components/ui/form-status-hint";
 import { NumberStepper } from "@/components/ui/quantity-input";
 import { useFormGate } from "@/hooks/use-form-gate";
+import { useEditorDialog } from "@/hooks/use-editor-dialog";
 import type {
   AdminInventoryDate,
   AdminInventoryRecord,
@@ -55,18 +58,26 @@ function StockEditor({
   dates,
   record,
   onSaved,
+  onDirtyChange,
+  onPendingChange,
+  onCancel,
 }: {
   product: { id: string; name: string };
   dates: AdminInventoryDate[];
   record?: AdminInventoryRecord;
   onSaved?: () => void;
+  onDirtyChange?: (isDirty: boolean) => void;
+  onPendingChange?: (pending: boolean) => void;
+  onCancel?: () => void;
 }) {
   const [state, action, pending] = useActionState(saveInventoryAction, initialState);
   const minimum = record ? record.stockReserved + record.stockConsumed : 0;
-  const { formRef, formProps, canSubmit, statusMessage } = useFormGate({ requireDirty: Boolean(record), extraValid: Boolean(record || dates.length) });
+  const { formRef, formProps, canSubmit, statusMessage, isDirty } = useFormGate({ requireDirty: Boolean(record), extraValid: Boolean(record || dates.length) });
   useEffect(() => {
     if (state.status === "success") onSaved?.();
   }, [state.status, onSaved]);
+  useEffect(() => onDirtyChange?.(isDirty), [isDirty, onDirtyChange]);
+  useEffect(() => onPendingChange?.(pending), [onPendingChange, pending]);
 
   return (
     <form ref={formRef} {...formProps} action={action} className="rounded-card border border-border bg-surface p-5 sm:p-6">
@@ -118,9 +129,12 @@ function StockEditor({
       <div className="mt-5 space-y-3">
         <ActionMessage state={state} />
         <FormStatusHint message={statusMessage} />
-        <PrimaryButton type="submit" disabled={pending || !canSubmit}>
-          {pending ? "Saving…" : record ? "Save stock settings" : "Publish stock"}
-        </PrimaryButton>
+        <div className={onCancel ? "grid gap-3 sm:grid-cols-2" : undefined}>
+          {onCancel ? <SecondaryButton disabled={pending} onClick={onCancel}>Cancel</SecondaryButton> : null}
+          <PrimaryButton type="submit" disabled={pending || !canSubmit}>
+            {pending ? "Saving…" : record ? "Save stock settings" : "Publish stock"}
+          </PrimaryButton>
+        </div>
       </div>
     </form>
   );
@@ -162,20 +176,24 @@ function PublishStockModal({
   dates: AdminInventoryDate[];
   onClose: () => void;
 }) {
+  const [isDirty, setIsDirty] = useState(false);
+  const [pending, setPending] = useState(false);
+  const { dialogRef, discardDialogRef, confirmDiscard, requestClose, keepEditing, discardChanges } = useEditorDialog({ isDirty, pending, onClose });
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-foreground/40 p-4" onPointerDown={onClose}>
-      <section role="dialog" aria-modal="true" aria-labelledby="publish-stock-modal-title" onPointerDown={(event) => event.stopPropagation()} className="my-auto w-full max-w-3xl rounded-card bg-surface shadow-2xl">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-foreground/40 p-4" onPointerDown={requestClose}>
+      <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="publish-stock-modal-title" aria-hidden={confirmDiscard || undefined} onPointerDown={(event) => event.stopPropagation()} className="my-auto w-full max-w-3xl rounded-card bg-surface shadow-2xl">
         <div className="flex items-start justify-between gap-4 px-5 pt-5 sm:px-7 sm:pt-7">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Ready-stock inventory</p>
             <h2 id="publish-stock-modal-title" className="mt-1 font-display text-3xl">Publish stock for another date</h2>
           </div>
-          <button type="button" aria-label="Close stock editor" onClick={onClose} className="flex size-11 items-center justify-center text-brand focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" /></button>
+          <button type="button" aria-label="Close stock editor" disabled={pending} onClick={requestClose} className="flex size-11 items-center justify-center text-brand focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50"><X aria-hidden="true" /></button>
         </div>
         <div className="p-5 pt-4 sm:p-7 sm:pt-4">
-          <StockEditor product={product} dates={dates} onSaved={onClose} />
+          <StockEditor product={product} dates={dates} onSaved={onClose} onDirtyChange={setIsDirty} onPendingChange={setPending} onCancel={requestClose} />
         </div>
       </section>
+      {confirmDiscard ? <DiscardChangesDialog dialogRef={discardDialogRef} onKeepEditing={keepEditing} onDiscard={discardChanges} /> : null}
     </div>
   );
 }
@@ -220,7 +238,7 @@ export function InventoryManager({
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label={`Inventory summary for ${formatDate(selectedRecord.pickupDate)}`}>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4" aria-label={`Inventory summary for ${formatDate(selectedRecord.pickupDate)}`}>
             <AdminStatCard compact label="Prepared" value={String(selectedRecord.stockTotal)} />
             <AdminStatCard compact label="Online committed" value={String(selectedRecord.stockReserved)} accentClassName="text-info-foreground" />
             <AdminStatCard compact label="Unusable" value={String(selectedRecord.stockConsumed)} />
@@ -235,25 +253,18 @@ export function InventoryManager({
           </article>
         </section>
       ) : (
-        <section className="mt-7 rounded-card border border-border bg-surface p-6" aria-labelledby="empty-inventory-title">
-          <div className="flex gap-3">
-            <PackageCheck aria-hidden="true" className="shrink-0 text-brand" size={22} />
-            <div>
-              <h2 id="empty-inventory-title" className="font-display text-2xl">No stock published yet</h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Publish the number of prepared pieces for an upcoming Ready stock or Hybrid pickup date.
-              </p>
-            </div>
-          </div>
-          {unconfiguredDates.length > 0 ? <PrimaryButton className="mt-5" onClick={() => setShowPublishModal(true)}><Plus size={17} />Publish stock</PrimaryButton> : null}
+        <section className="rounded-card border border-border bg-surface p-6 sm:p-8" aria-labelledby="empty-inventory-title">
+          <h2 id="empty-inventory-title" className="font-display text-2xl">No stock published yet</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            {unconfiguredDates.length > 0
+              ? "Choose an upcoming Ready stock or Hybrid pickup date and publish the number of prepared pieces."
+              : "Create an upcoming Ready stock or Hybrid date in Pickup before publishing prepared pieces."}
+          </p>
+          {unconfiguredDates.length > 0
+            ? <PrimaryButton className="mt-5" onClick={() => setShowPublishModal(true)}><Plus size={17} />Publish stock</PrimaryButton>
+            : <Link href="/admin/pickup" className={`${secondaryButtonClassName} mt-5`}>Go to Pickup</Link>}
         </section>
       )}
-
-      {dates.length === 0 ? (
-        <p className="mt-7 rounded-card border border-warning-border bg-warning-background p-5 text-sm leading-6 text-warning-foreground">
-          No eligible pickup date exists. Create an upcoming Ready stock or Hybrid date in Pickup before publishing prepared pieces.
-        </p>
-      ) : null}
 
       {showPublishModal ? <PublishStockModal product={product} dates={unconfiguredDates} onClose={() => setShowPublishModal(false)} /> : null}
 

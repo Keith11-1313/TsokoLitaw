@@ -7,11 +7,13 @@ import {
   setPickupDateOpenAction, type PickupActionState,
 } from "@/app/admin/pickup/actions";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
+import { DiscardChangesDialog } from "@/components/admin/discard-changes-dialog";
 import { FormField } from "@/components/ui/form-field";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { FormStatusHint } from "@/components/ui/form-status-hint";
 import { NumberStepper } from "@/components/ui/quantity-input";
 import { useFormGate } from "@/hooks/use-form-gate";
+import { useEditorDialog } from "@/hooks/use-editor-dialog";
 import type {
   AdminPickupDate, AdminPickupLocation, AdminPickupSettings, PickupMode,
 } from "@/lib/server-pickup";
@@ -59,7 +61,8 @@ function ScheduleEditor({
     locationIds: window.locationIds.filter((id) => activeLocationIds.has(id)),
   })) ?? [{ key: "window-0", startTime: "07:00", endTime: "08:00", locationIds: locations.map((location) => location.id) }]);
   const windowsValid = windows.length > 0 && windows.every((window) => window.startTime < window.endTime && window.locationIds.length > 0);
-  const { formRef, formProps, canSubmit, statusMessage, refresh } = useFormGate({ requireDirty: Boolean(date), extraValid: windowsValid && locations.length > 0 });
+  const { formRef, formProps, canSubmit, statusMessage, refresh, isDirty } = useFormGate({ requireDirty: Boolean(date), extraValid: windowsValid && locations.length > 0 });
+  const { dialogRef, discardDialogRef, confirmDiscard, requestClose, keepEditing, discardChanges } = useEditorDialog({ isDirty, pending, onClose });
   useEffect(() => { refresh(); }, [windows, refresh]);
 
   function changeWindow(key: string, patch: Partial<WindowDraft>) {
@@ -75,11 +78,11 @@ function ScheduleEditor({
     }));
   }
 
-  return <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-foreground/40 p-4" onPointerDown={() => !pending && onClose()}>
-    <section role="dialog" aria-modal="true" aria-labelledby="pickup-editor-title" onPointerDown={(event) => event.stopPropagation()} className="my-auto w-full max-w-3xl rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8">
+  return <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-foreground/40 p-4" onPointerDown={requestClose}>
+    <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="pickup-editor-title" aria-hidden={confirmDiscard || undefined} onPointerDown={(event) => event.stopPropagation()} className="my-auto w-full max-w-3xl rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8">
       <div className="flex items-start justify-between gap-4">
         <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Pickup schedule</p><h2 id="pickup-editor-title" className="mt-1 font-display text-3xl">{date ? "Edit pickup date" : "Add pickup date"}</h2></div>
-        <button type="button" aria-label="Close pickup editor" disabled={pending} onClick={onClose} className="flex size-11 items-center justify-center text-brand focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" /></button>
+        <button type="button" aria-label="Close pickup editor" disabled={pending} onClick={requestClose} className="flex size-11 items-center justify-center text-brand focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" /></button>
       </div>
       <form ref={formRef} {...formProps} action={action} className="mt-6 space-y-6">
         <input type="hidden" name="pickupDateId" value={date?.id ?? ""} />
@@ -108,9 +111,10 @@ function ScheduleEditor({
         <ActionMessage state={state} />
         {!windowsValid ? <p className="text-xs font-bold text-danger-foreground">Each time window must end after it starts and include at least one location.</p> : null}
         <FormStatusHint message={statusMessage} />
-        <div className="grid gap-3 sm:grid-cols-2"><SecondaryButton disabled={pending} onClick={onClose}>Cancel</SecondaryButton><PrimaryButton type="submit" disabled={pending || !canSubmit}>{pending ? "Saving…" : date ? "Save schedule" : "Publish pickup date"}</PrimaryButton></div>
+        <div className="grid gap-3 sm:grid-cols-2"><SecondaryButton disabled={pending} onClick={requestClose}>Cancel</SecondaryButton><PrimaryButton type="submit" disabled={pending || !canSubmit}>{pending ? "Saving…" : date ? "Save schedule" : "Publish pickup date"}</PrimaryButton></div>
       </form>
     </section>
+    {confirmDiscard ? <DiscardChangesDialog dialogRef={discardDialogRef} onKeepEditing={keepEditing} onDiscard={discardChanges} /> : null}
   </div>;
 }
 
@@ -135,13 +139,14 @@ function LocationEditor({ location, onClose }: {
   onClose: () => void;
 }) {
   const [state, action, pending] = useActionState(savePickupLocationAction, initialState);
-  const { formRef, formProps, canSubmit, statusMessage } = useFormGate({ requireDirty: Boolean(location) });
+  const { formRef, formProps, canSubmit, statusMessage, isDirty } = useFormGate({ requireDirty: Boolean(location) });
+  const { dialogRef, discardDialogRef, confirmDiscard, requestClose, keepEditing, discardChanges } = useEditorDialog({ isDirty, pending, onClose });
   useEffect(() => { if (state.status === "success") onClose(); }, [state.status, onClose]);
-  return <div className="fixed inset-0 z-[70] flex items-center justify-center bg-foreground/40 p-4" onPointerDown={() => !pending && onClose()}>
-    <section role="dialog" aria-modal="true" aria-labelledby="location-editor-title" onPointerDown={(event) => event.stopPropagation()} className="w-full max-w-xl rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8">
+  return <div className="fixed inset-0 z-[70] flex items-center justify-center bg-foreground/40 p-4" onPointerDown={requestClose}>
+    <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="location-editor-title" aria-hidden={confirmDiscard || undefined} onPointerDown={(event) => event.stopPropagation()} className="w-full max-w-xl rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8">
       <div className="flex items-start justify-between gap-4">
         <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Campus location</p><h2 id="location-editor-title" className="mt-1 font-display text-3xl">{location ? "Edit pickup location" : "Add pickup location"}</h2></div>
-        <button type="button" aria-label="Close location editor" disabled={pending} onClick={onClose} className="flex size-11 items-center justify-center text-brand focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" /></button>
+        <button type="button" aria-label="Close location editor" disabled={pending} onClick={requestClose} className="flex size-11 items-center justify-center text-brand focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" /></button>
       </div>
       <form ref={formRef} {...formProps} action={action} className="mt-6 space-y-5">
         <input type="hidden" name="locationId" value={location?.id ?? ""} />
@@ -150,9 +155,10 @@ function LocationEditor({ location, onClose }: {
         <label className="flex min-h-11 items-center gap-3 rounded-control bg-surface-control px-4 py-3 text-sm font-bold"><input type="checkbox" name="isActive" defaultChecked={location?.isActive ?? true} className="size-4 accent-brand" />Available for new pickup schedules</label>
         <ActionMessage state={state} />
         <FormStatusHint message={statusMessage} />
-        <div className="grid gap-3 sm:grid-cols-2"><SecondaryButton disabled={pending} onClick={onClose}>Cancel</SecondaryButton><PrimaryButton type="submit" disabled={pending || !canSubmit}>{pending ? "Saving…" : "Save location"}</PrimaryButton></div>
+        <div className="grid gap-3 sm:grid-cols-2"><SecondaryButton disabled={pending} onClick={requestClose}>Cancel</SecondaryButton><PrimaryButton type="submit" disabled={pending || !canSubmit}>{pending ? "Saving…" : "Save location"}</PrimaryButton></div>
       </form>
     </section>
+    {confirmDiscard ? <DiscardChangesDialog dialogRef={discardDialogRef} onKeepEditing={keepEditing} onDiscard={discardChanges} /> : null}
   </div>;
 }
 

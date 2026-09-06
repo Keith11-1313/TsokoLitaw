@@ -54,6 +54,8 @@ export interface CustomerOrderDetail extends CustomerOrderSummary {
 export interface AdminOrderSummary extends CustomerOrderSummary {
   customerName: string;
   customerEmail: string;
+  customerMobile: string | null;
+  notes: string | null;
   boxQuantity: number;
 }
 
@@ -323,6 +325,8 @@ export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
       pickup_location_snapshot,
       customer_name,
       customer_email,
+      customer_mobile,
+      customer_notes,
       order_items (
         id,
         order_id,
@@ -354,10 +358,14 @@ export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
   return ((data ?? []) as unknown as Array<CustomerOrderRow & {
     customer_name: string;
     customer_email: string;
+    customer_mobile: string | null;
+    customer_notes: string | null;
   }>).map((order) => ({
     ...toOrderSummary(order),
     customerName: order.customer_name,
     customerEmail: order.customer_email,
+    customerMobile: order.customer_mobile,
+    notes: order.customer_notes,
     boxQuantity: (order.order_items ?? []).reduce((total, item) => total + item.quantity, 0),
   }));
 }

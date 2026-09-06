@@ -14,10 +14,9 @@ export default async function AdminProductsPage() {
     <AdminShell activePath="/admin/products">
       <AdminContent>
         <header>
-          <h1 className="font-display text-[2.25rem] leading-tight text-foreground">Catalog</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Manage the boxes, coatings, add-ons, images, and PHP prices used by Our Creations and checkout.</p>
+          <h1 className="font-display text-[2rem] leading-tight text-foreground sm:text-[2.25rem]">Catalog</h1>
         </header>
-        <div className="mt-8"><CatalogManager {...catalog} /></div>
+        <div className="mt-7"><CatalogManager {...catalog} /></div>
       </AdminContent>
     </AdminShell>
   );

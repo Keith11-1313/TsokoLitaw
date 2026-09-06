@@ -12,13 +12,7 @@ export default async function AdminPickupPage() {
   return (
     <AdminPageLayout
       activePath="/admin/pickup"
-      title="Pickup Management"
-      description="Dates, times, and campus locations offered during checkout."
-      purpose="Publish only the dates, windows, and locations the team can serve."
-      customerImpact="Published schedules populate Checkout; Ready Stock and Hybrid dates also feed Inventory."
-      currentConnection="Connected to persisted pickup schedules, operational rules, Checkout, and Inventory."
-      connected
-      showScopeNote={false}
+      title="Pickup"
     >
       <PickupManager {...pickup} />
     </AdminPageLayout>
