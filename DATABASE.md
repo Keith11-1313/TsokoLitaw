@@ -1,5 +1,7 @@
 # TsokoLitaw — Approved Database Design
 
+TypeScript clients use `src/types/database.ts`, backed by `src/types/database.generated.ts`. Regenerate with `npm run db:types` after local migrations, then run typecheck. See [ONBOARDING.md](ONBOARDING.md#database-types-and-changes) for the explicit Dev alternative and nullable RPC exceptions. Generation does not apply migrations or reset a database.
+
 ## 1. Status
 
 The Phase 7 Supabase baseline is implemented as the canonical production bootstrap schema in `supabase/migrations/20260827000000_initial_schema.sql`, with controlled data in `supabase/seed.sql` and pgTAP checks in `supabase/tests/database/000_schema.test.sql`. The repository keeps the squashed bootstrap plus later reviewed migrations for fresh projects.

@@ -1,5 +1,7 @@
 # TsokoLitaw Database Reset Runbook
 
+**Historical procedure, not a current task.** The hosted reset was declined. This is not onboarding or a prerequisite for Phase 14, APK work, or deployment. Current work preserves hosted records and uses reviewed migrations. The local section remains available for deliberately disposable local databases.
+
 This runbook returns a TsokoLitaw environment to a clean operational state while preserving the accounts, Admin roles, reference catalog, storage assets, secrets, and Cron job definitions that the application still needs.
 
 Use this only for:

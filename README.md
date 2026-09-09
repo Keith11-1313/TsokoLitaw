@@ -4,13 +4,15 @@ TsokoLitaw is a mobile-first storefront and administration interface for a Filip
 
 ## Decision Record
 
+New maintainer: start with [ONBOARDING.md](ONBOARDING.md) for setup, the checkout code path, shared-control contracts, type generation, and deployment.
+
 [`DECISIONS.md`](DECISIONS.md) explains the product, workflow, UI, and architecture decisions made during review. It records why navigation was simplified, why products are modeled as boxes and coatings, why reviews are order-linked, why Vlog became Journal, how Admin relates to Customer, and what remains intentionally unconnected.
 
 Read it before changing established workflows. The rough PNG references do not override these approved decisions.
 
 ## Current Status
 
-**Phase 13: Security and Production is complete.** The isolated Dev and Production environments, live QR Ph payment, signed webhooks, production Cron jobs, transactional email, Search Console, sitemap, security controls, and production smoke tests have been verified. Remaining Phase 13 entries are post-launch monitoring, an optional Google Business Profile assessment, and the separately approved future database cleanup. Paid-order settlements occur in person; the website does not create refunds.
+**Phase 13: Security and Production is complete.** The isolated Dev and Production environments, live QR Ph payment, signed webhooks, production Cron jobs, transactional email, Search Console, sitemap, security controls, and production smoke tests have been verified. Remaining Phase 13 entries are post-launch monitoring, an optional Google Business Profile assessment, and a deferred assessment of historical refund retirement (no hosted reset). Paid-order settlements occur in person; the website does not create refunds.
 
 **Phase 14: UI Overhaul is in progress.** Its first approved customer-facing pass introduces the supplied photo background, simpler typography, tighter page spacing, and focused mobile builder and checkout improvements without changing commerce behavior. Phase 15 will package the stable Phase 14 website as a directly distributed Android APK; it will not introduce a second storefront implementation. Optional Phase 16 may add basic public-page Vercel Web Analytics only after the website and APK are stable.
 

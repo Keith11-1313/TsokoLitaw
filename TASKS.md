@@ -2,7 +2,7 @@
 
 ## Current Milestone
 
-Phase 13 Security and Production is complete. The Production baseline, live QR Ph payment, signed webhooks, Cron jobs, OAuth, transactional email, Search Console setup, and final smoke test are verified. Phase 14 UI Overhaul is in progress on `development`. Phase 15 Android APK Packaging follows only after the Phase 14 interface is stable. Optional Phase 16 Basic Web Analytics follows only after the website and APK are stable. Post-launch Search Console monitoring and the separately approved historical-refund database cleanup remain operational follow-up work.
+Phase 13 Security and Production is complete. The Production baseline, live QR Ph payment, signed webhooks, Cron jobs, OAuth, transactional email, Search Console setup, and final smoke test are verified. Phase 14 UI Overhaul is in progress on `development`. Phase 15 Android APK Packaging follows only after the Phase 14 interface is stable. Optional Phase 16 Basic Web Analytics follows only after the website and APK are stable. Post-launch Search Console monitoring and a deferred assessment of historical refund retirement (no hosted reset) remain operational follow-up work.
 
 ## Decision Baseline
 
@@ -301,7 +301,7 @@ Do not begin without explicit approval.
 - [ ] Monitor search queries, indexed pages, sitemap status, and crawl errors during the first weeks, then correct metadata or technical SEO issues without keyword stuffing
 - [ ] Assess Google Business Profile eligibility separately; create one only if TsokoLitaw meets Google's real-world business/location requirements
 - [x] Complete final smoke test and policy verification
-- [ ] During the separately approved post-Phase-13 database cleanup, remove the inactive historical refund subsystem only after preserving any required transaction evidence; do not run this removal before that reset
+- [ ] Deferred: assess historical refund retirement only if needed, preserving required transaction evidence through reviewed migrations. The hosted reset was declined and is not a prerequisite for Phase 14, APK work, or handover.
 
 ## Phase 14 — UI Overhaul
 

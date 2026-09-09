@@ -594,3 +594,9 @@ The phase does not add Speed Insights, Google Analytics, custom events, conversi
 ### Reason
 
 Basic aggregate traffic can help the campus business understand which public pages are used without expanding the operational system or collecting customer/order activity. Deferring it until after the required APK prevents optional observability work from delaying UI stabilization or Android delivery.
+
+## 26. Maintainer Handover
+
+Use Prettier on edited source files, generated Supabase schema types for clients, and a short onboarding guide explaining checkout and shared form contracts. Keep nullable RPC argument exceptions explicit and separate from generated output. Preserve the existing transaction and authorization boundaries; readability cleanup does not require new services or a database reset.
+
+The hosted reset was declined. Historical refund retirement is deferred and would require its own reviewed migration and retention assessment. Applied migration history and historical transaction records remain intact.

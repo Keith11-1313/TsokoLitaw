@@ -349,6 +349,8 @@ The current implementation uses tagged `unstable_cache` entries for deliberately
 
 ### Database query and index rules
 
+All Supabase clients use the checked-in generated public schema through `src/types/database.ts`. That file documents the few nullable RPC argument exceptions absent from PostgreSQL generation metadata. Regenerate with `npm run db:types` after schema changes and run typecheck; do not bypass a mismatch with an unchecked cast. The maintainer's checkout walkthrough is in [ONBOARDING.md](ONBOARDING.md#follow-checkout-once).
+
 - Index every ownership, foreign-key, status, sort, and RLS filter used by a hot query. RLS filters such as `user_id = (select auth.uid())` require `user_id` to be the leading column of a usable index.
 - Keep the existing order ownership/sort index and verify whether the load-test query plans need `(user_id, created_at desc, id desc)`, order-item ordering, or latest-refund indexes before adding them. Do not add speculative indexes; every index also increases write cost.
 - Wrap stable RLS helpers such as `auth.uid()` in `select` so PostgreSQL can evaluate them once per statement rather than once per candidate row.
