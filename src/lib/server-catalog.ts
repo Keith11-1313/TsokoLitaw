@@ -46,7 +46,7 @@ export async function getAdminCatalog() {
   if (productResult.error || !productResult.data || coatingsResult.error || addonsResult.error) {
     throw new Error("The Admin catalog could not be loaded.", { cause: productResult.error ?? coatingsResult.error ?? addonsResult.error });
   }
-  const row = productResult.data as unknown as ProductRow;
+  const row: ProductRow = productResult.data;
   const product: AdminCatalogProduct = {
     id: row.id, name: row.name, description: row.description,
     pricePerPiece: Number(row.price_per_piece), isActive: row.is_active,
@@ -58,7 +58,7 @@ export async function getAdminCatalog() {
   const coatings: AdminCatalogCoating[] = (coatingsResult.data ?? []).map((coating, index) => ({
     id: coating.id, name: coating.name, description: coating.description,
     imageUrl: coating.image_url,
-    pricePerPiece: Number(coating.price_per_piece ?? coating.additional_type_price),
+    pricePerPiece: Number(coating.price_per_piece),
     isDefault: coating.is_default ?? index === 0,
     isActive: coating.is_active, sortOrder: coating.sort_order,
   }));

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireCustomer } from "@/lib/auth";
-import { cancelCustomerOrder } from "@/lib/server-refunds";
+import { cancelCustomerOrder } from "@/lib/server-cancellation";
 import {
   enforceMutationRateLimit,
   MutationRateLimitError,
