@@ -9,12 +9,7 @@ interface AdminPageLayoutProps {
   children: ReactNode;
 }
 
-export function AdminPageLayout({
-  activePath,
-  title,
-  actions,
-  children,
-}: AdminPageLayoutProps) {
+export function AdminPageLayout({ activePath, title, actions, children }: AdminPageLayoutProps) {
   return (
     <AdminShell activePath={activePath}>
       <AdminContent>

@@ -1,0 +1,5 @@
+node_modules/
+.next/
+src/bones/
+src/types/database.generated.ts
+package-lock.json

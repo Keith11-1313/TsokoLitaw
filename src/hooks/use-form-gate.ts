@@ -5,9 +5,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 function snapshot(form: HTMLFormElement) {
   const values: string[] = [];
   new FormData(form).forEach((value, key) => {
-    values.push(value instanceof File
-      ? `${key}=file:${value.name}:${value.size}:${value.lastModified}`
-      : `${key}=${value}`);
+    values.push(
+      value instanceof File
+        ? `${key}=file:${value.name}:${value.size}:${value.lastModified}`
+        : `${key}=${value}`,
+    );
   });
   return values.sort().join("&");
 }

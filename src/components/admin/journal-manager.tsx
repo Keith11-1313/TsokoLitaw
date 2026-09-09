@@ -1,18 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useState, type ChangeEvent } from "react";
-import {
-  FileText,
-  Megaphone,
-  Plus,
-  Sparkles,
-  Video,
-  X,
-} from "lucide-react";
-import {
-  saveJournalPostAction,
-  type JournalActionState,
-} from "@/app/admin/journal/actions";
+import { FileText, Megaphone, Plus, Sparkles, Video, X } from "lucide-react";
+import { saveJournalPostAction, type JournalActionState } from "@/app/admin/journal/actions";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
 import { DiscardChangesDialog } from "@/components/admin/discard-changes-dialog";
 import { FormField } from "@/components/ui/form-field";
@@ -32,7 +22,12 @@ import {
 import type { JournalPostSummary } from "@/lib/server-journal";
 
 const initialState: JournalActionState = { status: "idle", message: "" };
-const iconMap = { megaphone: Megaphone, sparkles: Sparkles, file_text: FileText, video: Video } as const;
+const iconMap = {
+  megaphone: Megaphone,
+  sparkles: Sparkles,
+  file_text: FileText,
+  video: Video,
+} as const;
 
 function todayInManila() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -53,8 +48,12 @@ function JournalEditor({
   const [state, formAction, pending] = useActionState(saveJournalPostAction, initialState);
   const [imageError, setImageError] = useState("");
   const [imageChecking, setImageChecking] = useState(false);
-  const { formRef, formProps, canSubmit, statusMessage, refresh, isDirty } = useFormGate({ requireDirty: Boolean(post), extraValid: !imageError && !imageChecking });
-  const { dialogRef, discardDialogRef, confirmDiscard, requestClose, keepEditing, discardChanges } = useEditorDialog({ isDirty, pending, onClose });
+  const { formRef, formProps, canSubmit, statusMessage, refresh, isDirty } = useFormGate({
+    requireDirty: Boolean(post),
+    extraValid: !imageError && !imageChecking,
+  });
+  const { dialogRef, discardDialogRef, confirmDiscard, requestClose, keepEditing, discardChanges } =
+    useEditorDialog({ isDirty, pending, onClose });
 
   async function validateCover(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
@@ -89,7 +88,9 @@ function JournalEditor({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Journal editor</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
+              Journal editor
+            </p>
             <h2 id="journal-editor-title" className="mt-1 font-display text-3xl">
               {post ? "Edit post" : "Create post"}
             </h2>
@@ -105,7 +106,12 @@ function JournalEditor({
           </button>
         </div>
 
-        <form ref={formRef} {...formProps} action={formAction} className="mt-7 grid gap-5 sm:grid-cols-2">
+        <form
+          ref={formRef}
+          {...formProps}
+          action={formAction}
+          className="mt-7 grid gap-5 sm:grid-cols-2"
+        >
           <input type="hidden" name="postId" value={post?.id ?? ""} />
           <input type="hidden" name="existingCoverImageUrl" value={post?.coverImageUrl ?? ""} />
           <FormField
@@ -114,12 +120,54 @@ function JournalEditor({
             error={state.fieldErrors?.title}
             required
             className="sm:col-span-2"
-            inputProps={{ name: "title", defaultValue: post?.title, minLength: 3, maxLength: 120, autoFocus: true }}
+            inputProps={{
+              name: "title",
+              defaultValue: post?.title,
+              minLength: 3,
+              maxLength: 120,
+              autoFocus: true,
+            }}
           />
-          <CustomSelect label="Post type" name="contentType" required defaultValue={post?.contentType ?? "announcement"} options={JOURNAL_CONTENT_TYPES.map((type) => ({ value: type, label: journalContentTypeLabels[type] }))} />
-          <CustomSelect label="Icon" name="iconKey" required defaultValue={post?.iconKey ?? "megaphone"} options={JOURNAL_ICON_KEYS.map((icon) => ({ value: icon, label: journalIconLabels[icon] }))} />
-          <FormField id="journal-date" label="Display date" required inputProps={{ name: "displayDate", type: "date", defaultValue: post?.displayDate ?? todayInManila() }} />
-          <CustomSelect label="Publication" name="status" required defaultValue={post?.status ?? "draft"} options={JOURNAL_STATUSES.map((status) => ({ value: status, label: status === "published" ? "Published" : "Draft" }))} />
+          <CustomSelect
+            label="Post type"
+            name="contentType"
+            required
+            defaultValue={post?.contentType ?? "announcement"}
+            options={JOURNAL_CONTENT_TYPES.map((type) => ({
+              value: type,
+              label: journalContentTypeLabels[type],
+            }))}
+          />
+          <CustomSelect
+            label="Icon"
+            name="iconKey"
+            required
+            defaultValue={post?.iconKey ?? "megaphone"}
+            options={JOURNAL_ICON_KEYS.map((icon) => ({
+              value: icon,
+              label: journalIconLabels[icon],
+            }))}
+          />
+          <FormField
+            id="journal-date"
+            label="Display date"
+            required
+            inputProps={{
+              name: "displayDate",
+              type: "date",
+              defaultValue: post?.displayDate ?? todayInManila(),
+            }}
+          />
+          <CustomSelect
+            label="Publication"
+            name="status"
+            required
+            defaultValue={post?.status ?? "draft"}
+            options={JOURNAL_STATUSES.map((status) => ({
+              value: status,
+              label: status === "published" ? "Published" : "Draft",
+            }))}
+          />
           <FormField
             id="journal-excerpt"
             label="Short summary (optional)"
@@ -135,21 +183,41 @@ function JournalEditor({
             required
             className="sm:col-span-2"
             controlClassName="min-h-40"
-            textareaProps={{ name: "content", defaultValue: post?.content, minLength: 10, maxLength: 5000 }}
+            textareaProps={{
+              name: "content",
+              defaultValue: post?.content,
+              minLength: 10,
+              maxLength: 5000,
+            }}
           />
           <FormField
             id="journal-cover"
             label="Cover image (optional)"
-            hint={imageChecking ? "Checking image…" : "JPG, PNG, or WebP up to 3 MB. A new image replaces the current one."}
+            hint={
+              imageChecking
+                ? "Checking image…"
+                : "JPG, PNG, or WebP up to 3 MB. A new image replaces the current one."
+            }
             error={imageError || state.fieldErrors?.coverImage}
-            inputProps={{ name: "coverImage", type: "file", accept: "image/jpeg,image/png,image/webp", onChange: validateCover }}
+            inputProps={{
+              name: "coverImage",
+              type: "file",
+              accept: "image/jpeg,image/png,image/webp",
+              onChange: validateCover,
+            }}
           />
           <FormField
             id="journal-video"
             label="Video link (optional)"
             error={state.fieldErrors?.videoUrl}
             hint="Use a secure hosted video URL when the post includes video."
-            inputProps={{ name: "videoUrl", type: "url", pattern: "https://.*", defaultValue: post?.videoUrl ?? "", placeholder: "https://…" }}
+            inputProps={{
+              name: "videoUrl",
+              type: "url",
+              pattern: "https://.*",
+              defaultValue: post?.videoUrl ?? "",
+              placeholder: "https://…",
+            }}
           />
           {post?.coverImageUrl ? (
             <label className="flex min-h-11 items-center gap-3 text-sm sm:col-span-2">
@@ -157,11 +225,22 @@ function JournalEditor({
               Remove the current cover image
             </label>
           ) : null}
-          {state.status === "error" ? <p role="alert" className="rounded-control bg-danger-background p-4 text-sm text-danger-foreground sm:col-span-2">{state.message}</p> : null}
+          {state.status === "error" ? (
+            <p
+              role="alert"
+              className="rounded-control bg-danger-background p-4 text-sm text-danger-foreground sm:col-span-2"
+            >
+              {state.message}
+            </p>
+          ) : null}
           <FormStatusHint className="sm:col-span-2" message={statusMessage} />
           <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
-            <SecondaryButton type="button" disabled={pending} onClick={requestClose}>Cancel</SecondaryButton>
-            <PrimaryButton type="submit" disabled={pending || !canSubmit}>{pending ? "Saving…" : "Save post"}</PrimaryButton>
+            <SecondaryButton type="button" disabled={pending} onClick={requestClose}>
+              Cancel
+            </SecondaryButton>
+            <PrimaryButton type="submit" disabled={pending || !canSubmit}>
+              {pending ? "Saving…" : "Save post"}
+            </PrimaryButton>
           </div>
         </form>
       </section>
@@ -189,9 +268,17 @@ export function JournalManager({ posts }: { posts: JournalPostSummary[] }) {
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 id="journal-posts-title" className="font-display text-[2rem] leading-tight text-foreground sm:text-[2.25rem]">Journal</h1>
+          <h1
+            id="journal-posts-title"
+            className="font-display text-[2rem] leading-tight text-foreground sm:text-[2.25rem]"
+          >
+            Journal
+          </h1>
         </div>
-        <PrimaryButton type="button" onClick={() => openEditor(null)}><Plus aria-hidden="true" size={17} />New post</PrimaryButton>
+        <PrimaryButton type="button" onClick={() => openEditor(null)}>
+          <Plus aria-hidden="true" size={17} />
+          New post
+        </PrimaryButton>
       </div>
       {posts.length ? (
         <section className="mt-5 grid gap-5 lg:grid-cols-2" aria-label="Journal posts">
@@ -199,17 +286,38 @@ export function JournalManager({ posts }: { posts: JournalPostSummary[] }) {
             const Icon = iconMap[post.iconKey as JournalIconKey];
             return (
               <article key={post.id} className="rounded-card border border-border bg-surface p-6">
-                <span className="flex size-11 items-center justify-center rounded-full bg-surface-muted text-brand"><Icon aria-hidden="true" size={20} /></span>
+                <span className="flex size-11 items-center justify-center rounded-full bg-surface-muted text-brand">
+                  <Icon aria-hidden="true" size={20} />
+                </span>
                 <div className="mt-5 flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">{journalContentTypeLabels[post.contentType]}</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
+                      {journalContentTypeLabels[post.contentType]}
+                    </p>
                     <h3 className="mt-1 font-display text-2xl">{post.title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeZone: "Asia/Manila" }).format(new Date(`${post.displayDate}T00:00:00+08:00`))}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {new Intl.DateTimeFormat("en-PH", {
+                        dateStyle: "medium",
+                        timeZone: "Asia/Manila",
+                      }).format(new Date(`${post.displayDate}T00:00:00+08:00`))}
+                    </p>
                   </div>
-                  <span className={`rounded-lg px-2.5 py-1 text-xs font-bold ${post.status === "published" ? "bg-success-background text-success-foreground" : "bg-surface-muted text-muted-foreground"}`}>{post.status === "published" ? "Published" : "Draft"}</span>
+                  <span
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold ${post.status === "published" ? "bg-success-background text-success-foreground" : "bg-surface-muted text-muted-foreground"}`}
+                  >
+                    {post.status === "published" ? "Published" : "Draft"}
+                  </span>
                 </div>
-                <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted-foreground">{post.excerpt || post.content}</p>
-                <SecondaryButton type="button" className="mt-6 w-full" onClick={() => openEditor(post)}>Edit post</SecondaryButton>
+                <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted-foreground">
+                  {post.excerpt || post.content}
+                </p>
+                <SecondaryButton
+                  type="button"
+                  className="mt-6 w-full"
+                  onClick={() => openEditor(post)}
+                >
+                  Edit post
+                </SecondaryButton>
               </article>
             );
           })}
@@ -217,10 +325,18 @@ export function JournalManager({ posts }: { posts: JournalPostSummary[] }) {
       ) : (
         <section className="mt-5 rounded-card border border-dashed border-border bg-surface p-10 text-center">
           <h2 className="font-display text-2xl">No Journal posts yet</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Create a draft, then publish it when it is ready for customers.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Create a draft, then publish it when it is ready for customers.
+          </p>
         </section>
       )}
-      {editorOpen ? <JournalEditor key={selectedPost?.id ?? "new"} post={selectedPost} onClose={() => setEditorOpen(false)} /> : null}
+      {editorOpen ? (
+        <JournalEditor
+          key={selectedPost?.id ?? "new"}
+          post={selectedPost}
+          onClose={() => setEditorOpen(false)}
+        />
+      ) : null}
     </>
   );
 }
