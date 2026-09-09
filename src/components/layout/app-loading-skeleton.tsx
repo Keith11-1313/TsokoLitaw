@@ -56,7 +56,7 @@ function LoadingFrame() {
 
 export function AppLoadingSkeleton() {
   return (
-    <div className="delayed-route-loading" role="status" aria-label="Loading page" aria-busy="true">
+    <div role="status" aria-label="Loading page" aria-busy="true">
       <span className="sr-only">Loading page…</span>
       <Skeleton
         name="tsokolitaw-page"
