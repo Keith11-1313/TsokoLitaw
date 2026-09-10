@@ -23,10 +23,16 @@ export function AdminDataTable({
       {rows.length ? (
         <div className="space-y-3 md:hidden">
           {rows.map((row, rowIndex) => (
-            <article key={rowIndex} className="rounded-control border border-border bg-background p-4">
+            <article
+              key={rowIndex}
+              className="rounded-control border border-border bg-background p-4"
+            >
               <dl className="space-y-4">
                 {columns.map((column) => (
-                  <div key={column.key} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
+                  <div
+                    key={column.key}
+                    className="border-b border-border pb-4 last:border-b-0 last:pb-0"
+                  >
                     <dt className="mb-1.5 text-[0.6875rem] font-bold uppercase tracking-wide text-muted-foreground">
                       {column.label}
                     </dt>
@@ -38,7 +44,9 @@ export function AdminDataTable({
           ))}
         </div>
       ) : (
-        <p className="py-12 text-center text-muted-foreground md:hidden">No records are available yet.</p>
+        <p className="py-12 text-center text-muted-foreground md:hidden">
+          No records are available yet.
+        </p>
       )}
       <div className="hidden overflow-x-auto md:block">
         <table
@@ -63,19 +71,24 @@ export function AdminDataTable({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-12 text-center text-muted-foreground">
+                <td
+                  colSpan={columns.length}
+                  className="px-4 py-12 text-center text-muted-foreground"
+                >
                   No records are available yet.
                 </td>
               </tr>
-            ) : rows.map((row, rowIndex) => (
-              <tr key={rowIndex} className="min-h-14 border-b border-border last:border-b-0">
-                {columns.map((column) => (
-                  <td key={column.key} className="px-4 py-4 text-muted-foreground">
-                    {row[column.key]}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            ) : (
+              rows.map((row, rowIndex) => (
+                <tr key={rowIndex} className="min-h-14 border-b border-border last:border-b-0">
+                  {columns.map((column) => (
+                    <td key={column.key} className="px-4 py-4 text-muted-foreground">
+                      {row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

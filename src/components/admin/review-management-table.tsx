@@ -41,7 +41,11 @@ function ReviewActions({ review }: { review: AdminReviewSummary }) {
           {pending ? "Saving…" : review.isFeatured ? "Unfeature" : "Feature"}
         </button>
       </div>
-      {message ? <p role="alert" className="mt-2 text-xs text-danger-foreground">{message}</p> : null}
+      {message ? (
+        <p role="alert" className="mt-2 text-xs text-danger-foreground">
+          {message}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -53,14 +57,21 @@ export function ReviewManagementTable({ reviews }: { reviews: AdminReviewSummary
         <>
           <div className="space-y-3 md:hidden">
             {reviews.map((review) => (
-              <article key={review.id} className="rounded-control border border-border bg-background p-4">
+              <article
+                key={review.id}
+                className="rounded-control border border-border bg-background p-4"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-bold text-foreground">{review.customerName}</h3>
                     <p className="mt-1 text-xs text-muted-foreground">{review.orderNumber}</p>
                   </div>
                   <span className="inline-flex items-center gap-1 font-bold text-foreground">
-                    <Star aria-hidden="true" className="fill-warning-foreground text-warning-foreground" size={15} />
+                    <Star
+                      aria-hidden="true"
+                      className="fill-warning-foreground text-warning-foreground"
+                      size={15}
+                    />
                     {review.rating}
                   </span>
                 </div>
@@ -68,48 +79,60 @@ export function ReviewManagementTable({ reviews }: { reviews: AdminReviewSummary
                 <p className="mt-4 text-xs font-bold uppercase tracking-wide text-foreground">
                   {review.isFeatured ? "Featured" : review.isVisible ? "Visible" : "Hidden"}
                 </p>
-                <div className="mt-4"><ReviewActions review={review} /></div>
+                <div className="mt-4">
+                  <ReviewActions review={review} />
+                </div>
               </article>
             ))}
           </div>
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[62rem] border-collapse text-left text-sm">
-            <thead>
-              <tr className="h-12 bg-surface-muted text-xs text-foreground">
-                <th className="rounded-l-control px-4 font-bold">Customer</th>
-                <th className="px-4 font-bold">Order</th>
-                <th className="px-4 font-bold">Rating</th>
-                <th className="px-4 font-bold">Review</th>
-                <th className="px-4 font-bold">Visibility</th>
-                <th className="rounded-r-control px-4 font-bold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reviews.map((review) => (
-                <tr key={review.id} className="border-b border-border align-top last:border-b-0">
-                  <td className="px-4 py-4 font-bold text-foreground">{review.customerName}</td>
-                  <td className="px-4 py-4 text-foreground">{review.orderNumber}</td>
-                  <td className="px-4 py-4">
-                    <span className="inline-flex items-center gap-1 font-bold text-foreground">
-                      <Star aria-hidden="true" className="fill-warning-foreground text-warning-foreground" size={15} />
-                      {review.rating}
-                    </span>
-                  </td>
-                  <td className="max-w-md px-4 py-4 leading-6 text-muted-foreground">{review.comment}</td>
-                  <td className="px-4 py-4 text-xs font-bold text-foreground">
-                    {review.isFeatured ? "Featured" : review.isVisible ? "Visible" : "Hidden"}
-                  </td>
-                  <td className="px-4 py-4"><ReviewActions review={review} /></td>
+              <thead>
+                <tr className="h-12 bg-surface-muted text-xs text-foreground">
+                  <th className="rounded-l-control px-4 font-bold">Customer</th>
+                  <th className="px-4 font-bold">Order</th>
+                  <th className="px-4 font-bold">Rating</th>
+                  <th className="px-4 font-bold">Review</th>
+                  <th className="px-4 font-bold">Visibility</th>
+                  <th className="rounded-r-control px-4 font-bold">Actions</th>
                 </tr>
-              ))}
-            </tbody>
+              </thead>
+              <tbody>
+                {reviews.map((review) => (
+                  <tr key={review.id} className="border-b border-border align-top last:border-b-0">
+                    <td className="px-4 py-4 font-bold text-foreground">{review.customerName}</td>
+                    <td className="px-4 py-4 text-foreground">{review.orderNumber}</td>
+                    <td className="px-4 py-4">
+                      <span className="inline-flex items-center gap-1 font-bold text-foreground">
+                        <Star
+                          aria-hidden="true"
+                          className="fill-warning-foreground text-warning-foreground"
+                          size={15}
+                        />
+                        {review.rating}
+                      </span>
+                    </td>
+                    <td className="max-w-md px-4 py-4 leading-6 text-muted-foreground">
+                      {review.comment}
+                    </td>
+                    <td className="px-4 py-4 text-xs font-bold text-foreground">
+                      {review.isFeatured ? "Featured" : review.isVisible ? "Visible" : "Hidden"}
+                    </td>
+                    <td className="px-4 py-4">
+                      <ReviewActions review={review} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
         </>
       ) : (
         <div className="py-14 text-center">
           <h2 className="font-display text-2xl">No customer reviews yet</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Completed-order reviews will appear here.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Completed-order reviews will appear here.
+          </p>
         </div>
       )}
     </section>

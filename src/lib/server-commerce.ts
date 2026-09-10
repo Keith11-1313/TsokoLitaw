@@ -124,7 +124,7 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
     });
   }
 
-  const product = productResult.data as unknown as CatalogProductRow;
+  const product: CatalogProductRow = productResult.data;
   const piecePrice = asMoney(product.price_per_piece);
   const variants = (product.product_variants ?? [])
     .sort((left, right) => left.sort_order - right.sort_order)
@@ -146,7 +146,7 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
     name: coating.name,
     description: coating.description,
     imageSrc: coating.image_url ?? "/images/home/placeholder-square.jpg",
-    pricePerPiece: asMoney(coating.price_per_piece ?? coating.additional_type_price),
+    pricePerPiece: asMoney(coating.price_per_piece),
     isDefault: coating.is_default ?? index === 0,
     tone: coatingTones[coating.slug] ?? "plain",
   }));
@@ -293,7 +293,7 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
     ]),
   );
 
-  const dates = (datesResult.data ?? []) as unknown as PickupDateRow[];
+  const dates: PickupDateRow[] = datesResult.data ?? [];
   const checkoutDates = dates.flatMap((date) => {
     if (date.pickup_date === today && date.availability_mode === "MADE_TO_ORDER") return [];
     if (date.availability_mode === "READY_STOCK" && !remainingPiecesByDate.has(date.pickup_date)) return [];

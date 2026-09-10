@@ -41,12 +41,8 @@ export function QuickOperations() {
                 <Icon aria-hidden="true" size={20} strokeWidth={1.8} />
               </span>
               <span>
-                <span className="block text-sm font-bold text-foreground">
-                  {operation.title}
-                </span>
-                <span className="block text-xs text-muted-foreground">
-                  {operation.description}
-                </span>
+                <span className="block text-sm font-bold text-foreground">{operation.title}</span>
+                <span className="block text-xs text-muted-foreground">{operation.description}</span>
               </span>
             </Link>
           ) : null;

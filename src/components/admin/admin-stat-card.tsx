@@ -27,12 +27,7 @@ export function AdminStatCard({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p
-            className={cn(
-              "text-xs font-bold uppercase text-muted-foreground",
-              accentClassName,
-            )}
-          >
+          <p className={cn("text-xs font-bold uppercase text-muted-foreground", accentClassName)}>
             {label}
           </p>
           <p
@@ -46,10 +41,12 @@ export function AdminStatCard({
           </p>
         </div>
         {Icon ? (
-          <span className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-brand",
-            compact && "hidden sm:flex",
-          )}>
+          <span
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-brand",
+              compact && "hidden sm:flex",
+            )}
+          >
             <Icon aria-hidden="true" size={20} strokeWidth={1.8} />
           </span>
         ) : null}

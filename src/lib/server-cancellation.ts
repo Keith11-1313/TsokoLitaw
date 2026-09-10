@@ -4,15 +4,6 @@ import { expirePayMongoCheckoutSession } from "@/lib/paymongo";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { dispatchOrderNotifications } from "@/lib/server-notifications";
 
-interface CancellationPreparation {
-  cancellation_kind: string;
-  cancellation_checkout_id: string | null;
-}
-
-function firstRow<T>(data: unknown) {
-  return (Array.isArray(data) ? data[0] : data) as T | null;
-}
-
 async function dispatchCancellationNotifications(orderId: string) {
   try {
     await dispatchOrderNotifications(orderId);
@@ -32,7 +23,7 @@ export async function cancelCustomerOrder(orderId: string, userId: string) {
   if (preparationResult.error) {
     throw new Error("This order is no longer eligible for cancellation.", { cause: preparationResult.error });
   }
-  const preparation = firstRow<CancellationPreparation>(preparationResult.data);
+  const preparation = preparationResult.data?.[0];
   if (!preparation) throw new Error("Cancellation details are unavailable.");
   if (preparation.cancellation_kind !== "UNPAID") {
     throw new Error("Paid-order concerns must be settled directly with TsokoLitaw in person.");

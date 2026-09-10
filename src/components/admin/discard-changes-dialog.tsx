@@ -24,14 +24,22 @@ export function DiscardChangesDialog({
         <h2 id="discard-changes-title" className="font-display text-2xl text-foreground">
           Discard unsaved changes?
         </h2>
-        <p id="discard-changes-description" className="mt-3 text-sm leading-6 text-muted-foreground">
+        <p
+          id="discard-changes-description"
+          className="mt-3 text-sm leading-6 text-muted-foreground"
+        >
           The changes in this editor have not been saved.
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <SecondaryButton onClick={onDiscard} className="border-danger-foreground text-danger-foreground">
+          <SecondaryButton
+            onClick={onDiscard}
+            className="border-danger-foreground text-danger-foreground"
+          >
             Discard changes
           </SecondaryButton>
-          <PrimaryButton autoFocus onClick={onKeepEditing}>Keep editing</PrimaryButton>
+          <PrimaryButton autoFocus onClick={onKeepEditing}>
+            Keep editing
+          </PrimaryButton>
         </div>
       </section>
     </div>

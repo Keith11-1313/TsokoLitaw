@@ -4,7 +4,11 @@ import { Check, ChevronDown } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { cn } from "@/lib/cn";
 
-export interface SelectOption { value: string; label: string; disabled?: boolean }
+export interface SelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
 
 interface CustomSelectProps {
   label: string;
@@ -21,7 +25,20 @@ interface CustomSelectProps {
   className?: string;
 }
 
-export function CustomSelect({ label, options, name, value, defaultValue, onChange, placeholder = "Select an option", required, disabled, error, hint, className }: CustomSelectProps) {
+export function CustomSelect({
+  label,
+  options,
+  name,
+  value,
+  defaultValue,
+  onChange,
+  placeholder = "Select an option",
+  required,
+  disabled,
+  error,
+  hint,
+  className,
+}: CustomSelectProps) {
   const id = useId();
   const listboxId = `${id}-listbox`;
   const controlled = value !== undefined;
@@ -29,7 +46,14 @@ export function CustomSelect({ label, options, name, value, defaultValue, onChan
   const selectedValue = controlled ? value : internalValue;
   const selectedIndex = options.findIndex((option) => option.value === selectedValue);
   const selectedOption = selectedIndex >= 0 ? options[selectedIndex] : undefined;
-  const firstEnabled = useMemo(() => Math.max(0, options.findIndex((option) => !option.disabled)), [options]);
+  const firstEnabled = useMemo(
+    () =>
+      Math.max(
+        0,
+        options.findIndex((option) => !option.disabled),
+      ),
+    [options],
+  );
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(selectedIndex >= 0 ? selectedIndex : firstEnabled);
   const [touched, setTouched] = useState(false);
@@ -38,7 +62,8 @@ export function CustomSelect({ label, options, name, value, defaultValue, onChan
   const selectRef = useRef<HTMLSelectElement>(null);
   const typeaheadRef = useRef("");
   const typeaheadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const shownError = error || (touched && required && !selectedValue ? `${label} is required.` : "");
+  const shownError =
+    error || (touched && required && !selectedValue ? `${label} is required.` : "");
 
   useEffect(() => {
     function closeOutside(event: PointerEvent) {
@@ -51,9 +76,12 @@ export function CustomSelect({ label, options, name, value, defaultValue, onChan
     return () => document.removeEventListener("pointerdown", closeOutside);
   }, [open]);
 
-  useEffect(() => () => {
-    if (typeaheadTimer.current) clearTimeout(typeaheadTimer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (typeaheadTimer.current) clearTimeout(typeaheadTimer.current);
+    },
+    [],
+  );
 
   function moveActive(direction: 1 | -1) {
     if (!options.length) return;
@@ -63,7 +91,8 @@ export function CustomSelect({ label, options, name, value, defaultValue, onChan
       if (!options[next]?.disabled) {
         setActiveIndex(next);
         const activeOption = document.getElementById(`${id}-option-${next}`);
-        if (typeof activeOption?.scrollIntoView === "function") activeOption.scrollIntoView({ block: "nearest" });
+        if (typeof activeOption?.scrollIntoView === "function")
+          activeOption.scrollIntoView({ block: "nearest" });
         return;
       }
     }
@@ -110,8 +139,13 @@ export function CustomSelect({ label, options, name, value, defaultValue, onChan
     if (event.key.length === 1 && /\S/.test(event.key)) {
       typeaheadRef.current += event.key.toLocaleLowerCase();
       if (typeaheadTimer.current) clearTimeout(typeaheadTimer.current);
-      typeaheadTimer.current = setTimeout(() => { typeaheadRef.current = ""; }, 500);
-      const match = options.findIndex((option) => !option.disabled && option.label.toLocaleLowerCase().startsWith(typeaheadRef.current));
+      typeaheadTimer.current = setTimeout(() => {
+        typeaheadRef.current = "";
+      }, 500);
+      const match = options.findIndex(
+        (option) =>
+          !option.disabled && option.label.toLocaleLowerCase().startsWith(typeaheadRef.current),
+      );
       if (match >= 0) {
         setActiveIndex(match);
         setOpen(true);
@@ -121,7 +155,9 @@ export function CustomSelect({ label, options, name, value, defaultValue, onChan
 
   return (
     <div ref={rootRef} className={cn("relative min-w-0 space-y-2", className)}>
-      <label id={`${id}-label`} className="block text-sm font-bold text-foreground">{label}</label>
+      <label id={`${id}-label`} className="block text-sm font-bold text-foreground">
+        {label}
+      </label>
       <button
         ref={buttonRef}
         type="button"
@@ -134,7 +170,9 @@ export function CustomSelect({ label, options, name, value, defaultValue, onChan
         aria-invalid={Boolean(shownError) || undefined}
         aria-describedby={shownError ? `${id}-error` : hint ? `${id}-hint` : undefined}
         disabled={disabled}
-        onBlur={() => { if (!open) setTouched(true); }}
+        onBlur={() => {
+          if (!open) setTouched(true);
+        }}
         onClick={() => {
           setActiveIndex(selectedIndex >= 0 ? selectedIndex : firstEnabled);
           setOpen((current) => !current);
@@ -142,11 +180,22 @@ export function CustomSelect({ label, options, name, value, defaultValue, onChan
         onKeyDown={handleKeyDown}
         className="flex min-h-12 w-full items-center justify-between gap-3 rounded-control border border-transparent bg-surface-control px-4 text-left text-sm text-foreground outline-none transition focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/20 disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-danger-foreground"
       >
-        <span className={cn("truncate", !selectedOption && "text-foreground-muted")}>{selectedOption?.label ?? placeholder}</span>
-        <ChevronDown aria-hidden="true" className={cn("shrink-0 transition-transform", open && "rotate-180")} size={18} />
+        <span className={cn("truncate", !selectedOption && "text-foreground-muted")}>
+          {selectedOption?.label ?? placeholder}
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className={cn("shrink-0 transition-transform", open && "rotate-180")}
+          size={18}
+        />
       </button>
       {open ? (
-        <ul id={listboxId} role="listbox" aria-labelledby={`${id}-label`} className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-control border border-border-subtle bg-surface-raised p-1 shadow-lg">
+        <ul
+          id={listboxId}
+          role="listbox"
+          aria-labelledby={`${id}-label`}
+          className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-control border border-border-subtle bg-surface-raised p-1 shadow-lg"
+        >
           {options.map((option, index) => (
             <li
               id={`${id}-option-${index}`}
@@ -155,9 +204,16 @@ export function CustomSelect({ label, options, name, value, defaultValue, onChan
               aria-selected={selectedValue === option.value}
               aria-disabled={option.disabled || undefined}
               onPointerDown={(event) => event.preventDefault()}
-              onPointerMove={() => { if (!option.disabled) setActiveIndex(index); }}
+              onPointerMove={() => {
+                if (!option.disabled) setActiveIndex(index);
+              }}
               onClick={() => choose(index)}
-              className={cn("flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-control px-3 py-2 text-sm outline-none", activeIndex === index && "bg-surface-muted", selectedValue === option.value && "font-bold text-brand", option.disabled && "cursor-not-allowed opacity-45")}
+              className={cn(
+                "flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-control px-3 py-2 text-sm outline-none",
+                activeIndex === index && "bg-surface-muted",
+                selectedValue === option.value && "font-bold text-brand",
+                option.disabled && "cursor-not-allowed opacity-45",
+              )}
             >
               <span>{option.label}</span>
               {selectedValue === option.value ? <Check aria-hidden="true" size={17} /> : null}
@@ -177,10 +233,22 @@ export function CustomSelect({ label, options, name, value, defaultValue, onChan
         onChange={() => undefined}
       >
         <option value="">{placeholder}</option>
-        {options.map((option) => <option key={option.value} value={option.value} disabled={option.disabled}>{option.label}</option>)}
+        {options.map((option) => (
+          <option key={option.value} value={option.value} disabled={option.disabled}>
+            {option.label}
+          </option>
+        ))}
       </select>
-      {hint && !shownError ? <p id={`${id}-hint`} className="text-xs text-foreground-muted">{hint}</p> : null}
-      {shownError ? <p id={`${id}-error`} className="text-xs font-bold text-danger-foreground">{shownError}</p> : null}
+      {hint && !shownError ? (
+        <p id={`${id}-hint`} className="text-xs text-foreground-muted">
+          {hint}
+        </p>
+      ) : null}
+      {shownError ? (
+        <p id={`${id}-error`} className="text-xs font-bold text-danger-foreground">
+          {shownError}
+        </p>
+      ) : null}
     </div>
   );
 }

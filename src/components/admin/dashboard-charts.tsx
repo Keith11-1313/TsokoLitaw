@@ -30,7 +30,9 @@ export function DashboardCharts({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="font-display text-2xl">Paid revenue</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Last 7 days from the recent order set</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Last 7 days from the recent order set
+            </p>
           </div>
           <div className="w-full text-left sm:w-auto sm:text-right">
             <p className="text-xs font-bold uppercase text-muted-foreground">7-day value</p>
@@ -47,7 +49,10 @@ export function DashboardCharts({
             const height = maximumRevenue > 0 ? (point.value / maximumRevenue) * 100 : 0;
             return (
               <div key={point.dateLabel} className="flex h-full min-w-0 flex-col justify-end gap-2">
-                <span className="truncate text-center text-[0.65rem] font-bold text-muted-foreground" title={formatPhp(point.value)}>
+                <span
+                  className="truncate text-center text-[0.65rem] font-bold text-muted-foreground"
+                  title={formatPhp(point.value)}
+                >
                   {point.value > 0 ? formatPhp(point.value) : "—"}
                 </span>
                 <div className="flex h-32 items-end rounded-t-control bg-surface-muted sm:h-40">
@@ -75,7 +80,11 @@ export function DashboardCharts({
           <p className="font-display text-3xl text-foreground">{orderTotal}</p>
         </div>
 
-        <div className="mt-4 space-y-2" role="img" aria-label={`${orderTotal} recent orders grouped by fulfillment status. ${statuses.map((status) => `${status.label}: ${status.value}`).join("; ")}`}>
+        <div
+          className="mt-4 space-y-2"
+          role="img"
+          aria-label={`${orderTotal} recent orders grouped by fulfillment status. ${statuses.map((status) => `${status.label}: ${status.value}`).join("; ")}`}
+        >
           {statuses.map((status) => {
             const width = maximumStatus > 0 ? (status.value / maximumStatus) * 100 : 0;
             return (

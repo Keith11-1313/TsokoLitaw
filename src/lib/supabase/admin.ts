@@ -1,4 +1,5 @@
 import "server-only";
+import type { Database } from "@/types/database";
 
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -9,7 +10,7 @@ import {
 export function createAdminSupabaseClient() {
   const { url } = getSupabasePublicEnvironment();
 
-  return createClient(url, getSupabaseSecretKey(), {
+  return createClient<Database>(url, getSupabaseSecretKey(), {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
