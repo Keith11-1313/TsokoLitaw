@@ -1,10 +1,6 @@
 import "server-only";
 
-import type {
-  JournalContentType,
-  JournalIconKey,
-  JournalStatus,
-} from "@/lib/journal";
+import type { JournalContentType, JournalIconKey, JournalStatus } from "@/lib/journal";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { validateUploadedImage } from "@/lib/server-image-validation";
@@ -85,6 +81,21 @@ export async function getPublishedJournalPosts(): Promise<JournalPostSummary[]> 
   return ((data ?? []) as JournalPostRow[]).map(toJournalPost);
 }
 
+export async function getPublishedJournalPostBySlug(
+  slug: string,
+): Promise<JournalPostSummary | null> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("journal_posts")
+    .select(journalPostColumns)
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle();
+
+  if (error) throw new Error("The Journal post could not be loaded.", { cause: error });
+  return data ? toJournalPost(data as JournalPostRow) : null;
+}
+
 export async function getAdminJournalPosts(): Promise<JournalPostSummary[]> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
@@ -130,20 +141,15 @@ export async function saveAdminJournalPost(input: {
   return data as string;
 }
 
-export async function uploadJournalCover(input: {
-  adminId: string;
-  file: File;
-}) {
+export async function uploadJournalCover(input: { adminId: string; file: File }) {
   const validated = await validateUploadedImage(input.file, { label: "Journal cover" });
   const path = `${input.adminId}/${crypto.randomUUID()}.${validated.extension}`;
   const admin = createAdminSupabaseClient();
-  const { error } = await admin.storage
-    .from("journal-media")
-    .upload(path, validated.buffer, {
-      contentType: validated.contentType,
-      cacheControl: "31536000",
-      upsert: false,
-    });
+  const { error } = await admin.storage.from("journal-media").upload(path, validated.buffer, {
+    contentType: validated.contentType,
+    cacheControl: "31536000",
+    upsert: false,
+  });
 
   if (error) throw new Error("Journal image could not be uploaded.", { cause: error });
   return { path, url: admin.storage.from("journal-media").getPublicUrl(path).data.publicUrl };
@@ -151,5 +157,6 @@ export async function uploadJournalCover(input: {
 
 export async function removeJournalCover(path: string) {
   const { error } = await createAdminSupabaseClient().storage.from("journal-media").remove([path]);
-  if (error) throw new Error("The newly uploaded Journal cover could not be cleaned up.", { cause: error });
+  if (error)
+    throw new Error("The newly uploaded Journal cover could not be cleaned up.", { cause: error });
 }

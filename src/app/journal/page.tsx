@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, FileText, Megaphone, PlayCircle, Sparkles, Star, Video } from "lucide-react";
+import { ArrowRight, FileText, PlayCircle, Sparkles, Star } from "lucide-react";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
 import { DessertPlaceholder } from "@/components/home/dessert-placeholder";
 import { SiteContainer } from "@/components/layout/site-container";
-import { primaryButtonClassName } from "@/components/ui/button";
-import { journalContentTypeLabels, type JournalIconKey } from "@/lib/journal";
+import { primaryButtonClassName, secondaryButtonClassName } from "@/components/ui/button";
+import { getJournalCardSummary, journalContentTypeLabels } from "@/lib/journal";
 import { getPublishedJournalPosts, type JournalPostSummary } from "@/lib/server-journal";
 import { getPublicFeaturedReviews } from "@/lib/server-reviews";
 
@@ -15,13 +15,6 @@ export const metadata: Metadata = {
     "Announcements, kitchen stories, product features, and customer highlights from TsokoLitaw.",
   alternates: { canonical: "/journal" },
 };
-
-const iconMap = {
-  megaphone: Megaphone,
-  sparkles: Sparkles,
-  file_text: FileText,
-  video: Video,
-} as const;
 
 function formatDisplayDate(value: string) {
   return new Intl.DateTimeFormat("en-PH", {
@@ -48,36 +41,25 @@ function PostMedia({ post }: { post: JournalPostSummary }) {
 }
 
 function JournalPostCard({ post }: { post: JournalPostSummary }) {
-  const Icon = iconMap[post.iconKey as JournalIconKey];
   return (
     <article className="rounded-card border border-border bg-surface p-5">
       <PostMedia post={post} />
-      <div className="mt-5 flex items-start gap-3">
-        <Icon className="shrink-0 text-brand" aria-hidden="true" />
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
-            {journalContentTypeLabels[post.contentType]}
-          </p>
-          <h3 className="mt-1 font-display text-2xl">{post.title}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {formatDisplayDate(post.displayDate)}
-          </p>
-          {post.excerpt ? <p className="mt-3 text-sm font-bold leading-6">{post.excerpt}</p> : null}
-          <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted-foreground">
-            {post.content}
-          </p>
-          {post.videoUrl ? (
-            <a
-              href={post.videoUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-flex min-h-11 items-center gap-2 font-bold text-brand underline underline-offset-4"
-            >
-              <PlayCircle aria-hidden="true" size={18} />
-              Watch video
-            </a>
-          ) : null}
-        </div>
+      <div className="mt-5">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
+          {journalContentTypeLabels[post.contentType]}
+        </p>
+        <h3 className="mt-1 font-display text-2xl">{post.title}</h3>
+        <p className="mt-1 text-xs text-muted-foreground">{formatDisplayDate(post.displayDate)}</p>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          {getJournalCardSummary(post.excerpt, post.content)}
+        </p>
+        <Link
+          href={`/journal/${post.slug}`}
+          className="mt-4 inline-flex min-h-11 items-center gap-2 font-bold text-brand underline underline-offset-4"
+        >
+          Read post
+          <ArrowRight aria-hidden="true" size={17} />
+        </Link>
       </div>
     </article>
   );
@@ -175,21 +157,54 @@ export default async function JournalPage() {
 
         {latestAnnouncement ? (
           <section
-            className="mt-10 rounded-card border border-border bg-surface p-6 sm:p-8"
+            className="mt-10 overflow-hidden rounded-card border border-border bg-surface"
             aria-labelledby="announcement-heading"
           >
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">
-              Latest announcement · {formatDisplayDate(latestAnnouncement.displayDate)}
-            </p>
-            <h2 id="announcement-heading" className="mt-2 font-display text-2xl sm:text-3xl">
-              {latestAnnouncement.title}
-            </h2>
-            {latestAnnouncement.excerpt ? (
-              <p className="mt-3 font-bold leading-7">{latestAnnouncement.excerpt}</p>
-            ) : null}
-            <p className="mt-2 max-w-4xl whitespace-pre-line text-sm leading-6 text-muted-foreground">
-              {latestAnnouncement.content}
-            </p>
+            <div
+              className={latestAnnouncement.coverImageUrl ? "grid md:grid-cols-[1fr_22rem]" : ""}
+            >
+              <div className="p-6 sm:p-8">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">
+                  Latest announcement · {formatDisplayDate(latestAnnouncement.displayDate)}
+                </p>
+                <h2 id="announcement-heading" className="mt-2 font-display text-2xl sm:text-3xl">
+                  {latestAnnouncement.title}
+                </h2>
+                <p className="mt-3 max-w-4xl text-sm leading-6 text-muted-foreground">
+                  {getJournalCardSummary(latestAnnouncement.excerpt, latestAnnouncement.content)}
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link
+                    href={`/journal/${latestAnnouncement.slug}`}
+                    className={primaryButtonClassName}
+                  >
+                    Read announcement
+                    <ArrowRight aria-hidden="true" size={17} />
+                  </Link>
+                  {latestAnnouncement.videoUrl ? (
+                    <a
+                      href={latestAnnouncement.videoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={secondaryButtonClassName}
+                    >
+                      <PlayCircle aria-hidden="true" size={18} />
+                      Watch video
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+              {latestAnnouncement.coverImageUrl ? (
+                <div
+                  role="img"
+                  aria-label={`Cover image for ${latestAnnouncement.title}`}
+                  className="min-h-64 bg-surface-muted bg-cover bg-center md:min-h-full"
+                  style={{
+                    backgroundImage: `url(${JSON.stringify(latestAnnouncement.coverImageUrl).slice(1, -1)})`,
+                  }}
+                />
+              ) : null}
+            </div>
           </section>
         ) : null}
 
