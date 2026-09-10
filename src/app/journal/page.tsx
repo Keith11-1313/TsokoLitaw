@@ -163,17 +163,31 @@ export default async function JournalPage() {
             <div
               className={latestAnnouncement.coverImageUrl ? "grid md:grid-cols-[1fr_22rem]" : ""}
             >
-              <div className="p-6 sm:p-8">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">
-                  Latest announcement · {formatDisplayDate(latestAnnouncement.displayDate)}
-                </p>
-                <h2 id="announcement-heading" className="mt-2 font-display text-2xl sm:text-3xl">
-                  {latestAnnouncement.title}
-                </h2>
-                <p className="mt-3 max-w-4xl text-sm leading-6 text-muted-foreground">
-                  {getJournalCardSummary(latestAnnouncement.excerpt, latestAnnouncement.content)}
-                </p>
-                <div className="mt-5 flex flex-wrap gap-3">
+              <div
+                className={
+                  latestAnnouncement.coverImageUrl
+                    ? "p-6 sm:p-8"
+                    : "grid gap-5 p-6 sm:p-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-8"
+                }
+              >
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">
+                    Latest announcement · {formatDisplayDate(latestAnnouncement.displayDate)}
+                  </p>
+                  <h2 id="announcement-heading" className="mt-2 font-display text-2xl sm:text-3xl">
+                    {latestAnnouncement.title}
+                  </h2>
+                  <p className="mt-3 max-w-4xl text-sm leading-6 text-muted-foreground">
+                    {getJournalCardSummary(latestAnnouncement.excerpt, latestAnnouncement.content)}
+                  </p>
+                </div>
+                <div
+                  className={
+                    latestAnnouncement.coverImageUrl
+                      ? "mt-5 flex flex-wrap gap-3"
+                      : "flex flex-wrap gap-3 md:justify-end"
+                  }
+                >
                   <Link
                     href={`/journal/${latestAnnouncement.slug}`}
                     className={primaryButtonClassName}
