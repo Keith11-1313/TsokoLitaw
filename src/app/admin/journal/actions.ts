@@ -5,19 +5,12 @@ import { requireAdmin } from "@/lib/auth";
 import { isUuid } from "@/lib/identifiers";
 import {
   isJournalContentType,
-  isJournalIconKey,
   isJournalStatus,
+  legacyJournalIconForContentType,
 } from "@/lib/journal";
-import {
-  saveAdminJournalPost,
-  removeJournalCover,
-  uploadJournalCover,
-} from "@/lib/server-journal";
+import { saveAdminJournalPost, removeJournalCover, uploadJournalCover } from "@/lib/server-journal";
 import { secureUrlError, type FieldErrors } from "@/lib/form-validation";
-import {
-  enforceMutationRateLimit,
-  MutationRateLimitError,
-} from "@/lib/server-rate-limit";
+import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
 
 export type JournalActionState = {
   status: "idle" | "success" | "error";
@@ -38,7 +31,6 @@ export async function saveJournalPostAction(
   const excerpt = String(formData.get("excerpt") ?? "").trim();
   const content = String(formData.get("content") ?? "").trim();
   const contentType = String(formData.get("contentType") ?? "");
-  const iconKey = String(formData.get("iconKey") ?? "");
   const displayDate = String(formData.get("displayDate") ?? "");
   const status = String(formData.get("status") ?? "");
   const existingCoverImageUrl = String(formData.get("existingCoverImageUrl") ?? "").trim();
@@ -50,23 +42,41 @@ export async function saveJournalPostAction(
     return { status: "error", message: "That Journal post is unavailable." };
   }
   const fieldErrors: FieldErrors = {};
-  if (title.length < 3 || title.length > 120) fieldErrors.title = "Use a title between 3 and 120 characters.";
+  if (title.length < 3 || title.length > 120)
+    fieldErrors.title = "Use a title between 3 and 120 characters.";
   if (excerpt.length > 240) fieldErrors.excerpt = "The summary cannot exceed 240 characters.";
-  if (content.length < 10 || content.length > 5000) fieldErrors.content = "Use content between 10 and 5,000 characters.";
-  if (Object.keys(fieldErrors).length) return { status: "error", message: "Check the highlighted Journal fields.", fieldErrors };
-  if (!isJournalContentType(contentType) || !isJournalIconKey(iconKey) || !isJournalStatus(status)) {
-    return { status: "error", message: "Choose valid Journal type, icon, and publication values." };
+  if (content.length < 10 || content.length > 5000)
+    fieldErrors.content = "Use content between 10 and 5,000 characters.";
+  if (Object.keys(fieldErrors).length)
+    return { status: "error", message: "Check the highlighted Journal fields.", fieldErrors };
+  if (!isJournalContentType(contentType) || !isJournalStatus(status)) {
+    return { status: "error", message: "Choose valid Journal type and publication values." };
   }
   if (!datePattern.test(displayDate) || Number.isNaN(Date.parse(`${displayDate}T00:00:00Z`))) {
     return { status: "error", message: "Choose a valid display date." };
   }
   const videoUrlError = secureUrlError(videoUrl, "Video link");
+  if (contentType === "video" && !videoUrl) {
+    return {
+      status: "error",
+      message: "Video posts need a video link.",
+      fieldErrors: { videoUrl: "Add a secure video link for this post." },
+    };
+  }
   if (videoUrlError) {
-    return { status: "error", message: "Video links must use a valid secure URL.", fieldErrors: { videoUrl: videoUrlError } };
+    return {
+      status: "error",
+      message: "Video links must use a valid secure URL.",
+      fieldErrors: { videoUrl: videoUrlError },
+    };
   }
   if (coverImage instanceof File && coverImage.size > 0) {
     if (!allowedImageTypes.has(coverImage.type) || coverImage.size > 3 * 1024 * 1024) {
-      return { status: "error", message: "Upload a JPG, PNG, or WebP image no larger than 3 MB.", fieldErrors: { coverImage: "Choose a JPG, PNG, or WebP image no larger than 3 MB." } };
+      return {
+        status: "error",
+        message: "Upload a JPG, PNG, or WebP image no larger than 3 MB.",
+        fieldErrors: { coverImage: "Choose a JPG, PNG, or WebP image no larger than 3 MB." },
+      };
     }
   }
 
@@ -93,7 +103,7 @@ export async function saveJournalPostAction(
       excerpt,
       content,
       contentType,
-      iconKey,
+      iconKey: legacyJournalIconForContentType[contentType],
       displayDate,
       coverImageUrl,
       videoUrl,
@@ -105,13 +115,20 @@ export async function saveJournalPostAction(
     return { status: "success", message: "Journal post saved." };
   } catch (error) {
     if (uploadedPath) {
-      try { await removeJournalCover(uploadedPath); } catch (cleanupError) { console.error("Journal upload cleanup failed", cleanupError); }
+      try {
+        await removeJournalCover(uploadedPath);
+      } catch (cleanupError) {
+        console.error("Journal upload cleanup failed", cleanupError);
+      }
     }
     return {
       status: "error",
-      message: error instanceof MutationRateLimitError
-        ? `Too many updates. Try again in about ${error.retryAfterSeconds} seconds.`
-        : error instanceof Error ? error.message : "Journal post could not be saved.",
+      message:
+        error instanceof MutationRateLimitError
+          ? `Too many updates. Try again in about ${error.retryAfterSeconds} seconds.`
+          : error instanceof Error
+            ? error.message
+            : "Journal post could not be saved.",
     };
   }
 }

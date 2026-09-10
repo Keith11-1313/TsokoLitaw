@@ -18,12 +18,14 @@ describe("buildOrderConfirmationEmail", () => {
       pickupWindow: "7:00 AM–8:00 AM",
       pickupLocation: "UCC Congress — 3rd Floor",
       orderUrl: "https://www.tsokolitaw.com/orders/42",
-      items: [{
-        name: "Box of 4",
-        quantity: 1,
-        coatings: ["Cocoa"],
-        addon: "Extra sea salt cream × 1",
-      }],
+      items: [
+        {
+          name: "Box of 4",
+          quantity: 1,
+          coatings: ["Cocoa"],
+          addon: "Extra sea salt cream × 1",
+        },
+      ],
     });
 
     expect(email.subject).toBe("Order TL-0042 confirmed");
@@ -74,10 +76,12 @@ describe("buildOrderConfirmationEmail", () => {
       customerName: "Jerald Esmeria",
       orderUrl: "https://www.tsokolitaw.com/orders/45",
     };
-    expect(buildOrderCancelledEmail({ ...base, refundAmount: null }).text)
-      .toContain("No payment was collected");
-    expect(buildOrderCancelledEmail({ ...base, refundAmount: 80 }).text)
-      .toContain("full refund of ₱80.00");
+    expect(buildOrderCancelledEmail({ ...base, refundAmount: null }).text).toContain(
+      "No payment was collected",
+    );
+    expect(buildOrderCancelledEmail({ ...base, refundAmount: 80 }).text).toContain(
+      "full refund of ₱80.00",
+    );
   });
 
   it("renders distinct refund lifecycle emails", () => {
@@ -93,5 +97,39 @@ describe("buildOrderConfirmationEmail", () => {
     const failed = buildRefundFailedEmail(input);
     expect(failed.subject).toContain("needs attention");
     expect(failed.text).toContain("Do not send account details by email");
+  });
+
+  it("uses the shared email-safe branded shell for every notification", () => {
+    const orderInput = {
+      orderNumber: "TL-0047",
+      customerName: "Jerald Esmeria",
+      total: 80,
+      pickupDate: "2026-09-02",
+      pickupWindow: "1:00 PM–2:00 PM",
+      pickupLocation: "UCC Congress — 3rd Floor",
+      orderUrl: "https://www.tsokolitaw.com/orders/47",
+      items: [{ name: "Box of 4", quantity: 2, coatings: ["Cocoa × 4"], addon: null }],
+    };
+    const refundInput = {
+      orderNumber: orderInput.orderNumber,
+      customerName: orderInput.customerName,
+      orderUrl: orderInput.orderUrl,
+      refundAmount: orderInput.total,
+    };
+    const emails = [
+      buildOrderConfirmationEmail(orderInput),
+      buildReadyForPickupEmail(orderInput),
+      buildOrderCancelledEmail({ ...refundInput, refundAmount: null }),
+      buildRefundProcessingEmail(refundInput),
+      buildRefundCompletedEmail(refundInput),
+      buildRefundFailedEmail(refundInput),
+    ];
+
+    for (const email of emails) {
+      expect(email.html).toContain('<meta name="viewport"');
+      expect(email.html).toContain('role="presentation"');
+      expect(email.html).toContain("Campus pickup · UCC Congressional Campus");
+      expect(email.html).not.toContain("border-radius:999px");
+    }
   });
 });

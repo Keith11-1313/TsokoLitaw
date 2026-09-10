@@ -9,6 +9,7 @@ interface BrandLockupProps {
   showSubtitle?: boolean;
   subtitle?: string;
   titleClassName?: string;
+  markClassName?: string;
   className?: string;
 }
 
@@ -20,10 +21,10 @@ export function BrandLockup({
   showSubtitle = true,
   subtitle,
   titleClassName,
+  markClassName,
   className,
 }: BrandLockupProps) {
-  const resolvedSubtitle =
-    subtitle ?? (context === "admin" ? "Admin panel" : "Artisanal dessert");
+  const resolvedSubtitle = subtitle ?? (context === "admin" ? "Admin panel" : "Artisanal dessert");
 
   return (
     <div className={cn("inline-flex items-center gap-3", className)}>
@@ -34,31 +35,33 @@ export function BrandLockup({
           width={48}
           height={48}
           sizes="48px"
-          className="size-12 shrink-0 rounded-full object-contain"
+          className={cn("shrink-0 rounded-full object-contain", markClassName ?? "size-12")}
           aria-hidden="true"
         />
       ) : null}
-      {showTitle ? <span className="flex flex-col">
-        <span
-          className={cn(
-            "font-display text-2xl leading-none",
-            inverted ? "text-surface" : "text-brand",
-            titleClassName,
-          )}
-        >
-          TsokoLitaw
-        </span>
-        {showSubtitle ? (
+      {showTitle ? (
+        <span className="flex flex-col">
           <span
             className={cn(
-              "mt-1 text-[0.625rem] font-bold uppercase tracking-wide",
-              inverted ? "text-surface/75" : "text-muted-foreground",
+              "font-display text-2xl leading-none",
+              inverted ? "text-surface" : "text-brand",
+              titleClassName,
             )}
           >
-            {resolvedSubtitle}
+            TsokoLitaw
           </span>
-        ) : null}
-      </span> : null}
+          {showSubtitle ? (
+            <span
+              className={cn(
+                "mt-1 text-[0.625rem] font-bold uppercase tracking-wide",
+                inverted ? "text-surface/75" : "text-muted-foreground",
+              )}
+            >
+              {resolvedSubtitle}
+            </span>
+          ) : null}
+        </span>
+      ) : null}
     </div>
   );
 }

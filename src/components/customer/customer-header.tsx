@@ -1,8 +1,9 @@
 import { Menu } from "lucide-react";
-import Link from "next/link";
+import { CustomerNavigationLink as Link } from "@/components/customer/customer-navigation-link";
 import { SiteContainer } from "@/components/layout/site-container";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { HeaderActions } from "@/components/customer/header-actions";
+import { CustomerHeaderFrame } from "@/components/customer/customer-header-frame";
 import { cn } from "@/lib/cn";
 import { getAuthProfile } from "@/lib/auth";
 
@@ -19,17 +20,20 @@ interface CustomerHeaderProps {
 export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
   const profile = await getAuthProfile();
   return (
-    <header className="relative z-40 border-b border-border bg-surface">
-      <SiteContainer className="flex min-h-22 items-center justify-between gap-6">
+    <CustomerHeaderFrame>
+      <SiteContainer className="flex items-center justify-between gap-2 lg:gap-3">
         <Link
           href="/"
           aria-label="TsokoLitaw home"
-          className="shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
+          className="flex h-14 shrink-0 items-center rounded-full border border-border bg-surface/95 px-3 shadow-sm backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
         >
-          <BrandLockup showSubtitle={false} />
+          <BrandLockup showSubtitle={false} markClassName="size-11" className="gap-2.5" />
         </Link>
 
-        <nav className="hidden items-center gap-10 lg:flex" aria-label="Main navigation">
+        <nav
+          className="hidden h-14 items-center rounded-full border border-border bg-surface/95 p-1.5 shadow-sm backdrop-blur md:flex"
+          aria-label="Main navigation"
+        >
           {navigationItems.map((item) => {
             const isActive = activePath === item.href;
 
@@ -39,8 +43,8 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "relative rounded-sm py-2 text-sm text-muted-foreground transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
-                  isActive && "font-bold text-brand after:absolute after:inset-x-1 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-brand",
+                  "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-3 text-sm text-muted-foreground transition-colors hover:bg-surface-muted hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:px-4",
+                  isActive && "bg-brand font-bold text-surface hover:bg-brand hover:text-surface",
                 )}
               >
                 {item.label}
@@ -49,14 +53,16 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
           })}
         </nav>
 
-        <div className="hidden lg:block"><HeaderActions isSignedIn={Boolean(profile)} isAdmin={profile?.role === "admin"} /></div>
+        <div className="hidden h-14 shrink-0 items-center rounded-full border border-border bg-surface/95 p-1.5 shadow-sm backdrop-blur md:flex">
+          <HeaderActions isSignedIn={Boolean(profile)} isAdmin={profile?.role === "admin"} />
+        </div>
 
-        <details className="group relative lg:hidden">
-          <summary className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full bg-surface-muted text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
+        <details className="group relative md:hidden">
+          <summary className="flex size-14 cursor-pointer list-none items-center justify-center rounded-full border border-border bg-surface/95 text-brand shadow-sm backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
             <Menu aria-hidden="true" size={21} />
             <span className="sr-only">Open navigation</span>
           </summary>
-          <div className="absolute right-0 top-14 w-72 rounded-card border border-border bg-surface p-4 shadow-lg shadow-brand/5">
+          <div className="absolute right-0 top-16 w-72 rounded-card border border-border bg-surface p-4 shadow-xl shadow-brand/10">
             <nav className="flex flex-col" aria-label="Mobile navigation">
               {navigationItems.map((item) => {
                 const isActive = activePath === item.href;
@@ -76,10 +82,16 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
                 );
               })}
             </nav>
-            <div className="mt-3 border-t border-border pt-4"><HeaderActions mobile isSignedIn={Boolean(profile)} isAdmin={profile?.role === "admin"} /></div>
+            <div className="mt-3 border-t border-border pt-4">
+              <HeaderActions
+                mobile
+                isSignedIn={Boolean(profile)}
+                isAdmin={profile?.role === "admin"}
+              />
+            </div>
           </div>
         </details>
       </SiteContainer>
-    </header>
+    </CustomerHeaderFrame>
   );
 }

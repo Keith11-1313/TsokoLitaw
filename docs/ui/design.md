@@ -8,6 +8,12 @@ Inspect the relevant page and assets before editing UI.
 
 - Tokens: `src/app/globals.css`. Warm cream background/surfaces, chocolate text/actions, soft borders.
   Body font Lato; display font DM Serif Display. Prefer existing Tailwind spacing/token classes.
+- Customer navigation uses a sticky floating treatment: separate opaque brand, navigation, and action
+  surfaces on tablet/desktop, with the existing compact menu on mobile. It remains in document flow
+  before the page hero and does not alter Admin navigation. The surfaces share one height and sit over
+  the customer photo background; the customer-header logo mark matches the cart action's 44px circle.
+  A small downward scroll keeps navigation visible; continued downward scrolling hides it, and upward
+  scrolling reveals it immediately.
 - Customer canvas: `public/images/photo-bg.png`; opaque cream cards/navigation preserve readability.
   Admin uses a denser flat operational background, not a separate brand system.
 - Logo: `public/brand/logo.png`; local Home media: `public/images/home/`, `public/videos/home/`.
@@ -57,9 +63,12 @@ Contract tests: `src/hooks/editor-contracts.test.tsx`, form and image validation
 
 ## Loading and generated Boneyard files
 
-`src/app/loading.tsx` renders `AppLoadingSkeleton`. The root layout imports the generated bones
-registry. The previous whole-skeleton 500 ms hidden delay was removed; fallback content appears
-when the route loading boundary activates. This is continuity UI, not a way to hide slow server work.
+The root layout has a shared Suspense boundary using `AppLoadingSkeleton` for the initial load.
+There is no route `loading.tsx`: client navigation keeps the current page visible until the
+destination is ready. Customer header links (including Account and Cart) use Next.js `useLinkStatus`
+to give the clicked link a pressed, gray appearance and disable repeat activation while pending.
+Its label and dimensions stay unchanged; there is no underline, spinner, or loading text.
+The root layout still imports the generated bones registry for the initial fallback.
 
 Keep generated `src/bones/` output separate from the manually maintained fixture/layout. After
 changing the fixture with the dev server on port 3000:

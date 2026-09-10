@@ -1,16 +1,6 @@
-export const JOURNAL_CONTENT_TYPES = [
-  "announcement",
-  "story",
-  "product_feature",
-  "video",
-] as const;
+export const JOURNAL_CONTENT_TYPES = ["announcement", "story", "product_feature", "video"] as const;
 
-export const JOURNAL_ICON_KEYS = [
-  "megaphone",
-  "sparkles",
-  "file_text",
-  "video",
-] as const;
+export const JOURNAL_ICON_KEYS = ["megaphone", "sparkles", "file_text", "video"] as const;
 
 export const JOURNAL_STATUSES = ["draft", "published"] as const;
 
@@ -25,19 +15,25 @@ export const journalContentTypeLabels: Record<JournalContentType, string> = {
   video: "Video",
 };
 
-export const journalIconLabels: Record<JournalIconKey, string> = {
-  megaphone: "Megaphone",
-  sparkles: "Sparkles",
-  file_text: "Article",
-  video: "Video",
+export const legacyJournalIconForContentType: Record<JournalContentType, JournalIconKey> = {
+  announcement: "megaphone",
+  story: "file_text",
+  product_feature: "sparkles",
+  video: "video",
 };
+
+export function getJournalCardSummary(excerpt: string | null, content: string) {
+  const summary = (excerpt?.trim() || content.trim()).replace(/\s+/g, " ");
+  if (summary.length <= 180) return summary;
+
+  const candidate = summary.slice(0, 181);
+  const lastSpace = candidate.lastIndexOf(" ");
+  const end = lastSpace >= 120 ? lastSpace : 180;
+  return `${summary.slice(0, end).trimEnd()}…`;
+}
 
 export function isJournalContentType(value: string): value is JournalContentType {
   return JOURNAL_CONTENT_TYPES.includes(value as JournalContentType);
-}
-
-export function isJournalIconKey(value: string): value is JournalIconKey {
-  return JOURNAL_ICON_KEYS.includes(value as JournalIconKey);
 }
 
 export function isJournalStatus(value: string): value is JournalStatus {

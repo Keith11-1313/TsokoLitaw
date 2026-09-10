@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useState, type ChangeEvent } from "react";
-import { FileText, Megaphone, Plus, Sparkles, Video, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { saveJournalPostAction, type JournalActionState } from "@/app/admin/journal/actions";
-import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
+import { PrimaryButton, SecondaryButton, secondaryButtonClassName } from "@/components/ui/button";
 import { DiscardChangesDialog } from "@/components/admin/discard-changes-dialog";
 import { FormField } from "@/components/ui/form-field";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -13,22 +14,13 @@ import { useEditorDialog } from "@/hooks/use-editor-dialog";
 import { browserImageError } from "@/lib/form-validation";
 import {
   JOURNAL_CONTENT_TYPES,
-  JOURNAL_ICON_KEYS,
   JOURNAL_STATUSES,
   journalContentTypeLabels,
-  journalIconLabels,
-  type JournalIconKey,
+  type JournalContentType,
 } from "@/lib/journal";
 import type { JournalPostSummary } from "@/lib/server-journal";
 
 const initialState: JournalActionState = { status: "idle", message: "" };
-const iconMap = {
-  megaphone: Megaphone,
-  sparkles: Sparkles,
-  file_text: FileText,
-  video: Video,
-} as const;
-
 function todayInManila() {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Manila",
@@ -48,6 +40,9 @@ function JournalEditor({
   const [state, formAction, pending] = useActionState(saveJournalPostAction, initialState);
   const [imageError, setImageError] = useState("");
   const [imageChecking, setImageChecking] = useState(false);
+  const [contentType, setContentType] = useState<JournalContentType>(
+    post?.contentType ?? "announcement",
+  );
   const { formRef, formProps, canSubmit, statusMessage, refresh, isDirty } = useFormGate({
     requireDirty: Boolean(post),
     extraValid: !imageError && !imageChecking,
@@ -133,19 +128,10 @@ function JournalEditor({
             name="contentType"
             required
             defaultValue={post?.contentType ?? "announcement"}
+            onChange={(value) => setContentType(value as JournalContentType)}
             options={JOURNAL_CONTENT_TYPES.map((type) => ({
               value: type,
               label: journalContentTypeLabels[type],
-            }))}
-          />
-          <CustomSelect
-            label="Icon"
-            name="iconKey"
-            required
-            defaultValue={post?.iconKey ?? "megaphone"}
-            options={JOURNAL_ICON_KEYS.map((icon) => ({
-              value: icon,
-              label: journalIconLabels[icon],
             }))}
           />
           <FormField
@@ -208,9 +194,14 @@ function JournalEditor({
           />
           <FormField
             id="journal-video"
-            label="Video link (optional)"
+            label={contentType === "video" ? "Video link" : "Video link (optional)"}
+            required={contentType === "video"}
             error={state.fieldErrors?.videoUrl}
-            hint="Use a secure hosted video URL when the post includes video."
+            hint={
+              contentType === "video"
+                ? "Required for video posts. Use a secure hosted video URL."
+                : "Use a secure hosted video URL when the post includes video."
+            }
             inputProps={{
               name: "videoUrl",
               type: "url",
@@ -282,45 +273,44 @@ export function JournalManager({ posts }: { posts: JournalPostSummary[] }) {
       </div>
       {posts.length ? (
         <section className="mt-5 grid gap-5 lg:grid-cols-2" aria-label="Journal posts">
-          {posts.map((post) => {
-            const Icon = iconMap[post.iconKey as JournalIconKey];
-            return (
-              <article key={post.id} className="rounded-card border border-border bg-surface p-6">
-                <span className="flex size-11 items-center justify-center rounded-full bg-surface-muted text-brand">
-                  <Icon aria-hidden="true" size={20} />
-                </span>
-                <div className="mt-5 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
-                      {journalContentTypeLabels[post.contentType]}
-                    </p>
-                    <h3 className="mt-1 font-display text-2xl">{post.title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {new Intl.DateTimeFormat("en-PH", {
-                        dateStyle: "medium",
-                        timeZone: "Asia/Manila",
-                      }).format(new Date(`${post.displayDate}T00:00:00+08:00`))}
-                    </p>
-                  </div>
-                  <span
-                    className={`rounded-lg px-2.5 py-1 text-xs font-bold ${post.status === "published" ? "bg-success-background text-success-foreground" : "bg-surface-muted text-muted-foreground"}`}
-                  >
-                    {post.status === "published" ? "Published" : "Draft"}
-                  </span>
+          {posts.map((post) => (
+            <article key={post.id} className="rounded-card border border-border bg-surface p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
+                    {journalContentTypeLabels[post.contentType]}
+                  </p>
+                  <h3 className="mt-1 font-display text-2xl">{post.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {new Intl.DateTimeFormat("en-PH", {
+                      dateStyle: "medium",
+                      timeZone: "Asia/Manila",
+                    }).format(new Date(`${post.displayDate}T00:00:00+08:00`))}
+                  </p>
                 </div>
-                <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                  {post.excerpt || post.content}
-                </p>
-                <SecondaryButton
-                  type="button"
-                  className="mt-6 w-full"
-                  onClick={() => openEditor(post)}
+                <span
+                  className={`rounded-lg px-2.5 py-1 text-xs font-bold ${post.status === "published" ? "bg-success-background text-success-foreground" : "bg-surface-muted text-muted-foreground"}`}
                 >
+                  {post.status === "published" ? "Published" : "Draft"}
+                </span>
+              </div>
+              <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted-foreground">
+                {post.excerpt || post.content}
+              </p>
+              <div
+                className={`mt-6 grid gap-3 ${post.status === "published" ? "sm:grid-cols-2" : ""}`}
+              >
+                <SecondaryButton type="button" className="w-full" onClick={() => openEditor(post)}>
                   Edit post
                 </SecondaryButton>
-              </article>
-            );
-          })}
+                {post.status === "published" ? (
+                  <Link href={`/journal/${post.slug}`} className={secondaryButtonClassName}>
+                    View published post
+                  </Link>
+                ) : null}
+              </div>
+            </article>
+          ))}
         </section>
       ) : (
         <section className="mt-5 rounded-card border border-dashed border-border bg-surface p-10 text-center">
