@@ -1,5 +1,5 @@
 import { Menu } from "lucide-react";
-import Link from "next/link";
+import { CustomerNavigationLink as Link } from "@/components/customer/customer-navigation-link";
 import { SiteContainer } from "@/components/layout/site-container";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { HeaderActions } from "@/components/customer/header-actions";
