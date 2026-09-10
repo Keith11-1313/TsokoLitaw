@@ -63,9 +63,12 @@ Contract tests: `src/hooks/editor-contracts.test.tsx`, form and image validation
 
 ## Loading and generated Boneyard files
 
-`src/app/loading.tsx` renders `AppLoadingSkeleton`. The root layout imports the generated bones
-registry. The previous whole-skeleton 500 ms hidden delay was removed; fallback content appears
-when the route loading boundary activates. This is continuity UI, not a way to hide slow server work.
+The root layout has a shared Suspense boundary using `AppLoadingSkeleton` for the initial load.
+There is no route `loading.tsx`: client navigation keeps the current page visible until the
+destination is ready. Customer header links (including Account and Cart) use Next.js `useLinkStatus`
+to give the clicked link a pressed, gray appearance and disable repeat activation while pending.
+Its label and dimensions stay unchanged; there is no underline, spinner, or loading text.
+The root layout still imports the generated bones registry for the initial fallback.
 
 Keep generated `src/bones/` output separate from the manually maintained fixture/layout. After
 changing the fixture with the dev server on port 3000:
