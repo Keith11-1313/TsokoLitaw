@@ -10,7 +10,10 @@ Inspect the relevant page and assets before editing UI.
   Body font Lato; display font DM Serif Display. Prefer existing Tailwind spacing/token classes.
 - Customer navigation uses a sticky floating treatment: separate opaque brand, navigation, and action
   surfaces on tablet/desktop, with the existing compact menu on mobile. It remains in document flow
-  before the page hero and does not alter Admin navigation.
+  before the page hero and does not alter Admin navigation. The surfaces share one height and sit over
+  the customer photo background; the customer-header logo mark matches the cart action's 44px circle.
+  A small downward scroll keeps navigation visible; continued downward scrolling hides it, and upward
+  scrolling reveals it immediately.
 - Customer canvas: `public/images/photo-bg.png`; opaque cream cards/navigation preserve readability.
   Admin uses a denser flat operational background, not a separate brand system.
 - Logo: `public/brand/logo.png`; local Home media: `public/images/home/`, `public/videos/home/`.

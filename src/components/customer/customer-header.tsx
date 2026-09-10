@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SiteContainer } from "@/components/layout/site-container";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { HeaderActions } from "@/components/customer/header-actions";
+import { CustomerHeaderFrame } from "@/components/customer/customer-header-frame";
 import { cn } from "@/lib/cn";
 import { getAuthProfile } from "@/lib/auth";
 
@@ -19,18 +20,18 @@ interface CustomerHeaderProps {
 export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
   const profile = await getAuthProfile();
   return (
-    <header className="sticky top-0 z-40 py-3">
-      <SiteContainer className="flex items-center justify-between gap-3">
+    <CustomerHeaderFrame>
+      <SiteContainer className="flex items-center justify-between gap-2 lg:gap-3">
         <Link
           href="/"
           aria-label="TsokoLitaw home"
-          className="shrink-0 rounded-full border border-border bg-surface/95 px-3 py-2 shadow-sm backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
+          className="flex h-14 shrink-0 items-center rounded-full border border-border bg-surface/95 px-3 shadow-sm backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
         >
-          <BrandLockup showSubtitle={false} className="gap-2.5" />
+          <BrandLockup showSubtitle={false} markClassName="size-11" className="gap-2.5" />
         </Link>
 
         <nav
-          className="hidden items-center rounded-full border border-border bg-surface/95 p-1.5 shadow-sm backdrop-blur md:flex"
+          className="hidden h-14 items-center rounded-full border border-border bg-surface/95 p-1.5 shadow-sm backdrop-blur md:flex"
           aria-label="Main navigation"
         >
           {navigationItems.map((item) => {
@@ -42,7 +43,7 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "inline-flex min-h-11 items-center rounded-full px-4 text-sm text-muted-foreground transition-colors hover:bg-surface-muted hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
+                  "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-3 text-sm text-muted-foreground transition-colors hover:bg-surface-muted hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:px-4",
                   isActive && "bg-brand font-bold text-surface hover:bg-brand hover:text-surface",
                 )}
               >
@@ -52,7 +53,7 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
           })}
         </nav>
 
-        <div className="hidden rounded-full border border-border bg-surface/95 p-1.5 shadow-sm backdrop-blur md:block">
+        <div className="hidden h-14 shrink-0 items-center rounded-full border border-border bg-surface/95 p-1.5 shadow-sm backdrop-blur md:flex">
           <HeaderActions isSignedIn={Boolean(profile)} isAdmin={profile?.role === "admin"} />
         </div>
 
@@ -91,6 +92,6 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
           </div>
         </details>
       </SiteContainer>
-    </header>
+    </CustomerHeaderFrame>
   );
 }
