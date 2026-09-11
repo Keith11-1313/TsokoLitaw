@@ -22,9 +22,13 @@ Do not merge this cleanup into `main` until a separately approved coordinated Pr
 
 ## Finish Dev activation
 
-The three existing Dev app Cron jobs are intentionally paused:
-`tsokolitaw-payment-expirations`, `tsokolitaw-notification-retries`, `tsokolitaw-account-deletions`.
-Their schedules and Vault configuration remain; credentials were not copied or changed.
+The three Dev app Cron jobs are active as of September 11, 2026:
+`tsokolitaw-payment-expirations`, `tsokolitaw-notification-retries`, and
+`tsokolitaw-account-deletions`. The second pre-v1 linked reset removed the `pg_cron` extension and
+jobs while retaining Vault. The extension and exactly these three jobs were recreated afterward.
+Their routes, schedules, Vault-backed bearer authorization, and one HTTP 200 response per endpoint
+were verified. A future linked reset will remove the jobs again, so inspect and recreate them before
+calling that environment ready.
 
 1. The user deploys the matching cleanup code to the Dev Vercel project.
 2. Verify Dev Supabase URL/keys and payment mode. Manual GCash needs the actual server-only QR payload.
@@ -33,8 +37,8 @@ Their schedules and Vault configuration remain; credentials were not copied or c
 4. Re-upload catalog images and publish real available pickup dates/windows/locations in Admin.
 5. Smoke-test email-only Profile/Checkout, PayMongo test or Manual GCash, receipt access/review,
    unpaid cancellation and inventory/reward behavior. Sending actual email requires approved recipients.
-6. Resume only these three named Cron jobs after the matching endpoints and secrets are verified.
-   Do not leave review/payment work unmonitored while jobs are paused.
+6. Confirm only these three named Cron jobs remain active after any future database reset.
+   Do not leave review/payment work unmonitored while jobs are absent or paused.
 
 The hosted Dev site is not considered operationally ready merely because the database reset passed.
 
