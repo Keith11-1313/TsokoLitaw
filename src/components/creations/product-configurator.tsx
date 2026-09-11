@@ -339,19 +339,19 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
             {addons.length ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                 <CustomSelect
-                  label="Add-on"
+                  label="Extra"
                   value={addonId}
                   onChange={changeAddon}
                   options={[
-                    { value: "", label: "No add-on" },
+                    { value: "", label: "No extra" },
                     ...addons.map((addon) => ({
                       value: addon.id,
-                      label: `${addon.name} — ${formatPhp(addon.price)}`,
+                      label: `${addon.name}, ${formatPhp(addon.price)}`,
                     })),
                   ]}
                 />
                 <QuantityInput
-                  label="Add-on quantity per box"
+                  label="Extra quantity per box"
                   value={addonQuantity}
                   onChange={setAddonQuantity}
                   min={selectedAddon ? 1 : 0}

@@ -8,20 +8,18 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = { title: "Payment Status | TsokoLitaw" };
 
-export default async function PaymentSuccessPage({
-  searchParams,
-}: PageProps<"/payment/success">) {
+export default async function PaymentSuccessPage({ searchParams }: PageProps<"/payment/success">) {
   const profile = await requireCustomer("/payment/success");
   const { order } = await searchParams;
   const orderId = typeof order === "string" ? order : "";
   const supabase = createAdminSupabaseClient();
   const { data } = orderId
     ? await supabase
-      .from("orders")
-      .select("order_number, payment_status, payments(provider)")
-      .eq("id", orderId)
-      .eq("user_id", profile.id)
-      .maybeSingle()
+        .from("orders")
+        .select("order_number, payment_status, payments(provider)")
+        .eq("id", orderId)
+        .eq("user_id", profile.id)
+        .maybeSingle()
     : { data: null };
   const isPaid = data?.payment_status === "PAID";
   const payment = Array.isArray(data?.payments) ? data.payments[0] : data?.payments;
@@ -29,20 +27,22 @@ export default async function PaymentSuccessPage({
 
   return (
     <>
-      {isPaid ? <ClearPaidCart /> : <PaymentVerificationPoller />}
+      {isPaid ? <ClearPaidCart orderId={orderId} /> : <PaymentVerificationPoller />}
       <PaymentResultPage
-      title={isPaid ? "Payment confirmed" : "Payment is being verified"}
-      description={isPaid
-        ? isLoyaltyOnly
-          ? `Your loyalty reward covered order ${data.order_number}. TsokoLitaw can now prepare it for fulfillment.`
-          : `PayMongo confirmed payment for order ${data.order_number}. TsokoLitaw can now prepare it for fulfillment.`
-        : "Returning from PayMongo does not confirm payment by itself. We’ll update the order after the signed PayMongo notification arrives."}
-      icon={isPaid ? CheckCircle2 : Clock3}
-      tone="success"
-      detailLabel="Payment status"
-      detailValue={isPaid ? "Paid" : "Awaiting verification"}
-      primaryHref="/orders"
-      primaryLabel="View my orders"
+        title={isPaid ? "Payment confirmed" : "Payment is being verified"}
+        description={
+          isPaid
+            ? isLoyaltyOnly
+              ? `Your loyalty reward covered order ${data.order_number}. Your order is now confirmed.`
+              : `We received your payment for order ${data.order_number}. Your order is now confirmed.`
+            : "We’re waiting for PayMongo to confirm the payment. Your order will update automatically when we receive confirmation."
+        }
+        icon={isPaid ? CheckCircle2 : Clock3}
+        tone="success"
+        detailLabel="Payment status"
+        detailValue={isPaid ? "Paid" : "Awaiting verification"}
+        primaryHref="/orders"
+        primaryLabel="View my orders"
       />
     </>
   );
