@@ -1,9 +1,6 @@
 import "server-only";
 
-import {
-  createPayMongoCheckoutSession,
-  expirePayMongoCheckoutSession,
-} from "@/lib/paymongo";
+import { createPayMongoCheckoutSession, expirePayMongoCheckoutSession } from "@/lib/paymongo";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getConfiguredSiteOrigin } from "@/lib/site-url";
 
@@ -14,13 +11,32 @@ interface PreparedCheckoutRow {
   prepared_amount: number | string;
   prepared_customer_name: string;
   prepared_customer_email: string;
-  prepared_customer_mobile: string | null;
   existing_checkout_url: string | null;
 }
 
 interface DueCheckoutRow {
   due_payment_id: string;
   due_checkout_id: string;
+}
+
+export async function expireDueDirectPayments() {
+  const { error } = await createAdminSupabaseClient().rpc("expire_pending_orders");
+  if (error) {
+    throw new Error("Expired unpaid orders could not be synchronized.", { cause: error });
+  }
+}
+
+export async function getOrderPaymentUrl(orderId: string, userId: string) {
+  const { data: order, error } = await createAdminSupabaseClient()
+    .from("orders")
+    .select("payment_method, status, payment_status")
+    .eq("id", orderId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error || !order || order.status !== "PENDING_PAYMENT")
+    throw new Error("Pending order unavailable.");
+  if (order.payment_method === "manual_gcash") return `/orders/${orderId}/payment`;
+  return getOrCreatePayMongoCheckout(orderId, userId);
 }
 
 export async function getOrCreatePayMongoCheckout(orderId: string, userId: string) {
@@ -42,7 +58,6 @@ export async function getOrCreatePayMongoCheckout(orderId: string, userId: strin
     totalPhp: Number(row.prepared_amount),
     customerName: row.prepared_customer_name,
     customerEmail: row.prepared_customer_email,
-    customerMobile: row.prepared_customer_mobile,
     successUrl: `${siteUrl}/payment/success?order=${encodeURIComponent(row.prepared_order_id)}`,
     cancelUrl: `${siteUrl}/checkout?payment=cancelled&order=${encodeURIComponent(row.prepared_order_id)}`,
   });
@@ -69,6 +84,9 @@ export async function getOrCreatePayMongoCheckout(orderId: string, userId: strin
 
 export async function expireDuePayMongoCheckouts(batchLimit = 100) {
   const supabase = createAdminSupabaseClient();
+  // This SQL routine only releases overdue PENDING orders without provider checkouts.
+  // UNDER_REVIEW is excluded, retaining reservations until an Admin decision.
+  await expireDueDirectPayments();
   const { data, error } = await supabase.rpc("list_due_paymongo_checkouts", {
     batch_limit: Math.min(Math.max(Math.trunc(batchLimit), 1), 100),
   });

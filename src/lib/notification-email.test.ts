@@ -3,9 +3,6 @@ import {
   buildOrderCancelledEmail,
   buildOrderConfirmationEmail,
   buildReadyForPickupEmail,
-  buildRefundCompletedEmail,
-  buildRefundFailedEmail,
-  buildRefundProcessingEmail,
 } from "./notification-email";
 
 describe("buildOrderConfirmationEmail", () => {
@@ -15,8 +12,8 @@ describe("buildOrderConfirmationEmail", () => {
       customerName: "Jerald Esmeria",
       total: 58,
       pickupDate: "2026-08-31",
-      pickupWindow: "7:00 AM–8:00 AM",
-      pickupLocation: "UCC Congress — 3rd Floor",
+      pickupWindow: "7:00 AM to 8:00 AM",
+      pickupLocation: "UCC Congress, 3rd Floor",
       orderUrl: "https://www.tsokolitaw.com/orders/42",
       items: [
         {
@@ -31,7 +28,7 @@ describe("buildOrderConfirmationEmail", () => {
     expect(email.subject).toBe("Order TL-0042 confirmed");
     expect(email.text).toContain("Monday, August 31, 2026");
     expect(email.text).toContain("₱58.00");
-    expect(email.html).toContain("UCC Congress — 3rd Floor");
+    expect(email.html).toContain("UCC Congress, 3rd Floor");
     expect(email.html).toContain("https://www.tsokolitaw.com/orders/42");
   });
 
@@ -41,7 +38,7 @@ describe("buildOrderConfirmationEmail", () => {
       customerName: "<Customer>",
       total: 0,
       pickupDate: "2026-09-01",
-      pickupWindow: "9:00 AM–10:00 AM",
+      pickupWindow: "9:00 AM to 10:00 AM",
       pickupLocation: "Campus & Court",
       orderUrl: "https://www.tsokolitaw.com/orders/43",
       items: [{ name: "Box <4>", quantity: 1, coatings: [], addon: null }],
@@ -58,45 +55,25 @@ describe("buildOrderConfirmationEmail", () => {
       customerName: "Jerald Esmeria",
       total: 40,
       pickupDate: "2026-08-31",
-      pickupWindow: "7:00 AM–8:00 AM",
-      pickupLocation: "UCC Congress — Covered Court",
+      pickupWindow: "7:00 AM to 8:00 AM",
+      pickupLocation: "UCC Congress, Covered Court",
       orderUrl: "https://www.tsokolitaw.com/orders/44",
       items: [],
     });
 
     expect(email.subject).toBe("Order TL-0044 is ready for pickup");
     expect(email.text).toContain("within the scheduled pickup window");
-    expect(email.html).toContain("UCC Congress — Covered Court");
+    expect(email.html).toContain("UCC Congress, Covered Court");
     expect(email.text).not.toContain("completed");
   });
 
-  it("distinguishes unpaid and paid cancellations", () => {
+  it("describes unpaid cancellation without promising a refund", () => {
     const base = {
       orderNumber: "TL-0045",
       customerName: "Jerald Esmeria",
       orderUrl: "https://www.tsokolitaw.com/orders/45",
     };
-    expect(buildOrderCancelledEmail({ ...base, refundAmount: null }).text).toContain(
-      "No payment was collected",
-    );
-    expect(buildOrderCancelledEmail({ ...base, refundAmount: 80 }).text).toContain(
-      "full refund of ₱80.00",
-    );
-  });
-
-  it("renders distinct refund lifecycle emails", () => {
-    const input = {
-      orderNumber: "TL-0046",
-      customerName: "Jerald Esmeria",
-      orderUrl: "https://www.tsokolitaw.com/orders/46",
-      refundAmount: 80,
-    };
-
-    expect(buildRefundProcessingEmail(input).subject).toContain("Refund processing");
-    expect(buildRefundCompletedEmail(input).subject).toContain("Refund completed");
-    const failed = buildRefundFailedEmail(input);
-    expect(failed.subject).toContain("needs attention");
-    expect(failed.text).toContain("Do not send account details by email");
+    expect(buildOrderCancelledEmail(base).text).toContain("No payment was collected");
   });
 
   it("uses the shared email-safe branded shell for every notification", () => {
@@ -105,24 +82,15 @@ describe("buildOrderConfirmationEmail", () => {
       customerName: "Jerald Esmeria",
       total: 80,
       pickupDate: "2026-09-02",
-      pickupWindow: "1:00 PM–2:00 PM",
-      pickupLocation: "UCC Congress — 3rd Floor",
+      pickupWindow: "1:00 PM to 2:00 PM",
+      pickupLocation: "UCC Congress, 3rd Floor",
       orderUrl: "https://www.tsokolitaw.com/orders/47",
       items: [{ name: "Box of 4", quantity: 2, coatings: ["Cocoa × 4"], addon: null }],
-    };
-    const refundInput = {
-      orderNumber: orderInput.orderNumber,
-      customerName: orderInput.customerName,
-      orderUrl: orderInput.orderUrl,
-      refundAmount: orderInput.total,
     };
     const emails = [
       buildOrderConfirmationEmail(orderInput),
       buildReadyForPickupEmail(orderInput),
-      buildOrderCancelledEmail({ ...refundInput, refundAmount: null }),
-      buildRefundProcessingEmail(refundInput),
-      buildRefundCompletedEmail(refundInput),
-      buildRefundFailedEmail(refundInput),
+      buildOrderCancelledEmail(orderInput),
     ];
 
     for (const email of emails) {

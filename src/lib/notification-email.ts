@@ -24,14 +24,6 @@ export interface CancellationEmailInput {
   orderNumber: string;
   customerName: string;
   orderUrl: string;
-  refundAmount: number | null;
-}
-
-export interface RefundEmailInput {
-  orderNumber: string;
-  customerName: string;
-  orderUrl: string;
-  refundAmount: number;
 }
 
 const php = new Intl.NumberFormat("en-PH", {
@@ -152,7 +144,7 @@ export function buildOrderConfirmationEmail(
   const pickupDate = formatPickupDate(input.pickupDate);
   const itemLines = input.items.map((item) => {
     const details = [...item.coatings, ...(item.addon ? [item.addon] : [])];
-    return `${item.name} × ${item.quantity}${details.length ? ` — ${details.join(", ")}` : ""}`;
+    return `${item.name} × ${item.quantity}${details.length ? `: ${details.join(", ")}` : ""}`;
   });
   const htmlItems = input.items
     .map((item) => {
@@ -242,10 +234,7 @@ ${renderAction(input.orderUrl, "View order details")}`,
 }
 
 export function buildOrderCancelledEmail(input: CancellationEmailInput): TransactionalEmail {
-  const refundMessage =
-    input.refundAmount === null
-      ? "No payment was collected, so no refund is needed."
-      : `A full refund of ${php.format(input.refundAmount)} has been requested to the original payment method. We’ll email you when its status changes.`;
+  const refundMessage = "No payment was collected, so no refund is needed.";
 
   return {
     subject: `Order ${input.orderNumber} cancelled`,
@@ -268,63 +257,4 @@ ${renderNotice(refundMessage)}
 ${renderAction(input.orderUrl, "View order details")}`,
     }),
   };
-}
-
-function buildRefundEmail(
-  input: RefundEmailInput,
-  content: { subject: string; heading: string; message: string; action: string },
-): TransactionalEmail {
-  return {
-    subject: `${content.subject} — ${input.orderNumber}`,
-    text: [
-      `Hi ${input.customerName},`,
-      "",
-      content.message,
-      `Refund amount: ${php.format(input.refundAmount)}`,
-      "",
-      `${content.action}: ${input.orderUrl}`,
-      "",
-      "TsokoLitaw",
-    ].join("\n"),
-    html: renderEmailShell({
-      preheader: `${content.heading} for order ${input.orderNumber}.`,
-      eyebrow: `Order ${input.orderNumber}`,
-      heading: content.heading,
-      body: `<p style="margin:0;font-size:15px;line-height:1.7;color:#361e0a">Hi ${escapeHtml(input.customerName)}, ${escapeHtml(content.message)}</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:24px;border-top:1px solid #e9dfd3;border-bottom:1px solid #e9dfd3">
-  <tr>
-    <td style="padding:16px 0;font-size:13px;font-weight:bold;color:#60462e">Refund amount</td>
-    <td align="right" style="padding:16px 0;font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#361e0a">${escapeHtml(php.format(input.refundAmount))}</td>
-  </tr>
-</table>
-${renderAction(input.orderUrl, content.action)}`,
-    }),
-  };
-}
-
-export function buildRefundProcessingEmail(input: RefundEmailInput) {
-  return buildRefundEmail(input, {
-    subject: "Refund processing",
-    heading: "Your refund is processing",
-    message: `PayMongo is processing the refund for order ${input.orderNumber} to the original payment method.`,
-    action: "View refund status",
-  });
-}
-
-export function buildRefundCompletedEmail(input: RefundEmailInput) {
-  return buildRefundEmail(input, {
-    subject: "Refund completed",
-    heading: "Your refund is complete",
-    message: `PayMongo confirmed the refund for order ${input.orderNumber}. The time it appears in your account can depend on your payment provider.`,
-    action: "View order details",
-  });
-}
-
-export function buildRefundFailedEmail(input: RefundEmailInput) {
-  return buildRefundEmail(input, {
-    subject: "Refund needs attention",
-    heading: "We need your refund details",
-    message: `The automatic refund for order ${input.orderNumber} could not be completed. Sign in and use the secure refund form on your order page. Do not send account details by email.`,
-    action: "Open secure refund form",
-  });
 }
