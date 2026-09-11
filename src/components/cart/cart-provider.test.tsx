@@ -11,13 +11,7 @@ function Probe() {
         {cart.isReady ? cart.items.map((item) => item.id).join(",") : "loading"}
       </p>
       <p data-testid="selected">{cart.selectedItemIds.join(",")}</p>
-      <p data-testid="pending">
-        {Object.entries(cart.pendingOrderIdByItemId)
-          .map(([itemId, orderId]) => `${itemId}=${orderId}`)
-          .join(",")}
-      </p>
-      <button onClick={() => cart.removePaidCheckoutItems("order-a")}>Clear paid order A</button>
-      <button onClick={() => cart.releasePendingCheckoutItems("order-a")}>Release order A</button>
+      <button onClick={() => cart.removeCheckedOutItems()}>Complete checkout</button>
       <button onClick={() => cart.setAllItemsSelected(true)}>Select all</button>
       <button onClick={() => cart.updateQuantity("a", 3)}>Update A</button>
       <button onClick={() => cart.removeItem("a")}>Remove A</button>
@@ -27,7 +21,7 @@ function Probe() {
 beforeEach(() => {
   localStorage.clear();
   localStorage.setItem(
-    "tsokolitaw-cart-v2",
+    "tsokolitaw-cart-v3",
     JSON.stringify(
       ["a", "b"].map((id) => ({
         id,
@@ -41,36 +35,46 @@ beforeEach(() => {
   );
 });
 afterEach(cleanup);
-it("clears only the selection associated with the paid order", async () => {
-  localStorage.setItem("tsokolitaw-pending-checkout-items-v1:order-a", '["a"]');
-  localStorage.setItem("tsokolitaw-pending-checkout-items-v1:order-b", '["b"]');
+it("starts a clean cart when upgrading from the retired pre-release storage", async () => {
+  localStorage.clear();
+  localStorage.setItem("tsokolitaw-cart-v2", '[{"id":"old-order-line"}]');
+  render(
+    <CartProvider>
+      <Probe />
+    </CartProvider>,
+  );
+
+  await waitFor(() => expect(screen.getByTestId("items").textContent).toBe(""));
+  expect(localStorage.getItem("tsokolitaw-cart-v2")).toBeNull();
+});
+
+it("removes checked-out lines immediately and preserves other cart items", async () => {
+  localStorage.setItem("tsokolitaw-cart-selection-v2", '["a"]');
   render(
     <CartProvider>
       <Probe />
     </CartProvider>,
   );
   await waitFor(() => expect(screen.getByTestId("items").textContent).toBe("a,b"));
-  fireEvent.click(screen.getByText("Clear paid order A"));
+  fireEvent.click(screen.getByText("Complete checkout"));
   await waitFor(() => expect(screen.getByTestId("items").textContent).toBe("b"));
-  expect(localStorage.getItem("tsokolitaw-pending-checkout-items-v1:order-b")).toBe('["b"]');
   await waitFor(() =>
-    expect(JSON.parse(localStorage.getItem("tsokolitaw-cart-v2")!)).toHaveLength(1),
+    expect(JSON.parse(localStorage.getItem("tsokolitaw-cart-v3")!)).toHaveLength(1),
   );
 });
-it("does not trust an unscoped legacy checkout selection", async () => {
-  localStorage.setItem("tsokolitaw-pending-checkout-items-v1", '["b"]');
+it("removes cart lines locked by the retired pending-checkout storage", async () => {
+  localStorage.setItem("tsokolitaw-pending-checkout-items-v1:deleted-order", '["a"]');
   render(
     <CartProvider>
       <Probe />
     </CartProvider>,
   );
-  await waitFor(() => expect(screen.getByTestId("items").textContent).toBe("a,b"));
-  fireEvent.click(screen.getByText("Clear paid order A"));
-  expect(screen.getByTestId("items").textContent).toBe("a,b");
+  await waitFor(() => expect(screen.getByTestId("items").textContent).toBe("b"));
+  expect(localStorage.getItem("tsokolitaw-pending-checkout-items-v1:deleted-order")).toBeNull();
 });
 
-it("locks pending checkout items until that order is released", async () => {
-  localStorage.setItem("tsokolitaw-pending-checkout-items-v1:order-a", '["a"]');
+it("discards the retired unscoped marker without deleting uncertain cart lines", async () => {
+  localStorage.setItem("tsokolitaw-pending-checkout-items-v1", '["a"]');
   render(
     <CartProvider>
       <Probe />
@@ -78,17 +82,5 @@ it("locks pending checkout items until that order is released", async () => {
   );
 
   await waitFor(() => expect(screen.getByTestId("items").textContent).toBe("a,b"));
-  expect(screen.getByTestId("selected").textContent).toBe("b");
-  expect(screen.getByTestId("pending").textContent).toBe("a=order-a");
-
-  fireEvent.click(screen.getByText("Update A"));
-  fireEvent.click(screen.getByText("Remove A"));
-  fireEvent.click(screen.getByText("Select all"));
-  expect(screen.getByTestId("items").textContent).toBe("a,b");
-  expect(screen.getByTestId("selected").textContent).toBe("b");
-
-  fireEvent.click(screen.getByText("Release order A"));
-  fireEvent.click(screen.getByText("Select all"));
-  await waitFor(() => expect(screen.getByTestId("selected").textContent).toBe("a,b"));
-  expect(localStorage.getItem("tsokolitaw-pending-checkout-items-v1:order-a")).toBeNull();
+  expect(localStorage.getItem("tsokolitaw-pending-checkout-items-v1")).toBeNull();
 });

@@ -65,7 +65,7 @@ existing payment/loyalty/inventory suite. Apply the pre-v1 baseline only through
 Local acceptance (September 11, 2026): production-build browser checks at 390, 768 and 1440 px
 covered QR display, on-device OCR of a synthetic receipt, submission, owner/anonymous receipt
 access, Admin approval and confirmed customer status. Checkout recalculated tampered browser
-prices, retries retained the original method, and delayed approval preserved newer cart items.
+prices, retries retained the original method, and checkout removal preserved newer cart items.
 The cart's hydration snapshot also stays empty until each streamed consumer hydrates.
 Real wallet receipt extraction and actual received-funds reconciliation still require Dev acceptance;
 these local checks made no payment and sent no email. The migrations include explicit service-role

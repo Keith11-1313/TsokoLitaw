@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { ClearPaidCart, ReleasePendingCart } from "@/components/checkout/clear-paid-cart";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
 import { SiteContainer } from "@/components/layout/site-container";
 import { ManualReceiptForm } from "@/components/orders/manual-receipt-form";
@@ -78,8 +77,6 @@ export default async function ManualPaymentPage({
   return (
     <CustomerPageShell>
       <SiteContainer className="py-8 sm:py-12">
-        {paid ? <ClearPaidCart orderId={orderId} /> : null}
-        {cancelled || order.status === "EXPIRED" ? <ReleasePendingCart orderId={orderId} /> : null}
         <Link
           href={`/orders/${orderId}`}
           className="inline-flex min-h-11 items-center text-sm font-bold text-brand"

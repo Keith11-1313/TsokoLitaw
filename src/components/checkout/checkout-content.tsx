@@ -29,7 +29,7 @@ export function CheckoutContent({
   loyalty,
   resumeOrderId,
 }: CheckoutContentProps) {
-  const { selectedItems, selectedSubtotal, markSelectedItemsPendingCheckout } = useCart();
+  const { selectedItems, selectedSubtotal, removeCheckedOutItems } = useCart();
   const checkoutKeyRef = useRef<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [customerName, setCustomerName] = useState(profile.fullName);
@@ -86,7 +86,7 @@ export function CheckoutContent({
       });
       setSubmission(result);
       if (result.status === "success") {
-        markSelectedItemsPendingCheckout(result.orderId);
+        removeCheckedOutItems();
         window.location.assign(result.checkoutUrl);
       }
     });

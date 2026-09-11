@@ -18,7 +18,7 @@ export function ManualReceiptForm({ orderId }: { orderId: string }) {
   const workerRef = useRef<Worker | null>(null);
   const readVersion = useRef(0);
   const mounted = useRef(true);
-  const { formRef, formProps, canSubmit, refresh } = useFormGate({
+  const { formRef, formProps, refresh, statusMessage } = useFormGate({
     requireDirty: false,
     extraValid: !!file && !imageFileError(file),
   });
@@ -69,9 +69,9 @@ export function ManualReceiptForm({ orderId }: { orderId: string }) {
       if (mounted.current && readVersion.current === version)
         setMessage("We couldn’t read this receipt automatically. Please enter its details below.");
     } finally {
-      await worker?.terminate();
       if (workerRef.current === worker) workerRef.current = null;
       if (mounted.current && readVersion.current === version) setReading(false);
+      await worker?.terminate();
     }
   }
 
@@ -79,11 +79,38 @@ export function ManualReceiptForm({ orderId }: { orderId: string }) {
     <form
       ref={formRef}
       {...formProps}
+      noValidate
       className="space-y-5"
       onSubmit={(event) => {
         event.preventDefault();
-        if (pending || reading || submitted || !canSubmit) return;
+        if (pending || reading || submitted) return;
+        const currentForm = event.currentTarget;
+        const receiptInput = currentForm.elements.namedItem("receipt");
+        const currentFile =
+          receiptInput instanceof HTMLInputElement ? receiptInput.files?.[0] : null;
+        const fileError = imageFileError(currentFile ?? null);
+        const invalidField = Array.from(currentForm.elements).find(
+          (element) =>
+            element instanceof HTMLInputElement &&
+            element !== receiptInput &&
+            !element.checkValidity(),
+        );
+        if (!currentFile || fileError || invalidField) {
+          setMessage(
+            fileError ||
+              statusMessage ||
+              "Complete the required fields and correct the highlighted values.",
+          );
+          if (!currentFile && receiptInput instanceof HTMLInputElement) {
+            receiptInput.reportValidity();
+          } else if (invalidField instanceof HTMLInputElement) {
+            invalidField.reportValidity();
+          }
+          return;
+        }
         const form = new FormData(event.currentTarget);
+        form.set("receipt", currentFile);
+        setMessage("Submitting your receipt securely. Please keep this page open.");
         startTransition(async () => {
           try {
             const result = await submitManualReceipt(orderId, form);
@@ -164,13 +191,14 @@ export function ManualReceiptForm({ orderId }: { orderId: string }) {
           completed this payment and checked that these details match my receipt.
         </label>
       </fieldset>
-      <p role="status" className="text-sm leading-6">
+      <p role="status" aria-live="polite" className="min-h-6 text-sm leading-6">
         {message}
       </p>
       <button
         type="submit"
-        disabled={!canSubmit || pending || reading || submitted}
-        className="min-h-12 w-full rounded-full bg-brand px-5 font-bold text-surface disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={pending || reading || submitted}
+        aria-busy={pending}
+        className="min-h-12 w-full rounded-full bg-brand px-5 font-bold text-surface transition-[opacity,transform] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
       >
         Submit for verification
       </button>

@@ -20,15 +20,12 @@ interface CartContextValue {
   itemCount: number;
   subtotal: number;
   selectedSubtotal: number;
-  pendingOrderIdByItemId: Record<string, string>;
   addItem: (item: Omit<CartLineItem, "id">) => void;
   updateQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
   setItemSelected: (id: string, selected: boolean) => void;
   setAllItemsSelected: (selected: boolean) => void;
-  markSelectedItemsPendingCheckout: (orderId: string) => void;
-  removePaidCheckoutItems: (orderId: string) => void;
-  releasePendingCheckoutItems: (orderId: string) => void;
+  removeCheckedOutItems: () => void;
   clearCart: () => void;
 }
 
@@ -36,9 +33,10 @@ const CartContext = createContext<CartContextValue | null>(null);
 const subscribeToHydration = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;
-const STORAGE_KEY = "tsokolitaw-cart-v2";
-const SELECTION_STORAGE_KEY = "tsokolitaw-cart-selection-v1";
-const PENDING_CHECKOUT_STORAGE_KEY = "tsokolitaw-pending-checkout-items-v1";
+const STORAGE_KEY = "tsokolitaw-cart-v3";
+const SELECTION_STORAGE_KEY = "tsokolitaw-cart-selection-v2";
+const LEGACY_PENDING_CHECKOUT_STORAGE_KEY = "tsokolitaw-pending-checkout-items-v1";
+const LEGACY_CART_STORAGE_KEYS = ["tsokolitaw-cart-v2", "tsokolitaw-cart-selection-v1"];
 type StoredCartLine = Partial<CartLineItem> & {
   extraSauceAddonId?: string | null;
   extraSauceQuantity?: number;
@@ -53,15 +51,15 @@ function normalizeQuantity(quantity: number) {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartLineItem[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
-  const [pendingCheckoutItems, setPendingCheckoutItems] = useState<Record<string, string[]>>({});
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let active = true;
     try {
+      LEGACY_CART_STORAGE_KEYS.forEach((key) => window.localStorage.removeItem(key));
       const stored = window.localStorage.getItem(STORAGE_KEY);
       const parsed = stored ? (JSON.parse(stored) as unknown) : [];
-      const restored = Array.isArray(parsed)
+      let restored = Array.isArray(parsed)
         ? (parsed as StoredCartLine[]).map(
             (item) =>
               ({
@@ -78,6 +76,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
               }) as CartLineItem,
           )
         : [];
+      const checkedOutIds = new Set<string>();
+      const legacyPrefix = `${LEGACY_PENDING_CHECKOUT_STORAGE_KEY}:`;
+      for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+        const key = window.localStorage.key(index);
+        if (!key?.startsWith(legacyPrefix)) continue;
+        try {
+          const value = JSON.parse(window.localStorage.getItem(key) ?? "[]") as unknown;
+          if (Array.isArray(value)) {
+            value.forEach((id) => {
+              if (typeof id === "string") checkedOutIds.add(id);
+            });
+          }
+        } catch {
+          // The legacy entry is removed below even when it cannot be parsed.
+        }
+        window.localStorage.removeItem(key);
+      }
+      window.localStorage.removeItem(LEGACY_PENDING_CHECKOUT_STORAGE_KEY);
+      restored = restored.filter((item) => !checkedOutIds.has(item.id));
+
       const storedSelection = window.localStorage.getItem(SELECTION_STORAGE_KEY);
       const parsedSelection = storedSelection ? (JSON.parse(storedSelection) as unknown) : null;
       const restoredIds = new Set(restored.map((item) => item.id));
@@ -86,28 +104,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
             (id): id is string => typeof id === "string" && restoredIds.has(id),
           )
         : restored.map((item) => item.id);
-      const restoredPending: Record<string, string[]> = {};
-      for (let index = 0; index < window.localStorage.length; index += 1) {
-        const key = window.localStorage.key(index);
-        const prefix = `${PENDING_CHECKOUT_STORAGE_KEY}:`;
-        if (!key?.startsWith(prefix)) continue;
-        const orderId = key.slice(prefix.length);
-        try {
-          const value = JSON.parse(window.localStorage.getItem(key) ?? "[]") as unknown;
-          const itemIds = Array.isArray(value)
-            ? value.filter((id): id is string => typeof id === "string" && restoredIds.has(id))
-            : [];
-          if (itemIds.length) restoredPending[orderId] = itemIds;
-        } catch {
-          window.localStorage.removeItem(key);
-        }
-      }
-      const pendingIds = new Set(Object.values(restoredPending).flat());
       queueMicrotask(() => {
         if (active) {
           setItems(restored);
-          setSelectedItemIds(selectedIds.filter((id) => !pendingIds.has(id)));
-          setPendingCheckoutItems(restoredPending);
+          setSelectedItemIds(selectedIds);
           setReady(true);
         }
       });
@@ -131,20 +131,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, ready, selectedItemIds]);
 
   const selectedItems = items.filter((item) => selectedItemIds.includes(item.id));
-  const pendingOrderIdByItemId = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(pendingCheckoutItems).flatMap(([orderId, itemIds]) =>
-          itemIds.map((itemId) => [itemId, orderId]),
-        ),
-      ),
-    [pendingCheckoutItems],
-  );
-  const availableItems = useMemo(
-    () => items.filter((item) => !pendingOrderIdByItemId[item.id]),
-    [items, pendingOrderIdByItemId],
-  );
-
   const value = useMemo<CartContextValue>(
     () => ({
       isReady: ready,
@@ -154,7 +140,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
       subtotal: items.reduce((sum, item) => sum + calculateCartLineTotal(item), 0),
       selectedSubtotal: selectedItems.reduce((sum, item) => sum + calculateCartLineTotal(item), 0),
-      pendingOrderIdByItemId,
       addItem: (item) => {
         const id = crypto.randomUUID();
         setItems((current) => [
@@ -166,93 +151,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
       updateQuantity: (id, quantity) =>
         setItems((current) =>
           current.map((item) =>
-            item.id === id && !pendingOrderIdByItemId[id]
-              ? { ...item, quantity: normalizeQuantity(quantity) }
-              : item,
+            item.id === id ? { ...item, quantity: normalizeQuantity(quantity) } : item,
           ),
         ),
       removeItem: (id) => {
-        if (pendingOrderIdByItemId[id]) return;
         setItems((current) => current.filter((item) => item.id !== id));
         setSelectedItemIds((current) => current.filter((itemId) => itemId !== id));
       },
       setItemSelected: (id, selected) =>
         setSelectedItemIds((current) =>
-          pendingOrderIdByItemId[id]
-            ? current.filter((itemId) => itemId !== id)
-            : selected
-              ? current.includes(id)
-                ? current
-                : [...current, id]
-              : current.filter((itemId) => itemId !== id),
+          selected
+            ? current.includes(id)
+              ? current
+              : [...current, id]
+            : current.filter((itemId) => itemId !== id),
         ),
       setAllItemsSelected: (selected) =>
-        setSelectedItemIds(selected ? availableItems.map((item) => item.id) : []),
-      markSelectedItemsPendingCheckout: (orderId) => {
-        const itemIds = selectedItems.map((item) => item.id);
-        window.localStorage.setItem(
-          `${PENDING_CHECKOUT_STORAGE_KEY}:${orderId}`,
-          JSON.stringify(itemIds),
-        );
-        setPendingCheckoutItems((current) => ({ ...current, [orderId]: itemIds }));
-        setSelectedItemIds((current) => current.filter((id) => !itemIds.includes(id)));
-      },
-      removePaidCheckoutItems: (orderId) => {
-        // Manual review may finish after another checkout. Never clear a different order's selection.
-        const pendingKey = `${PENDING_CHECKOUT_STORAGE_KEY}:${orderId}`;
-        let paidIds = new Set<string>();
-        try {
-          const storedIds = window.localStorage.getItem(pendingKey);
-          const parsedIds = storedIds ? (JSON.parse(storedIds) as unknown) : [];
-          paidIds = new Set(
-            Array.isArray(parsedIds)
-              ? parsedIds.filter((id): id is string => typeof id === "string")
-              : [],
-          );
-        } catch {
-          window.localStorage.removeItem(pendingKey);
-        }
-        if (paidIds.size) {
-          setItems((current) => current.filter((item) => !paidIds.has(item.id)));
-          setSelectedItemIds((current) => current.filter((id) => !paidIds.has(id)));
-        }
-        setPendingCheckoutItems((current) => {
-          const next = { ...current };
-          delete next[orderId];
-          return next;
-        });
-        window.localStorage.removeItem(pendingKey);
-      },
-      releasePendingCheckoutItems: (orderId) => {
-        const pendingKey = `${PENDING_CHECKOUT_STORAGE_KEY}:${orderId}`;
-        const itemIds = pendingCheckoutItems[orderId] ?? [];
-        setPendingCheckoutItems((current) => {
-          const next = { ...current };
-          delete next[orderId];
-          return next;
-        });
-        setSelectedItemIds((current) => [...new Set([...current, ...itemIds])]);
-        window.localStorage.removeItem(pendingKey);
+        setSelectedItemIds(selected ? items.map((item) => item.id) : []),
+      removeCheckedOutItems: () => {
+        const checkedOutIds = new Set(selectedItems.map((item) => item.id));
+        setItems((current) => current.filter((item) => !checkedOutIds.has(item.id)));
+        setSelectedItemIds((current) => current.filter((id) => !checkedOutIds.has(id)));
       },
       clearCart: () => {
         setItems([]);
         setSelectedItemIds([]);
-        Object.keys(pendingCheckoutItems).forEach((orderId) =>
-          window.localStorage.removeItem(`${PENDING_CHECKOUT_STORAGE_KEY}:${orderId}`),
-        );
-        window.localStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
-        setPendingCheckoutItems({});
       },
     }),
-    [
-      availableItems,
-      items,
-      pendingCheckoutItems,
-      pendingOrderIdByItemId,
-      ready,
-      selectedItemIds,
-      selectedItems,
-    ],
+    [items, ready, selectedItemIds, selectedItems],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
@@ -274,7 +200,6 @@ export function useCart() {
       itemCount: 0,
       subtotal: 0,
       selectedSubtotal: 0,
-      pendingOrderIdByItemId: {},
     };
   return context;
 }

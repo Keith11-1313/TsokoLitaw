@@ -13,7 +13,6 @@ export function CartPageContent() {
     items,
     selectedItemIds,
     selectedSubtotal,
-    pendingOrderIdByItemId,
     updateQuantity,
     removeItem,
     setItemSelected,
@@ -33,8 +32,7 @@ export function CartPageContent() {
       </section>
     );
 
-  const availableItemCount = items.filter((item) => !pendingOrderIdByItemId[item.id]).length;
-  const allSelected = availableItemCount > 0 && selectedItemIds.length === availableItemCount;
+  const allSelected = items.length > 0 && selectedItemIds.length === items.length;
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[1fr_22rem]">
@@ -44,11 +42,10 @@ export function CartPageContent() {
           <input
             type="checkbox"
             checked={allSelected}
-            disabled={availableItemCount === 0}
             onChange={(event) => setAllItemsSelected(event.target.checked)}
             className="size-5 accent-brand disabled:opacity-50"
           />
-          Select all available ({selectedItemIds.length}/{availableItemCount})
+          Select all ({selectedItemIds.length}/{items.length})
         </label>
         <div className="mt-4 space-y-4">
           {items.map((item) => {
@@ -63,21 +60,18 @@ export function CartPageContent() {
               .map(([id, count]) => `${item.coatingNames[id]} × ${count}`)
               .join(", ");
             const selected = selectedItemIds.includes(item.id);
-            const pendingOrderId = pendingOrderIdByItemId[item.id];
             return (
               <article
                 key={item.id}
                 className={cn(
                   "rounded-card border bg-surface p-5 transition sm:p-6",
                   selected ? "border-brand ring-2 ring-brand/10" : "border-border",
-                  pendingOrderId && "bg-surface-muted",
                 )}
               >
                 <div className="flex items-start gap-4">
                   <input
                     type="checkbox"
                     checked={selected}
-                    disabled={!!pendingOrderId}
                     onChange={(event) => setItemSelected(item.id, event.target.checked)}
                     aria-label={`Select ${item.variantLabel} for checkout`}
                     className="mt-1 size-5 shrink-0 accent-brand disabled:opacity-50"
@@ -95,14 +89,6 @@ export function CartPageContent() {
                             {item.addonName} × {item.addonQuantity} per box
                           </p>
                         ) : null}
-                        {pendingOrderId ? (
-                          <p className="mt-4 text-sm font-bold text-brand">
-                            Reserved in a pending order.{" "}
-                            <Link href={`/orders/${pendingOrderId}`} className="underline">
-                              View order
-                            </Link>
-                          </p>
-                        ) : null}
                       </div>
                       <strong className="font-display text-xl">
                         {formatPhp(unitTotal * item.quantity)}
@@ -115,13 +101,11 @@ export function CartPageContent() {
                         onChange={(quantity) => updateQuantity(item.id, quantity)}
                         min={1}
                         max={MAX_CART_LINE_QUANTITY}
-                        disabled={!!pendingOrderId}
                         className="w-40"
                       />
                       <button
                         type="button"
                         onClick={() => removeItem(item.id)}
-                        disabled={!!pendingOrderId}
                         className="flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-bold text-danger-foreground hover:bg-danger-background disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <Trash2 size={17} />
@@ -156,7 +140,7 @@ export function CartPageContent() {
             aria-disabled="true"
             className={cn(primaryButtonClassName, "mt-6 w-full cursor-not-allowed opacity-45")}
           >
-            {availableItemCount ? "Select an item to checkout" : "Items already reserved"}
+            Select an item to checkout
           </span>
         )}
         <Link href="/our-creations" className={cn(secondaryButtonClassName, "mt-3 w-full")}>
