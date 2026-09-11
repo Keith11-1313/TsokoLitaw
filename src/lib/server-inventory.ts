@@ -21,7 +21,6 @@ export interface AdminInventoryRecord {
   stockReserved: number;
   stockConsumed: number;
   stockAvailable: number;
-  isAvailable: boolean;
   updatedAt: string;
 }
 
@@ -32,7 +31,6 @@ interface InventoryRow {
   stock_total: number;
   stock_reserved: number;
   stock_sold: number;
-  is_available: boolean;
   updated_at: string;
   products: { name: string } | null;
 }
@@ -60,7 +58,9 @@ export async function getAdminInventory() {
       .order("pickup_date"),
     supabase
       .from("daily_inventory")
-      .select("id,pickup_date,product_id,stock_total,stock_reserved,stock_sold,is_available,updated_at,products(name)")
+      .select(
+        "id,pickup_date,product_id,stock_total,stock_reserved,stock_sold,updated_at,products(name)",
+      )
       .not("product_id", "is", null)
       .gte("pickup_date", getManilaDate())
       .order("pickup_date"),
@@ -79,7 +79,9 @@ export async function getAdminInventory() {
     availabilityMode: date.availability_mode as InventoryMode,
     isOpen: date.is_open,
   }));
-  const records: AdminInventoryRecord[] = ((inventoryResult.data ?? []) as unknown as InventoryRow[]).map((row) => ({
+  const records: AdminInventoryRecord[] = (
+    (inventoryResult.data ?? []) as unknown as InventoryRow[]
+  ).map((row) => ({
     id: row.id,
     pickupDate: row.pickup_date,
     productId: row.product_id,
@@ -88,7 +90,6 @@ export async function getAdminInventory() {
     stockReserved: row.stock_reserved,
     stockConsumed: row.stock_sold,
     stockAvailable: row.stock_total - row.stock_reserved - row.stock_sold,
-    isAvailable: row.is_available,
     updatedAt: row.updated_at,
   }));
 
@@ -104,7 +105,6 @@ export async function saveDailyInventory(input: {
   pickupDate: string;
   productId: string;
   stockTotal: number;
-  isAvailable: boolean;
   notes: string;
 }) {
   const { error } = await createAdminSupabaseClient().rpc("upsert_daily_inventory", {
@@ -112,7 +112,6 @@ export async function saveDailyInventory(input: {
     target_pickup_date: input.pickupDate,
     target_product_id: input.productId,
     stock_total_value: input.stockTotal,
-    available_value: input.isAvailable,
     notes_value: input.notes,
   });
   if (error) throw new Error(error.message || "Inventory could not be saved.", { cause: error });
@@ -132,5 +131,8 @@ export async function recordInventoryConsumption(input: {
     reason_value: input.reason,
     notes_value: input.notes,
   });
-  if (error) throw new Error(error.message || "Inventory consumption could not be recorded.", { cause: error });
+  if (error)
+    throw new Error(error.message || "Inventory consumption could not be recorded.", {
+      cause: error,
+    });
 }

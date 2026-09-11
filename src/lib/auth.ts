@@ -8,7 +8,6 @@ export interface AuthProfile {
   id: string;
   fullName: string;
   email: string;
-  mobileNumber: string | null;
   role: "customer" | "admin";
   deletionScheduledFor: string | null;
 }
@@ -22,7 +21,7 @@ export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, full_name, email, mobile_number, role, is_active, deletion_scheduled_for")
+    .select("id, full_name, email, role, is_active, deletion_scheduled_for")
     .eq("id", userId)
     .maybeSingle();
 
@@ -38,7 +37,6 @@ export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
     id: profile.id,
     fullName: profile.full_name,
     email: profile.email,
-    mobileNumber: profile.mobile_number,
     role: profile.role,
     deletionScheduledFor: profile.deletion_scheduled_for,
   };

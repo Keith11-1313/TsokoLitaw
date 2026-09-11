@@ -79,10 +79,12 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
   const supabase = createPublicSupabaseClient();
   const [productResult, coatingsResult, addonsResult] = await measureServerOperation(
     "commerce.catalog",
-    () => Promise.all([
-      supabase
-        .from("products")
-        .select(`
+    () =>
+      Promise.all([
+        supabase
+          .from("products")
+          .select(
+            `
           id,
           name,
           description,
@@ -93,24 +95,25 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
             piece_count,
             sort_order
           )
-        `)
-        .eq("is_active", true)
-        .eq("product_variants.is_active", true)
-        .order("created_at", { ascending: true })
-        .order("sort_order", { referencedTable: "product_variants", ascending: true })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from("coatings")
-        .select()
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true }),
-      supabase
-        .from("addons")
-        .select("id, name, slug, price")
-        .eq("is_active", true)
-        .order("created_at", { ascending: true }),
-    ]),
+        `,
+          )
+          .eq("is_active", true)
+          .eq("product_variants.is_active", true)
+          .order("created_at", { ascending: true })
+          .order("sort_order", { referencedTable: "product_variants", ascending: true })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("coatings")
+          .select()
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("addons")
+          .select("id, name, slug, price")
+          .eq("is_active", true)
+          .order("created_at", { ascending: true }),
+      ]),
   );
 
   if (productResult.error || !productResult.data) {
@@ -134,12 +137,14 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
         return [];
       }
 
-      return [{
-        id: variant.id,
-        label: variant.name,
-        pieceCount,
-        price: pieceCount * piecePrice,
-      }];
+      return [
+        {
+          id: variant.id,
+          label: variant.name,
+          pieceCount,
+          price: pieceCount * piecePrice,
+        },
+      ];
     });
   const coatings = (coatingsResult.data ?? []).map((coating, index) => ({
     id: coating.id,
@@ -211,7 +216,10 @@ function addCalendarDays(value: string, days: number) {
   const date = new Date(`${value}T00:00:00+08:00`);
   date.setUTCDate(date.getUTCDate() + days);
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit",
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   }).format(date);
 }
 
@@ -236,10 +244,12 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
   const supabase = createPublicSupabaseClient();
   const [datesResult, settingsResult, inventoryResult] = await measureServerOperation(
     "commerce.pickup-definitions",
-    () => Promise.all([
-      supabase
-        .from("pickup_dates")
-        .select(`
+    () =>
+      Promise.all([
+        supabase
+          .from("pickup_dates")
+          .select(
+            `
           id,
           pickup_date,
           availability_mode,
@@ -257,14 +267,15 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
               )
             )
           )
-        `)
-        .eq("is_open", true)
-        .gte("pickup_date", getManilaDate())
-        .order("pickup_date", { ascending: true })
-        .order("sort_order", { referencedTable: "pickup_windows", ascending: true }),
-      supabase.rpc("get_public_pickup_settings"),
-      supabase.rpc("get_public_pickup_inventory"),
-    ]),
+        `,
+          )
+          .eq("is_open", true)
+          .gte("pickup_date", getManilaDate())
+          .order("pickup_date", { ascending: true })
+          .order("sort_order", { referencedTable: "pickup_windows", ascending: true }),
+        supabase.rpc("get_public_pickup_settings"),
+        supabase.rpc("get_public_pickup_inventory"),
+      ]),
   );
 
   if (datesResult.error || settingsResult.error || inventoryResult.error) {
@@ -288,58 +299,74 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
     Number(settings.minimum_lead_days) + (currentTime >= cutoff ? 1 : 0),
   );
   const remainingPiecesByDate = new Map<string, number>(
-    (inventoryResult.data ?? []).map((row: { pickup_date: string; available_pieces: number }): [string, number] => [
-      String(row.pickup_date), Number(row.available_pieces),
-    ]),
+    (inventoryResult.data ?? []).map(
+      (row: { pickup_date: string; available_pieces: number }): [string, number] => [
+        String(row.pickup_date),
+        Number(row.available_pieces),
+      ],
+    ),
   );
 
   const dates: PickupDateRow[] = datesResult.data ?? [];
   const checkoutDates = dates.flatMap((date) => {
     if (date.pickup_date === today && date.availability_mode === "MADE_TO_ORDER") return [];
-    if (date.availability_mode === "READY_STOCK" && !remainingPiecesByDate.has(date.pickup_date)) return [];
-    if (date.pickup_date === today && date.availability_mode === "HYBRID"
-      && !remainingPiecesByDate.has(date.pickup_date)) return [];
-    if (date.pickup_date > today
-      && (date.availability_mode === "MADE_TO_ORDER" || date.availability_mode === "HYBRID")
-      && date.pickup_date < earliestAdvanceDate) return [];
+    if (date.availability_mode === "READY_STOCK" && !remainingPiecesByDate.has(date.pickup_date))
+      return [];
+    if (
+      date.pickup_date === today &&
+      date.availability_mode === "HYBRID" &&
+      !remainingPiecesByDate.has(date.pickup_date)
+    )
+      return [];
+    if (
+      date.pickup_date > today &&
+      (date.availability_mode === "MADE_TO_ORDER" || date.availability_mode === "HYBRID") &&
+      date.pickup_date < earliestAdvanceDate
+    )
+      return [];
 
     const checkoutWindows = (date.pickup_windows ?? [])
       .filter((window) => date.pickup_date !== today || window.end_time.slice(0, 5) > currentTime)
       .sort((left, right) => left.sort_order - right.sort_order)
       .flatMap((window) => {
         const locations = (window.pickup_window_locations ?? [])
-          .flatMap((entry) => entry.pickup_locations ? [entry.pickup_locations] : [])
+          .flatMap((entry) => (entry.pickup_locations ? [entry.pickup_locations] : []))
           .sort((left, right) => left.sort_order - right.sort_order)
           .map((location) => ({ id: location.id, name: location.name }));
 
         if (!locations.length) return [];
-        return [{
-          id: window.id,
-          dateId: date.id,
-          label: `${formatPickupTime(window.start_time)}–${formatPickupTime(window.end_time)}`,
-          locations,
-        }];
+        return [
+          {
+            id: window.id,
+            dateId: date.id,
+            label: `${formatPickupTime(window.start_time)} to ${formatPickupTime(window.end_time)}`,
+            locations,
+          },
+        ];
       });
 
     if (!checkoutWindows.length) return [];
-    return [{
-      id: date.id,
-      value: date.pickup_date,
-      label: formatPickupDate(date.pickup_date),
-      availabilityMode: date.availability_mode,
-      remainingPieces: date.availability_mode === "READY_STOCK"
-        || (date.availability_mode === "HYBRID" && date.pickup_date === today)
-        ? remainingPiecesByDate.get(date.pickup_date) ?? null
-        : null,
-      windows: checkoutWindows,
-    }];
+    return [
+      {
+        id: date.id,
+        value: date.pickup_date,
+        label: formatPickupDate(date.pickup_date),
+        availabilityMode: date.availability_mode,
+        remainingPieces:
+          date.availability_mode === "READY_STOCK" ||
+          (date.availability_mode === "HYBRID" && date.pickup_date === today)
+            ? (remainingPiecesByDate.get(date.pickup_date) ?? null)
+            : null,
+        windows: checkoutWindows,
+      },
+    ];
   });
 
   return {
     dates: checkoutDates,
     graceMinutes: Number(settings.pickup_grace_minutes),
-    operatingDays: "Monday–Saturday",
-    operatingHours: `${formatPickupTime(settings.operating_start)}–${formatPickupTime(settings.operating_end)}`,
+    operatingDays: "Monday to Saturday",
+    operatingHours: `${formatPickupTime(settings.operating_start)} to ${formatPickupTime(settings.operating_end)}`,
   };
 }
 

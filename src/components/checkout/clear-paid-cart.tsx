@@ -3,15 +3,15 @@
 import { useEffect, useRef } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 
-export function ClearPaidCart() {
+export function ClearPaidCart({ orderId }: { orderId: string }) {
   const { isReady, removePaidCheckoutItems } = useCart();
-  const hasCleared = useRef(false);
+  const clearedOrder = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!isReady || hasCleared.current) return;
-    hasCleared.current = true;
-    removePaidCheckoutItems();
-  }, [isReady, removePaidCheckoutItems]);
+    if (!isReady || clearedOrder.current === orderId) return;
+    clearedOrder.current = orderId;
+    removePaidCheckoutItems(orderId);
+  }, [isReady, removePaidCheckoutItems, orderId]);
 
   return null;
 }

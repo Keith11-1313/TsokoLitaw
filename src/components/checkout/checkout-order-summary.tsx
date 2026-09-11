@@ -27,7 +27,7 @@ export function CheckoutOrderSummary({
     addon:
       item.addonQuantity > 0
         ? {
-            name: item.addonName ?? "Add-on",
+            name: item.addonName ?? "Extra",
             quantity: item.addonQuantity,
             lineTotal: item.addonPrice * item.addonQuantity,
           }

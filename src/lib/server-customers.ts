@@ -8,7 +8,6 @@ export interface AdminCustomerSummary {
   fullName: string;
   email: string;
   accountRole: "customer" | "admin";
-  mobileNumber: string | null;
   isActive: boolean;
   joinedAt: string;
   completedOrders: number;
@@ -25,7 +24,6 @@ interface AdminCustomerSummaryRow {
   full_name: string;
   email: string;
   account_role: "customer" | "admin";
-  mobile_number: string | null;
   is_active: boolean;
   joined_at: string;
   completed_orders: number | string;
@@ -40,12 +38,13 @@ interface AdminCustomerSummaryRow {
 export async function getAdminCustomerSummaries(adminId: string, search = "") {
   const normalizedSearch = search.trim().slice(0, 100);
   const supabase = createAdminSupabaseClient();
-  const { data, error } = await measureServerOperation("admin.customers.list", () => supabase
-    .rpc("get_admin_customer_summaries", {
+  const { data, error } = await measureServerOperation("admin.customers.list", () =>
+    supabase.rpc("get_admin_customer_summaries", {
       target_admin_id: adminId,
       search_value: normalizedSearch || null,
       result_limit: 100,
-    }));
+    }),
+  );
 
   if (error) throw new Error("Admin customer summaries could not be loaded.", { cause: error });
 
@@ -54,7 +53,6 @@ export async function getAdminCustomerSummaries(adminId: string, search = "") {
     fullName: customer.full_name,
     email: customer.email,
     accountRole: customer.account_role,
-    mobileNumber: customer.mobile_number,
     isActive: customer.is_active,
     joinedAt: customer.joined_at,
     completedOrders: Number(customer.completed_orders),

@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatPhp } from "@/lib/commerce";
 import type { AdminOrderSummary } from "@/lib/server-orders";
+import { getOrderStatusLabelOverride } from "@/lib/payment-status";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-PH", {
@@ -52,7 +53,14 @@ export function RecentOrdersTable({ orders }: { orders: AdminOrderSummary[] }) {
                   </p>
                 </div>
                 <div className="mt-3">
-                  <StatusBadge status={order.status} />
+                  <StatusBadge
+                    status={order.status}
+                    label={getOrderStatusLabelOverride({
+                      status: order.status,
+                      paymentStatus: order.paymentStatus,
+                      paymentWindowOpen: order.paymentWindowOpen,
+                    })}
+                  />
                 </div>
                 <p className="mt-3 text-sm font-bold text-foreground">{order.customerName}</p>
                 <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
@@ -85,7 +93,14 @@ export function RecentOrdersTable({ orders }: { orders: AdminOrderSummary[] }) {
                     </td>
                     <td className="px-4 font-bold text-foreground">{formatPhp(order.total)}</td>
                     <td className="px-4">
-                      <StatusBadge status={order.status} />
+                      <StatusBadge
+                        status={order.status}
+                        label={getOrderStatusLabelOverride({
+                          status: order.status,
+                          paymentStatus: order.paymentStatus,
+                          paymentWindowOpen: order.paymentWindowOpen,
+                        })}
+                      />
                     </td>
                     <td className="px-4 text-muted-foreground">{formatDate(order.orderedAt)}</td>
                   </tr>

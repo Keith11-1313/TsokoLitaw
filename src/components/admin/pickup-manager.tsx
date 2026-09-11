@@ -543,7 +543,7 @@ function PickupDateCard({
           >
             <span className="flex items-center gap-2">
               <Clock size={16} className="text-brand" />
-              {formatTime(window.startTime)}–{formatTime(window.endTime)}
+              {formatTime(window.startTime)} to {formatTime(window.endTime)}
             </span>
             <span className="flex items-center gap-2">
               <MapPin size={16} className="text-brand" />

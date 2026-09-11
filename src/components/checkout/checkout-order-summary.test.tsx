@@ -67,7 +67,7 @@ describe("CheckoutOrderSummary", () => {
       />,
     );
     expect(screen.getByText("In this box")).toBeTruthy();
-    expect(screen.queryByText("Add-on per box")).toBeNull();
+    expect(screen.queryByText("Extra per box")).toBeNull();
     expect(screen.queryByText("Sea salt cream × 1")).toBeNull();
   });
 });

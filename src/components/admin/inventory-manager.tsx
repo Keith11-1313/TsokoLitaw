@@ -115,7 +115,7 @@ function StockEditor({
               label="Choose date"
               name="pickupDate"
               required
-              placeholder="Choose a published ready-stock date"
+              placeholder="Choose a published Ready stock date"
               options={dates.map((date) => ({
                 value: date.pickupDate,
                 label: `${formatDate(date.pickupDate)} · ${modeLabel(date.availabilityMode)}`,
@@ -249,7 +249,7 @@ function PublishStockModal({
         <div className="flex items-start justify-between gap-4 px-5 pt-5 sm:px-7 sm:pt-7">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
-              Ready-stock inventory
+              Ready stock inventory
             </p>
             <h2 id="publish-stock-modal-title" className="mt-1 font-display text-3xl">
               Publish stock for another date

@@ -39,10 +39,7 @@ describe("configuration calculations", () => {
       { id: "plain", pricePerPiece: 2 },
     ];
 
-    expect(calculateConfiguredCoatingCharge(
-      { cocoa: 2, milk: 2, plain: 2 },
-      coatings,
-    )).toBe(24);
+    expect(calculateConfiguredCoatingCharge({ cocoa: 2, milk: 2, plain: 2 }, coatings)).toBe(24);
     expect(calculateConfiguredCoatingCharge({ milk: 4 }, coatings)).toBe(24);
   });
 
@@ -58,13 +55,15 @@ describe("configuration calculations", () => {
   });
 
   it("applies cart quantity after calculating one configured box", () => {
-    expect(calculateCartLineTotal({
-      boxPrice: 50,
-      extraCoatingCharge: 5,
-      addonQuantity: 1,
-      addonPrice: 18,
-      quantity: 3,
-    })).toBe(219);
+    expect(
+      calculateCartLineTotal({
+        boxPrice: 50,
+        extraCoatingCharge: 5,
+        addonQuantity: 1,
+        addonPrice: 18,
+        quantity: 3,
+      }),
+    ).toBe(219);
   });
 });
 
@@ -76,44 +75,79 @@ describe("server-authoritative cart pricing", () => {
     piecePrice: 10,
     variants: [{ id: "variant-4", label: "Box of 4", pieceCount: 4 as const, price: 40 }],
     coatings: [
-      { id: "cocoa", name: "Cocoa", description: "", imageSrc: "", pricePerPiece: 4, isDefault: true, tone: "cocoa-coating" as const },
-      { id: "milk", name: "Milk", description: "", imageSrc: "", pricePerPiece: 7, isDefault: false, tone: "milk" as const },
+      {
+        id: "cocoa",
+        name: "Cocoa",
+        description: "",
+        imageSrc: "",
+        pricePerPiece: 4,
+        isDefault: true,
+        tone: "cocoa-coating" as const,
+      },
+      {
+        id: "milk",
+        name: "Milk",
+        description: "",
+        imageSrc: "",
+        pricePerPiece: 7,
+        isDefault: false,
+        tone: "milk" as const,
+      },
     ],
     addons: [{ id: "cream", name: "Cream", slug: "cream", price: 18 }],
   };
 
   it("ignores browser prices and calculates current catalog totals", () => {
-    const priced = priceCheckoutCart([{
-      variantId: "variant-4",
-      coatingCounts: { cocoa: 2, milk: 2 },
-      addonId: "cream",
-      addonQuantity: 1,
-      quantity: 2,
-    }], catalog);
+    const priced = priceCheckoutCart(
+      [
+        {
+          variantId: "variant-4",
+          coatingCounts: { cocoa: 2, milk: 2 },
+          addonId: "cream",
+          addonQuantity: 1,
+          quantity: 2,
+        },
+      ],
+      catalog,
+    );
 
     expect(priced.subtotal).toBe(160);
     expect(priced.lines[0]).toMatchObject({
       baseUnitPrice: 40,
-      extraCoatingTotal: 22,
+      coatingTotal: 22,
       lineSubtotal: 160,
     });
   });
 
   it("rejects incomplete allocations and unavailable identifiers", () => {
-    expect(() => priceCheckoutCart([{
-      variantId: "variant-4",
-      coatingCounts: { cocoa: 3 },
-      addonId: null,
-      addonQuantity: 0,
-      quantity: 1,
-    }], catalog)).toThrow("Every piece");
+    expect(() =>
+      priceCheckoutCart(
+        [
+          {
+            variantId: "variant-4",
+            coatingCounts: { cocoa: 3 },
+            addonId: null,
+            addonQuantity: 0,
+            quantity: 1,
+          },
+        ],
+        catalog,
+      ),
+    ).toThrow("Every piece");
 
-    expect(() => priceCheckoutCart([{
-      variantId: "missing",
-      coatingCounts: { cocoa: 4 },
-      addonId: null,
-      addonQuantity: 0,
-      quantity: 1,
-    }], catalog)).toThrow("no longer available");
+    expect(() =>
+      priceCheckoutCart(
+        [
+          {
+            variantId: "missing",
+            coatingCounts: { cocoa: 4 },
+            addonId: null,
+            addonQuantity: 0,
+            quantity: 1,
+          },
+        ],
+        catalog,
+      ),
+    ).toThrow("no longer available");
   });
 });

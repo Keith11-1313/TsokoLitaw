@@ -33,7 +33,6 @@ export function CheckoutContent({
   const checkoutKeyRef = useRef<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [customerName, setCustomerName] = useState(profile.fullName);
-  const [customerMobile, setCustomerMobile] = useState(profile.mobileNumber ?? "");
   const [customerNotes, setCustomerNotes] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [useReward, setUseReward] = useState(false);
@@ -71,7 +70,6 @@ export function CheckoutContent({
         pickupWindowId: selectedWindow.id,
         pickupLocationId: locationId,
         customerName,
-        customerMobile,
         customerNotes,
         termsAccepted,
         loyaltyRewardId:
@@ -88,7 +86,7 @@ export function CheckoutContent({
       });
       setSubmission(result);
       if (result.status === "success") {
-        markSelectedItemsPendingCheckout();
+        markSelectedItemsPendingCheckout(result.orderId);
         window.location.assign(result.checkoutUrl);
       }
     });
@@ -108,10 +106,10 @@ export function CheckoutContent({
   if (resumeOrderId) {
     return (
       <section className="mx-auto max-w-2xl rounded-card border border-border bg-surface p-7 text-center sm:p-10">
-        <h2 className="font-display text-3xl">Payment was cancelled</h2>
+        <h2 className="font-display text-3xl">You’re back at checkout</h2>
         <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
-          No payment was confirmed. Reopen the same pending order below so another order and stock
-          reservation are not created.
+          Your order is still waiting for payment. Continue with the same order so you do not
+          reserve the items twice.
         </p>
         {submission?.status === "error" ? (
           <p
@@ -123,7 +121,7 @@ export function CheckoutContent({
         ) : null}
         <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
           <PrimaryButton type="button" onClick={resumePayment} disabled={isPending}>
-            {isPending ? "Reopening secure payment…" : "Return to secure payment"}
+            Continue to payment
           </PrimaryButton>
           <Link
             href="/"
@@ -170,7 +168,6 @@ export function CheckoutContent({
   const customerDetailsValid =
     customerName.trim().length >= 2 &&
     customerName.trim().length <= 100 &&
-    customerMobile.trim().length <= 30 &&
     customerNotes.trim().length <= 500;
 
   return (
@@ -204,19 +201,6 @@ export function CheckoutContent({
               label="Google email"
               inputProps={{ defaultValue: profile.email, readOnly: true }}
             />
-            <FormField
-              id="checkout-mobile"
-              label="Mobile number (optional)"
-              error={submission?.fieldErrors?.customerMobile}
-              hint="Add a number only if you also want pickup updates by phone."
-              inputProps={{
-                value: customerMobile,
-                onChange: (event) => setCustomerMobile(event.target.value),
-                placeholder: "+63 900 000 0000",
-                autoComplete: "tel",
-                maxLength: 30,
-              }}
-            />
           </div>
         </section>
 
@@ -229,8 +213,8 @@ export function CheckoutContent({
               Loyalty reward
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Use one reward for the base price of one 4-piece box. Coating and add-on charges
-              remain payable.
+              Use one reward for the base price of one 4 piece box. Coatings and extras are still
+              charged separately.
             </p>
             <label className="mt-5 flex items-start gap-3 rounded-control bg-success-background p-4 text-sm text-success-foreground">
               <input
@@ -241,11 +225,11 @@ export function CheckoutContent({
                 className="mt-0.5 size-4 accent-brand"
               />
               <span>
-                <strong className="block">Apply free 4-piece reward</strong>
+                <strong className="block">Apply free 4 piece reward</strong>
                 <span className="mt-1 block text-xs">
                   {eligibleRewardBoxes.length
                     ? `${loyalty.availableRewards.length} reward${loyalty.availableRewards.length === 1 ? "" : "s"} available.`
-                    : "Select a 4-piece box in your cart to use this reward."}
+                    : "Add a 4 piece box to your cart to use this reward."}
                 </span>
               </span>
             </label>
@@ -287,8 +271,8 @@ export function CheckoutContent({
                   className={`sm:col-span-2 rounded-control p-4 text-sm leading-6 ${exceedsPreparedStock ? "bg-danger-background font-bold text-danger-foreground" : "bg-success-background text-success-foreground"}`}
                 >
                   {exceedsPreparedStock
-                    ? `This cart needs ${requestedPieces} pieces, but only ${remainingPieces} remain for this pickup date. Return to your cart and reduce the box quantities or select another date.`
-                    : `${remainingPieces} prepared pieces remain for this date. Your selected cart uses ${requestedPieces}.`}
+                    ? `Your cart needs ${requestedPieces} pieces, but only ${remainingPieces} are available for this date. Remove some boxes or choose another date.`
+                    : `${remainingPieces} pieces are available for this date. Your cart needs ${requestedPieces}.`}
                 </div>
               ) : null}
               <FormField
@@ -309,8 +293,8 @@ export function CheckoutContent({
               role="status"
               className="mt-6 rounded-control bg-warning-background p-4 text-sm leading-6 text-warning-foreground"
             >
-              No pickup schedule is currently published. Please check again after TsokoLitaw
-              announces its next campus availability.
+              There are no pickup dates available right now. Please check again after TsokoLitaw
+              announces the next campus schedule.
             </div>
           )}
         </section>
@@ -331,7 +315,7 @@ export function CheckoutContent({
             <Link className="font-bold underline" href="/privacy">
               Privacy Policy
             </Link>
-            , allergen notice, pickup window, and no-show policy.
+            , allergen notice, pickup time, and missed pickup policy.
           </span>
         </label>
         {submission?.status === "error" ? (
@@ -363,11 +347,7 @@ export function CheckoutContent({
             ? "Pickup unavailable"
             : exceedsPreparedStock
               ? "Reduce cart quantities"
-              : isPending
-                ? "Opening secure payment…"
-                : submission?.status === "success"
-                  ? "Opening PayMongo…"
-                  : "Continue to payment"}
+              : "Continue to payment"}
         </PrimaryButton>
       </form>
 

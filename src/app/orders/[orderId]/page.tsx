@@ -12,6 +12,9 @@ import { requireCustomer } from "@/lib/auth";
 import { formatPhp } from "@/lib/commerce";
 import { getCustomerOrderDetail } from "@/lib/server-orders";
 import { getCustomerReviewContext } from "@/lib/server-reviews";
+import { ClearPaidCart } from "@/components/checkout/clear-paid-cart";
+import { ResumePaymentButton } from "@/components/orders/resume-payment-button";
+import { getOrderStatusLabelOverride, getPaymentStatusLabel } from "@/lib/payment-status";
 
 export const metadata: Metadata = { title: "Order Detail | TsokoLitaw" };
 
@@ -20,31 +23,146 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
   const profile = await requireCustomer(`/orders/${orderId}`);
   const order = await getCustomerOrderDetail(profile.id, orderId);
   if (!order) notFound();
-  const reviewContext = order.status === "COMPLETED"
-    ? await getCustomerReviewContext(profile.id, orderId)
-    : null;
+  const reviewContext =
+    order.status === "COMPLETED" ? await getCustomerReviewContext(profile.id, orderId) : null;
 
-  const pickupDate = new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", year: "numeric", month: "long", day: "numeric" }).format(new Date(`${order.pickupDate}T00:00:00+08:00`));
+  const pickupDate = new Intl.DateTimeFormat("en-PH", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(`${order.pickupDate}T00:00:00+08:00`));
   return (
     <CustomerPageShell activePath="/orders">
+      {order.paymentStatus === "PAID" ? <ClearPaidCart orderId={order.id} /> : null}
       <SiteContainer className="py-8 sm:py-12">
-        <Link href="/orders" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-brand"><ArrowLeft aria-hidden="true" size={18} />My orders</Link>
+        <Link
+          href="/orders"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-brand"
+        >
+          <ArrowLeft aria-hidden="true" size={18} />
+          My orders
+        </Link>
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex flex-wrap items-center gap-3"><h1 className="font-display text-4xl sm:text-5xl">{order.orderNumber}</h1><StatusBadge status={order.status} label={["PAID", "CONFIRMED"].includes(order.status) ? "Received" : undefined} /></div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-4xl sm:text-5xl">{order.orderNumber}</h1>
+            <StatusBadge
+              status={order.status}
+              label={getOrderStatusLabelOverride({
+                status: order.status,
+                paymentStatus: order.paymentStatus,
+                paymentWindowOpen: order.paymentWindowOpen,
+              })}
+            />
+          </div>
           <p className="font-display text-2xl">{formatPhp(order.total)}</p>
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_22rem]">
-          <section className="rounded-card border border-border bg-surface p-5 sm:p-8" aria-labelledby="items-title">
-            <h2 id="items-title" className="font-display text-2xl">Order items</h2>
+          <section
+            className="rounded-card border border-border bg-surface p-5 sm:p-8"
+            aria-labelledby="items-title"
+          >
+            <h2 id="items-title" className="font-display text-2xl">
+              Order items
+            </h2>
             <OrderLineItems items={order.items} className="mt-5" />
-            <div className="mt-6 grid gap-4 border-t border-border pt-6 text-sm sm:grid-cols-2"><p className="flex gap-2"><CalendarDays aria-hidden="true" size={18} />{pickupDate} · {order.pickupWindow}</p><p className="flex gap-2"><MapPin aria-hidden="true" size={18} />{order.pickupLocation}</p></div>
+            <div className="mt-6 grid gap-4 border-t border-border pt-6 text-sm sm:grid-cols-2">
+              <p className="flex gap-2">
+                <CalendarDays aria-hidden="true" size={18} />
+                {pickupDate} · {order.pickupWindow}
+              </p>
+              <p className="flex gap-2">
+                <MapPin aria-hidden="true" size={18} />
+                {order.pickupLocation}
+              </p>
+            </div>
           </section>
 
           <aside className="space-y-5">
-            <section className="rounded-card border border-border bg-surface p-6"><h2 className="font-display text-2xl">Payment</h2><dl className="mt-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Status</dt><dd className="font-bold">{order.paymentStatus.toLowerCase()}</dd></div></dl></section>
-            {reviewContext ? <section className="rounded-card border border-border bg-surface p-6"><h2 className="font-display text-2xl">Share your experience</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Each completed order can receive one customer review.</p><OrderReviewModal orderId={reviewContext.orderId} orderNumber={reviewContext.orderNumber} itemSummary={reviewContext.itemSummary} existingReview={reviewContext.existingReview} /></section> : null}
-            {order.canCancel ? <section className="rounded-card border border-danger-foreground/30 bg-surface p-6"><h2 className="font-display text-2xl text-danger-foreground">Cancel unpaid order</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">You may cancel while payment is still pending.</p><div className="mt-5"><OrderActions orderId={order.id} orderNumber={order.orderNumber} /></div></section> : order.paymentStatus === "PAID" ? <section className="rounded-card border border-border bg-surface p-6"><h2 className="font-display text-2xl">Paid-order concerns</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">For cancellation or settlement concerns involving a paid order, coordinate directly with TsokoLitaw in person. The website does not process refunds.</p></section> : null}
+            <section className="rounded-card border border-border bg-surface p-6">
+              <h2 className="font-display text-2xl">Payment</h2>
+              <dl className="mt-4 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">Status</dt>
+                  <dd className="font-bold">
+                    {getPaymentStatusLabel(
+                      order.paymentStatus,
+                      order.paymentMethod,
+                      order.paymentWindowOpen,
+                    )}
+                  </dd>
+                </div>
+                <div className="mt-2 flex justify-between gap-4">
+                  <dt>Method</dt>
+                  <dd>
+                    {order.total === 0
+                      ? "Loyalty reward"
+                      : order.paymentMethod === "manual_gcash"
+                        ? "Manual GCash"
+                        : "PayMongo"}
+                  </dd>
+                </div>
+              </dl>
+              {order.paymentMethod === "manual_gcash" &&
+              order.total > 0 &&
+              order.paymentStatus !== "FAILED" &&
+              (order.paymentStatus !== "PENDING" || order.paymentWindowOpen) ? (
+                <Link
+                  href={`/orders/${order.id}/payment`}
+                  className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand"
+                >
+                  {order.paymentStatus === "PENDING"
+                    ? "Continue GCash payment"
+                    : order.paymentStatus === "UNDER_REVIEW"
+                      ? "View payment review"
+                      : "View payment details"}
+                </Link>
+              ) : null}
+              {order.paymentMethod === "paymongo" &&
+              order.status === "PENDING_PAYMENT" &&
+              order.paymentStatus === "PENDING" &&
+              order.paymentWindowOpen ? (
+                <ResumePaymentButton orderId={order.id} />
+              ) : null}
+            </section>
+            {reviewContext ? (
+              <section className="rounded-card border border-border bg-surface p-6">
+                <h2 className="font-display text-2xl">Share your experience</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Each completed order can receive one customer review.
+                </p>
+                <OrderReviewModal
+                  orderId={reviewContext.orderId}
+                  orderNumber={reviewContext.orderNumber}
+                  itemSummary={reviewContext.itemSummary}
+                  existingReview={reviewContext.existingReview}
+                />
+              </section>
+            ) : null}
+            {order.canCancel ? (
+              <section className="rounded-card border border-danger-foreground/30 bg-surface p-6">
+                <h2 className="font-display text-2xl text-danger-foreground">Cancel this order</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  You can cancel this order if you have not paid yet.
+                </p>
+                <div className="mt-5">
+                  <OrderActions
+                    orderId={order.id}
+                    orderNumber={order.orderNumber}
+                    manualPayment={order.paymentMethod === "manual_gcash"}
+                  />
+                </div>
+              </section>
+            ) : order.paymentStatus === "PAID" ? (
+              <section className="rounded-card border border-border bg-surface p-6">
+                <h2 className="font-display text-2xl">Need help with this order?</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Please speak with TsokoLitaw in person if you have a concern about a paid order.
+                  Refunds are not handled through the website.
+                </p>
+              </section>
+            ) : null}
           </aside>
         </div>
       </SiteContainer>

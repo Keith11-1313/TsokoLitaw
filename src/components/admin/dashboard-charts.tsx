@@ -53,7 +53,7 @@ export function DashboardCharts({
                   className="truncate text-center text-[0.65rem] font-bold text-muted-foreground"
                   title={formatPhp(point.value)}
                 >
-                  {point.value > 0 ? formatPhp(point.value) : "—"}
+                  {formatPhp(point.value)}
                 </span>
                 <div className="flex h-32 items-end rounded-t-control bg-surface-muted sm:h-40">
                   <span

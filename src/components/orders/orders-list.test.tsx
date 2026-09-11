@@ -13,11 +13,12 @@ const order: CustomerOrderSummary = {
   orderNumber: "TL-0030",
   status: "PENDING_PAYMENT",
   paymentStatus: "PENDING",
+  paymentWindowOpen: true,
   total: 400.4,
   orderedAt: "2026-09-04T13:14:00+08:00",
   pickupDate: "2026-09-11",
-  pickupWindow: "7:00 AM–8:00 AM",
-  pickupLocation: "UCC Congress — 3rd Floor",
+  pickupWindow: "7:00 AM to 8:00 AM",
+  pickupLocation: "UCC Congress, 3rd Floor",
   itemSummary: "This flattened fallback must not be shown to customers.",
   itemLines: [
     {
@@ -35,17 +36,24 @@ const order: CustomerOrderSummary = {
 
 describe("OrdersList", () => {
   it("shows structured item details instead of a flattened order paragraph", () => {
-    const { container } = render(<OrdersList orders={[order]} nextCursor={null} showingOlderPage={false} />);
+    const { container } = render(
+      <OrdersList orders={[order]} nextCursor={null} showingOlderPage={false} />,
+    );
 
     expect(screen.getByText("TsokoMini (4 pcs)")).toBeTruthy();
-    expect(Array.from(container.querySelectorAll("p")).some((element) => (
-      element.textContent?.includes("2 boxes")
-      && element.textContent.includes("₱60.00")
-      && element.textContent.includes("each")
-    ))).toBe(true);
+    expect(
+      Array.from(container.querySelectorAll("p")).some(
+        (element) =>
+          element.textContent?.includes("2 boxes") &&
+          element.textContent.includes("₱60.00") &&
+          element.textContent.includes("each"),
+      ),
+    ).toBe(true);
     expect(screen.getByText("In each box")).toBeTruthy();
-    expect(screen.getByText("Milk × 1 · Palitaw × 1 · Crushed Nuts × 1 · Sesame Seeds × 1")).toBeTruthy();
-    expect(screen.getByText("Add-on per box")).toBeTruthy();
+    expect(
+      screen.getByText("Milk × 1 · Palitaw × 1 · Crushed Nuts × 1 · Sesame Seeds × 1"),
+    ).toBeTruthy();
+    expect(screen.getByText("Extra per box")).toBeTruthy();
     expect(screen.getByText("Sea salt cream × 10")).toBeTruthy();
     expect(screen.getByText("View price per box")).toBeTruthy();
     expect(screen.queryByText(order.itemSummary)).toBeNull();

@@ -4,6 +4,8 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getCommerceCatalog } from "@/lib/server-commerce";
 import { priceCheckoutCart } from "@/lib/commerce";
 import type { CheckoutCartInput } from "@/types/commerce";
+import { getPaymentMethod } from "@/lib/payment-method";
+import { createGcashQrPayload } from "@/lib/gcash-qr";
 
 export interface CreatePendingOrderInput {
   userId: string;
@@ -11,7 +13,6 @@ export interface CreatePendingOrderInput {
   pickupWindowId: string;
   pickupLocationId: string;
   customerName: string;
-  customerMobile: string;
   customerNotes: string;
   termsAccepted: boolean;
   loyaltyRewardId: string | null;
@@ -48,8 +49,12 @@ export async function createPendingOrder(
   }
   const rewardDiscount = input.loyaltyRewardId
     ? pricedCart.lines
-      .filter((line) => line.pieceCount === 4)
-      .reduce<number | null>((lowest, line) => lowest === null ? line.baseUnitPrice : Math.min(lowest, line.baseUnitPrice), null)
+        .filter((line) => line.pieceCount === 4)
+        .reduce<number | null>(
+          (lowest, line) =>
+            lowest === null ? line.baseUnitPrice : Math.min(lowest, line.baseUnitPrice),
+          null,
+        )
     : 0;
   if (input.loyaltyRewardId && rewardDiscount === null) {
     throw new Error("A free 4-piece reward requires an eligible 4-piece box.");
@@ -63,7 +68,7 @@ export async function createPendingOrder(
     variant_name: line.variantName,
     piece_count: line.pieceCount,
     base_unit_price: line.baseUnitPrice,
-    extra_coating_total: line.extraCoatingTotal,
+    coating_total: line.coatingTotal,
     quantity: line.quantity,
     line_subtotal: line.lineSubtotal,
     coatings: line.coatings.map((coating) => ({
@@ -71,24 +76,31 @@ export async function createPendingOrder(
       name: coating.name,
       piece_count: coating.pieceCount,
       additional_price: coating.additionalPrice,
-      is_included_type: coating.isIncludedType,
     })),
-    addon: line.addon ? {
-      id: line.addon.id,
-      name: line.addon.name,
-      unit_price: line.addon.unitPrice,
-      quantity: line.addon.quantity,
-      line_total: line.addon.lineTotal,
-    } : null,
+    addon: line.addon
+      ? {
+          id: line.addon.id,
+          name: line.addon.name,
+          unit_price: line.addon.unitPrice,
+          quantity: line.addon.quantity,
+          line_total: line.addon.lineTotal,
+        }
+      : null,
   }));
 
-  const { data, error } = await supabase.rpc("create_pending_order", {
+  const method = getPaymentMethod();
+  const qrPayload =
+    method === "manual_gcash" && total > 0
+      ? createGcashQrPayload(process.env.GCASH_BASE_QR_PAYLOAD ?? "", total)
+      : "";
+  const { data, error } = await supabase.rpc("create_checkout_order", {
+    payment_method_value: method,
+    qr_payload_value: qrPayload,
     target_user_id: input.userId,
     checkout_key: input.checkoutKey,
     selected_pickup_window_id: input.pickupWindowId,
     selected_pickup_location_id: input.pickupLocationId,
     customer_name_value: input.customerName,
-    customer_mobile_value: input.customerMobile,
     customer_notes_value: input.customerNotes,
     priced_lines: pricedLines,
     subtotal_value: pricedCart.subtotal,

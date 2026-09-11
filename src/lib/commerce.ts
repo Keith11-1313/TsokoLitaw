@@ -1,4 +1,11 @@
-import type { BoxVariant, CartLineItem, CheckoutCartInput, Coating, CommerceCatalog, ServerPricedCart } from "@/types/commerce";
+import type {
+  BoxVariant,
+  CartLineItem,
+  CheckoutCartInput,
+  Coating,
+  CommerceCatalog,
+  ServerPricedCart,
+} from "@/types/commerce";
 
 export const INITIAL_PIECE_PRICE = 10;
 
@@ -22,8 +29,9 @@ export function createBoxVariants(piecePrice: number): readonly BoxVariant[] {
 export const BOX_VARIANTS = createBoxVariants(INITIAL_PIECE_PRICE);
 
 export function getBoxVariantLabel(pieceCount: number) {
-  return BOX_SIZES.find((variant) => variant.pieceCount === pieceCount)?.label
-    ?? `Box of ${pieceCount}`;
+  return (
+    BOX_SIZES.find((variant) => variant.pieceCount === pieceCount)?.label ?? `Box of ${pieceCount}`
+  );
 }
 
 export const INITIAL_COATING_PRICE = 5;
@@ -46,8 +54,7 @@ export function calculateConfiguredCoatingCharge(
   coatings: ReadonlyArray<Pick<Coating, "id" | "pricePerPiece">>,
 ) {
   return coatings.reduce(
-    (total, coating) => total
-      + Math.max(0, coatingCounts[coating.id] ?? 0) * coating.pricePerPiece,
+    (total, coating) => total + Math.max(0, coatingCounts[coating.id] ?? 0) * coating.pricePerPiece,
     0,
   );
 }
@@ -57,10 +64,12 @@ export function hasCompleteCoatingAllocation(
   coatingCounts: Readonly<Record<string, number>>,
 ) {
   const counts = Object.values(coatingCounts);
-  return Number.isInteger(pieceCount)
-    && pieceCount > 0
-    && counts.every((count) => Number.isInteger(count) && count >= 0)
-    && counts.reduce((sum, count) => sum + count, 0) === pieceCount;
+  return (
+    Number.isInteger(pieceCount) &&
+    pieceCount > 0 &&
+    counts.every((count) => Number.isInteger(count) && count >= 0) &&
+    counts.reduce((sum, count) => sum + count, 0) === pieceCount
+  );
 }
 
 export function formatPhp(value: number) {
@@ -86,12 +95,14 @@ type PricedCartLine = Pick<
 >;
 
 export function calculateCartLineTotal(item: PricedCartLine) {
-  return calculateItemUnitTotal(
-    item.boxPrice,
-    item.extraCoatingCharge,
-    item.addonQuantity,
-    item.addonPrice,
-  ) * item.quantity;
+  return (
+    calculateItemUnitTotal(
+      item.boxPrice,
+      item.extraCoatingCharge,
+      item.addonQuantity,
+      item.addonPrice,
+    ) * item.quantity
+  );
 }
 
 export class CommerceValidationError extends Error {
@@ -112,8 +123,14 @@ export function priceCheckoutCart(
   const lines = items.map((item) => {
     const variant = catalog.variants.find((entry) => entry.id === item.variantId);
     if (!variant) throw new CommerceValidationError("A selected box is no longer available.");
-    if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > MAX_CART_LINE_QUANTITY) {
-      throw new CommerceValidationError(`Each box quantity must be between 1 and ${MAX_CART_LINE_QUANTITY}.`);
+    if (
+      !Number.isInteger(item.quantity) ||
+      item.quantity < 1 ||
+      item.quantity > MAX_CART_LINE_QUANTITY
+    ) {
+      throw new CommerceValidationError(
+        `Each box quantity must be between 1 and ${MAX_CART_LINE_QUANTITY}.`,
+      );
     }
     if (!hasCompleteCoatingAllocation(variant.pieceCount, item.coatingCounts)) {
       throw new CommerceValidationError(`Every piece in ${variant.label} must have a coating.`);
@@ -135,34 +152,34 @@ export function priceCheckoutCart(
       pieceCount: item.coatingCounts[coating.id],
       // Snapshot keys are retained for compatibility with historical orders.
       additionalPrice: coating.pricePerPiece,
-      isIncludedType: false,
     }));
-    const extraCoatingTotal = coatings.reduce(
+    const coatingTotal = coatings.reduce(
       (total, coating) => total + coating.additionalPrice * coating.pieceCount,
       0,
     );
 
-    if (!Number.isInteger(item.addonQuantity) || item.addonQuantity < 0 || item.addonQuantity > MAX_ADDON_QUANTITY) {
-      throw new CommerceValidationError(`The add-on quantity must be between 0 and ${MAX_ADDON_QUANTITY}.`);
+    if (
+      !Number.isInteger(item.addonQuantity) ||
+      item.addonQuantity < 0 ||
+      item.addonQuantity > MAX_ADDON_QUANTITY
+    ) {
+      throw new CommerceValidationError(`Choose between 0 and ${MAX_ADDON_QUANTITY} extras.`);
     }
-    const selectedAddon = item.addonQuantity > 0
-      ? catalog.addons.find((addon) => addon.id === item.addonId)
-      : null;
+    const selectedAddon =
+      item.addonQuantity > 0 ? catalog.addons.find((addon) => addon.id === item.addonId) : null;
     if (item.addonQuantity > 0 && !selectedAddon) {
-      throw new CommerceValidationError("The selected add-on is no longer available.");
+      throw new CommerceValidationError("That extra is no longer available.");
     }
-    const addon = selectedAddon ? {
-      id: selectedAddon.id,
-      name: selectedAddon.name,
-      unitPrice: selectedAddon.price,
-      quantity: item.addonQuantity,
-      lineTotal: selectedAddon.price * item.addonQuantity,
-    } : null;
-    const lineSubtotal = (
-      variant.price
-      + extraCoatingTotal
-      + (addon?.lineTotal ?? 0)
-    ) * item.quantity;
+    const addon = selectedAddon
+      ? {
+          id: selectedAddon.id,
+          name: selectedAddon.name,
+          unitPrice: selectedAddon.price,
+          quantity: item.addonQuantity,
+          lineTotal: selectedAddon.price * item.addonQuantity,
+        }
+      : null;
+    const lineSubtotal = (variant.price + coatingTotal + (addon?.lineTotal ?? 0)) * item.quantity;
 
     return {
       productId: catalog.productId,
@@ -171,7 +188,7 @@ export function priceCheckoutCart(
       variantName: variant.label,
       pieceCount: variant.pieceCount,
       baseUnitPrice: variant.price,
-      extraCoatingTotal,
+      coatingTotal,
       quantity: item.quantity,
       lineSubtotal,
       coatings,

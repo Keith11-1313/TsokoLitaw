@@ -9,7 +9,9 @@ interface OrderLineItemsProps {
 
 export function OrderLineItems({ items, className }: OrderLineItemsProps) {
   if (!items.length) {
-    return <p className={cn("text-sm text-muted-foreground", className)}>Order items unavailable</p>;
+    return (
+      <p className={cn("text-sm text-muted-foreground", className)}>Order items unavailable</p>
+    );
   }
 
   return (
@@ -31,7 +33,9 @@ export function OrderLineItems({ items, className }: OrderLineItemsProps) {
 
             <div className="mt-1 text-xs leading-5 text-muted-foreground">
               <p>
-                {boxQuantity}<span aria-hidden="true"> × </span><span className="sr-only"> at </span>
+                {boxQuantity}
+                <span aria-hidden="true"> × </span>
+                <span className="sr-only"> at </span>
                 <span className="tabular-nums">{formatPhp(unitTotal)}</span>
                 {item.quantity > 1 ? " each" : null}
               </p>
@@ -45,8 +49,10 @@ export function OrderLineItems({ items, className }: OrderLineItemsProps) {
 
               {item.addon ? (
                 <div className="mt-2">
-                  <p className="font-bold text-foreground">Add-on per box</p>
-                  <p>{item.addon.name} × {item.addon.quantity}</p>
+                  <p className="font-bold text-foreground">Extra per box</p>
+                  <p>
+                    {item.addon.name} × {item.addon.quantity}
+                  </p>
                 </div>
               ) : null}
 
@@ -66,7 +72,7 @@ export function OrderLineItems({ items, className }: OrderLineItemsProps) {
                   </div>
                   {item.addon ? (
                     <div className="flex justify-between gap-4">
-                      <dt>Add-on</dt>
+                      <dt>Extra</dt>
                       <dd className="shrink-0 tabular-nums">{formatPhp(item.addon.lineTotal)}</dd>
                     </div>
                   ) : null}

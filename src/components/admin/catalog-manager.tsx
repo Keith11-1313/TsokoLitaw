@@ -53,7 +53,7 @@ function ProductSettings({ product }: { product: AdminCatalogProduct }) {
       <input type="hidden" name="productId" value={product.id} />
       <h2 className="font-display text-2xl">Product pricing</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        One per-piece price calculates every active box total. Checkout reloads this value from the
+        One price per piece calculates every active box total. Checkout reloads this value from the
         server.
       </p>
       <div className="mt-5 max-w-xl">
@@ -363,15 +363,15 @@ function AddonEditor({ addon, onClose }: { addon: AdminCatalogAddon | null; onCl
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
-              Catalog add-on
+              Catalog extra
             </p>
             <h2 id="addon-editor-title" className="mt-1 font-display text-3xl">
-              {addon ? "Edit add-on" : "Add add-on"}
+              {addon ? "Edit extra" : "Add extra"}
             </h2>
           </div>
           <button
             type="button"
-            aria-label="Close add-on editor"
+            aria-label="Close extra editor"
             disabled={pending}
             onClick={requestClose}
             className="flex size-11 items-center justify-center text-brand focus-visible:ring-2 focus-visible:ring-focus"
@@ -425,7 +425,7 @@ function AddonEditor({ addon, onClose }: { addon: AdminCatalogAddon | null; onCl
               Cancel
             </SecondaryButton>
             <PrimaryButton type="submit" disabled={pending || !canSubmit}>
-              {pending ? "Saving…" : "Save add-on"}
+              {pending ? "Saving…" : "Save extra"}
             </PrimaryButton>
           </div>
         </form>
@@ -468,7 +468,7 @@ export function CatalogManager({
         />
         <AdminStatCard
           compact
-          label="Active add-ons"
+          label="Active extras"
           value={String(addons.filter((a) => a.isActive).length)}
           accentClassName="text-warning-foreground"
         />
@@ -481,7 +481,7 @@ export function CatalogManager({
           Box sizes
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Prices are calculated from the current per-piece price. Approved piece counts stay fixed
+          Prices are calculated from the current price per piece. Approved piece counts stay fixed
           at 4, 6, and 8.
         </p>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
@@ -554,7 +554,7 @@ export function CatalogManager({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 id="addons-heading" className="font-display text-2xl">
-              Add-ons
+              Extras
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Optional extras customers can add to a configured box.
@@ -562,7 +562,7 @@ export function CatalogManager({
           </div>
           <PrimaryButton onClick={() => setAddonEditor(null)}>
             <Plus aria-hidden="true" size={17} />
-            Add add-on
+            Add extra
           </PrimaryButton>
         </div>
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -583,7 +583,7 @@ export function CatalogManager({
               </div>
               <SecondaryButton className="mt-5 w-full" onClick={() => setAddonEditor(addon)}>
                 <Pencil aria-hidden="true" size={15} />
-                Edit add-on
+                Edit extra
               </SecondaryButton>
             </article>
           ))}
