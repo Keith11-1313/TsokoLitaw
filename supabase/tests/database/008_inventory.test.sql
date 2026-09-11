@@ -44,7 +44,7 @@ values ('99000000-0000-4000-8000-000000000003', '2099-02-01', 'READY_STOCK', tru
 select throws_ok(
   $$ select public.upsert_daily_inventory(
     '99000000-0000-4000-8000-000000000002', '2099-02-01',
-    '10000000-0000-4000-8000-000000000001', 10, true, 'unauthorized'
+    '10000000-0000-4000-8000-000000000001', 10, 'unauthorized'
   ) $$,
   'P0001',
   'Active administrator access is required',
@@ -54,7 +54,7 @@ select throws_ok(
 select lives_ok(
   $$ select public.upsert_daily_inventory(
     '99000000-0000-4000-8000-000000000001', '2099-02-01',
-    '10000000-0000-4000-8000-000000000001', 10, true, 'opening stock'
+    '10000000-0000-4000-8000-000000000001', 10, 'opening stock'
   ) $$,
   'an active Admin can publish piece stock'
 );
@@ -106,7 +106,7 @@ select throws_ok(
 select throws_ok(
   $$ select public.upsert_daily_inventory(
     '99000000-0000-4000-8000-000000000001', '2099-02-01',
-    '10000000-0000-4000-8000-000000000001', 1, true, 'invalid correction'
+    '10000000-0000-4000-8000-000000000001', 1, 'invalid correction'
   ) $$,
   'P0001',
   'Total stock cannot be lower than committed and consumed pieces',

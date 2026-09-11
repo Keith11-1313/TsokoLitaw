@@ -25,12 +25,12 @@ select set_config(
   true
 );
 
-select plan(61);
+select plan(72);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
 select has_table('public', 'orders', 'orders table exists');
-select has_table('public', 'refunds', 'refunds table exists');
+select hasnt_table('public', 'refunds', 'retired refunds table is absent');
 select has_table('public', 'inventory_adjustments', 'inventory adjustments table exists');
 select has_table('public', 'mutation_rate_limit_buckets', 'distributed mutation rate-limit table exists');
 select hasnt_table('public', 'promotions', 'obsolete promotions table is absent');
@@ -39,12 +39,29 @@ select has_column('public', 'profiles', 'deactivated_at', 'profiles record when 
 select has_column('public', 'orders', 'checkout_idempotency_key', 'orders store a customer checkout idempotency key');
 select has_column('public', 'daily_inventory', 'product_id', 'daily inventory tracks shared product pieces');
 select hasnt_column('public', 'daily_inventory', 'product_variant_id', 'obsolete variant inventory compatibility is absent');
+select hasnt_column('public', 'daily_inventory', 'is_available', 'pickup publication is the only inventory availability control');
 select has_sequence('public', 'order_number_sequence', 'orders use a concurrency-safe kiosk number sequence');
 select has_column('public', 'coatings', 'price_per_piece', 'coatings store a per-piece price');
 select has_column('public', 'coatings', 'is_default', 'coatings identify the storefront default');
 select hasnt_column('public', 'coatings', 'additional_type_price', 'obsolete additional-type pricing is removed');
 select hasnt_column('public', 'coatings', 'is_allergen', 'obsolete per-coating allergen flag is removed');
 select hasnt_column('public', 'coatings', 'allergen_note', 'obsolete per-coating allergen note is removed');
+select hasnt_column('public', 'journal_posts', 'icon_key', 'unused Journal icon storage is absent');
+select hasnt_column('public', 'order_item_coatings', 'is_included_type', 'retired coating pricing distinction is absent');
+select has_column('public', 'order_items', 'coating_total_snapshot', 'order items store the complete coating total');
+select hasnt_column('public', 'order_items', 'extra_coating_total_snapshot', 'retired extra-coating name is absent');
+select has_column('public', 'manual_payment_submissions', 'reported_reference', 'receipt references are explicitly customer reported');
+select has_column('public', 'manual_payment_submissions', 'reported_amount', 'receipt amounts are explicitly customer reported');
+select has_column('public', 'manual_payment_submissions', 'reported_paid_at', 'receipt times are explicitly customer reported');
+select has_column('public', 'manual_payment_submissions', 'reported_recipient', 'receipt recipients are explicitly customer reported');
+select ok(
+  exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.payments'::regclass
+      and conname = 'payments_provider_check'
+  ),
+  'payments restrict provider names to supported flows'
+);
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.profiles'::regclass),
@@ -59,8 +76,8 @@ select ok(
   'payments has RLS enabled'
 );
 select ok(
-  (select relrowsecurity from pg_class where oid = 'public.manual_refund_destinations'::regclass),
-  'manual refund destinations have RLS enabled'
+  to_regclass('public.manual_refund_destinations') is null,
+  'retired manual refund destinations do not exist'
 );
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.mutation_rate_limit_buckets'::regclass),
@@ -70,6 +87,10 @@ select ok(
 select ok(has_table_privilege('anon', 'public.products', 'SELECT'), 'anon can read public products');
 select ok(not has_table_privilege('anon', 'public.orders', 'SELECT'), 'anon cannot read orders');
 select ok(not has_table_privilege('anon', 'public.profiles', 'SELECT'), 'anon cannot read profiles');
+select ok(
+  has_table_privilege('service_role', 'public.profiles', 'SELECT'),
+  'service role can verify profile state during authentication callbacks'
+);
 select ok(not has_table_privilege('authenticated', 'public.payment_webhook_events', 'INSERT'), 'authenticated clients cannot insert webhook events');
 select ok(not has_table_privilege('authenticated', 'public.business_settings', 'UPDATE'), 'authenticated clients cannot update settings directly');
 select ok(not has_table_privilege('authenticated', 'public.mutation_rate_limit_buckets', 'SELECT'), 'authenticated clients cannot read rate-limit buckets');
@@ -161,7 +182,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.create_pending_order(uuid,uuid,uuid,uuid,text,text,text,jsonb,numeric,numeric,numeric,text,uuid)',
+    'public.create_checkout_order(uuid,uuid,uuid,uuid,text,text,jsonb,numeric,numeric,numeric,text,uuid,text,text)',
     'EXECUTE'
   ),
   'authenticated users cannot invoke the atomic order writer directly'
@@ -169,7 +190,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.create_pending_order(uuid,uuid,uuid,uuid,text,text,text,jsonb,numeric,numeric,numeric,text,uuid)',
+    'public.create_checkout_order(uuid,uuid,uuid,uuid,text,text,jsonb,numeric,numeric,numeric,text,uuid,text,text)',
     'EXECUTE'
   ),
   'service role can invoke the atomic order writer'
@@ -177,7 +198,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.upsert_daily_inventory(uuid,date,uuid,integer,boolean,text)',
+    'public.upsert_daily_inventory(uuid,date,uuid,integer,text)',
     'EXECUTE'
   ),
   'authenticated users cannot write inventory directly'
@@ -185,7 +206,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.upsert_daily_inventory(uuid,date,uuid,integer,boolean,text)',
+    'public.upsert_daily_inventory(uuid,date,uuid,integer,text)',
     'EXECUTE'
   ),
   'service role can invoke controlled inventory updates'

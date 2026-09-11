@@ -59,28 +59,28 @@ select is((select status from public.loyalty_rewards where user_id = 'da000000-0
 select is((select source_order_id from public.loyalty_rewards where user_id = 'da000000-0000-4000-8000-000000000002'), 'da400000-0000-4000-8000-000000000007'::uuid, 'the threshold-completing order is the reward source');
 
 select is((
-  select created_total from public.create_pending_order(
+  select created_total from public.create_checkout_order(
     'da000000-0000-4000-8000-000000000002', 'da500000-0000-4000-8000-000000000001',
     'da300000-0000-4000-8000-000000000001', 'da100000-0000-4000-8000-000000000001',
-    'Loyalty Customer', null, null,
-    '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"extra_coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0,"is_included_type":true}],"addon":null}]'::jsonb,
+    'Loyalty Customer', null,
+    '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addon":null}]'::jsonb,
     40, 40, 0, 'loyalty-test',
     (select id from public.loyalty_rewards where user_id = 'da000000-0000-4000-8000-000000000002')
-  )
+  ,'paymongo','')
 ), 0::numeric, 'one reward discounts one base 4-piece box');
 select is((select status from public.orders where checkout_idempotency_key = 'da500000-0000-4000-8000-000000000001'), 'CONFIRMED'::public.order_status, 'a zero-total reward order skips hosted payment and is confirmed');
 select is((select provider from public.payments where order_id = (select id from public.orders where checkout_idempotency_key = 'da500000-0000-4000-8000-000000000001')), 'loyalty', 'a zero-total reward order records its settlement');
 select is((select status from public.loyalty_rewards where user_id = 'da000000-0000-4000-8000-000000000002'), 'redeemed'::public.loyalty_reward_status, 'the reward is atomically bound to the created order');
 
 select throws_ok(
-  $$select * from public.create_pending_order(
+  $$select * from public.create_checkout_order(
     'da000000-0000-4000-8000-000000000002', 'da500000-0000-4000-8000-000000000002',
     'da300000-0000-4000-8000-000000000001', 'da100000-0000-4000-8000-000000000001',
-    'Loyalty Customer', null, null,
-    '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"extra_coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0,"is_included_type":true}],"addon":null}]'::jsonb,
+    'Loyalty Customer', null,
+    '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addon":null}]'::jsonb,
     40, 40, 0, 'loyalty-test',
     (select id from public.loyalty_rewards where user_id = 'da000000-0000-4000-8000-000000000002')
-  )$$,
+  ,'paymongo','')$$,
   'P0001', 'The selected loyalty reward is unavailable',
   'a redeemed reward cannot be used for a second order'
 );

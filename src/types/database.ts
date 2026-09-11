@@ -11,7 +11,7 @@ type NullableArguments = {
   upsert_journal_post: "target_post_id";
   upsert_pickup_schedule: "target_pickup_date_id";
   upsert_pickup_location: "target_location_id";
-  create_pending_order: "loyalty_reward_id";
+  create_checkout_order: "loyalty_reward_id";
   get_admin_customer_summaries: "search_value";
 };
 

@@ -8,11 +8,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       addons: {
@@ -147,7 +142,6 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          is_available: boolean
           pickup_date: string
           product_id: string
           stock_reserved: number
@@ -158,7 +152,6 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          is_available?: boolean
           pickup_date: string
           product_id: string
           stock_reserved?: number
@@ -169,7 +162,6 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          is_available?: boolean
           pickup_date?: string
           product_id?: string
           stock_reserved?: number
@@ -248,7 +240,6 @@ export type Database = {
           created_at: string
           display_date: string
           excerpt: string | null
-          icon_key: string
           id: string
           published_at: string | null
           slug: string
@@ -265,7 +256,6 @@ export type Database = {
           created_at?: string
           display_date?: string
           excerpt?: string | null
-          icon_key?: string
           id?: string
           published_at?: string | null
           slug: string
@@ -282,7 +272,6 @@ export type Database = {
           created_at?: string
           display_date?: string
           excerpt?: string | null
-          icon_key?: string
           id?: string
           published_at?: string | null
           slug?: string
@@ -369,7 +358,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "loyalty_rewards_redeemed_order_fkey"
+            foreignKeyName: "loyalty_rewards_redeemed_order_id_fkey"
             columns: ["redeemed_order_id"]
             isOneToOne: false
             referencedRelation: "orders"
@@ -391,50 +380,62 @@ export type Database = {
           },
         ]
       }
-      manual_refund_destinations: {
+      manual_payment_submissions: {
         Row: {
-          account_name: string
-          account_reference_encrypted: string
-          collected_by: string
-          created_at: string
-          deleted_at: string | null
-          destination_type: string
           id: string
-          refund_id: string
+          order_id: string
+          receipt_path: string
+          rejection_reason: string | null
+          reported_amount: number
+          reported_paid_at: string
+          reported_recipient: string
+          reported_reference: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
         }
         Insert: {
-          account_name: string
-          account_reference_encrypted: string
-          collected_by: string
-          created_at?: string
-          deleted_at?: string | null
-          destination_type: string
           id?: string
-          refund_id: string
+          order_id: string
+          receipt_path: string
+          rejection_reason?: string | null
+          reported_amount: number
+          reported_paid_at: string
+          reported_recipient: string
+          reported_reference: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
         }
         Update: {
-          account_name?: string
-          account_reference_encrypted?: string
-          collected_by?: string
-          created_at?: string
-          deleted_at?: string | null
-          destination_type?: string
           id?: string
-          refund_id?: string
+          order_id?: string
+          receipt_path?: string
+          rejection_reason?: string | null
+          reported_amount?: number
+          reported_paid_at?: string
+          reported_recipient?: string
+          reported_reference?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "manual_refund_destinations_collected_by_fkey"
-            columns: ["collected_by"]
+            foreignKeyName: "manual_payment_submissions_order_id_fkey"
+            columns: ["order_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "manual_refund_destinations_refund_id_fkey"
-            columns: ["refund_id"]
-            isOneToOne: true
-            referencedRelation: "refunds"
+            foreignKeyName: "manual_payment_submissions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -477,7 +478,6 @@ export type Database = {
           provider_event_at: string | null
           provider_message_id: string | null
           recipient_email: string
-          refund_id: string | null
           sent_at: string | null
           status: string
           updated_at: string
@@ -499,7 +499,6 @@ export type Database = {
           provider_event_at?: string | null
           provider_message_id?: string | null
           recipient_email: string
-          refund_id?: string | null
           sent_at?: string | null
           status?: string
           updated_at?: string
@@ -521,7 +520,6 @@ export type Database = {
           provider_event_at?: string | null
           provider_message_id?: string | null
           recipient_email?: string
-          refund_id?: string | null
           sent_at?: string | null
           status?: string
           updated_at?: string
@@ -533,13 +531,6 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notification_deliveries_refund_id_fkey"
-            columns: ["refund_id"]
-            isOneToOne: false
-            referencedRelation: "refunds"
             referencedColumns: ["id"]
           },
           {
@@ -639,7 +630,6 @@ export type Database = {
           coating_name_snapshot: string
           created_at: string
           id: string
-          is_included_type: boolean
           order_item_id: string
           piece_count: number
         }
@@ -649,7 +639,6 @@ export type Database = {
           coating_name_snapshot: string
           created_at?: string
           id?: string
-          is_included_type?: boolean
           order_item_id: string
           piece_count: number
         }
@@ -659,7 +648,6 @@ export type Database = {
           coating_name_snapshot?: string
           created_at?: string
           id?: string
-          is_included_type?: boolean
           order_item_id?: string
           piece_count?: number
         }
@@ -682,8 +670,8 @@ export type Database = {
       }
       order_items: {
         Row: {
+          coating_total_snapshot: number
           created_at: string
-          extra_coating_total_snapshot: number
           id: string
           line_subtotal: number
           order_id: string
@@ -696,8 +684,8 @@ export type Database = {
           variant_name_snapshot: string
         }
         Insert: {
+          coating_total_snapshot?: number
           created_at?: string
-          extra_coating_total_snapshot?: number
           id?: string
           line_subtotal: number
           order_id: string
@@ -710,8 +698,8 @@ export type Database = {
           variant_name_snapshot: string
         }
         Update: {
+          coating_total_snapshot?: number
           created_at?: string
-          extra_coating_total_snapshot?: number
           id?: string
           line_subtotal?: number
           order_id?: string
@@ -754,13 +742,13 @@ export type Database = {
           completed_at: string | null
           created_at: string
           customer_email: string
-          customer_mobile: string | null
           customer_name: string
           customer_notes: string | null
           discount_total: number
           id: string
           order_number: string
           payment_expires_at: string | null
+          payment_method: string
           payment_status: Database["public"]["Enums"]["payment_status"]
           pickup_date: string
           pickup_location_id: string
@@ -781,13 +769,13 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_email: string
-          customer_mobile?: string | null
           customer_name: string
           customer_notes?: string | null
           discount_total?: number
           id?: string
           order_number: string
           payment_expires_at?: string | null
+          payment_method?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
           pickup_date: string
           pickup_location_id: string
@@ -808,13 +796,13 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_email?: string
-          customer_mobile?: string | null
           customer_name?: string
           customer_notes?: string | null
           discount_total?: number
           id?: string
           order_number?: string
           payment_expires_at?: string | null
+          payment_method?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
           pickup_date?: string
           pickup_location_id?: string
@@ -889,13 +877,13 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          manual_qr_payload: string | null
           order_id: string
           paid_at: string | null
           provider: string
           provider_checkout_id: string | null
           provider_checkout_url: string | null
           provider_payment_id: string | null
-          refunded_at: string | null
           status: Database["public"]["Enums"]["payment_status"]
           updated_at: string
         }
@@ -904,13 +892,13 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          manual_qr_payload?: string | null
           order_id: string
           paid_at?: string | null
           provider?: string
           provider_checkout_id?: string | null
           provider_checkout_url?: string | null
           provider_payment_id?: string | null
-          refunded_at?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
         }
@@ -919,13 +907,13 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          manual_qr_payload?: string | null
           order_id?: string
           paid_at?: string | null
           provider?: string
           provider_checkout_id?: string | null
           provider_checkout_url?: string | null
           provider_payment_id?: string | null
-          refunded_at?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
         }
@@ -1160,7 +1148,6 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
-          mobile_number: string | null
           role: Database["public"]["Enums"]["profile_role"]
           updated_at: string
         }
@@ -1173,7 +1160,6 @@ export type Database = {
           full_name?: string
           id: string
           is_active?: boolean
-          mobile_number?: string | null
           role?: Database["public"]["Enums"]["profile_role"]
           updated_at?: string
         }
@@ -1186,86 +1172,10 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
-          mobile_number?: string | null
           role?: Database["public"]["Enums"]["profile_role"]
           updated_at?: string
         }
         Relationships: []
-      }
-      refunds: {
-        Row: {
-          amount: number
-          created_at: string
-          currency: string
-          failure_code: string | null
-          failure_message: string | null
-          id: string
-          method: Database["public"]["Enums"]["refund_method"]
-          order_id: string
-          payment_id: string
-          processed_at: string | null
-          provider: string
-          provider_refund_id: string | null
-          reason: string
-          refunded_at: string | null
-          requested_at: string
-          status: Database["public"]["Enums"]["refund_status"]
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          currency?: string
-          failure_code?: string | null
-          failure_message?: string | null
-          id?: string
-          method?: Database["public"]["Enums"]["refund_method"]
-          order_id: string
-          payment_id: string
-          processed_at?: string | null
-          provider?: string
-          provider_refund_id?: string | null
-          reason: string
-          refunded_at?: string | null
-          requested_at?: string
-          status?: Database["public"]["Enums"]["refund_status"]
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          currency?: string
-          failure_code?: string | null
-          failure_message?: string | null
-          id?: string
-          method?: Database["public"]["Enums"]["refund_method"]
-          order_id?: string
-          payment_id?: string
-          processed_at?: string | null
-          provider?: string
-          provider_refund_id?: string | null
-          reason?: string
-          refunded_at?: string | null
-          requested_at?: string
-          status?: Database["public"]["Enums"]["refund_status"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "refunds_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "refunds_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "payments"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       reviews: {
         Row: {
@@ -1382,15 +1292,16 @@ export type Database = {
           retry_after_seconds: number
         }[]
       }
-      create_pending_order: {
+      create_checkout_order: {
         Args: {
           checkout_key: string
-          customer_mobile_value: string
           customer_name_value: string
           customer_notes_value: string
           discount_value: number
           loyalty_reward_id: string
+          payment_method_value: string
           priced_lines: Json
+          qr_payload_value: string
           selected_pickup_location_id: string
           selected_pickup_window_id: string
           subtotal_value: number
@@ -1414,14 +1325,6 @@ export type Database = {
         Returns: boolean
       }
       expire_pending_orders: { Args: never; Returns: number }
-      fail_paymongo_refund_request: {
-        Args: {
-          failure_code_value: string
-          failure_message_value: string
-          target_refund_id: string
-        }
-        Returns: boolean
-      }
       get_admin_customer_summaries: {
         Args: {
           result_limit?: number
@@ -1440,7 +1343,6 @@ export type Database = {
           last_order_at: string
           loyalty_completed_orders: number
           loyalty_threshold: number
-          mobile_number: string
           redeemed_rewards: number
           user_id: string
         }[]
@@ -1489,8 +1391,6 @@ export type Database = {
           cancellation_kind: string
           cancellation_payment_id: string
           cancellation_provider_payment_id: string
-          existing_refund_id: string
-          existing_refund_status: Database["public"]["Enums"]["refund_status"]
         }[]
       }
       prepare_paymongo_checkout: {
@@ -1499,7 +1399,6 @@ export type Database = {
           existing_checkout_url: string
           prepared_amount: number
           prepared_customer_email: string
-          prepared_customer_mobile: string
           prepared_customer_name: string
           prepared_order_id: string
           prepared_order_number: string
@@ -1515,17 +1414,6 @@ export type Database = {
           payment_id: string
           target_order_id: string
           target_order_number: string
-        }
-        Returns: boolean
-      }
-      process_paymongo_refund_event: {
-        Args: {
-          event_key: string
-          event_summary: Json
-          provider_payment_id_value: string
-          provider_refund_id_value: string
-          provider_status_value: string
-          refund_amount_value: number
         }
         Returns: boolean
       }
@@ -1553,42 +1441,34 @@ export type Database = {
         }
         Returns: number
       }
-      record_paymongo_refund_result: {
-        Args: {
-          failure_code_value?: string
-          failure_message_value?: string
-          provider_refund_id_value: string
-          provider_status_value: string
-          target_refund_id: string
-        }
-        Returns: boolean
-      }
       request_account_deletion: { Args: never; Returns: string }
-      request_manual_refund_fallback: {
+      review_manual_payment: {
         Args: {
-          account_name_value: string
-          destination_type_value: string
-          encrypted_reference_value: string
-          target_refund_id: string
-          target_user_id: string
+          approve: boolean
+          reason_value: string
+          target_admin_id: string
+          target_submission_id: string
         }
         Returns: boolean
-      }
-      request_paid_order_refund: {
-        Args: { target_order_id: string; target_user_id: string }
-        Returns: {
-          provider_payment_id: string
-          refund_amount: number
-          refund_status_value: Database["public"]["Enums"]["refund_status"]
-          requested_payment_id: string
-          requested_refund_id: string
-        }[]
       }
       set_pickup_date_open: {
         Args: {
           open_value: boolean
           target_admin_id: string
           target_pickup_date_id: string
+        }
+        Returns: boolean
+      }
+      submit_manual_payment: {
+        Args: {
+          receipt_path_value: string
+          reported_amount_value: number
+          reported_paid_at_value: string
+          reported_recipient_value: string
+          reported_reference_value: string
+          submission_id: string
+          target_order_id: string
+          target_user_id: string
         }
         Returns: boolean
       }
@@ -1664,7 +1544,6 @@ export type Database = {
       }
       upsert_daily_inventory: {
         Args: {
-          available_value: boolean
           notes_value: string
           stock_total_value: number
           target_admin_id: string
@@ -1680,7 +1559,6 @@ export type Database = {
           cover_image_url_value: string
           display_date_value: string
           excerpt_value: string
-          icon_key_value: string
           status_value: Database["public"]["Enums"]["journal_status"]
           target_admin_id: string
           target_post_id: string
@@ -1724,11 +1602,9 @@ export type Database = {
         | "COMPLETED"
         | "CANCELLED"
         | "EXPIRED"
-      payment_status: "PENDING" | "PAID" | "FAILED" | "REFUNDED"
+      payment_status: "PENDING" | "PAID" | "FAILED" | "UNDER_REVIEW"
       pickup_availability_mode: "MADE_TO_ORDER" | "READY_STOCK" | "HYBRID"
       profile_role: "customer" | "admin"
-      refund_method: "ORIGINAL_PAYMENT_METHOD" | "MANUAL_FALLBACK"
-      refund_status: "REQUESTED" | "PROCESSING" | "REFUNDED" | "FAILED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1744,12 +1620,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1773,11 +1649,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1798,11 +1674,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1823,11 +1699,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1840,11 +1716,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1868,11 +1744,9 @@ export const Constants = {
         "CANCELLED",
         "EXPIRED",
       ],
-      payment_status: ["PENDING", "PAID", "FAILED", "REFUNDED"],
+      payment_status: ["PENDING", "PAID", "FAILED", "UNDER_REVIEW"],
       pickup_availability_mode: ["MADE_TO_ORDER", "READY_STOCK", "HYBRID"],
       profile_role: ["customer", "admin"],
-      refund_method: ["ORIGINAL_PAYMENT_METHOD", "MANUAL_FALLBACK"],
-      refund_status: ["REQUESTED", "PROCESSING", "REFUNDED", "FAILED"],
     },
   },
 } as const

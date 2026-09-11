@@ -24,7 +24,7 @@ select set_config(
   ),
   true
 );
-select plan(29);
+select plan(32);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -106,7 +106,7 @@ select throws_ok(
 select throws_ok(
   $$select public.request_account_deletion()$$,
   'P0001',
-  'Account deletion is unavailable while orders or refunds are active',
+  'Account deletion is unavailable while orders are active',
   'customer with an active order cannot schedule deletion'
 );
 
@@ -154,37 +154,44 @@ set local role postgres;
 select is(
   (
     select was_created
-    from public.create_pending_order(
+    from public.create_checkout_order(
       '91000000-0000-4000-8000-000000000001',
       '96000000-0000-4000-8000-000000000001',
       '94000000-0000-4000-8000-000000000001',
       '92000000-0000-4000-8000-000000000001',
       'RLS Owner',
       null,
-      null,
-      '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"extra_coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0,"is_included_type":true}],"addon":null}]'::jsonb,
+      '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addon":null}]'::jsonb,
       40,
       0,
       40,
       'rls-test-v1',
       null
-    )
+    ,'paymongo','')
   ),
   true,
   'service-only writer atomically creates a pending order'
 );
+select ok(
+  (
+    select payment_expires_at between now() + interval '14 minutes' and now() + interval '16 minutes'
+    from public.orders
+    where checkout_idempotency_key = '96000000-0000-4000-8000-000000000001'
+  ),
+  'PayMongo checkout keeps the shared 15-minute payment window'
+);
 select is(
   (
     select was_created
-    from public.create_pending_order(
+    from public.create_checkout_order(
       '91000000-0000-4000-8000-000000000001',
       '96000000-0000-4000-8000-000000000001',
       '94000000-0000-4000-8000-000000000001',
       '92000000-0000-4000-8000-000000000001',
-      'RLS Owner', null, null,
-      '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"extra_coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0,"is_included_type":true}],"addon":null}]'::jsonb,
+      'RLS Owner', null,
+      '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addon":null}]'::jsonb,
       40, 0, 40, 'rls-test-v1', null
-    )
+    ,'paymongo','')
   ),
   false,
   'reusing a checkout key returns the existing order'
@@ -241,15 +248,45 @@ select is(
 select is(
   (
     select was_created
-    from public.create_pending_order(
+    from public.create_checkout_order(
+      '91000000-0000-4000-8000-000000000001',
+      '96000000-0000-4000-8000-000000000004',
+      '94000000-0000-4000-8000-000000000001',
+      '92000000-0000-4000-8000-000000000001',
+      'RLS Owner', null,
+      '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addon":null}]'::jsonb,
+      40, 0, 40, 'rls-test-v1', null,
+      'manual_gcash', repeat('Q', 50)
+    )
+  ),
+  true,
+  'service-only writer creates a Manual GCash order'
+);
+select ok(
+  (
+    select payment_expires_at between now() + interval '29 minutes' and now() + interval '31 minutes'
+    from public.orders
+    where checkout_idempotency_key = '96000000-0000-4000-8000-000000000004'
+  ),
+  'Manual GCash receives its separate 30-minute submission window'
+);
+update public.orders
+set payment_expires_at = now() - interval '1 minute'
+where checkout_idempotency_key = '96000000-0000-4000-8000-000000000004';
+select public.expire_pending_orders();
+
+select is(
+  (
+    select was_created
+    from public.create_checkout_order(
       '91000000-0000-4000-8000-000000000003',
       '96000000-0000-4000-8000-000000000003',
       '94000000-0000-4000-8000-000000000001',
       '92000000-0000-4000-8000-000000000001',
-      'RLS Admin', null, null,
-      '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"extra_coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0,"is_included_type":true}],"addon":null}]'::jsonb,
+      'RLS Admin', null,
+      '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addon":null}]'::jsonb,
       40, 0, 40, 'rls-test-v1', null
-    )
+    ,'paymongo','')
   ),
   true,
   'active admin can place their own customer order'
@@ -326,7 +363,7 @@ select is(
       '91000000-0000-4000-8000-000000000004'
     )
   ),
-  5::bigint,
+  6::bigint,
   'approved admin can read customer orders'
 );
 select throws_ok(

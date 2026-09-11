@@ -39,6 +39,8 @@ if (
 }
 writeFileSync(
   new URL("../src/types/database.generated.ts", import.meta.url),
-  "// Generated public schema. Do not edit; regenerate with npm run db:types.\n" + result.stdout,
+  "// Generated public schema. Do not edit; regenerate with npm run db:types.\n" +
+    result.stdout.trimEnd() +
+    "\n",
 );
 console.log("Updated src/types/database.generated.ts. Run npm run typecheck next.");

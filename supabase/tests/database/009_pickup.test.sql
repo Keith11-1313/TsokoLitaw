@@ -143,7 +143,7 @@ select is(
 
 select public.upsert_daily_inventory(
   '9a000000-0000-4000-8000-000000000001', '2099-03-01',
-  '10000000-0000-4000-8000-000000000001', 20, true, 'lock schedule'
+  '10000000-0000-4000-8000-000000000001', 20, 'lock schedule'
 );
 select public.set_pickup_date_open(
   '9a000000-0000-4000-8000-000000000001',
