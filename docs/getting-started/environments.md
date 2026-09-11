@@ -48,7 +48,9 @@ project. The **Dev Vercel project can have that label** while remaining the Dev 
 
 Use `.env.example` as the maintained application-variable template. Do not restore the retired
 `REFUND_DESTINATION_ENCRYPTION_KEY` or add unused email settings from old docs.
-Public variables are built into the client; deployment-variable changes require a new deployment.
+Public variables are built into the client, while server variables are captured by the running deployment.
+Any Vercel variable change, including `PAYMENT_METHOD`, requires a new deployment in the same project
+and environment scope. Local server-variable changes require restarting the Next.js process.
 
 ## External services
 

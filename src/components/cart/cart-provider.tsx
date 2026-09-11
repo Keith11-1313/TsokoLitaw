@@ -20,6 +20,7 @@ interface CartContextValue {
   itemCount: number;
   subtotal: number;
   selectedSubtotal: number;
+  pendingOrderIdByItemId: Record<string, string>;
   addItem: (item: Omit<CartLineItem, "id">) => void;
   updateQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
@@ -27,6 +28,7 @@ interface CartContextValue {
   setAllItemsSelected: (selected: boolean) => void;
   markSelectedItemsPendingCheckout: (orderId: string) => void;
   removePaidCheckoutItems: (orderId: string) => void;
+  releasePendingCheckoutItems: (orderId: string) => void;
   clearCart: () => void;
 }
 
@@ -51,6 +53,7 @@ function normalizeQuantity(quantity: number) {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartLineItem[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [pendingCheckoutItems, setPendingCheckoutItems] = useState<Record<string, string[]>>({});
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -83,10 +86,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
             (id): id is string => typeof id === "string" && restoredIds.has(id),
           )
         : restored.map((item) => item.id);
+      const restoredPending: Record<string, string[]> = {};
+      for (let index = 0; index < window.localStorage.length; index += 1) {
+        const key = window.localStorage.key(index);
+        const prefix = `${PENDING_CHECKOUT_STORAGE_KEY}:`;
+        if (!key?.startsWith(prefix)) continue;
+        const orderId = key.slice(prefix.length);
+        try {
+          const value = JSON.parse(window.localStorage.getItem(key) ?? "[]") as unknown;
+          const itemIds = Array.isArray(value)
+            ? value.filter((id): id is string => typeof id === "string" && restoredIds.has(id))
+            : [];
+          if (itemIds.length) restoredPending[orderId] = itemIds;
+        } catch {
+          window.localStorage.removeItem(key);
+        }
+      }
+      const pendingIds = new Set(Object.values(restoredPending).flat());
       queueMicrotask(() => {
         if (active) {
           setItems(restored);
-          setSelectedItemIds(selectedIds);
+          setSelectedItemIds(selectedIds.filter((id) => !pendingIds.has(id)));
+          setPendingCheckoutItems(restoredPending);
           setReady(true);
         }
       });
@@ -110,6 +131,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, ready, selectedItemIds]);
 
   const selectedItems = items.filter((item) => selectedItemIds.includes(item.id));
+  const pendingOrderIdByItemId = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(pendingCheckoutItems).flatMap(([orderId, itemIds]) =>
+          itemIds.map((itemId) => [itemId, orderId]),
+        ),
+      ),
+    [pendingCheckoutItems],
+  );
+  const availableItems = useMemo(
+    () => items.filter((item) => !pendingOrderIdByItemId[item.id]),
+    [items, pendingOrderIdByItemId],
+  );
 
   const value = useMemo<CartContextValue>(
     () => ({
@@ -120,6 +154,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
       subtotal: items.reduce((sum, item) => sum + calculateCartLineTotal(item), 0),
       selectedSubtotal: selectedItems.reduce((sum, item) => sum + calculateCartLineTotal(item), 0),
+      pendingOrderIdByItemId,
       addItem: (item) => {
         const id = crypto.randomUUID();
         setItems((current) => [
@@ -131,28 +166,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
       updateQuantity: (id, quantity) =>
         setItems((current) =>
           current.map((item) =>
-            item.id === id ? { ...item, quantity: normalizeQuantity(quantity) } : item,
+            item.id === id && !pendingOrderIdByItemId[id]
+              ? { ...item, quantity: normalizeQuantity(quantity) }
+              : item,
           ),
         ),
       removeItem: (id) => {
+        if (pendingOrderIdByItemId[id]) return;
         setItems((current) => current.filter((item) => item.id !== id));
         setSelectedItemIds((current) => current.filter((itemId) => itemId !== id));
       },
       setItemSelected: (id, selected) =>
         setSelectedItemIds((current) =>
-          selected
-            ? current.includes(id)
-              ? current
-              : [...current, id]
-            : current.filter((itemId) => itemId !== id),
+          pendingOrderIdByItemId[id]
+            ? current.filter((itemId) => itemId !== id)
+            : selected
+              ? current.includes(id)
+                ? current
+                : [...current, id]
+              : current.filter((itemId) => itemId !== id),
         ),
       setAllItemsSelected: (selected) =>
-        setSelectedItemIds(selected ? items.map((item) => item.id) : []),
-      markSelectedItemsPendingCheckout: (orderId) =>
+        setSelectedItemIds(selected ? availableItems.map((item) => item.id) : []),
+      markSelectedItemsPendingCheckout: (orderId) => {
+        const itemIds = selectedItems.map((item) => item.id);
         window.localStorage.setItem(
           `${PENDING_CHECKOUT_STORAGE_KEY}:${orderId}`,
-          JSON.stringify(selectedItems.map((item) => item.id)),
-        ),
+          JSON.stringify(itemIds),
+        );
+        setPendingCheckoutItems((current) => ({ ...current, [orderId]: itemIds }));
+        setSelectedItemIds((current) => current.filter((id) => !itemIds.includes(id)));
+      },
       removePaidCheckoutItems: (orderId) => {
         // Manual review may finish after another checkout. Never clear a different order's selection.
         const pendingKey = `${PENDING_CHECKOUT_STORAGE_KEY}:${orderId}`;
@@ -172,15 +216,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
           setItems((current) => current.filter((item) => !paidIds.has(item.id)));
           setSelectedItemIds((current) => current.filter((id) => !paidIds.has(id)));
         }
+        setPendingCheckoutItems((current) => {
+          const next = { ...current };
+          delete next[orderId];
+          return next;
+        });
+        window.localStorage.removeItem(pendingKey);
+      },
+      releasePendingCheckoutItems: (orderId) => {
+        const pendingKey = `${PENDING_CHECKOUT_STORAGE_KEY}:${orderId}`;
+        const itemIds = pendingCheckoutItems[orderId] ?? [];
+        setPendingCheckoutItems((current) => {
+          const next = { ...current };
+          delete next[orderId];
+          return next;
+        });
+        setSelectedItemIds((current) => [...new Set([...current, ...itemIds])]);
         window.localStorage.removeItem(pendingKey);
       },
       clearCart: () => {
         setItems([]);
         setSelectedItemIds([]);
+        Object.keys(pendingCheckoutItems).forEach((orderId) =>
+          window.localStorage.removeItem(`${PENDING_CHECKOUT_STORAGE_KEY}:${orderId}`),
+        );
         window.localStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
+        setPendingCheckoutItems({});
       },
     }),
-    [items, ready, selectedItemIds, selectedItems],
+    [
+      availableItems,
+      items,
+      pendingCheckoutItems,
+      pendingOrderIdByItemId,
+      ready,
+      selectedItemIds,
+      selectedItems,
+    ],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
@@ -202,6 +274,7 @@ export function useCart() {
       itemCount: 0,
       subtotal: 0,
       selectedSubtotal: 0,
+      pendingOrderIdByItemId: {},
     };
   return context;
 }

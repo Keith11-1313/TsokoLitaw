@@ -24,14 +24,17 @@ then render `src/components/checkout/checkout-content.tsx`.
 
 - Pickup/customer state, validation feedback, submit/retry orchestration: `checkout-content.tsx`.
 - Receipt mapping/layout: `checkout-order-summary.tsx`; shared item rendering: `orders/order-line-items.tsx`.
-- Cart persistence/selected lines: `cart-provider.tsx`. Purchased selection is removed only after verified payment.
-  Pending selections are keyed by order ID because manual approval can occur after a later checkout.
+- Cart persistence/selected lines: `cart-provider.tsx`. A saved pending order locks its selected lines
+  to that order so they cannot create another reservation. Verified payment removes those lines;
+  cancellation or expiry releases them for checkout again. Pending selections are keyed by order ID
+  because manual approval can occur after a later checkout.
   Unscoped legacy pending selections are not auto-cleared; customers can remove those old lines themselves.
 - Pickup definitions/eligibility: [inventory guide](inventory.md); never authorize stock from cached availability.
 - Input limits and user-facing server errors: `checkout/actions.ts`, with server/SQL limits kept consistent.
 
-A failed provider call can leave a saved pending order. Reuse its identity/payment rather than
-creating another order or releasing stock blindly. Browser cancellation of payment is not order cancellation.
+A failed provider call can leave a saved pending order. The customer is sent to that saved order,
+and its cart lines remain locked to it. Reuse its identity/payment rather than creating another order
+or releasing stock blindly. Browser cancellation of payment is not order cancellation.
 
 Tests: `commerce.test.ts`, checkout summary tests, PayMongo contract/mode/webhook tests, local
 `002_payments`, `008_inventory`, `009_pickup`, and `011_loyalty` pgTAP files. For behavior changes,

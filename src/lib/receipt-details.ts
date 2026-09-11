@@ -112,6 +112,17 @@ export function getReceiptReadWarning(text: string) {
     : "";
 }
 
+export function isReceiptTimePlausible(paidAt: Date, orderCreatedAt: string, now = Date.now()) {
+  const paidAtTime = paidAt.getTime();
+  const orderCreatedTime = Date.parse(orderCreatedAt);
+  return (
+    Number.isFinite(paidAtTime) &&
+    Number.isFinite(orderCreatedTime) &&
+    paidAtTime >= orderCreatedTime - 5 * 60 * 1000 &&
+    paidAtTime <= now + 5 * 60 * 1000
+  );
+}
+
 export function extractReceiptDetails(text: string) {
   return {
     reference: extractReference(text),

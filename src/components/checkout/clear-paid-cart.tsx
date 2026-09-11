@@ -15,3 +15,16 @@ export function ClearPaidCart({ orderId }: { orderId: string }) {
 
   return null;
 }
+
+export function ReleasePendingCart({ orderId }: { orderId: string }) {
+  const { isReady, releasePendingCheckoutItems } = useCart();
+  const releasedOrder = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isReady || releasedOrder.current === orderId) return;
+    releasedOrder.current = orderId;
+    releasePendingCheckoutItems(orderId);
+  }, [isReady, orderId, releasePendingCheckoutItems]);
+
+  return null;
+}

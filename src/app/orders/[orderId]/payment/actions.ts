@@ -6,6 +6,7 @@ import { isUuid } from "@/lib/identifiers";
 import { enforceMutationRateLimit } from "@/lib/server-rate-limit";
 import { validateUploadedImage } from "@/lib/server-image-validation";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { isReceiptTimePlausible } from "@/lib/receipt-details";
 
 export async function submitManualReceipt(orderId: string, form: FormData) {
   const profile = await requireCustomer(`/orders/${orderId}/payment`);
@@ -20,7 +21,7 @@ export async function submitManualReceipt(orderId: string, form: FormData) {
     const client = createAdminSupabaseClient();
     const { data: order, error } = await client
       .from("orders")
-      .select("id, payment_expires_at, payment_status, status, payment_method")
+      .select("id, created_at, payment_expires_at, payment_status, status, payment_method")
       .eq("id", orderId)
       .eq("user_id", profile.id)
       .maybeSingle();
@@ -61,6 +62,13 @@ export async function submitManualReceipt(orderId: string, form: FormData) {
         message: "Review the reference, amount, date/time and recipient, then confirm the details.",
       };
     }
+    if (!isReceiptTimePlausible(paidAt, order.created_at)) {
+      return {
+        status: "error",
+        message:
+          "The receipt date and time must be for this order. Check the Philippine time shown on the completed payment receipt.",
+      };
+    }
     const file = form.get("receipt");
     if (!(file instanceof File))
       return { status: "error", message: "Upload your completed payment receipt." };
@@ -83,11 +91,56 @@ export async function submitManualReceipt(orderId: string, form: FormData) {
       reported_recipient_value: recipient,
     });
     if (submitError) {
+      const { data: committedSubmission } = await client
+        .from("manual_payment_submissions")
+        .select("id")
+        .eq("id", submissionId)
+        .eq("order_id", orderId)
+        .maybeSingle();
+      if (committedSubmission) {
+        revalidatePath(`/orders/${orderId}`);
+        revalidatePath(`/orders/${orderId}/payment`);
+        revalidatePath("/orders");
+        revalidatePath("/admin/orders");
+        return { status: "success", message: "Receipt submitted for review. Do not pay again." };
+      }
+
       // Known SQL failures rolled back. Only remove this attempt's upload, never existing receipts.
       if (["P0001", "23505", "23514", "22008"].includes(submitError.code)) {
         await client.storage.from("payment-receipts").remove([path]);
       }
-      // Unknown/network failures may have committed: keep their evidence for reconciliation.
+      const databaseMessage = submitError.message.toLowerCase();
+      if (databaseMessage.includes("no longer accepting receipts")) {
+        return {
+          status: "error",
+          message:
+            "This payment window has closed. Refresh the order to see its current status. If you already paid, contact TsokoLitaw and do not pay again.",
+        };
+      }
+      if (databaseMessage.includes("invalid receipt details")) {
+        return {
+          status: "error",
+          message:
+            "Some receipt details are not valid for this order. Check the reference, amount, Philippine date and time, and recipient.",
+        };
+      }
+      if (
+        databaseMessage.includes("order unavailable") ||
+        databaseMessage.includes("payment unavailable")
+      ) {
+        return {
+          status: "error",
+          message:
+            "This order is not ready to accept a receipt. Refresh the order before trying again.",
+        };
+      }
+      if (databaseMessage.includes("receipt upload unavailable")) {
+        return {
+          status: "error",
+          message: "The receipt upload was not saved. Upload the image again and resubmit it.",
+        };
+      }
+      // An unknown transport outcome may have committed. Keep the evidence for reconciliation.
       return {
         status: "error",
         message:

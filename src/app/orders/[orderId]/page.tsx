@@ -12,7 +12,7 @@ import { requireCustomer } from "@/lib/auth";
 import { formatPhp } from "@/lib/commerce";
 import { getCustomerOrderDetail } from "@/lib/server-orders";
 import { getCustomerReviewContext } from "@/lib/server-reviews";
-import { ClearPaidCart } from "@/components/checkout/clear-paid-cart";
+import { ClearPaidCart, ReleasePendingCart } from "@/components/checkout/clear-paid-cart";
 import { ResumePaymentButton } from "@/components/orders/resume-payment-button";
 import { getOrderStatusLabelOverride, getPaymentStatusLabel } from "@/lib/payment-status";
 
@@ -35,6 +35,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
   return (
     <CustomerPageShell activePath="/orders">
       {order.paymentStatus === "PAID" ? <ClearPaidCart orderId={order.id} /> : null}
+      {order.status === "CANCELLED" || order.status === "EXPIRED" ? (
+        <ReleasePendingCart orderId={order.id} />
+      ) : null}
       <SiteContainer className="py-8 sm:py-12">
         <Link
           href="/orders"

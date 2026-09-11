@@ -182,8 +182,9 @@ export async function submitPendingOrderAction(
     return { status: "success", ...result, checkoutUrl };
   } catch {
     return {
-      status: "error",
-      message: `Pending order ${result.orderNumber} was saved, but secure payment could not be opened. No payment was collected. Please try again.`,
+      status: "success",
+      ...result,
+      checkoutUrl: `/orders/${encodeURIComponent(result.orderId)}`,
     };
   }
 }

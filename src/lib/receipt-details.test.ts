@@ -1,5 +1,9 @@
 import { expect, it } from "vitest";
-import { extractReceiptDetails, getReceiptReadWarning } from "./receipt-details";
+import {
+  extractReceiptDetails,
+  getReceiptReadWarning,
+  isReceiptTimePlausible,
+} from "./receipt-details";
 it("extracts hints from explicit labels without substituting the expected total", () => {
   expect(
     extractReceiptDetails(
@@ -64,4 +68,13 @@ it("warns instead of prefilling a load-purchase receipt", () => {
   const text =
     "Buy Load Transaction for 09945957459\nAmount\n-50.00\nDate & Time\nAug 21, 2026 10:04 AM\nReference Number\n207147088";
   expect(getReceiptReadWarning(text)).toContain("load-purchase receipt");
+});
+
+it("accepts only receipt times that could belong to the new order", () => {
+  const now = Date.parse("2026-09-11T12:00:00.000Z");
+  const createdAt = "2026-09-11T11:30:00.000Z";
+
+  expect(isReceiptTimePlausible(new Date("2026-09-11T11:29:00.000Z"), createdAt, now)).toBe(true);
+  expect(isReceiptTimePlausible(new Date("2026-09-10T11:30:00.000Z"), createdAt, now)).toBe(false);
+  expect(isReceiptTimePlausible(new Date("2026-09-11T12:06:00.000Z"), createdAt, now)).toBe(false);
 });

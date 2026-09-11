@@ -35,7 +35,9 @@ owner/Admin read RLS. Receipt URLs authenticate each request; no public Storage 
 Customer-entered receipt details use `reported_reference`, `reported_amount`, `reported_paid_at`,
 and `reported_recipient` so they cannot be confused with the verified payment record.
 Known SQL failures clean up only the newly uploaded file. Unknown commit outcomes retain evidence;
-operators should reconcile orphan uploads against submissions before any deliberate cleanup.
+the server reads the new submission once before reporting uncertainty so a committed receipt is not
+shown as failed. Ordinary validation failures explain what the customer must correct. Operators should
+reconcile orphan uploads against submissions before any deliberate cleanup.
 
 `submit_manual_payment` locks the owned pending order and payment, checks the deadline, records
 the proof, and sets payment `UNDER_REVIEW`. It does not confirm fulfillment or send confirmation.
