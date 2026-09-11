@@ -1,5 +1,10 @@
 # Current work and approved next phases
 
+The owner defines v1.0 as the completed and accepted Phase 15 Android APK plus the working web app.
+Until then the whole application is pre-release, including the Vercel Production environment.
+Disposable test data does not require backward-compatibility layers. Database cleanup/rebaselining
+is approved in principle; each hosted reset still needs its exact project and scope confirmed.
+
 The production/security baseline (Phase 13) is complete. Phase 14 UI Overhaul remains in progress.
 Completion of an earlier smoke test does not establish that every future deployment is healthy.
 Use the current [release checks](operations/deployment.md), not old checked-off implementation lists.
@@ -56,5 +61,6 @@ Begin only after the website and Phase 15 APK are stable.
   Google Business Profile is optional and needs separate eligibility assessment.
 - Resolve reported dependency advisories in a targeted, tested maintenance update; do not mix
   forced upgrades into this documentation/structure pass.
-- Historical refund retirement remains deferred, subject to retention/dependency review and a
-  reviewed migration. **No hosted reset** is a prerequisite for UI work, APK, deployment or handover.
+- Hosted Dev refund retirement and migration consolidation are complete. Finish matching Dev
+  code activation and resume its paused jobs using the database migration runbook.
+  Production promotion is blocked until a separate coordinated database plan is approved.

@@ -18,7 +18,7 @@ delivery addresses, cash sales, walk-in stock writer, or redundant Inventory ava
 - `/admin/inventory` → `inventory-manager.tsx` → Inventory `actions.ts` → `server-inventory.ts` →
   `upsert_daily_inventory`, `record_inventory_consumption`.
 - Checkout reads `server-commerce.ts` published definitions and public inventory projection;
-  `pickup.ts` supplies shared date/time helpers. `create_pending_order` rechecks rules under locks.
+  `pickup.ts` supplies shared date/time helpers. `create_checkout_order` rechecks rules under locks.
 
 SQL definitions are linked in the [RPC map](../architecture/database.md). Schedule structural edits
 are blocked once orders or stock depend on them, but publication can be closed/restored.

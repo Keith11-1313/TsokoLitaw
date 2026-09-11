@@ -52,6 +52,12 @@ Public variables are built into the client; deployment-variable changes require 
 
 ## External services
 
+`PAYMENT_METHOD=paymongo` is the backward-compatible default. `manual_gcash` also requires
+server-only `GCASH_BASE_QR_PAYLOAD` (decoded recipient QR). Do not put the actual payload in Git.
+Keep PayMongo configuration/webhooks working for pre-existing PayMongo orders when switching modes.
+Both methods require the new pre-v1 baseline. Old Production is incompatible with the cleanup branch;
+do not merge/deploy it there until a separately approved coordinated database replacement.
+
 - PayMongo: separate Dev/test and Production/live webhook endpoints, both subscribed only to
   `checkout_session.payment.paid`. Secrets and signature mode must match. Never copy a live key to Preview.
 - Google → Supabase → app: Google allows the respective Supabase URL ending `/auth/v1/callback`.

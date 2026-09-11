@@ -4,12 +4,12 @@ Committed order transition → SQL enqueue trigger → `notification_deliveries`
 `server-notifications.ts` → Resend → signed delivery webhook → delivery metadata.
 
 Active order events: `order.confirmed`, `order.ready_for_pickup`, `order.cancelled` (unpaid only).
-Historical refund processing/completed/failed templates and triggers remain for old records.
+Refund templates and triggers were removed in the pre-v1 cleanup. Customer contact is email-only.
 Do not add a new event just because a new UI action was introduced.
 
 ## Files and data
 
-- SQL `enqueue_transactional_order_email` / `enqueue_transactional_refund_email`: unique event/entity
+- SQL `enqueue_transactional_order_email`: unique event/entity
   keys queue messages from persisted transitions, not browser clicks.
 - `src/lib/server-notifications.ts`: claims due deliveries, builds snapshot payloads, sends with
   the stored Resend idempotency key, records results, and reconciles early callbacks.

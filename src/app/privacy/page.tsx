@@ -17,8 +17,9 @@ const sections: readonly LegalSection[] = [
   {
     heading: "Information we collect",
     paragraphs: [
-      "When you sign in, we receive the account identifiers and basic profile details supplied through Google and Supabase authentication, including your name and email address. You may also provide a mobile number.",
-      "When you shop or contact us, we process cart selections, order and pickup details, customer notes, Terms acceptance, payment references and statuses, loyalty activity, reviews, account-deletion requests, and technical security or delivery records needed to operate the service. Historical refund records may remain where needed for transactions created under an earlier workflow. TsokoLitaw does not store your full e-wallet or online-banking credentials.",
+      "For Manual GCash, we store the original receipt privately in Supabase Storage with the submitted reference, amount, payment time, recipient and Admin decision. The owner and authorized Admins can access the receipt for payment verification and support. Optional receipt extraction runs in your browser; the image is not sent to an external OCR service. Check and correct extracted details before submitting.",
+      "When you sign in, we receive the account identifiers and basic profile details supplied through Google and Supabase authentication, including your name and email address.",
+      "When you shop or contact us, we process cart selections, order and pickup details, customer notes, Terms acceptance, payment references and statuses, loyalty activity, reviews, account deletion requests, and technical security or delivery records needed to operate the service. TsokoLitaw does not store the login details for your digital wallet or online bank.",
     ],
   },
   {
@@ -31,7 +32,7 @@ const sections: readonly LegalSection[] = [
   {
     heading: "Service providers and disclosures",
     paragraphs: [
-      "TsokoLitaw uses Google for sign-in, Supabase for authentication and application data, Vercel for application hosting, PayMongo for QR Ph payment processing, and Resend for transactional email delivery. These providers receive only the information needed for their service and process it under their own terms and privacy commitments.",
+      "TsokoLitaw uses Google to sign you in, Supabase for authentication and application data, Vercel for application hosting, PayMongo for QR Ph payment processing, and Resend for transactional email delivery. These providers receive only the information needed for their service and process it under their own terms and privacy commitments.",
       "Authorized TsokoLitaw administrators may access customer and order information only for fulfillment, support, moderation, security, and operational purposes. We may also disclose information when required by law or necessary to protect customers, the service, or legal rights.",
     ],
   },
@@ -39,7 +40,7 @@ const sections: readonly LegalSection[] = [
     heading: "Retention, account deletion, and security",
     paragraphs: [
       "We retain information only while it is needed for the stated purposes, legitimate operational or legal requirements, dispute resolution, security, and recordkeeping. An eligible customer may schedule account deletion from Profile; the current service provides a 90-day cancellation period before deactivation. Active orders or unresolved historical transaction records may delay the request, and transaction records may be retained where necessary even after account access is deactivated.",
-      "We use access controls, server-side authorization, database row-level security, signed provider webhooks, rate limits, and restricted administrative access. No internet service can promise absolute security, but suspected incidents are assessed and handled under applicable requirements.",
+      "We use access controls, server authorization, database access policies, signed provider webhooks, rate limits, and restricted administrative access. No internet service can promise absolute security, but suspected incidents are assessed and handled under applicable requirements.",
     ],
   },
   {
@@ -63,7 +64,7 @@ export default function PrivacyPage() {
       title="Privacy"
       introduction="This notice explains how TsokoLitaw handles personal information when you use the website, place an order, pay through QR Ph, or contact us."
       sections={sections}
-      documentNote="Privacy notice · Last updated September 1, 2026"
+      documentNote="Privacy notice · Last updated September 10, 2026"
     />
   );
 }

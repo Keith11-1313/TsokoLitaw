@@ -3,7 +3,8 @@ import { LegalDocumentPage, type LegalSection } from "@/components/customer/lega
 
 export const metadata: Metadata = {
   title: "Terms & Conditions | TsokoLitaw",
-  description: "Terms for TsokoLitaw online ordering, QR Ph payment, cancellation, and campus pickup.",
+  description:
+    "Terms for TsokoLitaw online ordering, QR Ph payment, cancellation, and campus pickup.",
   alternates: { canonical: "/terms" },
 };
 
@@ -25,7 +26,8 @@ const sections: readonly LegalSection[] = [
   {
     heading: "Payments and transaction status",
     paragraphs: [
-      "Website checkout accepts QR Ph through PayMongo. Sandbox testing may be used during development; a sandbox or test transaction has no cash value and does not create a real order. A live order is confirmed only after the payment provider and TsokoLitaw verify payment.",
+      "Checkout uses the method shown for that order: PayMongo QR Ph or Manual GCash. PayMongo requires verified provider confirmation. Manual GCash requires a completed receipt and Admin verification against the actual incoming transaction before confirming the order. Sandbox transactions have no cash value.",
+      "For Manual GCash, send the exact order total and upload your receipt before the time shown. Your order stays reserved while we review the receipt and cannot be cancelled online. If we reject a receipt, we will explain why and give you 15 minutes to correct it. The unpaid order may expire if no correction is received. If you sent the payment late or the details do not match, contact TsokoLitaw and do not pay again.",
       "A browser redirect, screenshot, email, or on-screen message alone is not proof of payment. Customers are responsible for reviewing the amount and pickup details before authorizing a live transaction.",
     ],
   },
@@ -37,7 +39,7 @@ const sections: readonly LegalSection[] = [
     ],
   },
   {
-    heading: "Cancellations, refunds, and no-shows",
+    heading: "Cancellations, refunds, and missed pickups",
     paragraphs: [
       "A customer may cancel through the website only while an order is still awaiting payment. An unpaid cancellation releases the reservation. Once an order is paid through QR Ph, cancellation or settlement concerns must be coordinated directly with TsokoLitaw in person; the website does not initiate or process refunds.",
       "Prepared, ready-for-pickup, completed, and missed-pickup orders are non-refundable because ingredients and labor have already been committed, subject to customer rights that cannot legally be waived. Any settlement approved for a paid order is handled directly by TsokoLitaw outside the website.",
@@ -73,7 +75,7 @@ const sections: readonly LegalSection[] = [
   {
     heading: "Intellectual property and educational fair use",
     paragraphs: [
-      "The TsokoLitaw name, original content, product presentation, software, and project materials may not be copied or commercially reused without permission. Third-party names, logos, images, or references used for academic illustration remain the property of their respective owners and are not presented as sponsorship or ownership by TsokoLitaw.",
+      "The TsokoLitaw name, original content, product presentation, software, and project materials may not be copied or commercially reused without permission. Names, logos, images, or references owned by others remain their property and are used only for academic illustration. Their use does not imply sponsorship or ownership by TsokoLitaw.",
     ],
   },
   {
@@ -86,7 +88,7 @@ const sections: readonly LegalSection[] = [
   {
     heading: "Electronic acceptance",
     paragraphs: [
-      "Selecting the Terms & Conditions checkbox and continuing through checkout records the customer's electronic acceptance of these terms, the Privacy Policy, allergen notice, pickup window, and no-show policy. Customers should review the displayed version before placing each order.",
+      "Selecting the Terms & Conditions checkbox and continuing through checkout records the customer's electronic acceptance of these terms, the Privacy Policy, allergen notice, pickup time, and missed pickup policy. Customers should review the displayed version before placing each order.",
     ],
   },
 ];
@@ -97,7 +99,7 @@ export default function TermsPage() {
       title="Terms & Conditions"
       introduction="These terms govern use of the TsokoLitaw academic e-commerce platform, including live food orders, payments, and campus pickup."
       sections={sections}
-      documentNote="Educational project terms · Last updated September 1, 2026"
+      documentNote="Educational project terms · Version September 10, 2026"
     />
   );
 }

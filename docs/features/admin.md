@@ -16,10 +16,14 @@ and business state, and record audited mutations. Browser visibility is not acce
 
 ## Journal flow
 
+Orders also owns [Manual GCash verification](payments.md#manual-gcash): load receipts within
+View complete order, inspect the actual receiving account, then approve or reject with a reason.
+This is an audited active-Admin operation; it is not a separate Payments page. Review items remain
+reserved until a decision. The list includes a bounded review queue as well as recent orders.
+
 `src/app/admin/journal/actions.ts` → `server-journal.ts` → `upsert_journal_post`.
 The editor controls type/display date/text, optional cover/video, and draft/published state.
-Post type supplies the legacy persisted icon value; decorative icons are not separately configured
-or rendered. Video posts require a secure video URL. Published cards use the summary (or a compact
+Video posts require a secure video URL. Published cards use the summary (or a compact
 content fallback) and link by stable slug to a full public post page; drafts are not publicly readable.
 Cover uploads use `journal-media` and validated JPG/PNG/WebP ≤3 MiB (square not required).
 Stable slugs, publication timestamps, and audit entries are handled by SQL. Public `/journal`

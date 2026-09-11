@@ -11,7 +11,7 @@ its own URLs and signing/bearer secrets. This document describes configuration; 
 | `POST /api/webhooks/resend`   | Resend   | Matching endpoint secret; `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.complained`, `email.failed`, `email.suppressed` |
 
 Prefix each route with the matching Dev or canonical Production origin. Do not subscribe new
-PayMongo endpoints to refunds; legacy parsing exists only for historical rows. Signed event bodies
+PayMongo endpoints to refunds; refund parsing and storage were retired in the pre-v1 baseline. Signed event bodies
 must remain untouched until verification. Both handlers enforce bounded request bodies and durable
 deduplication. Resend delivery outcomes never mark orders paid.
 
@@ -30,6 +30,11 @@ site origin is stored as `tsokolitaw_site_url` in Vault. Never put literal secre
 `vercel.json` intentionally has no competing Vercel Cron schedule.
 
 ## Proving a job works
+
+The payment-expiration application processor also invokes `expire_pending_orders` for overdue
+unattached pending orders (including Manual GCash without submitted proof). Its SQL predicate
+excludes `UNDER_REVIEW`. Keep this job and PayMongo callbacks enabled after changing the method:
+existing PayMongo orders still need provider-first expiry and verified callbacks.
 
 1. Confirm project, request URL, time range, and job schedule.
 2. Inspect `cron.job_run_details` for the scheduler result.

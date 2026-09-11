@@ -46,5 +46,5 @@ maintenance, not one wrapper per JSX fragment.
 - Lockfiles are tool-maintained; `.next/` and `node_modules/` are build/install output.
 
 Legacy `/vlog`, `/feedback`, and older Admin routes are intentional compatibility redirects, not
-dead pages. Historical refund handlers and browser-cart compatibility fields protect old data.
+dead pages. The pre-v1 baseline removes historical refund handlers. Do not restore compatibility solely for discarded test data.
 Do not remove them solely because no current UI creates that data.

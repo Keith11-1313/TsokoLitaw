@@ -21,6 +21,13 @@ Update the affected current guide when behavior changes; do not recreate duplica
 
 ## Current scope
 
+Owner decision (September 11, 2026): the entire application is pre-release until the required
+Android APK is completed and accepted as v1.0. A Vercel environment named Production is not a
+product-release milestone. Existing test records need not be retained. Prefer a clean database
+baseline over compatibility solely for disposable pre-release data. A coordinated rebaseline may
+replace migration history after dependency review and local validation; confirm the exact hosted
+project and destructive scope before resetting it. Never infer that provider funds are disposable.
+
 Phase 13 production/security is complete; Phase 14 UI stabilization is in progress.
 Phase 15 is the approved thin TWA Android APK after UI stability. Optional Phase 16 is public-page
 aggregate Web Analytics after APK stability. See [roadmap](docs/roadmap.md); planned features are not implemented.
@@ -44,14 +51,19 @@ or speculative abstractions. Readability cleanup must not redesign working archi
   release of a provider-bound unpaid reservation.
 - Keep payment and fulfillment state separate. Website cancellation is pending-unpaid only.
   Paid concerns are settled in person; no new refund API or destination collection.
-  Historical refund records/reconciliation remain. No hosted reset is approved.
+  The retired refund subsystem was removed in the pre-v1 baseline. Hosted Dev
+  `mgkzphpznamjlgrpumjd` was rebaselined with approved Auth/test-data/Storage disposal on
+  September 11, 2026. Its app Cron jobs remain paused pending matching code activation;
+  follow the database migration runbook. This is not ongoing reset permission.
+  Production `zkmlzktvjkjrbznvrsxb` is untouched and not approved for reset or baseline push.
 - Preserve bounded validation, distributed rate limiting, provider timeouts, notification claim/
   retry/idempotency rules, and audit records. Email delivery never changes payment state.
 - Dev and Production have separate Vercel projects, Supabase data/Auth/Storage, credentials,
   provider modes, webhooks and Cron. Git branch selection is not an environment safeguard.
   A Git merge/deployment never applies SQL.
-- Applied migrations are immutable. Add reviewed migrations; test locally, then Dev, then
-  deliberately promote unchanged files to Production. Never seed/reset Production or blindly repair history.
+- For ordinary incremental deployment, applied migrations are immutable. The approved pre-release
+  rebaseline is a separate coordinated replacement, not a normal db push or blind history repair.
+  Validate locally first; resetting either hosted environment requires exact-target confirmation.
 
 ## Product rules to preserve
 
@@ -69,6 +81,7 @@ It does not create schedules; a prepared total cannot fall below committed/consu
 Each date has an independent balance. Historical snapshots must not follow later catalog/pickup edits.
 
 Customer navigation is Home, Our Creations, Journal; Profile and Cart are actions.
+Customer contact is email-only; do not reintroduce unused mobile-number collection.
 My Orders belongs inside Account. Reviews originate only from owned completed orders and require
 moderation for public visibility. Admin has one equal-permission role with at most five approved identities.
 

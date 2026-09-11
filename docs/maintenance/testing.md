@@ -29,7 +29,7 @@ report that blocker honestly rather than claiming a pass. Tests do not prove dep
 | Shared form/editor       | `src/hooks/editor-contracts.test.tsx`; keyboard, dirty close, discard/stay, pending/save failure, focus restoration          |
 | Pricing/cart/checkout    | `commerce.test.ts`, receipt tests, Dev checkout, relevant local payment/inventory/loyalty SQL tests                          |
 | Auth/permission          | Redirect tests, local `001_auth_rls`, cross-owner and non-Admin requests                                                     |
-| PayMongo                 | Mode/contract/signature/route tests, `webhook-request.test.ts`, local `002_payments` and `003_refunds`                       |
+| PayMongo                 | Mode/contract/signature/route tests, `webhook-request.test.ts`, local `002_payments` and `003_cancellation`                  |
 | Notifications            | Email/Resend webhook tests, local `012_notifications`; approved test recipients                                              |
 | SQL                      | Disposable local reset, lint and full pgTAP suite, regenerate types, then Dev apply/verification                             |
 
