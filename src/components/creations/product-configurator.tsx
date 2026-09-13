@@ -155,9 +155,6 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
             <h2 id="coatings-heading" className="font-display text-3xl">
               Choose your coating
             </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Select one finish or allocate a mixed box piece by piece.
-            </p>
           </div>
           <p className="text-xs font-bold text-subtle-foreground">{coatings.length} choices</p>
         </div>
@@ -346,7 +343,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
                     { value: "", label: "No extra" },
                     ...addons.map((addon) => ({
                       value: addon.id,
-                      label: `${addon.name}, ${formatPhp(addon.price)}`,
+                      label: addon.name,
                     })),
                   ]}
                 />
