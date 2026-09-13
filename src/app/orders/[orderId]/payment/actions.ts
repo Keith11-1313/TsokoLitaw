@@ -66,7 +66,7 @@ export async function submitManualReceipt(orderId: string, form: FormData) {
       return {
         status: "error",
         message:
-          "The receipt date and time must be for this order. Check the Philippine time shown on the completed payment receipt.",
+          "Use the Philippine receipt time for this order. A 10-minute clock allowance is included.",
       };
     }
     const file = form.get("receipt");

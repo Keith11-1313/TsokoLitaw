@@ -1851,7 +1851,7 @@ begin
     or receipt_path_value !~ ('^' || target_user_id::text || '/' || target_order_id::text || '/' || submission_id::text || '[.](jpg|png|webp)$')
     or reported_reference_value is null or reported_reference_value !~ '^[A-Z0-9]{6,64}$'
     or reported_amount_value is null or reported_amount_value <= 0 or reported_amount_value <> round(reported_amount_value,2)
-    or reported_paid_at_value is null or reported_paid_at_value > now() + interval '5 minutes' or reported_paid_at_value < target_order.created_at - interval '5 minutes'
+    or reported_paid_at_value is null or reported_paid_at_value > now() + interval '10 minutes' or reported_paid_at_value < target_order.created_at - interval '10 minutes'
     or reported_recipient_value is null or length(trim(reported_recipient_value)) not between 2 and 100 then
     raise exception 'Invalid receipt details';
   end if;

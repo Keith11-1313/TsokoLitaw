@@ -20,6 +20,9 @@ receipt and reviews reference, amount, Philippine date/time and recipient. Manua
 separate transfer fees. A QR prefills an amount; it cannot prevent editing or revoke a saved code.
 Late payments require direct support, not automatic reactivation or another payment.
 
+Receipt timestamps allow up to ten minutes of clock difference before order creation or after the
+current server time. This allowance does not shorten or extend the 30-minute submission window.
+
 Optional Tesseract OCR starts in the browser when a valid image is selected and never proves payment.
 Uploading another image supersedes the current read; selecting the file again reruns it. Missing or
 ambiguous fields stay editable. The upload control uses a visible drop zone, and each completed

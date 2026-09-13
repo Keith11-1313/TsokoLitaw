@@ -52,7 +52,7 @@ export function ManualReceiptForm({
       details.paidAt &&
       orderCreatedAt &&
       !isReceiptTimePlausible(new Date(`${details.paidAt}+08:00`), orderCreatedAt)
-        ? "Use the Philippine date and time from the payment made for this order."
+        ? "Use the receipt time for this order. A 10-minute clock allowance is included."
         : "",
     recipient:
       details.recipient && details.recipient.trim().length < 2

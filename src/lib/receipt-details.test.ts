@@ -74,7 +74,8 @@ it("accepts only receipt times that could belong to the new order", () => {
   const now = Date.parse("2026-09-11T12:00:00.000Z");
   const createdAt = "2026-09-11T11:30:00.000Z";
 
-  expect(isReceiptTimePlausible(new Date("2026-09-11T11:29:00.000Z"), createdAt, now)).toBe(true);
-  expect(isReceiptTimePlausible(new Date("2026-09-10T11:30:00.000Z"), createdAt, now)).toBe(false);
-  expect(isReceiptTimePlausible(new Date("2026-09-11T12:06:00.000Z"), createdAt, now)).toBe(false);
+  expect(isReceiptTimePlausible(new Date("2026-09-11T11:20:00.000Z"), createdAt, now)).toBe(true);
+  expect(isReceiptTimePlausible(new Date("2026-09-11T11:19:59.000Z"), createdAt, now)).toBe(false);
+  expect(isReceiptTimePlausible(new Date("2026-09-11T12:10:00.000Z"), createdAt, now)).toBe(true);
+  expect(isReceiptTimePlausible(new Date("2026-09-11T12:10:01.000Z"), createdAt, now)).toBe(false);
 });
