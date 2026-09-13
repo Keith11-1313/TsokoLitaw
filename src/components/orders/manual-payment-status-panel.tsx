@@ -39,7 +39,7 @@ export function ManualPaymentStatusPanel({
 }) {
   const content = copy[state];
   return (
-    <section className="mt-7 max-w-3xl rounded-card border border-border bg-surface p-5 sm:p-8">
+    <section className="mt-7 w-full rounded-card border border-border bg-surface p-5 sm:p-8">
       <h2 className="font-display text-2xl">{content.title}</h2>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{content.description}</p>
 

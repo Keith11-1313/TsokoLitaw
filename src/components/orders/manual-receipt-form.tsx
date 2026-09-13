@@ -52,7 +52,7 @@ export function ManualReceiptForm({
       details.paidAt &&
       orderCreatedAt &&
       !isReceiptTimePlausible(new Date(`${details.paidAt}+08:00`), orderCreatedAt)
-        ? "Use the receipt time for this order. A 10-minute clock allowance is included."
+        ? "Use the receipt date and time for this order. A 10-minute clock allowance is included."
         : "",
     recipient:
       details.recipient && details.recipient.trim().length < 2
@@ -211,7 +211,7 @@ export function ManualReceiptForm({
           [
             ["reference", "Transaction or reference ID", "text"],
             ["amount", "Amount sent in PHP, excluding fees", "number"],
-            ["paidAt", "Date and time paid in Philippine time", "datetime-local"],
+            ["paidAt", "Date and time paid", "datetime-local"],
             ["recipient", "Recipient shown on receipt", "text"],
           ] as const
         ).map(([key, label, type]) => (
@@ -262,13 +262,17 @@ export function ManualReceiptForm({
           </label>
         ))}
         <label className="flex items-start gap-3 text-sm leading-6">
-          <input name="confirmed" type="checkbox" required className="mt-1 size-5 shrink-0" />I have
-          completed this payment and checked that these details match my receipt.
+          <input name="confirmed" type="checkbox" required className="mt-1 size-5 shrink-0" />
+          <span>
+            I have completed this payment and checked that these details match my receipt.
+          </span>
         </label>
       </fieldset>
-      <p role="status" aria-live="polite" className="min-h-6 text-sm leading-6">
-        {message}
-      </p>
+      {message ? (
+        <p role="status" aria-live="polite" className="text-sm leading-6">
+          {message}
+        </p>
+      ) : null}
       <button
         type="submit"
         disabled={pending || reading || submitted}

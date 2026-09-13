@@ -224,7 +224,6 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
                 <h2 className="font-display text-2xl">Need help with this order?</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Please speak with TsokoLitaw in person if you have a concern about a paid order.
-                  Refunds are not handled through the website.
                 </p>
               </section>
             ) : null}

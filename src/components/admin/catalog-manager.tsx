@@ -52,10 +52,6 @@ function ProductSettings({ product }: { product: AdminCatalogProduct }) {
     >
       <input type="hidden" name="productId" value={product.id} />
       <h2 className="font-display text-2xl">Product pricing</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        One price per piece calculates every active box total. Checkout reloads this value from the
-        server.
-      </p>
       <div className="mt-5 max-w-xl">
         <NumberStepper
           label="Price per piece (PHP)"
@@ -71,9 +67,11 @@ function ProductSettings({ product }: { product: AdminCatalogProduct }) {
       <div className="mt-5 space-y-3">
         <ActionMessage state={state} />
         <FormStatusHint message={statusMessage} />
-        <PrimaryButton type="submit" disabled={pending || !canSubmit}>
-          {pending ? "Saving…" : "Save product settings"}
-        </PrimaryButton>
+        <div className="flex justify-end">
+          <PrimaryButton type="submit" disabled={pending || !canSubmit}>
+            {pending ? "Saving…" : "Save product settings"}
+          </PrimaryButton>
+        </div>
       </div>
     </form>
   );
@@ -480,10 +478,6 @@ export function CatalogManager({
         <h2 id="box-sizes-heading" className="font-display text-2xl">
           Box sizes
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Prices are calculated from the current price per piece. Approved piece counts stay fixed
-          at 4, 6, and 8.
-        </p>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {product.variants.map((variant) => (
             <VariantCard
@@ -496,15 +490,9 @@ export function CatalogManager({
       </section>
       <section className="mt-9" aria-labelledby="coatings-heading">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 id="coatings-heading" className="font-display text-2xl">
-              Coatings
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Each piece uses its coating&apos;s saved price. One active coating supplies the
-              storefront default.
-            </p>
-          </div>
+          <h2 id="coatings-heading" className="font-display text-2xl">
+            Coatings
+          </h2>
           <PrimaryButton onClick={() => setEditor(null)}>
             <Plus aria-hidden="true" size={17} />
             Add coating
@@ -552,14 +540,9 @@ export function CatalogManager({
       </section>
       <section className="mt-9" aria-labelledby="addons-heading">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 id="addons-heading" className="font-display text-2xl">
-              Extras
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Optional extras customers can add to a configured box.
-            </p>
-          </div>
+          <h2 id="addons-heading" className="font-display text-2xl">
+            Extras
+          </h2>
           <PrimaryButton onClick={() => setAddonEditor(null)}>
             <Plus aria-hidden="true" size={17} />
             Add extra

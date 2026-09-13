@@ -66,7 +66,7 @@ export async function submitManualReceipt(orderId: string, form: FormData) {
       return {
         status: "error",
         message:
-          "Use the Philippine receipt time for this order. A 10-minute clock allowance is included.",
+          "Use the receipt date and time for this order. A 10-minute clock allowance is included.",
       };
     }
     const file = form.get("receipt");

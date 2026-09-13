@@ -53,8 +53,6 @@ export function useFormGate({
     canSubmit: isValid && (!requireDirty || isDirty),
     statusMessage: !isValid
       ? "Complete the required fields and correct the highlighted values."
-      : requireDirty && !isDirty
-        ? "Change at least one value before saving."
-        : "",
+      : "",
   };
 }

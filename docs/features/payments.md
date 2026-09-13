@@ -15,7 +15,7 @@ on the payment, preserving its recipient even if configuration changes later. Ne
 actual recipient payload. Invalid/missing configuration blocks new manual checkout.
 
 The owner visits `/orders/[orderId]/payment`, saves/scans the QR, pays, then uploads a completed
-receipt and reviews reference, amount, Philippine date/time and recipient. Manual GCash has its own
+receipt and reviews reference, amount, local date/time and recipient. Manual GCash has its own
 30-minute submission window; PayMongo retains the shared 15-minute setting. Some sending apps charge
 separate transfer fees. A QR prefills an amount; it cannot prevent editing or revoke a saved code.
 Late payments require direct support, not automatic reactivation or another payment.

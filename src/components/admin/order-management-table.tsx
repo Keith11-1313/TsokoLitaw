@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useState, useTransition } from "react";
-import { ArrowRight, Search, X } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
 import { transitionOrderStatusAction } from "@/app/admin/orders/actions";
 import type { OrderStatus } from "@/components/ui/status-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -204,31 +204,20 @@ function FulfillmentAction({ order }: { order: AdminOrderSummary }) {
             onPointerDown={(event) => event.stopPropagation()}
             className="w-full max-w-md rounded-card border border-border bg-surface p-6 shadow-2xl"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Fulfillment update
-                </p>
-                <h2 id={`transition-title-${order.id}`} className="mt-2 font-display text-2xl">
-                  {actionLabel} for {order.orderNumber}?
-                </h2>
-              </div>
-              <button
-                type="button"
-                disabled={pending}
-                aria-label="Close fulfillment update"
-                onClick={() => setOpen(false)}
-                className="flex size-11 shrink-0 items-center justify-center text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-              >
-                <X aria-hidden="true" size={19} />
-              </button>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Fulfillment update
+              </p>
+              <h2 id={`transition-title-${order.id}`} className="mt-2 font-display text-2xl">
+                {actionLabel} for {order.orderNumber}?
+              </h2>
             </div>
 
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              This changes the customer-visible order status from{" "}
+              This changes the order status customers see from{" "}
               <strong className="text-foreground">{statusLabels[order.status]}</strong> to{" "}
-              <strong className="text-foreground">{statusLabels[targetStatus]}</strong>. The action
-              is recorded in the Admin audit log and cannot be reversed here.
+              <strong className="text-foreground">{statusLabels[targetStatus]}</strong>. We will
+              record who made this change and when. You cannot undo it from this screen.
             </p>
 
             {result?.status === "error" ? (

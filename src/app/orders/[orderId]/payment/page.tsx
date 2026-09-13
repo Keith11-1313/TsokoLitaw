@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
+import { ArrowLeft } from "lucide-react";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
 import { SiteContainer } from "@/components/layout/site-container";
 import { ManualReceiptForm } from "@/components/orders/manual-receipt-form";
@@ -8,7 +9,7 @@ import {
   ManualPaymentStatusPanel,
   type ManualPaymentPageState,
 } from "@/components/orders/manual-payment-status-panel";
-import { PaymentStatusRefresh } from "@/components/orders/payment-status-refresh";
+import { PaymentDeadline, PaymentStatusRefresh } from "@/components/orders/payment-status-refresh";
 import { requireCustomer } from "@/lib/auth";
 import { formatPhp } from "@/lib/commerce";
 import { getManualPayment, type ManualPaymentDetails } from "@/lib/server-manual-payment";
@@ -79,16 +80,20 @@ export default async function ManualPaymentPage({
       <SiteContainer className="py-8 sm:py-12">
         <Link
           href={`/orders/${orderId}`}
-          className="inline-flex min-h-11 items-center text-sm font-bold text-brand"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-brand"
         >
-          ← {order.orderNumber}
+          <ArrowLeft aria-hidden="true" size={18} />
+          Back
         </Link>
         <h1 className="mt-4 font-display text-4xl">GCash payment</h1>
 
         {accepting ? (
           <div className="mt-7 grid items-start gap-6 lg:grid-cols-2">
             <section className="rounded-card border border-border bg-surface p-5 sm:p-8">
-              <h2 className="text-sm font-bold">Amount due</h2>
+              <div className="flex items-start justify-between gap-4">
+                <h2 className="text-sm font-bold">Amount due</h2>
+                <p className="text-sm font-bold text-muted-foreground">{order.orderNumber}</p>
+              </div>
               <p className="mt-2 font-display text-4xl">{formatPhp(order.total)}</p>
               <p className="mt-3 text-sm">
                 Pay to: <strong>{payment.recipientName}</strong>
@@ -111,17 +116,19 @@ export default async function ManualPaymentPage({
                   >
                     Save QR
                   </a>
-                  <p className="mt-5 text-sm leading-6">
-                    Scan or import this QR in your payment app. Check the recipient, then send
-                    exactly {formatPhp(order.total)}. Your payment provider may charge a separate
-                    transfer fee.
+                  <h3 className="mt-5 font-display text-xl">Scan to pay</h3>
+                  <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6">
+                    <li>Scan or import the QR in your payment app.</li>
+                    <li>Check that the recipient is {payment.recipientName}.</li>
+                    <li>Send exactly {formatPhp(order.total)}.</li>
+                  </ol>
+                  <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                    Your payment provider may charge a separate transfer fee.
                   </p>
-                  <p className="mt-3 text-sm leading-6">
-                    Submit your receipt before{" "}
-                    {new Date(payment.expiresAt!).toLocaleString("en-PH", {
-                      timeZone: "Asia/Manila",
-                    })}{" "}
-                    in Philippine time. If you already paid, please do not pay again.
+                  <PaymentDeadline expiresAt={payment.expiresAt!} />
+                  <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">
+                    Upload your completed receipt before the deadline. If you already paid, please
+                    do not pay again.
                   </p>
                 </>
               ) : (
