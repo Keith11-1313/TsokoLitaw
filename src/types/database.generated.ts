@@ -1292,6 +1292,10 @@ export type Database = {
           retry_after_seconds: number
         }[]
       }
+      count_admin_customers: {
+        Args: { search_value?: string; target_admin_id: string }
+        Returns: number
+      }
       create_checkout_order: {
         Args: {
           checkout_key: string
@@ -1328,6 +1332,7 @@ export type Database = {
       get_admin_customer_summaries: {
         Args: {
           result_limit?: number
+          result_offset?: number
           search_value?: string
           target_admin_id: string
         }
@@ -1396,6 +1401,7 @@ export type Database = {
       prepare_paymongo_checkout: {
         Args: { target_order_id: string; target_user_id: string }
         Returns: {
+          existing_checkout_id: string
           existing_checkout_url: string
           prepared_amount: number
           prepared_customer_email: string
@@ -1440,6 +1446,15 @@ export type Database = {
           target_inventory_id: string
         }
         Returns: number
+      }
+      replace_paymongo_checkout: {
+        Args: {
+          checkout_id: string
+          checkout_url: string
+          expected_checkout_id: string
+          target_payment_id: string
+        }
+        Returns: boolean
       }
       request_account_deletion: { Args: never; Returns: string }
       review_manual_payment: {

@@ -118,6 +118,62 @@ ALTER FUNCTION "public"."attach_paymongo_checkout"("target_payment_id" "uuid", "
 
 COMMENT ON FUNCTION "public"."attach_paymongo_checkout"("target_payment_id" "uuid", "checkout_id" "text", "checkout_url" "text") IS 'Service-role-only writer that immutably attaches one PayMongo checkout session to a pending payment.';
 
+CREATE OR REPLACE FUNCTION "public"."replace_paymongo_checkout"("target_payment_id" "uuid", "expected_checkout_id" "text", "checkout_id" "text", "checkout_url" "text") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $_$
+declare
+  target_payment public.payments%rowtype;
+  target_order public.orders%rowtype;
+begin
+  if expected_checkout_id !~ '^cs_[A-Za-z0-9_-]+$'
+    or checkout_id !~ '^cs_[A-Za-z0-9_-]+$'
+    or checkout_url !~ '^https://checkout[.]paymongo[.]com/'
+  then
+    raise exception 'PayMongo checkout reference is invalid';
+  end if;
+
+  select * into target_payment
+  from public.payments
+  where id = target_payment_id
+  for update;
+
+  if target_payment.id is null
+    or target_payment.provider <> 'paymongo'
+    or target_payment.status <> 'PENDING'
+    or target_payment.provider_checkout_id is distinct from expected_checkout_id
+  then
+    raise exception 'Pending PayMongo checkout has changed';
+  end if;
+
+  select * into target_order
+  from public.orders
+  where id = target_payment.order_id
+  for update;
+
+  if target_order.id is null
+    or target_order.status <> 'PENDING_PAYMENT'
+    or target_order.payment_status <> 'PENDING'
+    or target_order.payment_expires_at is null
+    or target_order.payment_expires_at <= now()
+  then
+    raise exception 'Order is not eligible for a replacement checkout';
+  end if;
+
+  update public.payments
+  set provider_checkout_id = checkout_id,
+      provider_checkout_url = checkout_url,
+      updated_at = now()
+  where id = target_payment.id;
+
+  return true;
+end;
+$_$;
+
+ALTER FUNCTION "public"."replace_paymongo_checkout"("target_payment_id" "uuid", "expected_checkout_id" "text", "checkout_id" "text", "checkout_url" "text") OWNER TO "postgres";
+
+COMMENT ON FUNCTION "public"."replace_paymongo_checkout"("target_payment_id" "uuid", "expected_checkout_id" "text", "checkout_id" "text", "checkout_url" "text") IS 'Service-role-only compare-and-replace for a provider checkout that the server has already expired.';
+
 CREATE OR REPLACE FUNCTION "public"."cancel_account_deletion"() RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
@@ -949,7 +1005,7 @@ ALTER FUNCTION "public"."expire_pending_orders"() OWNER TO "postgres";
 
 COMMENT ON FUNCTION "public"."expire_pending_orders"() IS 'Service-role-only processor that expires overdue unpaid orders without an attached provider checkout and releases ready-stock reservations.';
 
-CREATE OR REPLACE FUNCTION "public"."get_admin_customer_summaries"("target_admin_id" "uuid", "search_value" "text" DEFAULT NULL::"text", "result_limit" integer DEFAULT 100) RETURNS TABLE("user_id" "uuid", "full_name" "text", "email" "text", "account_role" "public"."profile_role", "is_active" boolean, "joined_at" timestamp with time zone, "completed_orders" bigint, "completed_spend" numeric, "last_order_at" timestamp with time zone, "loyalty_completed_orders" integer, "loyalty_threshold" integer, "available_rewards" bigint, "redeemed_rewards" bigint)
+CREATE OR REPLACE FUNCTION "public"."get_admin_customer_summaries"("target_admin_id" "uuid", "search_value" "text" DEFAULT NULL::"text", "result_limit" integer DEFAULT 20, "result_offset" integer DEFAULT 0) RETURNS TABLE("user_id" "uuid", "full_name" "text", "email" "text", "account_role" "public"."profile_role", "is_active" boolean, "joined_at" timestamp with time zone, "completed_orders" bigint, "completed_spend" numeric, "last_order_at" timestamp with time zone, "loyalty_completed_orders" integer, "loyalty_threshold" integer, "available_rewards" bigint, "redeemed_rewards" bigint)
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -1009,11 +1065,43 @@ begin
       or profiles.email ilike '%' || btrim(search_value) || '%'
     )
   order by order_summary.last_order_at desc nulls last, profiles.created_at desc
-  limit greatest(1, least(coalesce(result_limit, 100), 500));
+  limit greatest(1, least(coalesce(result_limit, 20), 100))
+  offset greatest(coalesce(result_offset, 0), 0);
 end;
 $$;
 
-ALTER FUNCTION "public"."get_admin_customer_summaries"("target_admin_id" "uuid", "search_value" "text", "result_limit" integer) OWNER TO "postgres";
+ALTER FUNCTION "public"."get_admin_customer_summaries"("target_admin_id" "uuid", "search_value" "text", "result_limit" integer, "result_offset" integer) OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."count_admin_customers"("target_admin_id" "uuid", "search_value" "text" DEFAULT NULL::"text") RETURNS bigint
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+declare
+  customer_count bigint;
+begin
+  if not exists (
+    select 1 from public.profiles as admin_profile
+    where admin_profile.id = target_admin_id
+      and admin_profile.role = 'admin'
+      and admin_profile.is_active
+  ) then
+    raise exception 'Active Admin access required';
+  end if;
+
+  select count(*) into customer_count
+  from public.profiles
+  where profiles.role in ('customer', 'admin')
+    and (
+      nullif(btrim(search_value), '') is null
+      or profiles.full_name ilike '%' || btrim(search_value) || '%'
+      or profiles.email ilike '%' || btrim(search_value) || '%'
+    );
+
+  return customer_count;
+end;
+$$;
+
+ALTER FUNCTION "public"."count_admin_customers"("target_admin_id" "uuid", "search_value" "text") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."get_public_pickup_inventory"() RETURNS TABLE("pickup_date" "date", "available_pieces" integer)
     LANGUAGE "sql" STABLE SECURITY DEFINER
@@ -1240,7 +1328,7 @@ $$;
 
 ALTER FUNCTION "public"."prepare_order_cancellation"("target_order_id" "uuid", "target_user_id" "uuid") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."prepare_paymongo_checkout"("target_order_id" "uuid", "target_user_id" "uuid") RETURNS TABLE("prepared_payment_id" "uuid", "prepared_order_id" "uuid", "prepared_order_number" "text", "prepared_amount" numeric, "prepared_customer_name" "text", "prepared_customer_email" "text", "existing_checkout_url" "text")
+CREATE OR REPLACE FUNCTION "public"."prepare_paymongo_checkout"("target_order_id" "uuid", "target_user_id" "uuid") RETURNS TABLE("prepared_payment_id" "uuid", "prepared_order_id" "uuid", "prepared_order_number" "text", "prepared_amount" numeric, "prepared_customer_name" "text", "prepared_customer_email" "text", "existing_checkout_id" "text", "existing_checkout_url" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -1292,6 +1380,7 @@ begin
     target_order.total,
     target_order.customer_name,
     target_order.customer_email,
+    target_payment.provider_checkout_id,
     target_payment.provider_checkout_url;
 end;
 $$;
@@ -3554,6 +3643,9 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 REVOKE ALL ON FUNCTION "public"."attach_paymongo_checkout"("target_payment_id" "uuid", "checkout_id" "text", "checkout_url" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."attach_paymongo_checkout"("target_payment_id" "uuid", "checkout_id" "text", "checkout_url" "text") TO "service_role";
 
+REVOKE ALL ON FUNCTION "public"."replace_paymongo_checkout"("target_payment_id" "uuid", "expected_checkout_id" "text", "checkout_id" "text", "checkout_url" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."replace_paymongo_checkout"("target_payment_id" "uuid", "expected_checkout_id" "text", "checkout_id" "text", "checkout_url" "text") TO "service_role";
+
 REVOKE ALL ON FUNCTION "public"."cancel_account_deletion"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."cancel_account_deletion"() TO "authenticated";
 
@@ -3579,8 +3671,11 @@ GRANT ALL ON FUNCTION "public"."expire_paymongo_order"("target_payment_id" "uuid
 REVOKE ALL ON FUNCTION "public"."expire_pending_orders"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."expire_pending_orders"() TO "service_role";
 
-REVOKE ALL ON FUNCTION "public"."get_admin_customer_summaries"("target_admin_id" "uuid", "search_value" "text", "result_limit" integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."get_admin_customer_summaries"("target_admin_id" "uuid", "search_value" "text", "result_limit" integer) TO "service_role";
+REVOKE ALL ON FUNCTION "public"."get_admin_customer_summaries"("target_admin_id" "uuid", "search_value" "text", "result_limit" integer, "result_offset" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_admin_customer_summaries"("target_admin_id" "uuid", "search_value" "text", "result_limit" integer, "result_offset" integer) TO "service_role";
+
+REVOKE ALL ON FUNCTION "public"."count_admin_customers"("target_admin_id" "uuid", "search_value" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."count_admin_customers"("target_admin_id" "uuid", "search_value" "text") TO "service_role";
 
 REVOKE ALL ON FUNCTION "public"."get_public_pickup_inventory"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_public_pickup_inventory"() TO "anon";

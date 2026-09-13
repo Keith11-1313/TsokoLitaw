@@ -13,7 +13,6 @@ begin
   execute format('grant usage on schema %I to %I', pgtap_schema, session_user);
 end;
 $$;
-reset role;
 select set_config(
   'search_path',
   (
@@ -25,7 +24,7 @@ select set_config(
   true
 );
 
-select plan(72);
+select plan(76);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -220,12 +219,28 @@ select ok(
   'anonymous checkout can read customer-safe remaining pieces by Pickup date'
 );
 select ok(
-  not has_function_privilege('authenticated', 'public.get_admin_customer_summaries(uuid,text,integer)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.get_admin_customer_summaries(uuid,text,integer,integer)', 'EXECUTE'),
   'authenticated clients cannot invoke Admin customer aggregates directly'
 );
 select ok(
-  has_function_privilege('service_role', 'public.get_admin_customer_summaries(uuid,text,integer)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.get_admin_customer_summaries(uuid,text,integer,integer)', 'EXECUTE'),
   'service role can invoke bounded Admin customer aggregates'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.count_admin_customers(uuid,text)', 'EXECUTE'),
+  'authenticated clients cannot count Admin customers'
+);
+select ok(
+  has_function_privilege('service_role', 'public.count_admin_customers(uuid,text)', 'EXECUTE'),
+  'service role can count Admin customers'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.replace_paymongo_checkout(uuid,text,text,text)', 'EXECUTE'),
+  'authenticated clients cannot replace provider checkouts'
+);
+select ok(
+  has_function_privilege('service_role', 'public.replace_paymongo_checkout(uuid,text,text,text)', 'EXECUTE'),
+  'service role can replace provider checkouts'
 );
 select ok(
   not has_function_privilege(
