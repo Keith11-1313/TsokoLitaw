@@ -3,6 +3,8 @@
 `/orders` and `/orders/[orderId]` use `server-orders.ts` ownership-scoped snapshot reads.
 `orders-list.tsx` owns filters/pagination presentation; `order-line-items.tsx` renders the shared receipt.
 Order numbers come from PostgreSQL's shared sequence (`TL-0001` style), not per-page counters.
+Cancelled, expired, and completed order details offer `Order again` only when every saved catalog
+selection is still active. It copies selections to the cart; server checkout reprices them normally.
 
 ## State authority
 

@@ -13,7 +13,8 @@ then render `src/components/checkout/checkout-content.tsx`.
    pickup, inventory and reward. It inserts snapshots and pins the payment method in one transaction,
    or returns the existing order for the same owner/idempotency key. Contact is email-only.
 5. **Payment:** Manual GCash stores the server-total QR and routes to the owned receipt page.
-   PayMongo prepares/resumes its unique hosted checkout with the existing provider idempotency key.
+   PayMongo creates its hosted checkout. An explicit resume expires the previous provider session and
+   atomically attaches a fresh one, so an expired QR is not reopened.
    Zero-total loyalty settles without external payment. See [payments](payments.md).
 6. **Verified result:** the [PayMongo webhook](payments.md) matches signed provider evidence to the
    stored order and amount, then commits the paid transition. Return URLs only read persisted state.
@@ -35,6 +36,8 @@ then render `src/components/checkout/checkout-content.tsx`.
 A failed provider call can leave a saved pending order. The customer is sent to that saved order,
 which remains available in My Orders. Reuse its identity/payment rather than creating another order
 or releasing stock blindly. Browser cancellation of payment is not order cancellation.
+Cancelled, expired, and completed order details can copy an exact still-available configuration back
+into the cart. Checkout still reloads current prices and availability; it never trusts the snapshot price.
 
 Tests: `commerce.test.ts`, checkout summary tests, PayMongo contract/mode/webhook tests, local
 `002_payments`, `008_inventory`, `009_pickup`, and `011_loyalty` pgTAP files. For behavior changes,

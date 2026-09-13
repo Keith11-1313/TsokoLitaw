@@ -22,7 +22,8 @@ Late payments require direct support, not automatic reactivation or another paym
 
 Optional Tesseract OCR starts in the browser when a valid image is selected and never proves payment.
 Uploading another image supersedes the current read; selecting the file again reruns it. Missing or
-ambiguous fields stay editable. `prepare-receipt-ocr.mjs` copies
+ambiguous fields stay editable. The upload control uses a visible drop zone, and each completed
+receipt field shows its own valid or correction state before submission. `prepare-receipt-ocr.mjs` copies
 locked dependency assets into ignored `public/receipt-ocr` before dev/build; no external OCR/CDN
 requests are needed. Sparse-text recognition and conservative parsing cover the validated GCash,
 GoTyme and MariBank labels/date formats. A detected load-purchase receipt is warned against rather
@@ -78,8 +79,11 @@ Request/response contracts: `paymongo-contract.ts`. Raw-body verification/parsin
 `paymongo-webhook.ts`. Application coordination: `server-payment.ts`.
 
 Checkout creates/reuses one payment row using `prepare_paymongo_checkout`, creates a QR Ph
-Hosted Checkout, and attaches its immutable provider ID/URL with `attach_paymongo_checkout`.
-Provider I/O happens outside long-running SQL locks. Reuse the payment-derived idempotency key.
+Hosted Checkout, and attaches its provider ID/URL with `attach_paymongo_checkout`.
+Explicitly reopening an existing PayMongo payment first expires the old provider session, creates a
+fresh session, then uses `replace_paymongo_checkout` to compare and replace the stored reference only
+while the exact payment and order are still pending. Provider I/O happens outside long-running SQL
+locks. Session creation keeps a payment-and-previous-session-derived idempotency key.
 
 ## Paid callback
 

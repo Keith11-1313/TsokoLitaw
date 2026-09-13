@@ -62,9 +62,8 @@ export default function PrivacyPage() {
   return (
     <LegalDocumentPage
       title="Privacy"
-      introduction="This notice explains how TsokoLitaw handles personal information when you use the website, place an order, pay through QR Ph, or contact us."
       sections={sections}
-      documentNote="Privacy notice · Last updated September 10, 2026"
+      documentNote="Updated on September 10, 2026"
     />
   );
 }

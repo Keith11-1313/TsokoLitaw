@@ -16,13 +16,19 @@ That reset removed 2 new test Auth users and 2 test orders; Storage was already 
 found zero Auth users, profiles, orders and Storage objects, the single matching migration marker, the
 simplified schema fields, required service-role profile read access, and no linked schema lint errors.
 
+On September 13, the owner approved another hosted Dev rebaseline for the PayMongo checkout replacement
+and Admin customer pagination contracts. It removed 3 test Auth users, 4 test orders, 1 manual receipt
+submission and its orphaned Storage object. The single baseline marker, empty Auth/order/receipt state,
+linked schema lint, all 327 linked PostgreSQL assertions, and all three Cron endpoint HTTP 200 responses
+were verified afterward. The three named Cron jobs were recreated with their existing Vault configuration.
+
 **Production `zkmlzktvjkjrbznvrsxb` was not reset or changed. Do not push this baseline there.**
 The baseline is for an empty database, not an incremental upgrade over Production's old schema.
 Do not merge this cleanup into `main` until a separately approved coordinated Production plan exists.
 
 ## Finish Dev activation
 
-The three Dev app Cron jobs are active as of September 11, 2026:
+The three Dev app Cron jobs are active as of September 13, 2026:
 `tsokolitaw-payment-expirations`, `tsokolitaw-notification-retries`, and
 `tsokolitaw-account-deletions`. The second pre-v1 linked reset removed the `pg_cron` extension and
 jobs while retaining Vault. The extension and exactly these three jobs were recreated afterward.

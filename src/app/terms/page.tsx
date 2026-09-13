@@ -97,9 +97,8 @@ export default function TermsPage() {
   return (
     <LegalDocumentPage
       title="Terms & Conditions"
-      introduction="These terms govern use of the TsokoLitaw academic e-commerce platform, including live food orders, payments, and campus pickup."
       sections={sections}
-      documentNote="Educational project terms · Version September 10, 2026"
+      documentNote="Updated on September 10, 2026"
     />
   );
 }
