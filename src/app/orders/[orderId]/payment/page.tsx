@@ -147,7 +147,11 @@ export default async function ManualPaymentPage({
                   instead of paying again.
                 </p>
               ) : null}
-              <ManualReceiptForm orderId={orderId} />
+              <ManualReceiptForm
+                orderId={orderId}
+                expectedAmount={order.total}
+                orderCreatedAt={order.orderedAt}
+              />
               <PaymentStatusRefresh expiresAt={payment.expiresAt} />
               <div className="mt-6">
                 <ReceiptHistory payment={payment} />
@@ -159,13 +163,9 @@ export default async function ManualPaymentPage({
             state={closedState}
             orderId={orderId}
             orderNumber={order.orderNumber}
+            action={underReview ? <PaymentStatusRefresh showControl /> : null}
           >
-            {underReview || paid ? (
-              <>
-                <ReceiptHistory payment={payment} />
-                {underReview ? <PaymentStatusRefresh showControl /> : null}
-              </>
-            ) : null}
+            {underReview || paid ? <ReceiptHistory payment={payment} /> : null}
           </ManualPaymentStatusPanel>
         )}
       </SiteContainer>

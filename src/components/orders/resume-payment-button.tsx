@@ -21,12 +21,12 @@ export function ResumePaymentButton({ orderId }: { orderId: string }) {
   }
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 w-full">
       <button
         type="button"
         onClick={resume}
         disabled={pending}
-        className="inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand disabled:cursor-not-allowed disabled:opacity-60"
       >
         Continue PayMongo payment
       </button>

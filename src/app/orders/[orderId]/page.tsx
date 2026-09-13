@@ -9,11 +9,13 @@ import { OrderActions } from "@/components/orders/order-actions";
 import { OrderLineItems } from "@/components/orders/order-line-items";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { requireCustomer } from "@/lib/auth";
-import { formatPhp } from "@/lib/commerce";
+import { calculateConfiguredCoatingCharge, formatPhp } from "@/lib/commerce";
 import { getCustomerOrderDetail } from "@/lib/server-orders";
 import { getCustomerReviewContext } from "@/lib/server-reviews";
 import { ResumePaymentButton } from "@/components/orders/resume-payment-button";
+import { ReorderButton } from "@/components/orders/reorder-button";
 import { getOrderStatusLabelOverride, getPaymentStatusLabel } from "@/lib/payment-status";
+import { getCommerceCatalog } from "@/lib/server-commerce";
 
 export const metadata: Metadata = { title: "Order Detail | TsokoLitaw" };
 
@@ -24,6 +26,54 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
   if (!order) notFound();
   const reviewContext =
     order.status === "COMPLETED" ? await getCustomerReviewContext(profile.id, orderId) : null;
+  const canOrderAgain = ["CANCELLED", "EXPIRED", "COMPLETED"].includes(order.status);
+  const catalog = canOrderAgain ? await getCommerceCatalog() : null;
+  const reorderItems = catalog
+    ? order.items.flatMap((item) => {
+        const configuration = item.configuration;
+        if (!configuration) return [];
+        const variant = catalog.variants.find(
+          (candidate) => candidate.id === configuration.variantId,
+        );
+        const selectedCoatings = Object.entries(configuration.coatingCounts);
+        const coatingCountsAreValid =
+          variant &&
+          selectedCoatings.reduce((total, [, count]) => total + count, 0) === variant.pieceCount &&
+          selectedCoatings.every(([id]) => catalog.coatings.some((coating) => coating.id === id));
+        const addon = configuration.addonId
+          ? catalog.addons.find((candidate) => candidate.id === configuration.addonId)
+          : null;
+        if (!variant || !coatingCountsAreValid || (configuration.addonId && !addon)) return [];
+        const coatingNames = Object.fromEntries(
+          catalog.coatings.map((coating) => [coating.id, coating.name]),
+        );
+        const coatingPrices = Object.fromEntries(
+          catalog.coatings.map((coating) => [coating.id, coating.pricePerPiece]),
+        );
+        return [
+          {
+            variantId: variant.id,
+            variantLabel: variant.label,
+            pieceCount: variant.pieceCount,
+            boxPrice: variant.price,
+            coatingCounts: configuration.coatingCounts,
+            coatingNames,
+            coatingPrices,
+            extraCoatingCharge: calculateConfiguredCoatingCharge(
+              configuration.coatingCounts,
+              catalog.coatings,
+            ),
+            addonId: addon?.id ?? null,
+            addonName: addon?.name ?? null,
+            addonQuantity: addon ? configuration.addonQuantity : 0,
+            addonPrice: addon?.price ?? 0,
+            quantity: item.quantity,
+          },
+        ];
+      })
+    : [];
+  const exactOrderCanBeRepeated =
+    reorderItems.length === order.items.length && reorderItems.length > 0;
 
   const pickupDate = new Intl.DateTimeFormat("en-PH", {
     timeZone: "Asia/Manila",
@@ -108,7 +158,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
               (order.paymentStatus !== "PENDING" || order.paymentWindowOpen) ? (
                 <Link
                   href={`/orders/${order.id}/payment`}
-                  className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand"
+                  className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand"
                 >
                   {order.paymentStatus === "PENDING"
                     ? "Continue GCash payment"
@@ -122,6 +172,23 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
               order.paymentStatus === "PENDING" &&
               order.paymentWindowOpen ? (
                 <ResumePaymentButton orderId={order.id} />
+              ) : null}
+              {canOrderAgain ? (
+                <div className="mt-5 border-t border-border pt-5">
+                  <p className="mb-3 text-xs leading-5 text-muted-foreground">
+                    Current prices and availability are checked again at checkout.
+                  </p>
+                  {exactOrderCanBeRepeated ? (
+                    <ReorderButton items={reorderItems} />
+                  ) : (
+                    <Link
+                      href="/our-creations"
+                      className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand"
+                    >
+                      Build a new box
+                    </Link>
+                  )}
+                </div>
               ) : null}
             </section>
             {reviewContext ? (

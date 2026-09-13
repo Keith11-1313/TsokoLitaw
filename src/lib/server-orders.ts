@@ -22,6 +22,13 @@ export interface CustomerOrderItemSummary {
     quantity: number;
     lineTotal: number;
   } | null;
+  configuration?: {
+    variantId: string;
+    pieceCount: number;
+    coatingCounts: Record<string, number>;
+    addonId: string | null;
+    addonQuantity: number;
+  };
 }
 
 export interface CustomerOrderSummary {
@@ -65,6 +72,7 @@ interface CoatingRow {
   order_item_id: string;
   coating_name_snapshot: string;
   piece_count: number;
+  coating_id: string;
 }
 
 interface AddonRow {
@@ -72,12 +80,15 @@ interface AddonRow {
   addon_name_snapshot: string;
   quantity: number;
   line_total: number | string;
+  addon_id: string;
 }
 
 interface NestedOrderItemRow {
   id: string;
   order_id?: string;
   variant_name_snapshot: string;
+  variant_id: string;
+  piece_count_snapshot: number;
   quantity: number;
   unit_price_snapshot?: number | string;
   coating_total_snapshot?: number | string;
@@ -157,6 +168,18 @@ function toItemLine(item: NestedOrderItemRow): CustomerOrderItemSummary {
           lineTotal: Number(addon.line_total),
         }
       : null,
+    configuration: {
+      variantId: item.variant_id,
+      pieceCount: item.piece_count_snapshot,
+      coatingCounts: Object.fromEntries(
+        (item.order_item_coatings ?? []).map((coating) => [
+          coating.coating_id,
+          coating.piece_count,
+        ]),
+      ),
+      addonId: addon?.addon_id ?? null,
+      addonQuantity: addon?.quantity ?? 0,
+    },
   };
 }
 
@@ -221,18 +244,22 @@ export async function getCustomerOrders(
       order_items (
         id,
         order_id,
+        variant_id,
         variant_name_snapshot,
+        piece_count_snapshot,
         quantity,
         unit_price_snapshot,
         coating_total_snapshot,
         line_subtotal,
         order_item_coatings (
           order_item_id,
+          coating_id,
           coating_name_snapshot,
           piece_count
         ),
         order_item_addons (
           order_item_id,
+          addon_id,
           addon_name_snapshot,
           quantity,
           line_total
@@ -295,18 +322,22 @@ export async function getCustomerOrderDetail(
       order_items (
         id,
         order_id,
+        variant_id,
         variant_name_snapshot,
+        piece_count_snapshot,
         quantity,
         unit_price_snapshot,
         coating_total_snapshot,
         line_subtotal,
         order_item_coatings (
           order_item_id,
+          coating_id,
           coating_name_snapshot,
           piece_count
         ),
         order_item_addons (
           order_item_id,
+          addon_id,
           addon_name_snapshot,
           quantity,
           line_total
@@ -358,18 +389,22 @@ export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
       order_items (
         id,
         order_id,
+        variant_id,
         variant_name_snapshot,
+        piece_count_snapshot,
         quantity,
         unit_price_snapshot,
         coating_total_snapshot,
         line_subtotal,
         order_item_coatings (
           order_item_id,
+          coating_id,
           coating_name_snapshot,
           piece_count
         ),
         order_item_addons (
           order_item_id,
+          addon_id,
           addon_name_snapshot,
           quantity,
           line_total

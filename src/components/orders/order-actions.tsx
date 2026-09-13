@@ -37,7 +37,7 @@ export function OrderActions({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-danger-foreground px-5 text-sm font-bold text-danger-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:w-auto"
+        className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-danger-foreground px-5 text-sm font-bold text-danger-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
         Cancel this order
       </button>

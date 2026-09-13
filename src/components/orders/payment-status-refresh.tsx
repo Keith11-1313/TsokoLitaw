@@ -23,7 +23,7 @@ export function PaymentStatusRefresh({
       type="button"
       onClick={() => startTransition(() => router.refresh())}
       disabled={pending}
-      className="inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand disabled:opacity-50"
+      className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand disabled:opacity-50"
     >
       Check payment status
     </button>
