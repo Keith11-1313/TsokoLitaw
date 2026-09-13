@@ -1,13 +1,28 @@
 "use client";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { CircleAlert, CircleCheck, ImageUp } from "lucide-react";
 import { submitManualReceipt } from "@/app/orders/[orderId]/payment/actions";
 import { useFormGate } from "@/hooks/use-form-gate";
 import { imageFileError } from "@/lib/form-validation";
-import { extractReceiptDetails, getReceiptReadWarning } from "@/lib/receipt-details";
+import {
+  extractReceiptDetails,
+  getReceiptReadWarning,
+  isReceiptTimePlausible,
+} from "@/lib/receipt-details";
 import type { Worker } from "tesseract.js";
 
-export function ManualReceiptForm({ orderId }: { orderId: string }) {
+type DetailKey = "reference" | "amount" | "paidAt" | "recipient";
+
+export function ManualReceiptForm({
+  orderId,
+  expectedAmount,
+  orderCreatedAt,
+}: {
+  orderId: string;
+  expectedAmount?: number;
+  orderCreatedAt?: string;
+}) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [details, setDetails] = useState({ reference: "", amount: "", paidAt: "", recipient: "" });
@@ -22,6 +37,28 @@ export function ManualReceiptForm({ orderId }: { orderId: string }) {
     requireDirty: false,
     extraValid: !!file && !imageFileError(file),
   });
+  const detailErrors: Record<DetailKey, string> = {
+    reference:
+      details.reference && !/^[A-Z0-9\s-]{6,64}$/i.test(details.reference)
+        ? "Use the reference shown on the completed receipt."
+        : "",
+    amount:
+      details.amount &&
+      expectedAmount !== undefined &&
+      Math.abs(Number(details.amount) - expectedAmount) >= 0.005
+        ? `The receipt must show exactly ₱${expectedAmount.toFixed(2)}, excluding transfer fees.`
+        : "",
+    paidAt:
+      details.paidAt &&
+      orderCreatedAt &&
+      !isReceiptTimePlausible(new Date(`${details.paidAt}+08:00`), orderCreatedAt)
+        ? "Use the Philippine date and time from the payment made for this order."
+        : "",
+    recipient:
+      details.recipient && details.recipient.trim().length < 2
+        ? "Enter the recipient shown on the completed receipt."
+        : "",
+  };
   useEffect(() => {
     refresh();
   }, [details, refresh]);
@@ -64,7 +101,7 @@ export function ManualReceiptForm({ orderId }: { orderId: string }) {
           ? { reference: "", amount: "", paidAt: "", recipient: "" }
           : extractReceiptDetails(result.data.text),
       );
-      setMessage(warning || "Your receipt is ready to review. Please correct anything we missed.");
+      setMessage(warning);
     } catch {
       if (mounted.current && readVersion.current === version)
         setMessage("We couldn’t read this receipt automatically. Please enter its details below.");
@@ -95,9 +132,11 @@ export function ManualReceiptForm({ orderId }: { orderId: string }) {
             element !== receiptInput &&
             !element.checkValidity(),
         );
-        if (!currentFile || fileError || invalidField) {
+        const customError = Object.values(detailErrors).find(Boolean);
+        if (!currentFile || fileError || invalidField || customError) {
           setMessage(
             fileError ||
+              customError ||
               statusMessage ||
               "Complete the required fields and correct the highlighted values.",
           );
@@ -128,34 +167,43 @@ export function ManualReceiptForm({ orderId }: { orderId: string }) {
       }}
     >
       <label className="block text-sm font-bold">
-        Completed payment receipt
-        <input
-          name="receipt"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          required
-          disabled={pending || submitted}
-          className="mt-2 block w-full min-w-0 rounded-control border border-border p-3 text-sm"
-          onChange={(event) => {
-            const chosen = event.target.files?.[0] ?? null;
-            setFile(chosen);
-            setDetails({ reference: "", amount: "", paidAt: "", recipient: "" });
-            const error = imageFileError(chosen);
-            setMessage(error);
-            if (chosen && !error) void readReceipt(chosen);
-          }}
-          onClick={(event) => {
-            event.currentTarget.value = "";
-            setFile(null);
-            setDetails({ reference: "", amount: "", paidAt: "", recipient: "" });
-            setMessage("");
-          }}
-        />
+        Upload your payment receipt
+        <span className="relative mt-2 flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-card border-2 border-dashed border-border bg-surface-muted px-6 py-8 text-center transition-colors hover:border-brand focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/20">
+          <ImageUp aria-hidden="true" size={34} className="text-brand" />
+          <span className="mt-3 font-bold text-foreground">
+            {file ? file.name : "Drag and drop or browse"}
+          </span>
+          <span className="mt-1 text-xs font-normal text-muted-foreground">
+            JPG, PNG or WebP up to 3 MB
+          </span>
+          <input
+            name="receipt"
+            type="file"
+            aria-label="Upload your payment receipt"
+            accept="image/jpeg,image/png,image/webp"
+            required
+            disabled={pending || submitted}
+            className="absolute inset-0 size-full cursor-pointer opacity-0"
+            onChange={(event) => {
+              const chosen = event.target.files?.[0] ?? null;
+              setFile(chosen);
+              setDetails({ reference: "", amount: "", paidAt: "", recipient: "" });
+              const error = imageFileError(chosen);
+              setMessage(error);
+              if (chosen && !error) void readReceipt(chosen);
+            }}
+            onClick={(event) => {
+              event.currentTarget.value = "";
+              setFile(null);
+              setDetails({ reference: "", amount: "", paidAt: "", recipient: "" });
+              setMessage("");
+            }}
+          />
+        </span>
       </label>
       <p className="text-xs leading-5 text-muted-foreground">
-        Upload a JPG, PNG or WebP file up to 3 MB. Choose the receipt that shows a successful
-        payment, not the screen shown before you sent it. We store the original privately for review
-        and start reading it as soon as you upload it. Upload the file again to reread it.
+        Choose the completed payment receipt, not the screen shown before sending. We store it
+        privately and read it on this device. Upload it again to reread it.
       </p>
       <fieldset disabled={pending || reading || submitted} className="space-y-4">
         <legend className="mb-3 font-bold">Review payment details</legend>
@@ -169,21 +217,48 @@ export function ManualReceiptForm({ orderId }: { orderId: string }) {
         ).map(([key, label, type]) => (
           <label key={key} className="block text-sm font-bold">
             {label}
-            <input
-              name={key}
-              type={type}
-              required
-              value={details[key]}
-              min={key === "amount" ? "0.01" : undefined}
-              max={key === "amount" ? "99999999.99" : undefined}
-              step={key === "amount" ? "0.01" : undefined}
-              maxLength={key === "reference" ? 64 : key === "recipient" ? 100 : undefined}
-              minLength={key === "reference" ? 6 : key === "recipient" ? 2 : undefined}
-              onChange={(event) =>
-                setDetails((current) => ({ ...current, [key]: event.target.value }))
-              }
-              className="mt-2 min-h-12 w-full min-w-0 rounded-control border border-border bg-surface px-3 font-normal"
-            />
+            <span className="relative mt-2 block">
+              <input
+                name={key}
+                type={type}
+                required
+                value={details[key]}
+                min={key === "amount" ? "0.01" : undefined}
+                max={key === "amount" ? "99999999.99" : undefined}
+                step={key === "amount" ? "0.01" : undefined}
+                maxLength={key === "reference" ? 64 : key === "recipient" ? 100 : undefined}
+                minLength={key === "reference" ? 6 : key === "recipient" ? 2 : undefined}
+                aria-invalid={Boolean(detailErrors[key]) || undefined}
+                aria-describedby={detailErrors[key] ? `${key}-receipt-error` : undefined}
+                onChange={(event) =>
+                  setDetails((current) => ({ ...current, [key]: event.target.value }))
+                }
+                className="min-h-12 w-full min-w-0 rounded-control border border-border bg-surface px-3 pr-11 font-normal aria-invalid:border-danger-foreground"
+              />
+              {details[key] ? (
+                detailErrors[key] ? (
+                  <CircleAlert
+                    aria-hidden="true"
+                    size={19}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-danger-foreground"
+                  />
+                ) : (
+                  <CircleCheck
+                    aria-hidden="true"
+                    size={19}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-success-foreground"
+                  />
+                )
+              ) : null}
+            </span>
+            {detailErrors[key] ? (
+              <span
+                id={`${key}-receipt-error`}
+                className="mt-1 block text-xs font-normal leading-5 text-danger-foreground"
+              >
+                {detailErrors[key]}
+              </span>
+            ) : null}
           </label>
         ))}
         <label className="flex items-start gap-3 text-sm leading-6">
@@ -202,10 +277,6 @@ export function ManualReceiptForm({ orderId }: { orderId: string }) {
       >
         Submit for verification
       </button>
-      <p className="text-xs leading-5 text-muted-foreground">
-        Sending a receipt does not mark your order as paid. Our team will compare it with the
-        incoming transaction before confirming your order.
-      </p>
     </form>
   );
 }

@@ -34,7 +34,7 @@ afterEach(cleanup);
 
 it("reads immediately after upload and requires another upload to reread", async () => {
   render(<ManualReceiptForm orderId="order-1" />);
-  const input = screen.getByLabelText("Completed payment receipt") as HTMLInputElement;
+  const input = screen.getByLabelText("Upload your payment receipt") as HTMLInputElement;
   const receipt = new File(["receipt"], "receipt.png", { type: "image/png" });
 
   fireEvent.change(input, { target: { files: [receipt] } });
@@ -74,7 +74,7 @@ it("submits the image and reviewed fields and shows the server result", async ()
   render(<ManualReceiptForm orderId="order-1" />);
   const receipt = new File(["receipt"], "receipt.png", { type: "image/png" });
 
-  fireEvent.change(screen.getByLabelText("Completed payment receipt"), {
+  fireEvent.change(screen.getByLabelText("Upload your payment receipt"), {
     target: { files: [receipt] },
   });
   await waitFor(() => expect(ocr.recognize).toHaveBeenCalledTimes(1));

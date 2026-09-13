@@ -29,11 +29,13 @@ export function ManualPaymentStatusPanel({
   orderId,
   orderNumber,
   children,
+  action,
 }: {
   state: ManualPaymentPageState;
   orderId: string;
   orderNumber: string;
   children?: ReactNode;
+  action?: ReactNode;
 }) {
   const content = copy[state];
   return (
@@ -56,13 +58,14 @@ export function ManualPaymentStatusPanel({
         </p>
       ) : null}
 
-      <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+      <div className={`mt-7 grid gap-3 ${action || state === "expired" ? "sm:grid-cols-2" : ""}`}>
         <Link
           href={`/orders/${orderId}`}
           className="inline-flex min-h-11 items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand"
         >
           Back to order
         </Link>
+        {action}
         {state === "expired" ? (
           <Link
             href="/checkout"

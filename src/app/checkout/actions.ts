@@ -226,7 +226,9 @@ export async function resumePendingPaymentAction(
   }
 
   try {
-    const checkoutUrl = await getOrderPaymentUrl(order.id, profile.id);
+    const checkoutUrl = await getOrderPaymentUrl(order.id, profile.id, {
+      refreshPayMongo: true,
+    });
     return {
       status: "success",
       orderId: order.id,

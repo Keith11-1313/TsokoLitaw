@@ -11,6 +11,7 @@ interface PreparedCheckoutRow {
   prepared_amount: number | string;
   prepared_customer_name: string;
   prepared_customer_email: string;
+  existing_checkout_id: string | null;
   existing_checkout_url: string | null;
 }
 
@@ -26,7 +27,11 @@ export async function expireDueDirectPayments() {
   }
 }
 
-export async function getOrderPaymentUrl(orderId: string, userId: string) {
+export async function getOrderPaymentUrl(
+  orderId: string,
+  userId: string,
+  options: { refreshPayMongo?: boolean } = {},
+) {
   const { data: order, error } = await createAdminSupabaseClient()
     .from("orders")
     .select("payment_method, status, payment_status")
@@ -36,10 +41,14 @@ export async function getOrderPaymentUrl(orderId: string, userId: string) {
   if (error || !order || order.status !== "PENDING_PAYMENT")
     throw new Error("Pending order unavailable.");
   if (order.payment_method === "manual_gcash") return `/orders/${orderId}/payment`;
-  return getOrCreatePayMongoCheckout(orderId, userId);
+  return getOrCreatePayMongoCheckout(orderId, userId, options.refreshPayMongo);
 }
 
-export async function getOrCreatePayMongoCheckout(orderId: string, userId: string) {
+export async function getOrCreatePayMongoCheckout(
+  orderId: string,
+  userId: string,
+  refreshExisting = false,
+) {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase.rpc("prepare_paymongo_checkout", {
     target_order_id: orderId,
@@ -48,11 +57,21 @@ export async function getOrCreatePayMongoCheckout(orderId: string, userId: strin
   if (error) throw new Error("The order is not ready for payment.", { cause: error });
   const row = (Array.isArray(data) ? data[0] : data) as PreparedCheckoutRow | null;
   if (!row) throw new Error("The payment initializer did not return an order.");
-  if (row.existing_checkout_url) return row.existing_checkout_url;
+  if (Boolean(row.existing_checkout_id) !== Boolean(row.existing_checkout_url)) {
+    throw new Error("The stored PayMongo checkout is incomplete.");
+  }
+  if (row.existing_checkout_url && !refreshExisting) return row.existing_checkout_url;
+
+  if (refreshExisting && row.existing_checkout_id) {
+    await expirePayMongoCheckoutSession(row.existing_checkout_id);
+  }
 
   const siteUrl = getConfiguredSiteOrigin();
   const session = await createPayMongoCheckoutSession({
-    idempotencyKey: `checkout:${row.prepared_payment_id}`,
+    idempotencyKey:
+      refreshExisting && row.existing_checkout_id
+        ? `checkout:${row.prepared_payment_id}:after:${row.existing_checkout_id}`
+        : `checkout:${row.prepared_payment_id}`,
     orderId: row.prepared_order_id,
     orderNumber: row.prepared_order_number,
     totalPhp: Number(row.prepared_amount),
@@ -62,11 +81,19 @@ export async function getOrCreatePayMongoCheckout(orderId: string, userId: strin
     cancelUrl: `${siteUrl}/checkout?payment=cancelled&order=${encodeURIComponent(row.prepared_order_id)}`,
   });
 
-  const { error: attachError } = await supabase.rpc("attach_paymongo_checkout", {
-    target_payment_id: row.prepared_payment_id,
-    checkout_id: session.id,
-    checkout_url: session.checkoutUrl,
-  });
+  const { error: attachError } =
+    refreshExisting && row.existing_checkout_id
+      ? await supabase.rpc("replace_paymongo_checkout", {
+          target_payment_id: row.prepared_payment_id,
+          expected_checkout_id: row.existing_checkout_id,
+          checkout_id: session.id,
+          checkout_url: session.checkoutUrl,
+        })
+      : await supabase.rpc("attach_paymongo_checkout", {
+          target_payment_id: row.prepared_payment_id,
+          checkout_id: session.id,
+          checkout_url: session.checkoutUrl,
+        });
   if (attachError) {
     try {
       await expirePayMongoCheckoutSession(session.id);
