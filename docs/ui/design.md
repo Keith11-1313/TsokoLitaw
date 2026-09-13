@@ -14,9 +14,9 @@ Inspect the relevant page and assets before editing UI.
   the customer photo background; the customer-header logo mark matches the cart action's 44px circle.
   A small downward scroll keeps navigation visible; continued downward scrolling hides it, and upward
   scrolling reveals it immediately.
-- Customer canvas: `public/images/photo-bg.png`; opaque cream cards/navigation preserve readability.
+- Customer canvas: `public/images/photo-bg.webp`; opaque cream cards/navigation preserve readability.
   Admin uses a denser flat operational background, not a separate brand system.
-- Logo: `public/brand/logo.png`; local Home media: `public/images/home/`, `public/videos/home/`.
+- Logo: `public/brand/logo.webp`; local Home media: `public/images/home/`, `public/videos/home/`.
   Coating images: persisted Supabase `catalog-media` URLs. Journal covers: `journal-media`.
 - Use Lucide for missing simple icons; no new icon/UI library without a concrete need.
 - Reuse `CustomerPageShell`, header/footer, `SiteContainer`, buttons, `FormField`, `CustomSelect`,

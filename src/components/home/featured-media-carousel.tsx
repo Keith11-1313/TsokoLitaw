@@ -28,7 +28,11 @@ export function FeaturedMediaCarousel() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-lg" aria-roledescription="carousel" aria-label="Featured TsokoLitaw media">
+    <section
+      className="mx-auto w-full max-w-lg"
+      aria-roledescription="carousel"
+      aria-label="Featured TsokoLitaw media"
+    >
       <div className="relative overflow-hidden rounded-card border border-border bg-foreground shadow-sm">
         <div className="aspect-[9/16]">
           {activeSlide === 0 ? (
@@ -55,7 +59,7 @@ export function FeaturedMediaCarousel() {
               aria-label="View the TsokoLitaw selection in Our Creations"
             >
               <Image
-                src="/images/home/featured-selection.png"
+                src="/images/home/featured-selection.webp"
                 alt="TsokoLitaw selection showing eight chocolate-filled Litaw coatings"
                 fill
                 sizes="(min-width: 640px) 32rem, calc(100vw - 2rem)"
@@ -72,7 +76,11 @@ export function FeaturedMediaCarousel() {
             className="absolute right-3 top-3 flex min-h-11 items-center gap-2 rounded-full bg-surface/95 px-4 text-xs font-bold text-brand shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             aria-label={muted ? "Turn video sound on" : "Mute video"}
           >
-            {muted ? <VolumeX aria-hidden="true" size={17} /> : <Volume2 aria-hidden="true" size={17} />}
+            {muted ? (
+              <VolumeX aria-hidden="true" size={17} />
+            ) : (
+              <Volume2 aria-hidden="true" size={17} />
+            )}
             {muted ? "Sound off" : "Sound on"}
           </button>
         ) : null}
