@@ -22,12 +22,13 @@ export default async function ProfilePage() {
       <SiteContainer className="py-8 sm:py-12">
         <div className="mx-auto max-w-4xl">
           <h1 className="font-display text-4xl sm:text-5xl">Your profile</h1>
-          <p className="mt-3 text-muted-foreground">
-            The details connected to your authenticated Google account.
-          </p>
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_20rem]">
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_20rem]">
             <section aria-label="Personal details">
-              <ProfileForm fullName={profile.fullName} email={profile.email} />
+              <ProfileForm
+                fullName={profile.fullName}
+                email={profile.email}
+                avatarUrl={profile.avatarUrl}
+              />
             </section>
             <aside className="space-y-5">
               <LoyaltyProgressCard loyalty={loyalty} />

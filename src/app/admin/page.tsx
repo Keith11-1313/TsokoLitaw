@@ -220,8 +220,8 @@ export default async function AdminDashboardPage() {
               {
                 href: "/admin/customers",
                 title: "Customers",
-                value: `${customers.length} accounts shown`,
-                detail: `${customers.filter((customer) => customer.completedOrders >= 2).length} returning customers`,
+                value: `${customers.totalCount} accounts`,
+                detail: `${customers.customers.filter((customer) => customer.completedOrders >= 2).length} returning among the latest accounts`,
                 icon: Users,
               },
               {

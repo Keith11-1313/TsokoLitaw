@@ -10,6 +10,22 @@ export interface AuthProfile {
   email: string;
   role: "customer" | "admin";
   deletionScheduledFor: string | null;
+  avatarUrl: string | null;
+}
+
+function getGoogleAvatarUrl(metadata: unknown) {
+  if (!metadata || typeof metadata !== "object") return null;
+  const values = metadata as Record<string, unknown>;
+  const candidate = values.avatar_url ?? values.picture;
+  if (typeof candidate !== "string") return null;
+  try {
+    const url = new URL(candidate);
+    return url.protocol === "https:" && url.hostname === "lh3.googleusercontent.com"
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
@@ -39,6 +55,7 @@ export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
     email: profile.email,
     role: profile.role,
     deletionScheduledFor: profile.deletion_scheduled_for,
+    avatarUrl: getGoogleAvatarUrl(claimsData.claims.user_metadata),
   };
 });
 
