@@ -38,10 +38,9 @@ calling that environment ready.
 
 Later on September 13, the stale `pg_cron` launcher left every newly recreated job without run
 history. Hosted Dev was restarted and a temporary harmless Cron health check then completed
-successfully. The notification retry job was recreated and left paused until the matching Resend
-request fix is deployed. Reactivate it only after that deployment, then verify both its Cron run and
-the resulting delivery status. Current state: payment expiration and account deletion are active;
-notification retries are paused.
+successfully. On September 14, the corrected Resend sender and credentials were deployed, five
+previously failed messages were retried successfully, and all seven current delivery records reached
+`DELIVERED`. The notification retry job is active again on its five minute schedule.
 
 1. The user deploys the matching cleanup code to the Dev Vercel project.
 2. Verify Dev Supabase URL/keys and payment mode. Manual GCash needs the actual server-only QR payload.

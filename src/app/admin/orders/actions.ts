@@ -20,7 +20,36 @@ export type AdminOrderActionResult = {
 export async function loadManualPaymentAction(orderId: string) {
   await requireAdmin("/admin/orders");
   if (!isUuid(orderId)) throw new Error("Invalid order.");
-  return getManualPayment(orderId);
+  const payment = await getManualPayment(orderId);
+  const proof = payment?.submissions.find((submission) => submission.status === "UNDER_REVIEW");
+  if (!payment || !proof) return payment ? { ...payment, approvedReferenceConflict: null } : null;
+
+  const client = createAdminSupabaseClient();
+  const { data: approvedProof, error: proofError } = await client
+    .from("manual_payment_submissions")
+    .select("order_id")
+    .eq("reported_reference", proof.reported_reference)
+    .eq("status", "APPROVED")
+    .neq("order_id", orderId)
+    .limit(1)
+    .maybeSingle();
+  if (proofError) throw new Error("Payment reference could not be checked.");
+
+  let approvedReferenceConflict: { orderId: string; orderNumber: string } | null = null;
+  if (approvedProof) {
+    const { data: approvedOrder, error: orderError } = await client
+      .from("orders")
+      .select("order_number")
+      .eq("id", approvedProof.order_id)
+      .single();
+    if (orderError) throw new Error("Approved payment order could not be loaded.");
+    approvedReferenceConflict = {
+      orderId: approvedProof.order_id,
+      orderNumber: approvedOrder.order_number,
+    };
+  }
+
+  return { ...payment, approvedReferenceConflict };
 }
 
 export async function reviewManualPaymentAction(input: {
@@ -54,10 +83,30 @@ export async function reviewManualPaymentAction(input: {
     const client = createAdminSupabaseClient();
     const { data: proof, error: readError } = await client
       .from("manual_payment_submissions")
-      .select("order_id")
+      .select("order_id, reported_reference")
       .eq("id", input.submissionId)
       .maybeSingle();
     if (readError || !proof) return { status: "error", message: "Receipt unavailable." };
+    if (input.approve) {
+      const { data: approvedProof, error: duplicateReadError } = await client
+        .from("manual_payment_submissions")
+        .select("id")
+        .eq("reported_reference", proof.reported_reference)
+        .eq("status", "APPROVED")
+        .neq("id", input.submissionId)
+        .limit(1)
+        .maybeSingle();
+      if (duplicateReadError)
+        return {
+          status: "error",
+          message: "Payment reference could not be checked. Refresh before trying again.",
+        };
+      if (approvedProof)
+        return {
+          status: "error",
+          message: "This reference has already been approved for another order.",
+        };
+    }
     const { error } = await client.rpc("review_manual_payment", {
       target_admin_id: admin.id,
       target_submission_id: input.submissionId,

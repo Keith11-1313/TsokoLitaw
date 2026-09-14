@@ -1,12 +1,12 @@
 "use client";
 import { useState, useTransition } from "react";
 import { loadManualPaymentAction, reviewManualPaymentAction } from "@/app/admin/orders/actions";
-import type { ManualPaymentDetails } from "@/lib/server-manual-payment";
+import type { AdminManualPaymentDetails } from "@/lib/server-manual-payment";
 import { formatPhp } from "@/lib/commerce";
 import { getPaymentStatusLabel } from "@/lib/payment-status";
 
 export function ManualPaymentReview({ orderId, total }: { orderId: string; total: number }) {
-  const [payment, setPayment] = useState<ManualPaymentDetails | null>(null);
+  const [payment, setPayment] = useState<AdminManualPaymentDetails | null>(null);
   const [message, setMessage] = useState("");
   const [reason, setReason] = useState("");
   const [verified, setVerified] = useState(false);
@@ -21,6 +21,7 @@ export function ManualPaymentReview({ orderId, total }: { orderId: string; total
     });
   }
   const proof = payment?.submissions[0];
+  const referenceConflict = payment?.approvedReferenceConflict ?? null;
   function review(approve: boolean) {
     if (!proof || pending) return;
     startTransition(async () => {
@@ -106,6 +107,19 @@ export function ManualPaymentReview({ orderId, total }: { orderId: string; total
               >
                 View original receipt
               </a>
+              {referenceConflict ? (
+                <div
+                  role="alert"
+                  className="rounded-control border border-danger bg-danger/5 p-4 leading-6 text-danger"
+                >
+                  <p className="font-bold">This payment reference was already used</p>
+                  <p>
+                    It was approved for order {referenceConflict.orderNumber}. Do not approve this
+                    receipt. Check the receiving GCash account, then reject it so the customer can
+                    submit the correct receipt.
+                  </p>
+                </div>
+              ) : null}
               {proof.status === "UNDER_REVIEW" ? (
                 <>
                   <p className="leading-6">
@@ -149,7 +163,12 @@ export function ManualPaymentReview({ orderId, total }: { orderId: string; total
                     </button>
                     <button
                       type="button"
-                      disabled={pending || !verified || proof.reported_amount !== total}
+                      disabled={
+                        pending ||
+                        !verified ||
+                        proof.reported_amount !== total ||
+                        !!referenceConflict
+                      }
                       onClick={() => review(true)}
                       className="min-h-11 rounded-full bg-brand px-4 font-bold text-surface disabled:opacity-50"
                     >

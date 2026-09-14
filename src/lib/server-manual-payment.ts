@@ -44,3 +44,6 @@ export async function getManualPayment(orderId: string) {
 }
 
 export type ManualPaymentDetails = NonNullable<Awaited<ReturnType<typeof getManualPayment>>>;
+export type AdminManualPaymentDetails = ManualPaymentDetails & {
+  approvedReferenceConflict: { orderId: string; orderNumber: string } | null;
+};

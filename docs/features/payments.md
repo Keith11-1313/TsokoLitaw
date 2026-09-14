@@ -54,7 +54,9 @@ Admin opens the existing order details and compares the receipt against the **ac
 GCash transaction**, including recipient, amount, reference and time. `review_manual_payment`
 rechecks active Admin/state under a lock. Approval requires the exact total and atomically sets
 payment `PAID` / order `CONFIRMED`, records an audit entry and queues the existing confirmation
-event. Unique approved references prevent one normalized reference paying multiple orders.
+event. Known reused references are detected before the review mutation, and Admin sees the order
+that already used the reference before approval. The partial unique index remains the final
+concurrency safeguard so one normalized reference cannot pay multiple orders.
 Screenshots/OCR/customer corrections are untrusted; the Admin checkbox is an acknowledgment,
 not independent verification by an API.
 
