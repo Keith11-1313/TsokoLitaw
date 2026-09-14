@@ -28,13 +28,20 @@ Do not merge this cleanup into `main` until a separately approved coordinated Pr
 
 ## Finish Dev activation
 
-The three Dev app Cron jobs are active as of September 13, 2026:
+Hosted Dev has exactly these three app Cron job definitions as of September 13, 2026:
 `tsokolitaw-payment-expirations`, `tsokolitaw-notification-retries`, and
 `tsokolitaw-account-deletions`. The second pre-v1 linked reset removed the `pg_cron` extension and
 jobs while retaining Vault. The extension and exactly these three jobs were recreated afterward.
 Their routes, schedules, Vault-backed bearer authorization, and one HTTP 200 response per endpoint
 were verified. A future linked reset will remove the jobs again, so inspect and recreate them before
 calling that environment ready.
+
+Later on September 13, the stale `pg_cron` launcher left every newly recreated job without run
+history. Hosted Dev was restarted and a temporary harmless Cron health check then completed
+successfully. The notification retry job was recreated and left paused until the matching Resend
+request fix is deployed. Reactivate it only after that deployment, then verify both its Cron run and
+the resulting delivery status. Current state: payment expiration and account deletion are active;
+notification retries are paused.
 
 1. The user deploys the matching cleanup code to the Dev Vercel project.
 2. Verify Dev Supabase URL/keys and payment mode. Manual GCash needs the actual server-only QR payload.

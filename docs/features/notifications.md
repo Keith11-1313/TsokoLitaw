@@ -12,7 +12,8 @@ Do not add a new event just because a new UI action was introduced.
 - SQL `enqueue_transactional_order_email`: unique event/entity
   keys queue messages from persisted transitions, not browser clicks.
 - `src/lib/server-notifications.ts`: claims due deliveries, builds snapshot payloads, sends with
-  the stored Resend idempotency key, records results, and reconciles early callbacks.
+  the stored Resend idempotency key and an explicit application user agent, records bounded
+  provider error details for diagnosis, and reconciles early callbacks.
 - `src/lib/notification-email.ts`: HTML/plain-text copy using stored order/pickup information.
 - `/api/cron/notifications`: protected retry batch, at most 20 deliveries per call.
 - `/api/webhooks/resend`, `resend-webhook.ts`, `process_resend_delivery_event`: raw-body signature

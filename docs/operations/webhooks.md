@@ -24,8 +24,8 @@ deduplication. Resend delivery outcomes never mark orders paid.
 | `/api/cron/account-deletions`   | `0 19 * * *`             | 3 AM Manila daily; at most 100 due profiles plus rate-limit pruning                  |
 
 Jobs live in each environment's Supabase Cron, calling that environment's website with
-`Authorization: Bearer <its CRON_SECRET>` sourced privately from Vault. Production's configured
-site origin is stored as `tsokolitaw_site_url` in Vault. Never put literal secrets in docs or screenshots.
+`Authorization: Bearer <its CRON_SECRET>` sourced privately from Vault. Each environment's configured
+site origin is stored as `tsokolitaw_app_url` in Vault. Never put literal secrets in docs or screenshots.
 `src/lib/cron-auth.ts` provides constant-time authorization and non-cacheable responses.
 `vercel.json` intentionally has no competing Vercel Cron schedule.
 

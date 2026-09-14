@@ -47,6 +47,7 @@ interface OrderRow {
 
 const MAX_ATTEMPTS = 5;
 const PROCESSING_TIMEOUT_MS = 10 * 60 * 1000;
+const RESEND_USER_AGENT = "TsokoLitaw/0.1";
 
 function getRequiredEmailEnvironment() {
   const apiKey = process.env.RESEND_API_KEY?.trim();
@@ -57,7 +58,22 @@ function getRequiredEmailEnvironment() {
   return { apiKey, from, siteUrl: getConfiguredSiteOrigin() };
 }
 
-async function sendWithResend(input: {
+interface ResendResponseBody {
+  id?: unknown;
+  name?: unknown;
+  message?: unknown;
+}
+
+function cleanProviderText(value: unknown, maxLength: number) {
+  if (typeof value !== "string") return null;
+  const cleaned = value
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return cleaned ? cleaned.slice(0, maxLength) : null;
+}
+
+export async function sendWithResend(input: {
   apiKey: string;
   from: string;
   to: string;
@@ -72,6 +88,7 @@ async function sendWithResend(input: {
       Authorization: `Bearer ${input.apiKey}`,
       "Content-Type": "application/json",
       "Idempotency-Key": input.idempotencyKey,
+      "User-Agent": RESEND_USER_AGENT,
     },
     body: JSON.stringify({
       from: input.from,
@@ -82,9 +99,17 @@ async function sendWithResend(input: {
     }),
     signal: AbortSignal.timeout(15_000),
   });
-  const body = (await response.json().catch(() => null)) as { id?: unknown } | null;
-  if (!response.ok || typeof body?.id !== "string" || !body.id) {
-    throw new Error(`Resend rejected the message with status ${response.status}.`);
+  const body = (await response.json().catch(() => null)) as ResendResponseBody | null;
+  if (!response.ok) {
+    const errorType = cleanProviderText(body?.name, 80);
+    const providerMessage = cleanProviderText(body?.message, 300);
+    const details = [errorType, providerMessage].filter(Boolean).join(": ");
+    throw new Error(
+      `Resend rejected the message with status ${response.status}${details ? ` (${details})` : ""}.`,
+    );
+  }
+  if (typeof body?.id !== "string" || !body.id) {
+    throw new Error(`Resend returned status ${response.status} without a message ID.`);
   }
   return body.id;
 }
