@@ -8,7 +8,8 @@ then render `src/components/checkout/checkout-content.tsx`.
 2. **Action:** `src/app/checkout/actions.ts` authenticates, validates bounded IDs/counts/text, and
    applies the distributed user/IP rate limit. The user ID comes from the verified profile, not input.
 3. **Server:** `server-checkout.ts` reloads the live catalog through `server-commerce.ts`, runs
-   `commerce.ts:priceCheckoutCart`, reads current Terms, and constructs trusted priced snapshots.
+   `commerce.ts:priceCheckoutCart`, adds the current complimentary extra once per box, reads current
+   Terms, and constructs trusted priced snapshots. Browser cart data cannot choose the free extra.
 4. **Transaction:** `create_checkout_order` in the pre-v1 baseline locks/rechecks the account,
    pickup, inventory and reward. It inserts snapshots and pins the payment method in one transaction,
    or returns the existing order for the same owner/idempotency key. Contact is email-only.

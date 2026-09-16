@@ -41,8 +41,9 @@ actions and keeps private activity separate from public discovery.
 - Base unit price is piece count × the current Admin-managed product price per piece.
   Each coated piece adds its coating's Admin-managed per-piece charge. Mixed allocations total
   the whole box; a single-coating box allocates every piece to that choice.
-- Exactly one active coating is the default. Add-ons are active persisted records; a configured
-  line may select one type and quantity per box. Different configurations are separate cart lines.
+- Exactly one active coating is the default. Exactly one active extra is complimentary, with one
+  portion included in every box. A configured line may also select one paid extra type and quantity
+  per box. Different configurations are separate cart lines.
 - Customer screens call add-ons “Extras.” Code and database names retain the standard `addon`
   term so the technical contract stays consistent.
 - Seed prices (base ₱10/piece, coating ₱5/piece, initial cream add-on ₱18) are provisional data,

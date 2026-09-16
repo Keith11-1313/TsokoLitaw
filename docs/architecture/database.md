@@ -67,5 +67,8 @@ references are unique.
 - Signed payment verification must match stored references and amount in one idempotent transition.
 - Role, active-state, ownership, and review eligibility require database/server enforcement, not UI controls.
 - Historical snapshots are not recalculated from the current catalog.
+- `addons.is_default` identifies the one active complimentary extra. The
+  `order_item_addons.is_complimentary` snapshot keeps free and paid extras distinct and constrains
+  complimentary line totals to zero.
 
 See [migration workflow](../operations/database-migrations.md) and [tests](../maintenance/testing.md).

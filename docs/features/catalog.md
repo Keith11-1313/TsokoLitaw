@@ -7,9 +7,11 @@ Admin writes: `/admin/products/actions.ts` → `server-catalog.ts` → catalog R
 ## Authoritative rules
 
 `products.price_per_piece × product_variants.piece_count` is the base box price. Every allocated
-piece adds its coating's current `coatings.price_per_piece`; an optional add-on has a quantity per
-box. Box sizes are 4, 6, 8. Mixed allocations must account for every piece. Exactly one active
-coating is the storefront default. PHP seed values are editable catalog data, not hardcoded prices.
+piece adds its coating's current `coatings.price_per_piece`; an optional paid add-on has a quantity
+per box. Box sizes are 4, 6, 8. Mixed allocations must account for every piece. Exactly one active
+coating is the storefront default. Exactly one active extra is complimentary; checkout snapshots
+one free portion per box and charges only the customer's additional selected quantity. PHP seed
+values are editable catalog data, not hardcoded prices.
 
 Browser calculation in `commerce.ts` is an estimate. Checkout reloads the catalog and calls
 `priceCheckoutCart` on the server; existing orders retain their old snapshot prices/names.
@@ -30,4 +32,5 @@ authorization; failed persistence removes only the newly uploaded object. Public
 the public catalog cache. A local preview never implies a saved record.
 
 Tests: `commerce.test.ts`, `server-image-validation.test.ts`, and local `007_catalog.test.sql`.
-Check single/mixed boxes, active/default selection, add-ons, and current versus historical prices.
+Check single/mixed boxes, coating and complimentary-extra defaults, paid extras, and current versus
+historical prices.
