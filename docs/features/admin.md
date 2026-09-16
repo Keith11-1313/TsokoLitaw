@@ -16,8 +16,9 @@ and business state, and record audited mutations. Browser visibility is not acce
 
 ## Journal flow
 
-Orders also owns [Manual GCash verification](payments.md#manual-gcash): load receipts within
-View complete order, inspect the actual receiving account, then approve or reject with a reason.
+Orders also owns [Manual GCash verification](payments.md#manual-gcash): open the payment review
+from the order's payment status, inspect the receipt in the focused review dialog and compare it
+with the actual receiving account, then approve or reject with a reason.
 This is an audited active-Admin operation; it is not a separate Payments page. Review items remain
 reserved until a decision. The list includes a bounded review queue as well as recent orders.
 

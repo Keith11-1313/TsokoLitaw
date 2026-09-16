@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { ArrowRight, Search } from "lucide-react";
 import { transitionOrderStatusAction } from "@/app/admin/orders/actions";
 import type { OrderStatus } from "@/components/ui/status-badge";
@@ -75,13 +75,7 @@ function PaymentBadge({
   );
 }
 
-function OrderContents({
-  order,
-  includePayment = true,
-}: {
-  order: AdminOrderSummary;
-  includePayment?: boolean;
-}) {
+function OrderContents({ order }: { order: AdminOrderSummary }) {
   return (
     <details className="group">
       <summary className="w-fit cursor-pointer rounded-sm text-xs font-bold text-brand underline decoration-border underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
@@ -90,9 +84,6 @@ function OrderContents({
       </summary>
       <div className="mt-4 rounded-control bg-surface-muted p-4">
         <OrderLineItems items={order.itemLines} />
-        {includePayment && order.paymentMethod === "manual_gcash" ? (
-          <ManualPaymentReview orderId={order.id} total={order.total} />
-        ) : null}
         {order.notes ? (
           <div className="mt-4 border-t border-border pt-4 text-xs leading-5">
             <p className="font-bold text-foreground">Customer note</p>
@@ -124,6 +115,15 @@ function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
           paymentWindowOpen={order.paymentWindowOpen}
         />
       </div>
+      {order.paymentMethod === "manual_gcash" ? (
+        <ManualPaymentReview
+          orderId={order.id}
+          orderNumber={order.orderNumber}
+          paymentStatus={order.paymentStatus}
+          total={order.total}
+          className="mt-4"
+        />
+      ) : null}
       <dl className="mt-5 space-y-4 text-sm">
         <div>
           <dt className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -336,70 +336,65 @@ export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }
               </thead>
               <tbody>
                 {visibleOrders.map((order) => (
-                  <Fragment key={order.id}>
-                    <tr className="border-b border-border align-top last:border-b-0">
-                      <th className="px-4 py-5 font-bold text-foreground" scope="row">
-                        {order.orderNumber}
-                        <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                          {formatDate(order.orderedAt)}
-                        </span>
-                      </th>
-                      <td className="px-4 py-5 text-foreground">
-                        {order.customerName}
-                        <span className="mt-1 block max-w-52 truncate text-xs text-muted-foreground">
-                          {order.customerEmail}
-                        </span>
-                      </td>
-                      <td className="max-w-72 px-4 py-5 text-muted-foreground">
-                        <span className="line-clamp-2">
-                          {order.itemSummary || "No item snapshot"}
-                        </span>
-                        <span className="mt-1 block text-xs">
-                          {order.boxQuantity} {order.boxQuantity === 1 ? "box" : "boxes"}
-                        </span>
-                        <div className="mt-3">
-                          <OrderContents order={order} includePayment={false} />
-                        </div>
-                      </td>
-                      <td className="px-4 py-5 font-bold text-foreground">
-                        {formatPhp(order.total)}
-                      </td>
-                      <td className="px-4 py-5">
+                  <tr key={order.id} className="border-b border-border align-top last:border-b-0">
+                    <th className="px-4 py-5 font-bold text-foreground" scope="row">
+                      {order.orderNumber}
+                      <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                        {formatDate(order.orderedAt)}
+                      </span>
+                    </th>
+                    <td className="px-4 py-5 text-foreground">
+                      {order.customerName}
+                      <span className="mt-1 block max-w-52 truncate text-xs text-muted-foreground">
+                        {order.customerEmail}
+                      </span>
+                    </td>
+                    <td className="max-w-72 px-4 py-5 text-muted-foreground">
+                      <span className="line-clamp-2">
+                        {order.itemSummary || "No item snapshot"}
+                      </span>
+                      <span className="mt-1 block text-xs">
+                        {order.boxQuantity} {order.boxQuantity === 1 ? "box" : "boxes"}
+                      </span>
+                      <div className="mt-3">
+                        <OrderContents order={order} />
+                      </div>
+                    </td>
+                    <td className="px-4 py-5 font-bold text-foreground">
+                      {formatPhp(order.total)}
+                    </td>
+                    <td className="px-4 py-5">
+                      <div className="space-y-3">
                         <PaymentBadge
                           status={order.paymentStatus}
                           method={order.paymentMethod}
                           paymentWindowOpen={order.paymentWindowOpen}
                         />
-                      </td>
-                      <td className="px-4 py-5">
-                        <StatusBadge status={order.status} />
-                      </td>
-                      <td className="max-w-56 px-4 py-5 text-xs leading-5 text-muted-foreground">
-                        {formatPickupDate(order.pickupDate)}
-                        <br />
-                        {order.pickupWindow}
-                        <br />
-                        {order.pickupLocation}
-                      </td>
-                      <td className="px-4 py-5 text-center">
-                        <FulfillmentAction order={order} />
-                      </td>
-                    </tr>
-                    {order.paymentMethod === "manual_gcash" ? (
-                      <tr>
-                        <td colSpan={8} className="border-b border-border px-4 pb-5">
-                          <details className="rounded-control bg-surface-muted p-5">
-                            <summary className="cursor-pointer py-2 font-bold">
-                              Payment receipts · {order.orderNumber}
-                            </summary>
-                            <div className="max-w-3xl">
-                              <ManualPaymentReview orderId={order.id} total={order.total} />
-                            </div>
-                          </details>
-                        </td>
-                      </tr>
-                    ) : null}
-                  </Fragment>
+                        {order.paymentMethod === "manual_gcash" ? (
+                          <ManualPaymentReview
+                            orderId={order.id}
+                            orderNumber={order.orderNumber}
+                            paymentStatus={order.paymentStatus}
+                            total={order.total}
+                            className="min-w-32 px-3 text-xs"
+                          />
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="px-4 py-5">
+                      <StatusBadge status={order.status} />
+                    </td>
+                    <td className="max-w-56 px-4 py-5 text-xs leading-5 text-muted-foreground">
+                      {formatPickupDate(order.pickupDate)}
+                      <br />
+                      {order.pickupWindow}
+                      <br />
+                      {order.pickupLocation}
+                    </td>
+                    <td className="px-4 py-5 text-center">
+                      <FulfillmentAction order={order} />
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>
