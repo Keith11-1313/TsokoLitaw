@@ -2,10 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Star } from "lucide-react";
-import {
-  submitReviewAction,
-  type ReviewActionState,
-} from "@/app/orders/[orderId]/review/actions";
+import { submitReviewAction, type ReviewActionState } from "@/app/orders/[orderId]/review/actions";
 import { PrimaryButton } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { cn } from "@/lib/cn";
@@ -31,17 +28,19 @@ function ReviewStars({ rating }: { rating: number }) {
           key={index}
           aria-hidden="true"
           size={22}
-          className={cn(
-            "text-warning-foreground",
-            index < rating && "fill-warning-foreground",
-          )}
+          className={cn("text-warning-foreground", index < rating && "fill-warning-foreground")}
         />
       ))}
     </div>
   );
 }
 
-export function OrderReviewForm({ orderId, orderNumber, itemSummary, existingReview }: OrderReviewFormProps) {
+export function OrderReviewForm({
+  orderId,
+  orderNumber,
+  itemSummary,
+  existingReview,
+}: OrderReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [state, formAction, pending] = useActionState(submitReviewAction, initialState);
@@ -55,7 +54,6 @@ export function OrderReviewForm({ orderId, orderNumber, itemSummary, existingRev
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
           {existingReview?.comment ?? state.message}
         </p>
-        <p className="mt-5 text-xs text-muted-foreground">Each completed order can be reviewed once.</p>
       </section>
     );
   }
@@ -81,7 +79,12 @@ export function OrderReviewForm({ orderId, orderNumber, itemSummary, existingRev
               onClick={() => setRating(value)}
               className="flex size-12 items-center justify-center rounded-control bg-surface-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
-              <Star className={cn("text-warning-foreground", value <= rating && "fill-warning-foreground")} />
+              <Star
+                className={cn(
+                  "text-warning-foreground",
+                  value <= rating && "fill-warning-foreground",
+                )}
+              />
             </button>
           ))}
         </div>
@@ -102,16 +105,30 @@ export function OrderReviewForm({ orderId, orderNumber, itemSummary, existingRev
           onChange: (event) => setComment(event.currentTarget.value.slice(0, 1000)),
         }}
       />
-      <p className={`mt-2 text-right text-xs font-bold ${comment.length < 10 ? "text-danger-foreground" : "text-muted-foreground"}`} aria-live="polite">
+      <p
+        className={`mt-2 text-right text-xs font-bold ${comment.length < 10 ? "text-danger-foreground" : "text-muted-foreground"}`}
+        aria-live="polite"
+      >
         {comment.length}/1000
       </p>
       {state.status === "error" ? (
-        <p role="alert" className="mt-5 rounded-control bg-danger-background p-4 text-sm text-danger-foreground">
+        <p
+          role="alert"
+          className="mt-5 rounded-control bg-danger-background p-4 text-sm text-danger-foreground"
+        >
           {state.message}
         </p>
       ) : null}
-      {state.fieldErrors?.rating ? <p className="mt-3 text-center text-xs font-bold text-danger-foreground">{state.fieldErrors.rating}</p> : null}
-      <PrimaryButton className="mt-6 w-full" type="submit" disabled={!rating || comment.trim().length < 10 || pending}>
+      {state.fieldErrors?.rating ? (
+        <p className="mt-3 text-center text-xs font-bold text-danger-foreground">
+          {state.fieldErrors.rating}
+        </p>
+      ) : null}
+      <PrimaryButton
+        className="mt-6 w-full"
+        type="submit"
+        disabled={!rating || comment.trim().length < 10 || pending}
+      >
         {pending ? "Submitting review…" : "Submit review"}
       </PrimaryButton>
     </form>

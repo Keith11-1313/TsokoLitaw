@@ -51,7 +51,6 @@ export function HeaderActions({
               role="menu"
               className="absolute right-0 top-12 z-50 w-56 rounded-card border border-border bg-surface p-2 shadow-xl"
             >
-              <p className="px-3 py-2 text-xs text-muted-foreground">Signed in with Google</p>
               {isAdmin ? (
                 <Link
                   role="menuitem"

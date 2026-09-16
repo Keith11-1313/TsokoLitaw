@@ -33,8 +33,7 @@ export function LoginPreview({ nextPath }: { nextPath: string }) {
       </span>
       <h1 className="mt-6 font-display text-4xl leading-tight text-brand">Sign in to TsokoLitaw</h1>
       <p className="mt-4 text-sm leading-6 text-muted-foreground">
-        New and returning customers use Google to order, track campus pickups, and review completed
-        orders.
+        Use your Google account to place orders and manage pickups.
       </p>
       <PrimaryButton
         className="mt-8 w-full"

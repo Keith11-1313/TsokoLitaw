@@ -409,8 +409,7 @@ export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }
         )}
       </div>
       <p className="pt-5 text-xs text-muted-foreground">
-        Showing {visibleOrders.length} of {orders.length} loaded orders (recent orders plus payment
-        reviews)
+        Showing {visibleOrders.length} of {orders.length} recent orders
       </p>
     </section>
   );

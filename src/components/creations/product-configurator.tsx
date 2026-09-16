@@ -150,14 +150,9 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_27rem]">
       <section className="order-2 min-w-0 lg:order-1" aria-labelledby="coatings-heading">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 id="coatings-heading" className="font-display text-3xl">
-              Choose your coating
-            </h2>
-          </div>
-          <p className="text-xs font-bold text-subtle-foreground">{coatings.length} choices</p>
-        </div>
+        <h2 id="coatings-heading" className="font-display text-3xl">
+          Choose your coating
+        </h2>
 
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {coatings.map((coating) => {

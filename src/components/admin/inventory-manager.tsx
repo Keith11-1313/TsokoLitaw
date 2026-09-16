@@ -200,7 +200,7 @@ function ConsumptionForm({ record }: { record: AdminInventoryRecord }) {
           <input
             name="notes"
             maxLength={240}
-            placeholder="Short operational note"
+            placeholder="Example: 3 pieces damaged during preparation"
             className="min-h-12 w-full rounded-control bg-surface-control px-3 font-normal"
           />
         </label>

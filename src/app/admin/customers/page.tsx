@@ -154,29 +154,27 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
   return (
     <AdminPageLayout activePath="/admin/customers" title="Customers">
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <AdminStatCard
-          compact
-          icon={UsersRound}
-          label="Accounts shown"
-          value={String(totalCount)}
-        />
+        <AdminStatCard compact icon={UsersRound} label="Customers" value={String(totalCount)} />
         <AdminStatCard
           compact
           icon={Repeat2}
-          label="Returning on page"
+          label="Returning customers"
           value={String(returningCustomers)}
+          supportingText="On this page"
         />
         <AdminStatCard
           compact
           icon={Gift}
-          label="Available on page"
+          label="Available rewards"
           value={String(availableRewards)}
+          supportingText="On this page"
         />
         <AdminStatCard
           compact
           icon={BadgeCheck}
-          label="Used on page"
+          label="Used rewards"
           value={String(redeemedRewards)}
+          supportingText="On this page"
         />
       </div>
 
@@ -185,7 +183,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
           <div>
             <h2 className="font-display text-2xl text-foreground">Account directory</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              {formatPhp(completedRevenue)} completed paid value on this page.
+              {formatPhp(completedRevenue)} from completed orders shown.
             </p>
           </div>
           <form
@@ -229,6 +227,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
         columns={columns}
         rows={rows}
         minimumWidth="64rem"
+        emptyMessage="No customers found."
       />
       <div className="mt-4 flex flex-col gap-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p>
