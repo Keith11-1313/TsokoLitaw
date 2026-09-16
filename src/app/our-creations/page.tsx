@@ -14,6 +14,11 @@ export default async function OurCreationsPage() {
   const catalog = await getPublicCommerceCatalog();
 
   return (
-    <CustomerPageShell activePath="/our-creations"><SiteContainer className="py-8 sm:py-12 lg:py-16"><ProductConfigurator catalog={catalog} /></SiteContainer></CustomerPageShell>
+    <CustomerPageShell activePath="/our-creations">
+      <SiteContainer className="py-8 sm:py-12 lg:py-16">
+        <h1 className="sr-only">Build your TsokoLitaw box</h1>
+        <ProductConfigurator catalog={catalog} />
+      </SiteContainer>
+    </CustomerPageShell>
   );
 }
