@@ -332,12 +332,6 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
 
             {addons.length ? (
               <div className="space-y-4">
-                <div className="rounded-control bg-success-background p-4 text-sm text-success-foreground">
-                  <p className="font-bold">Complimentary {complimentaryAddon.name}</p>
-                  <p className="mt-1 text-xs leading-5">
-                    One is included with every box for {formatPhp(0)}.
-                  </p>
-                </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   <CustomSelect
                     label="Additional extra"
