@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { ArrowRight, Search, X } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
 import { transitionOrderStatusAction } from "@/app/admin/orders/actions";
 import type { OrderStatus } from "@/components/ui/status-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -10,6 +10,8 @@ import { OrderLineItems } from "@/components/orders/order-line-items";
 import { formatPhp } from "@/lib/commerce";
 import { fulfillmentActionLabels, getNextFulfillmentStatus } from "@/lib/order-status";
 import type { AdminOrderSummary } from "@/lib/server-orders";
+import { ManualPaymentReview } from "@/components/admin/manual-payment-review";
+import { getPaymentStatusLabel } from "@/lib/payment-status";
 
 const statusOptions: Array<{ value: "ALL" | OrderStatus; label: string }> = [
   { value: "ALL", label: "All statuses" },
@@ -28,13 +30,6 @@ const statusLabels: Record<OrderStatus, string> = Object.fromEntries(
     .filter((option) => option.value !== "ALL")
     .map((option) => [option.value, option.label]),
 ) as Record<OrderStatus, string>;
-
-const paymentLabels: Record<AdminOrderSummary["paymentStatus"], string> = {
-  PENDING: "Pending",
-  PAID: "Paid",
-  FAILED: "Failed",
-  REFUNDED: "Refunded (historical)",
-};
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-PH", {
@@ -56,7 +51,15 @@ function formatPickupDate(value: string) {
   }).format(new Date(`${value}T00:00:00+08:00`));
 }
 
-function PaymentBadge({ status }: { status: AdminOrderSummary["paymentStatus"] }) {
+function PaymentBadge({
+  status,
+  method,
+  paymentWindowOpen,
+}: {
+  status: AdminOrderSummary["paymentStatus"];
+  method?: AdminOrderSummary["paymentMethod"];
+  paymentWindowOpen: boolean;
+}) {
   const colors =
     status === "PAID"
       ? "bg-success-background text-success-foreground"
@@ -67,7 +70,7 @@ function PaymentBadge({ status }: { status: AdminOrderSummary["paymentStatus"] }
           : "bg-info-background text-info-foreground";
   return (
     <span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-bold ${colors}`}>
-      {paymentLabels[status]}
+      {getPaymentStatusLabel(status, method, paymentWindowOpen)}
     </span>
   );
 }
@@ -106,8 +109,21 @@ function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <StatusBadge status={order.status} />
-        <PaymentBadge status={order.paymentStatus} />
+        <PaymentBadge
+          status={order.paymentStatus}
+          method={order.paymentMethod}
+          paymentWindowOpen={order.paymentWindowOpen}
+        />
       </div>
+      {order.paymentMethod === "manual_gcash" ? (
+        <ManualPaymentReview
+          orderId={order.id}
+          orderNumber={order.orderNumber}
+          paymentStatus={order.paymentStatus}
+          total={order.total}
+          className="mt-4"
+        />
+      ) : null}
       <dl className="mt-5 space-y-4 text-sm">
         <div>
           <dt className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -115,9 +131,6 @@ function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
           </dt>
           <dd className="mt-1 font-bold text-foreground">{order.customerName}</dd>
           <dd className="break-all text-xs text-muted-foreground">{order.customerEmail}</dd>
-          {order.customerMobile ? (
-            <dd className="text-xs text-muted-foreground">{order.customerMobile}</dd>
-          ) : null}
         </div>
         <div>
           <dt className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -191,31 +204,20 @@ function FulfillmentAction({ order }: { order: AdminOrderSummary }) {
             onPointerDown={(event) => event.stopPropagation()}
             className="w-full max-w-md rounded-card border border-border bg-surface p-6 shadow-2xl"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Fulfillment update
-                </p>
-                <h2 id={`transition-title-${order.id}`} className="mt-2 font-display text-2xl">
-                  {actionLabel} for {order.orderNumber}?
-                </h2>
-              </div>
-              <button
-                type="button"
-                disabled={pending}
-                aria-label="Close fulfillment update"
-                onClick={() => setOpen(false)}
-                className="flex size-11 shrink-0 items-center justify-center text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-              >
-                <X aria-hidden="true" size={19} />
-              </button>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Fulfillment update
+              </p>
+              <h2 id={`transition-title-${order.id}`} className="mt-2 font-display text-2xl">
+                {actionLabel} for {order.orderNumber}?
+              </h2>
             </div>
 
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              This changes the customer-visible order status from{" "}
+              This changes the order status customers see from{" "}
               <strong className="text-foreground">{statusLabels[order.status]}</strong> to{" "}
-              <strong className="text-foreground">{statusLabels[targetStatus]}</strong>. The action
-              is recorded in the Admin audit log and cannot be reversed here.
+              <strong className="text-foreground">{statusLabels[targetStatus]}</strong>. We will
+              record who made this change and when. You cannot undo it from this screen.
             </p>
 
             {result?.status === "error" ? (
@@ -265,7 +267,6 @@ export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }
         order.orderNumber,
         order.customerName,
         order.customerEmail,
-        order.customerMobile ?? "",
         order.itemSummary,
         order.notes ?? "",
       ].some((value) => value.toLowerCase().includes(normalizedQuery));
@@ -363,7 +364,22 @@ export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }
                       {formatPhp(order.total)}
                     </td>
                     <td className="px-4 py-5">
-                      <PaymentBadge status={order.paymentStatus} />
+                      <div className="space-y-3">
+                        <PaymentBadge
+                          status={order.paymentStatus}
+                          method={order.paymentMethod}
+                          paymentWindowOpen={order.paymentWindowOpen}
+                        />
+                        {order.paymentMethod === "manual_gcash" ? (
+                          <ManualPaymentReview
+                            orderId={order.id}
+                            orderNumber={order.orderNumber}
+                            paymentStatus={order.paymentStatus}
+                            total={order.total}
+                            className="min-w-32 px-3 text-xs"
+                          />
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-5">
                       <StatusBadge status={order.status} />
@@ -393,7 +409,7 @@ export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }
         )}
       </div>
       <p className="pt-5 text-xs text-muted-foreground">
-        Showing {visibleOrders.length} of {orders.length} most recent orders
+        Showing {visibleOrders.length} of {orders.length} recent orders
       </p>
     </section>
   );

@@ -48,9 +48,17 @@ project. The **Dev Vercel project can have that label** while remaining the Dev 
 
 Use `.env.example` as the maintained application-variable template. Do not restore the retired
 `REFUND_DESTINATION_ENCRYPTION_KEY` or add unused email settings from old docs.
-Public variables are built into the client; deployment-variable changes require a new deployment.
+Public variables are built into the client, while server variables are captured by the running deployment.
+Any Vercel variable change, including `PAYMENT_METHOD`, requires a new deployment in the same project
+and environment scope. Local server-variable changes require restarting the Next.js process.
 
 ## External services
+
+`PAYMENT_METHOD=paymongo` is the backward-compatible default. `manual_gcash` also requires
+server-only `GCASH_BASE_QR_PAYLOAD` (decoded recipient QR). Do not put the actual payload in Git.
+Keep PayMongo configuration/webhooks working for pre-existing PayMongo orders when switching modes.
+Both methods require the new pre-v1 baseline. Old Production is incompatible with the cleanup branch;
+do not merge/deploy it there until a separately approved coordinated database replacement.
 
 - PayMongo: separate Dev/test and Production/live webhook endpoints, both subscribed only to
   `checkout_session.payment.paid`. Secrets and signature mode must match. Never copy a live key to Preview.

@@ -3,11 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { isUuid } from "@/lib/identifiers";
-import {
-  isJournalContentType,
-  isJournalStatus,
-  legacyJournalIconForContentType,
-} from "@/lib/journal";
+import { isJournalContentType, isJournalStatus } from "@/lib/journal";
 import { saveAdminJournalPost, removeJournalCover, uploadJournalCover } from "@/lib/server-journal";
 import { secureUrlError, type FieldErrors } from "@/lib/form-validation";
 import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
@@ -103,7 +99,6 @@ export async function saveJournalPostAction(
       excerpt,
       content,
       contentType,
-      iconKey: legacyJournalIconForContentType[contentType],
       displayDate,
       coverImageUrl,
       videoUrl,

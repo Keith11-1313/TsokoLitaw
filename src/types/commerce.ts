@@ -12,14 +12,7 @@ export interface Coating {
   imageSrc: string;
   pricePerPiece: number;
   isDefault: boolean;
-  tone:
-    | "cocoa-coating"
-    | "milk"
-    | "palitaw"
-    | "nuts"
-    | "plain"
-    | "sesame"
-    | "cookies-cream";
+  tone: "cocoa-coating" | "milk" | "palitaw" | "nuts" | "plain" | "sesame" | "cookies-cream";
 }
 
 export interface CommerceAddon {
@@ -27,6 +20,7 @@ export interface CommerceAddon {
   name: string;
   slug: string;
   price: number;
+  isDefault: boolean;
 }
 
 export interface CommerceCatalog {
@@ -53,6 +47,7 @@ export interface CartLineItem {
   addonName: string | null;
   addonQuantity: number;
   addonPrice: number;
+  complimentaryAddonName: string;
   quantity: number;
 }
 
@@ -71,7 +66,7 @@ export interface ServerPricedCartLine {
   variantName: string;
   pieceCount: number;
   baseUnitPrice: number;
-  extraCoatingTotal: number;
+  coatingTotal: number;
   quantity: number;
   lineSubtotal: number;
   coatings: Array<{
@@ -79,15 +74,15 @@ export interface ServerPricedCartLine {
     name: string;
     pieceCount: number;
     additionalPrice: number;
-    isIncludedType: boolean;
   }>;
-  addon: {
+  addons: Array<{
     id: string;
     name: string;
     unitPrice: number;
     quantity: number;
     lineTotal: number;
-  } | null;
+    isComplimentary: boolean;
+  }>;
 }
 
 export interface ServerPricedCart {

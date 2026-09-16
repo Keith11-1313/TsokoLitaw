@@ -22,7 +22,7 @@ export function AdminStatCard({
     <article
       className={cn(
         "rounded-card border border-border bg-surface",
-        compact ? "min-h-[6.25rem] px-4 py-4 sm:px-5" : "min-h-[9.4375rem] p-6",
+        compact ? "px-4 py-3 sm:min-h-[6.25rem] sm:px-5 sm:py-4" : "min-h-[9.4375rem] p-6",
       )}
     >
       <div className="flex items-start justify-between gap-4">

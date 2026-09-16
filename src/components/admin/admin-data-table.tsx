@@ -10,6 +10,7 @@ interface AdminDataTableProps {
   columns: readonly AdminTableColumn[];
   rows: readonly Record<string, ReactNode>[];
   minimumWidth?: string;
+  emptyMessage?: string;
 }
 
 export function AdminDataTable({
@@ -17,6 +18,7 @@ export function AdminDataTable({
   columns,
   rows,
   minimumWidth = "48rem",
+  emptyMessage = "No records are available yet.",
 }: AdminDataTableProps) {
   return (
     <section className="min-w-0 rounded-card border border-border bg-surface p-4 sm:p-6">
@@ -44,9 +46,7 @@ export function AdminDataTable({
           ))}
         </div>
       ) : (
-        <p className="py-12 text-center text-muted-foreground md:hidden">
-          No records are available yet.
-        </p>
+        <p className="py-12 text-center text-muted-foreground md:hidden">{emptyMessage}</p>
       )}
       <div className="hidden overflow-x-auto md:block">
         <table
@@ -75,7 +75,7 @@ export function AdminDataTable({
                   colSpan={columns.length}
                   className="px-4 py-12 text-center text-muted-foreground"
                 >
-                  No records are available yet.
+                  {emptyMessage}
                 </td>
               </tr>
             ) : (

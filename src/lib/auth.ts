@@ -8,9 +8,24 @@ export interface AuthProfile {
   id: string;
   fullName: string;
   email: string;
-  mobileNumber: string | null;
   role: "customer" | "admin";
   deletionScheduledFor: string | null;
+  avatarUrl: string | null;
+}
+
+function getGoogleAvatarUrl(metadata: unknown) {
+  if (!metadata || typeof metadata !== "object") return null;
+  const values = metadata as Record<string, unknown>;
+  const candidate = values.avatar_url ?? values.picture;
+  if (typeof candidate !== "string") return null;
+  try {
+    const url = new URL(candidate);
+    return url.protocol === "https:" && url.hostname === "lh3.googleusercontent.com"
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
@@ -22,7 +37,7 @@ export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, full_name, email, mobile_number, role, is_active, deletion_scheduled_for")
+    .select("id, full_name, email, role, is_active, deletion_scheduled_for")
     .eq("id", userId)
     .maybeSingle();
 
@@ -38,9 +53,9 @@ export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
     id: profile.id,
     fullName: profile.full_name,
     email: profile.email,
-    mobileNumber: profile.mobile_number,
     role: profile.role,
     deletionScheduledFor: profile.deletion_scheduled_for,
+    avatarUrl: getGoogleAvatarUrl(claimsData.claims.user_metadata),
   };
 });
 

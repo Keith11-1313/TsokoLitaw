@@ -9,6 +9,7 @@ import { DiscardChangesDialog } from "@/components/admin/discard-changes-dialog"
 import { FormField } from "@/components/ui/form-field";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { FormStatusHint } from "@/components/ui/form-status-hint";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { useFormGate } from "@/hooks/use-form-gate";
 import { useEditorDialog } from "@/hooks/use-editor-dialog";
 import { browserImageError } from "@/lib/form-validation";
@@ -40,6 +41,7 @@ function JournalEditor({
   const [state, formAction, pending] = useActionState(saveJournalPostAction, initialState);
   const [imageError, setImageError] = useState("");
   const [imageChecking, setImageChecking] = useState(false);
+  const [coverName, setCoverName] = useState("");
   const [contentType, setContentType] = useState<JournalContentType>(
     post?.contentType ?? "announcement",
   );
@@ -54,7 +56,12 @@ function JournalEditor({
     const input = event.currentTarget;
     const file = input.files?.[0];
     setImageError("");
-    if (!file) return;
+    setCoverName(file?.name ?? "");
+    input.setCustomValidity("");
+    if (!file) {
+      refresh();
+      return;
+    }
     setImageChecking(true);
     const nextError = await browserImageError(file);
     setImageError(nextError);
@@ -176,32 +183,22 @@ function JournalEditor({
               maxLength: 5000,
             }}
           />
-          <FormField
+          <ImageUploadField
             id="journal-cover"
+            name="coverImage"
             label="Cover image (optional)"
-            hint={
-              imageChecking
-                ? "Checking image…"
-                : "JPG, PNG, or WebP up to 3 MB. A new image replaces the current one."
-            }
             error={imageError || state.fieldErrors?.coverImage}
-            inputProps={{
-              name: "coverImage",
-              type: "file",
-              accept: "image/jpeg,image/png,image/webp",
-              onChange: validateCover,
-            }}
+            disabled={pending}
+            busy={imageChecking}
+            fileName={coverName}
+            previewUrl={post?.coverImageUrl ?? ""}
+            onChange={validateCover}
           />
           <FormField
             id="journal-video"
             label={contentType === "video" ? "Video link" : "Video link (optional)"}
             required={contentType === "video"}
             error={state.fieldErrors?.videoUrl}
-            hint={
-              contentType === "video"
-                ? "Required for video posts. Use a secure hosted video URL."
-                : "Use a secure hosted video URL when the post includes video."
-            }
             inputProps={{
               name: "videoUrl",
               type: "url",

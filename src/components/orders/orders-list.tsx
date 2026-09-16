@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/cn";
 import { formatPhp } from "@/lib/commerce";
 import type { CustomerOrderSummary } from "@/lib/server-orders";
+import { getOrderStatusLabelOverride } from "@/lib/payment-status";
 
 type OrderFilter = "all" | "received" | "preparing" | "pickup" | "completed";
 
@@ -49,7 +50,10 @@ export function OrdersList({
 }) {
   const [filter, setFilter] = useState<OrderFilter>("all");
   const [openingOrderId, setOpeningOrderId] = useState<string | null>(null);
-  const visibleOrders = useMemo(() => orders.filter((order) => matchesFilter(order, filter)), [filter, orders]);
+  const visibleOrders = useMemo(
+    () => orders.filter((order) => matchesFilter(order, filter)),
+    [filter, orders],
+  );
   const filtersWithCounts = FILTERS.map((item) => ({
     ...item,
     count: orders.filter((order) => matchesFilter(order, item.id)).length,
@@ -100,7 +104,9 @@ export function OrdersList({
               onClick={() => setFilter(item.id)}
               className={cn(
                 "min-h-11 shrink-0 whitespace-nowrap rounded-full border border-border px-4 py-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 sm:min-w-0",
-                filter === item.id ? "border-brand bg-brand text-surface" : "bg-surface text-foreground hover:bg-surface-muted",
+                filter === item.id
+                  ? "border-brand bg-brand text-surface"
+                  : "bg-surface text-foreground hover:bg-surface-muted",
               )}
             >
               {item.label} <span aria-label={`${item.count} orders`}>({item.count})</span>
@@ -119,10 +125,16 @@ export function OrdersList({
                     <h2 className="font-display text-2xl">{order.orderNumber}</h2>
                     <StatusBadge
                       status={order.status}
-                      label={["PAID", "CONFIRMED"].includes(order.status) ? "Received" : undefined}
+                      label={getOrderStatusLabelOverride({
+                        status: order.status,
+                        paymentStatus: order.paymentStatus,
+                        paymentWindowOpen: order.paymentWindowOpen,
+                      })}
                     />
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">Ordered {formatDate(order.orderedAt, true)}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Ordered {formatDate(order.orderedAt, true)}
+                  </p>
                 </div>
                 <p className="shrink-0 font-display text-xl tabular-nums">
                   <span className="sr-only">Order total: </span>
@@ -130,11 +142,19 @@ export function OrdersList({
                 </p>
               </div>
               <div className="mt-5 grid gap-3 border-t border-border pt-5 text-sm text-muted-foreground sm:grid-cols-2">
-                <p className="flex items-start gap-2"><CalendarDays aria-hidden="true" className="mt-0.5 shrink-0" size={17} />{formatDate(order.pickupDate)} · {order.pickupWindow}</p>
-                <p className="flex items-start gap-2"><MapPin aria-hidden="true" className="mt-0.5 shrink-0" size={17} />{order.pickupLocation}</p>
+                <p className="flex items-start gap-2">
+                  <CalendarDays aria-hidden="true" className="mt-0.5 shrink-0" size={17} />
+                  {formatDate(order.pickupDate)} · {order.pickupWindow}
+                </p>
+                <p className="flex items-start gap-2">
+                  <MapPin aria-hidden="true" className="mt-0.5 shrink-0" size={17} />
+                  {order.pickupLocation}
+                </p>
               </div>
               <div className="mt-5 border-t border-border pt-5">
-                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Order items</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Order items
+                </p>
                 <OrderLineItems items={order.itemLines} className="mt-3" />
               </div>
               <div className="mt-5 flex justify-end">

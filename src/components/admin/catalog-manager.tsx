@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState, useTransition, type ChangeEvent } from "react";
-import { ImagePlus, Pencil, Plus, X } from "lucide-react";
+import { Pencil, Plus, X } from "lucide-react";
 import {
   saveAddonAction,
   saveCoatingAction,
@@ -14,6 +14,7 @@ import { DiscardChangesDialog } from "@/components/admin/discard-changes-dialog"
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { FormStatusHint } from "@/components/ui/form-status-hint";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { NumberStepper } from "@/components/ui/quantity-input";
 import { useFormGate } from "@/hooks/use-form-gate";
 import { useEditorDialog } from "@/hooks/use-editor-dialog";
@@ -51,29 +52,32 @@ function ProductSettings({ product }: { product: AdminCatalogProduct }) {
       className="rounded-card border border-border bg-surface p-6"
     >
       <input type="hidden" name="productId" value={product.id} />
-      <h2 className="font-display text-2xl">Product pricing</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        One per-piece price calculates every active box total. Checkout reloads this value from the
-        server.
-      </p>
-      <div className="mt-5 max-w-xl">
-        <NumberStepper
-          label="Price per piece (PHP)"
-          name="pricePerPiece"
-          required
-          min={0}
-          max={10000}
-          step={0.01}
-          defaultValue={product.pricePerPiece}
-        />
-        <input type="hidden" name="description" value={product.description} />
-      </div>
-      <div className="mt-5 space-y-3">
-        <ActionMessage state={state} />
-        <FormStatusHint message={statusMessage} />
-        <PrimaryButton type="submit" disabled={pending || !canSubmit}>
-          {pending ? "Saving…" : "Save product settings"}
-        </PrimaryButton>
+      <div className="max-w-3xl">
+        <h2 className="font-display text-2xl">Product pricing</h2>
+        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <NumberStepper
+            label="Price per piece (PHP)"
+            name="pricePerPiece"
+            required
+            min={0}
+            max={10000}
+            step={0.01}
+            defaultValue={product.pricePerPiece}
+            layout="inline"
+          />
+          <input type="hidden" name="description" value={product.description} />
+          <PrimaryButton
+            type="submit"
+            className="w-full lg:w-auto lg:min-w-64"
+            disabled={pending || !canSubmit}
+          >
+            {pending ? "Saving…" : "Save product settings"}
+          </PrimaryButton>
+        </div>
+        <div className="mt-4 space-y-3">
+          <ActionMessage state={state} />
+          <FormStatusHint message={statusMessage} />
+        </div>
       </div>
     </form>
   );
@@ -148,6 +152,7 @@ function CoatingEditor({
 }) {
   const [state, action, pending] = useActionState(saveCoatingAction, initialState);
   const [preview, setPreview] = useState(coating?.imageUrl ?? "");
+  const [imageName, setImageName] = useState("");
   const [imageError, setImageError] = useState("");
   const [imageChecking, setImageChecking] = useState(false);
   const { formRef, formProps, canSubmit, statusMessage, isDirty } = useFormGate({
@@ -163,6 +168,7 @@ function CoatingEditor({
     const input = event.currentTarget;
     const file = input.files?.[0];
     setImageError("");
+    setImageName(file?.name ?? "");
     if (!file) return;
     setImageChecking(true);
     try {
@@ -230,7 +236,6 @@ function CoatingEditor({
           <NumberStepper
             label="Coating price per piece (PHP)"
             error={state.fieldErrors?.pricePerPiece}
-            hint="Charged for every piece using this coating."
             name="pricePerPiece"
             required
             min={0}
@@ -252,47 +257,19 @@ function CoatingEditor({
               defaultValue: coating?.description,
             }}
           />
-          <div className="space-y-2 sm:col-span-2">
-            <label htmlFor="coating-image" className="block text-sm font-bold">
-              Square image (1:1){coating?.imageUrl ? "" : " *"}
-            </label>
-            <label
-              htmlFor="coating-image"
-              className="flex min-h-32 cursor-pointer items-center gap-4 rounded-card border border-dashed border-border bg-surface-control p-4"
-            >
-              {preview ? (
-                <span
-                  role="img"
-                  aria-label="Coating image preview"
-                  className="size-24 shrink-0 rounded-control bg-cover bg-center"
-                  style={{ backgroundImage: `url(${preview})` }}
-                />
-              ) : (
-                <ImagePlus aria-hidden="true" className="text-brand" size={30} />
-              )}
-              <span className="text-sm">
-                <strong className="block">
-                  {imageChecking
-                    ? "Checking image…"
-                    : preview
-                      ? "Choose another square image"
-                      : "Choose a square product image"}
-                </strong>
-                <span className="text-xs text-muted-foreground">JPG, PNG, or WebP up to 3 MB</span>
-              </span>
-              <input
-                id="coating-image"
-                name="image"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="sr-only"
-                onChange={selectImage}
-              />
-            </label>
-            {imageError ? (
-              <p className="text-xs font-bold text-danger-foreground">{imageError}</p>
-            ) : null}
-          </div>
+          <ImageUploadField
+            id="coating-image"
+            name="image"
+            label="Square image (1:1)"
+            required={!coating?.imageUrl}
+            disabled={pending}
+            busy={imageChecking}
+            fileName={imageName}
+            previewUrl={preview}
+            error={imageError}
+            className="sm:col-span-2"
+            onChange={selectImage}
+          />
           <label className="flex min-h-11 items-center gap-3 rounded-control bg-surface-control px-4 py-3 text-sm font-bold">
             <input
               type="checkbox"
@@ -363,15 +340,15 @@ function AddonEditor({ addon, onClose }: { addon: AdminCatalogAddon | null; onCl
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
-              Catalog add-on
+              Catalog extra
             </p>
             <h2 id="addon-editor-title" className="mt-1 font-display text-3xl">
-              {addon ? "Edit add-on" : "Add add-on"}
+              {addon ? "Edit extra" : "Add extra"}
             </h2>
           </div>
           <button
             type="button"
-            aria-label="Close add-on editor"
+            aria-label="Close extra editor"
             disabled={pending}
             onClick={requestClose}
             className="flex size-11 items-center justify-center text-brand focus-visible:ring-2 focus-visible:ring-focus"
@@ -416,6 +393,15 @@ function AddonEditor({ addon, onClose }: { addon: AdminCatalogAddon | null; onCl
             />
             Available to customers
           </label>
+          <label className="flex min-h-11 items-center gap-3 rounded-control bg-surface-control px-4 py-3 text-sm font-bold sm:col-span-2">
+            <input
+              type="checkbox"
+              name="isDefault"
+              defaultChecked={addon?.isDefault ?? false}
+              className="size-4 accent-brand"
+            />
+            Complimentary extra included with every box
+          </label>
           <div className="sm:col-span-2">
             <ActionMessage state={state} />
             <FormStatusHint message={statusMessage} />
@@ -425,7 +411,7 @@ function AddonEditor({ addon, onClose }: { addon: AdminCatalogAddon | null; onCl
               Cancel
             </SecondaryButton>
             <PrimaryButton type="submit" disabled={pending || !canSubmit}>
-              {pending ? "Saving…" : "Save add-on"}
+              {pending ? "Saving…" : "Save extra"}
             </PrimaryButton>
           </div>
         </form>
@@ -468,7 +454,7 @@ export function CatalogManager({
         />
         <AdminStatCard
           compact
-          label="Active add-ons"
+          label="Active extras"
           value={String(addons.filter((a) => a.isActive).length)}
           accentClassName="text-warning-foreground"
         />
@@ -480,10 +466,6 @@ export function CatalogManager({
         <h2 id="box-sizes-heading" className="font-display text-2xl">
           Box sizes
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Prices are calculated from the current per-piece price. Approved piece counts stay fixed
-          at 4, 6, and 8.
-        </p>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {product.variants.map((variant) => (
             <VariantCard
@@ -496,15 +478,9 @@ export function CatalogManager({
       </section>
       <section className="mt-9" aria-labelledby="coatings-heading">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 id="coatings-heading" className="font-display text-2xl">
-              Coatings
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Each piece uses its coating&apos;s saved price. One active coating supplies the
-              storefront default.
-            </p>
-          </div>
+          <h2 id="coatings-heading" className="font-display text-2xl">
+            Coatings
+          </h2>
           <PrimaryButton onClick={() => setEditor(null)}>
             <Plus aria-hidden="true" size={17} />
             Add coating
@@ -552,17 +528,12 @@ export function CatalogManager({
       </section>
       <section className="mt-9" aria-labelledby="addons-heading">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 id="addons-heading" className="font-display text-2xl">
-              Add-ons
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Optional extras customers can add to a configured box.
-            </p>
-          </div>
+          <h2 id="addons-heading" className="font-display text-2xl">
+            Extras
+          </h2>
           <PrimaryButton onClick={() => setAddonEditor(null)}>
             <Plus aria-hidden="true" size={17} />
-            Add add-on
+            Add extra
           </PrimaryButton>
         </div>
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -575,15 +546,22 @@ export function CatalogManager({
                     Price: <strong>{formatPhp(addon.price)}</strong>
                   </p>
                 </div>
-                <span
-                  className={`rounded-lg px-2.5 py-1 text-xs font-bold ${addon.isActive ? "bg-success-background text-success-foreground" : "bg-surface-muted text-muted-foreground"}`}
-                >
-                  {addon.isActive ? "Active" : "Hidden"}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold ${addon.isActive ? "bg-success-background text-success-foreground" : "bg-surface-muted text-muted-foreground"}`}
+                  >
+                    {addon.isActive ? "Active" : "Hidden"}
+                  </span>
+                  {addon.isDefault ? (
+                    <span className="rounded-lg bg-brand px-2.5 py-1 text-xs font-bold text-surface">
+                      Complimentary
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <SecondaryButton className="mt-5 w-full" onClick={() => setAddonEditor(addon)}>
                 <Pencil aria-hidden="true" size={15} />
-                Edit add-on
+                Edit extra
               </SecondaryButton>
             </article>
           ))}

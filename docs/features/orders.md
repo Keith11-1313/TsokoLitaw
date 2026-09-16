@@ -3,6 +3,10 @@
 `/orders` and `/orders/[orderId]` use `server-orders.ts` ownership-scoped snapshot reads.
 `orders-list.tsx` owns filters/pagination presentation; `order-line-items.tsx` renders the shared receipt.
 Order numbers come from PostgreSQL's shared sequence (`TL-0001` style), not per-page counters.
+Receipts show the snapshotted complimentary extra as a separate `₱0.00` line. Paid extras remain
+separate. Reordering copies paid selections only; the new checkout applies the current complimentary extra.
+Cancelled, expired, and completed order details offer `Order again` only when every saved catalog
+selection is still active. It copies selections to the cart; server checkout reprices them normally.
 
 ## State authority
 
@@ -16,9 +20,14 @@ This describes the domain vocabulary; verified payment normally commits payment 
 `CONFIRMED → PREPARING → READY_FOR_PICKUP → COMPLETED` path. The action is under
 `src/app/admin/orders/actions.ts`, with server orchestration in `server-orders.ts` and an SQL audit record.
 
-Payment states are separate: `PENDING`, `PAID`, `FAILED`, historical `REFUNDED`.
+Payment states are separate: `PENDING`, `UNDER_REVIEW` (Manual GCash only), `PAID`, `FAILED`.
+Under review keeps fulfillment at `PENDING_PAYMENT`; the customer label explains payment review.
+See [manual payment verification](payments.md#manual-gcash) for proof, approval and rejection.
 There is no payment `EXPIRED` value: expiration transitions unpaid payment to `FAILED` and order
-to `EXPIRED`. `src/lib/order-status.ts` presents state labels; it does not authorize transitions.
+to `EXPIRED`. Manual/direct overdue orders are synchronized through the existing atomic expiration
+processor before customer or Admin order reads, preventing a closed payment page from disagreeing
+with a still-pending order card. A provider-bound PayMongo order waits for verified provider expiry.
+`src/lib/order-status.ts` presents state labels; it does not authorize transitions.
 
 ## Cancellation
 
@@ -26,7 +35,7 @@ to `EXPIRED`. `src/lib/order-status.ts` presents state labels; it does not autho
 → expire exact provider checkout if attached → `cancel_unpaid_order` → notification attempt.
 Only pending unpaid orders are cancellable online. SQL rechecks state under locks; a paid webhook
 winning a race must prevent release. Paid concerns are settled in person, not through an online refund form.
-Historical refund records/reconciliation are retained, not safe dead-code deletion targets.
+The pre-v1 baseline removes the retired online refund subsystem.
 
 ## Reviews
 
@@ -36,6 +45,6 @@ Reviews are hidden until authorized Admin moderation through `moderate_order_rev
 Public Journal shows only safe approved display data; no customer emails.
 
 Tests: `order-status.test.ts`, `components/orders/orders-list.test.tsx`, local `001_auth_rls`,
-`002_payments`, `003_refunds` (unpaid cancellation despite its historical filename),
+`002_payments`, `003_cancellation`,
 `004_admin_orders`, `005_reviews`, and `011_loyalty`. Changes must preserve stored snapshots
 and cross-customer denial, including direct URL/action requests.

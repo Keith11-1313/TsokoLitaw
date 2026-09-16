@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { BadgeCheck, Gift, Repeat2, Search, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { AdminPageLayout } from "@/components/admin/admin-page-layout";
 import { AdminDataTable, type AdminTableColumn } from "@/components/admin/admin-data-table";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
@@ -12,6 +13,7 @@ import { formatPhp } from "@/lib/commerce";
 import { getAdminCustomerSummaries } from "@/lib/server-customers";
 
 export const metadata: Metadata = { title: "Customers | TsokoLitaw Admin" };
+const CUSTOMERS_PER_PAGE = 20;
 const columns: readonly AdminTableColumn[] = [
   { key: "customer", label: "Customer" },
   { key: "account", label: "Account" },
@@ -23,7 +25,10 @@ const columns: readonly AdminTableColumn[] = [
 function formatDate(value: string | null) {
   if (!value) return "No orders yet";
   return new Intl.DateTimeFormat("en-PH", {
-    timeZone: "Asia/Manila", year: "numeric", month: "short", day: "numeric",
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   }).format(new Date(value));
 }
 
@@ -31,11 +36,35 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
   const admin = await requireAdmin("/admin/customers");
   const parameters = await searchParams;
   const search = typeof parameters.q === "string" ? parameters.q.trim().slice(0, 100) : "";
-  const customers = await getAdminCustomerSummaries(admin.id, search);
+  const requestedPage = typeof parameters.page === "string" ? Number(parameters.page) : 1;
+  const currentPage = Number.isInteger(requestedPage) ? Math.max(requestedPage, 1) : 1;
+  const pageStart = (currentPage - 1) * CUSTOMERS_PER_PAGE;
+  const { customers, totalCount } = await getAdminCustomerSummaries(
+    admin.id,
+    search,
+    currentPage,
+    CUSTOMERS_PER_PAGE,
+  );
+  const totalPages = Math.max(1, Math.ceil(totalCount / CUSTOMERS_PER_PAGE));
+  if (currentPage > totalPages) {
+    const query = new URLSearchParams();
+    if (search) query.set("q", search);
+    if (totalPages > 1) query.set("page", String(totalPages));
+    redirect(`/admin/customers${query.size ? `?${query.toString()}` : ""}`);
+  }
   const returningCustomers = customers.filter((customer) => customer.completedOrders >= 2).length;
-  const completedRevenue = customers.reduce((total, customer) => total + customer.completedSpend, 0);
-  const availableRewards = customers.reduce((total, customer) => total + customer.availableRewards, 0);
-  const redeemedRewards = customers.reduce((total, customer) => total + customer.redeemedRewards, 0);
+  const completedRevenue = customers.reduce(
+    (total, customer) => total + customer.completedSpend,
+    0,
+  );
+  const availableRewards = customers.reduce(
+    (total, customer) => total + customer.availableRewards,
+    0,
+  );
+  const redeemedRewards = customers.reduce(
+    (total, customer) => total + customer.redeemedRewards,
+    0,
+  );
   const rows: readonly Record<string, ReactNode>[] = customers.map((customer) => ({
     customer: (
       <div className="flex min-w-56 items-center gap-3">
@@ -47,26 +76,29 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
             {customer.fullName || "Unnamed customer"}
           </strong>
           <span className="block truncate text-xs">{customer.email}</span>
-          {customer.mobileNumber ? <span className="block text-xs">{customer.mobileNumber}</span> : null}
         </span>
       </div>
     ),
     account: (
       <div className="flex flex-col items-start gap-2">
-        <span className={cn(
-          "inline-flex rounded-full px-3 py-1 text-xs font-bold",
-          customer.accountRole === "admin"
-            ? "bg-brand/10 text-brand"
-            : "bg-surface-muted text-foreground",
-        )}>
+        <span
+          className={cn(
+            "inline-flex rounded-full px-3 py-1 text-xs font-bold",
+            customer.accountRole === "admin"
+              ? "bg-brand/10 text-brand"
+              : "bg-surface-muted text-foreground",
+          )}
+        >
           {customer.accountRole === "admin" ? "Admin" : "Customer"}
         </span>
-        <span className={cn(
-          "inline-flex rounded-full px-3 py-1 text-[0.6875rem] font-bold",
-          customer.isActive
-            ? "bg-success-background text-success-foreground"
-            : "bg-danger-background text-danger-foreground",
-        )}>
+        <span
+          className={cn(
+            "inline-flex rounded-full px-3 py-1 text-[0.6875rem] font-bold",
+            customer.isActive
+              ? "bg-success-background text-success-foreground"
+              : "bg-danger-background text-danger-foreground",
+          )}
+        >
           {customer.isActive ? "Active" : "Inactive"}
         </span>
       </div>
@@ -74,7 +106,8 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
     orders: (
       <span>
         <strong className="block text-foreground">
-          {customer.completedOrders} {customer.completedOrders === 1 ? "completed order" : "completed orders"}
+          {customer.completedOrders}{" "}
+          {customer.completedOrders === 1 ? "completed order" : "completed orders"}
         </strong>
         <span className="text-xs">{formatPhp(customer.completedSpend)} paid value</span>
       </span>
@@ -87,7 +120,9 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
       return (
         <div className="min-w-52 space-y-2">
           <div className="flex items-center justify-between gap-3 text-xs">
-            <strong className="text-foreground">{progress}/{threshold} toward next reward</strong>
+            <strong className="text-foreground">
+              {progress}/{threshold} toward next reward
+            </strong>
           </div>
           <div
             className="h-2 overflow-hidden rounded-full bg-surface-muted"
@@ -117,15 +152,30 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
   }));
 
   return (
-    <AdminPageLayout
-      activePath="/admin/customers"
-      title="Customers"
-    >
+    <AdminPageLayout activePath="/admin/customers" title="Customers">
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <AdminStatCard compact icon={UsersRound} label="Accounts shown" value={String(customers.length)} />
-        <AdminStatCard compact icon={Repeat2} label="Returning customers" value={String(returningCustomers)} />
-        <AdminStatCard compact icon={Gift} label="Available rewards" value={String(availableRewards)} />
-        <AdminStatCard compact icon={BadgeCheck} label="Rewards used" value={String(redeemedRewards)} />
+        <AdminStatCard compact icon={UsersRound} label="Customers" value={String(totalCount)} />
+        <AdminStatCard
+          compact
+          icon={Repeat2}
+          label="Returning customers"
+          value={String(returningCustomers)}
+          supportingText="On this page"
+        />
+        <AdminStatCard
+          compact
+          icon={Gift}
+          label="Available rewards"
+          value={String(availableRewards)}
+          supportingText="On this page"
+        />
+        <AdminStatCard
+          compact
+          icon={BadgeCheck}
+          label="Used rewards"
+          value={String(redeemedRewards)}
+          supportingText="On this page"
+        />
       </div>
 
       <section className="mb-5 rounded-card border border-border bg-surface p-4 sm:p-5">
@@ -133,10 +183,14 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
           <div>
             <h2 className="font-display text-2xl text-foreground">Account directory</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              {formatPhp(completedRevenue)} completed paid value across the accounts shown.
+              {formatPhp(completedRevenue)} from completed orders shown.
             </p>
           </div>
-          <form action="/admin/customers" method="get" className="flex w-full flex-col gap-3 sm:flex-row lg:max-w-2xl">
+          <form
+            action="/admin/customers"
+            method="get"
+            className="flex w-full flex-col gap-3 sm:flex-row lg:max-w-2xl"
+          >
             <label className="relative block min-w-0 flex-1">
               <span className="sr-only">Search customers</span>
               <Search
@@ -150,21 +204,64 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
                 defaultValue={search}
                 maxLength={100}
                 placeholder="Search by name or email"
-                className="min-h-11 w-full rounded-control border border-border bg-background pl-11 pr-4 outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
+                className="min-h-12 w-full rounded-control border border-border bg-background pl-11 pr-4 outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
               />
             </label>
-            <button type="submit" className={cn(primaryButtonClassName, "px-6")}>Search</button>
+            <button type="submit" className={cn(primaryButtonClassName, "min-h-12 px-6")}>
+              Search
+            </button>
             {search ? (
-              <Link href="/admin/customers" className={cn(secondaryButtonClassName, "px-6")}>Clear</Link>
+              <Link
+                href="/admin/customers"
+                className={cn(secondaryButtonClassName, "min-h-12 px-6")}
+              >
+                Clear
+              </Link>
             ) : null}
           </form>
         </div>
       </section>
 
-      <AdminDataTable caption="Account directory" columns={columns} rows={rows} minimumWidth="64rem" />
-      <p className="mt-3 text-xs text-muted-foreground">
-        Showing up to 100 customer and Admin accounts. Order counts and financial totals include completed, paid orders only.
-      </p>
+      <AdminDataTable
+        caption="Account directory"
+        columns={columns}
+        rows={rows}
+        minimumWidth="64rem"
+        emptyMessage="No customers found."
+      />
+      <div className="mt-4 flex flex-col gap-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <p>
+          Showing {customers.length ? pageStart + 1 : 0}–
+          {Math.min(pageStart + customers.length, totalCount)} of {totalCount} accounts. Order
+          totals include completed, paid orders only.
+        </p>
+        {totalPages > 1 ? (
+          <nav className="flex gap-2" aria-label="Customer directory pages">
+            {currentPage > 1 ? (
+              <Link
+                href={`/admin/customers?${new URLSearchParams({
+                  ...(search ? { q: search } : {}),
+                  page: String(currentPage - 1),
+                })}`}
+                className={cn(secondaryButtonClassName, "min-h-10 px-4 py-2")}
+              >
+                Previous
+              </Link>
+            ) : null}
+            {currentPage < totalPages ? (
+              <Link
+                href={`/admin/customers?${new URLSearchParams({
+                  ...(search ? { q: search } : {}),
+                  page: String(currentPage + 1),
+                })}`}
+                className={cn(primaryButtonClassName, "min-h-10 px-4 py-2")}
+              >
+                Next
+              </Link>
+            ) : null}
+          </nav>
+        ) : null}
+      </div>
     </AdminPageLayout>
   );
 }

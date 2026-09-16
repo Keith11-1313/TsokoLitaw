@@ -24,7 +24,7 @@ select set_config(
   ),
   true
 );
-select plan(28);
+select plan(31);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -70,6 +70,22 @@ select ok(
 select ok(
   has_function_privilege('service_role', 'public.prepare_paymongo_checkout(uuid,uuid)', 'EXECUTE'),
   'service role can initialize provider payments'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.replace_paymongo_checkout(uuid,text,text,text)',
+    'EXECUTE'
+  ),
+  'authenticated users cannot replace provider checkouts'
+);
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.replace_paymongo_checkout(uuid,text,text,text)',
+    'EXECUTE'
+  ),
+  'service role can replace provider checkouts'
 );
 select ok(
   not has_function_privilege(
@@ -159,13 +175,22 @@ select throws_ok(
   'A different PayMongo checkout is already attached',
   'a different provider checkout cannot replace the original'
 );
+select ok(
+  public.replace_paymongo_checkout(
+    (select id from public.payments where order_id = 'a5000000-0000-4000-8000-000000000001'),
+    'cs_test_9001',
+    'cs_test_9001_fresh',
+    'https://checkout.paymongo.com/cs_test_9001_fresh'
+  ),
+  'an explicitly expired provider checkout can be replaced atomically'
+);
 
 select ok(
   public.process_paymongo_paid_event(
-    'checkout_session.payment.paid:cs_test_9001:pay_test_9001',
+    'checkout_session.payment.paid:cs_test_9001_fresh:pay_test_9001',
     'a5000000-0000-4000-8000-000000000001', 'TL-9001',
-    'cs_test_9001', 'pay_test_9001', 40,
-    '{"livemode":false,"checkout_id":"cs_test_9001","payment_id":"pay_test_9001"}'::jsonb
+    'cs_test_9001_fresh', 'pay_test_9001', 40,
+    '{"livemode":false,"checkout_id":"cs_test_9001_fresh","payment_id":"pay_test_9001"}'::jsonb
   ),
   'a matching verified payment event is processed'
 );
@@ -186,10 +211,10 @@ select is(
 );
 select is(
   public.process_paymongo_paid_event(
-    'checkout_session.payment.paid:cs_test_9001:pay_test_9001',
+    'checkout_session.payment.paid:cs_test_9001_fresh:pay_test_9001',
     'a5000000-0000-4000-8000-000000000001', 'TL-9001',
-    'cs_test_9001', 'pay_test_9001', 40,
-    '{"livemode":false,"checkout_id":"cs_test_9001","payment_id":"pay_test_9001"}'::jsonb
+    'cs_test_9001_fresh', 'pay_test_9001', 40,
+    '{"livemode":false,"checkout_id":"cs_test_9001_fresh","payment_id":"pay_test_9001"}'::jsonb
   ),
   false,
   'a duplicate provider event is acknowledged without a second transition'

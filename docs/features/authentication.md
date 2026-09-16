@@ -17,7 +17,7 @@ Profile updates and deletion requests enter `src/app/profile/actions.ts`. The au
 `request_account_deletion`/`cancel_account_deletion` RPCs derive the owner from the session.
 After a 90-day grace period, `/api/cron/account-deletions` invokes `deactivate_due_account`,
 rechecks eligibility, and marks the profile inactive. Auth identity and relational history remain.
-Pending deletion blocks new checkout; active orders/refunds block scheduling; Admin self-deletion
+Pending deletion blocks new checkout; active orders block scheduling; Admin self-deletion
 is excluded. Later login clears the session and shows `/auth/account-deleted`.
 
 ## Where to change it

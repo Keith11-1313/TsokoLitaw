@@ -10,7 +10,7 @@ begin
 end;
 $$;
 select set_config('search_path', (select quote_ident(pg_namespace.nspname) || ',public' from pg_extension join pg_namespace on pg_namespace.oid = pg_extension.extnamespace where pg_extension.extname = 'pgtap'), true);
-select plan(17);
+select plan(20);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at) values
   ('e2000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','catalog-admin@example.test','{"provider":"google","providers":["google"]}','{"name":"Catalog Admin"}',now(),now()),
@@ -30,8 +30,11 @@ select lives_ok($$select public.upsert_catalog_coating('e2000000-0000-4000-8000-
 select is((select price_per_piece from public.coatings where name='Toasted Coconut'),7.00::numeric,'coating per-piece price persisted');
 select lives_ok($$select public.upsert_catalog_coating('e2000000-0000-4000-8000-000000000001',(select id from public.coatings where name='Toasted Coconut'),'Toasted Coconut','A toasted coconut coating for the filled base.','https://example.test/coating.jpeg',7,true,true)$$,'admin changes the default coating');
 select is((select count(*)::integer from public.coatings where is_default),1,'exactly one coating is the storefront default');
-select lives_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001','13000000-0000-4000-8000-000000000001','Extra sea salt cream',20,true)$$,'admin updates add-on');
-select lives_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001',null,'Gift note',3,true)$$,'admin creates add-on');
+select lives_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001','13000000-0000-4000-8000-000000000001','Sea salt cream',20,true,true)$$,'admin updates add-on');
+select lives_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001',null,'Gift note',3,true,false)$$,'admin creates add-on');
+select is((select count(*)::integer from public.addons where is_default),1,'exactly one extra is complimentary');
+select throws_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001','13000000-0000-4000-8000-000000000001','Sea salt cream',20,false,true)$$,'P0001','The complimentary extra must be active','complimentary extra cannot be hidden');
+select throws_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001','13000000-0000-4000-8000-000000000001','Sea salt cream',20,true,false)$$,'P0001','Choose another complimentary extra before changing this one','complimentary designation cannot be removed without replacement');
 select is((select count(*)::integer from public.admin_audit_logs where action like 'catalog.%'),6,'catalog mutations are audited');
 select ok((select public and file_size_limit=3145728 from storage.buckets where id='catalog-media'),'catalog media bucket is public and size-limited');
 

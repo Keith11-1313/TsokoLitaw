@@ -9,7 +9,7 @@ export interface LegalSection {
 
 interface LegalDocumentPageProps {
   title: string;
-  introduction: string;
+  introduction?: string;
   sections: readonly LegalSection[];
   documentNote?: string;
 }
@@ -18,7 +18,7 @@ export function LegalDocumentPage({
   title,
   introduction,
   sections,
-  documentNote = "Static preview · Last updated October 14, 2025",
+  documentNote = "Updated on October 14, 2025",
 }: LegalDocumentPageProps) {
   return (
     <CustomerPageShell>
@@ -32,9 +32,7 @@ export function LegalDocumentPage({
             <div className="mt-8 space-y-8">
               {sections.map((section) => (
                 <section key={section.heading}>
-                  <h2 className="font-display text-2xl text-foreground">
-                    {section.heading}
-                  </h2>
+                  <h2 className="font-display text-2xl text-foreground">{section.heading}</h2>
                   <div className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
                     {section.paragraphs.map((paragraph) => (
                       <p key={paragraph}>{paragraph}</p>

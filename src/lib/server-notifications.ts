@@ -4,9 +4,6 @@ import {
   buildOrderCancelledEmail,
   buildOrderConfirmationEmail,
   buildReadyForPickupEmail,
-  buildRefundCompletedEmail,
-  buildRefundFailedEmail,
-  buildRefundProcessingEmail,
 } from "@/lib/notification-email";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getConfiguredSiteOrigin } from "@/lib/site-url";
@@ -14,12 +11,20 @@ import { getConfiguredSiteOrigin } from "@/lib/site-url";
 interface DeliveryRow {
   id: string;
   order_id: string;
-  refund_id: string | null;
   recipient_email: string;
   idempotency_key: string;
   event_type: string;
-  status: "PENDING" | "PROCESSING" | "SEND_FAILED" | "SENT" | "DELAYED"
-    | "DELIVERED" | "BOUNCED" | "COMPLAINED" | "FAILED" | "SUPPRESSED";
+  status:
+    | "PENDING"
+    | "PROCESSING"
+    | "SEND_FAILED"
+    | "SENT"
+    | "DELAYED"
+    | "DELIVERED"
+    | "BOUNCED"
+    | "COMPLAINED"
+    | "FAILED"
+    | "SUPPRESSED";
   attempt_count: number;
   last_attempt_at: string | null;
 }
@@ -36,18 +41,17 @@ interface OrderRow {
     variant_name_snapshot: string;
     quantity: number;
     order_item_coatings: Array<{ coating_name_snapshot: string; piece_count: number }> | null;
-    order_item_addons: Array<{ addon_name_snapshot: string; quantity: number }> | null;
-  }> | null;
-  refunds: Array<{
-    id: string;
-    amount: number | string;
-    status: "REQUESTED" | "PROCESSING" | "REFUNDED" | "FAILED";
-    created_at: string;
+    order_item_addons: Array<{
+      addon_name_snapshot: string;
+      quantity: number;
+      is_complimentary: boolean;
+    }> | null;
   }> | null;
 }
 
 const MAX_ATTEMPTS = 5;
 const PROCESSING_TIMEOUT_MS = 10 * 60 * 1000;
+const RESEND_USER_AGENT = "TsokoLitaw/0.1";
 
 function getRequiredEmailEnvironment() {
   const apiKey = process.env.RESEND_API_KEY?.trim();
@@ -58,7 +62,22 @@ function getRequiredEmailEnvironment() {
   return { apiKey, from, siteUrl: getConfiguredSiteOrigin() };
 }
 
-async function sendWithResend(input: {
+interface ResendResponseBody {
+  id?: unknown;
+  name?: unknown;
+  message?: unknown;
+}
+
+function cleanProviderText(value: unknown, maxLength: number) {
+  if (typeof value !== "string") return null;
+  const cleaned = value
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return cleaned ? cleaned.slice(0, maxLength) : null;
+}
+
+export async function sendWithResend(input: {
   apiKey: string;
   from: string;
   to: string;
@@ -73,6 +92,7 @@ async function sendWithResend(input: {
       Authorization: `Bearer ${input.apiKey}`,
       "Content-Type": "application/json",
       "Idempotency-Key": input.idempotencyKey,
+      "User-Agent": RESEND_USER_AGENT,
     },
     body: JSON.stringify({
       from: input.from,
@@ -83,9 +103,17 @@ async function sendWithResend(input: {
     }),
     signal: AbortSignal.timeout(15_000),
   });
-  const body = await response.json().catch(() => null) as { id?: unknown } | null;
-  if (!response.ok || typeof body?.id !== "string" || !body.id) {
-    throw new Error(`Resend rejected the message with status ${response.status}.`);
+  const body = (await response.json().catch(() => null)) as ResendResponseBody | null;
+  if (!response.ok) {
+    const errorType = cleanProviderText(body?.name, 80);
+    const providerMessage = cleanProviderText(body?.message, 300);
+    const details = [errorType, providerMessage].filter(Boolean).join(": ");
+    throw new Error(
+      `Resend rejected the message with status ${response.status}${details ? ` (${details})` : ""}.`,
+    );
+  }
+  if (typeof body?.id !== "string" || !body.id) {
+    throw new Error(`Resend returned status ${response.status} without a message ID.`);
   }
   return body.id;
 }
@@ -100,7 +128,8 @@ async function reconcilePendingResendEvents(providerMessageId: string) {
     .is("processed_at", null)
     .order("event_created_at", { ascending: true })
     .limit(20);
-  if (error) throw new Error("Pending Resend delivery events could not be loaded.", { cause: error });
+  if (error)
+    throw new Error("Pending Resend delivery events could not be loaded.", { cause: error });
 
   for (const event of data ?? []) {
     const result = await supabase.rpc("process_resend_delivery_event", {
@@ -110,7 +139,9 @@ async function reconcilePendingResendEvents(providerMessageId: string) {
       event_created_at_value: event.event_created_at,
     });
     if (result.error) {
-      throw new Error("A pending Resend delivery event could not be reconciled.", { cause: result.error });
+      throw new Error("A pending Resend delivery event could not be reconciled.", {
+        cause: result.error,
+      });
     }
   }
 }
@@ -118,9 +149,11 @@ async function reconcilePendingResendEvents(providerMessageId: string) {
 function canClaim(delivery: DeliveryRow, now: number) {
   if (delivery.attempt_count >= MAX_ATTEMPTS) return false;
   if (delivery.status === "PENDING" || delivery.status === "SEND_FAILED") return true;
-  return delivery.status === "PROCESSING"
-    && delivery.last_attempt_at !== null
-    && new Date(delivery.last_attempt_at).getTime() <= now - PROCESSING_TIMEOUT_MS;
+  return (
+    delivery.status === "PROCESSING" &&
+    delivery.last_attempt_at !== null &&
+    new Date(delivery.last_attempt_at).getTime() <= now - PROCESSING_TIMEOUT_MS
+  );
 }
 
 async function dispatchDelivery(delivery: DeliveryRow) {
@@ -143,28 +176,26 @@ async function dispatchDelivery(delivery: DeliveryRow) {
   if (claim.error || !claim.data) return false;
 
   try {
-    if (![
-      "order.confirmed",
-      "order.ready_for_pickup",
-      "order.cancelled",
-      "refund.processing",
-      "refund.completed",
-      "refund.failed",
-    ].includes(delivery.event_type)) {
+    if (
+      !["order.confirmed", "order.ready_for_pickup", "order.cancelled"].includes(
+        delivery.event_type,
+      )
+    ) {
       throw new Error("Unsupported transactional email event.");
     }
     const { data, error } = await supabase
       .from("orders")
-      .select(`
+      .select(
+        `
         id, order_number, customer_name, total, pickup_date,
         pickup_window_snapshot, pickup_location_snapshot,
         order_items (
           variant_name_snapshot, quantity,
           order_item_coatings (coating_name_snapshot, piece_count),
-          order_item_addons (addon_name_snapshot, quantity)
-        ),
-        refunds (id, amount, status, created_at)
-      `)
+          order_item_addons (addon_name_snapshot, quantity, is_complimentary)
+        )
+      `,
+      )
       .eq("id", delivery.order_id)
       .maybeSingle();
     if (error || !data) throw new Error("The notification order snapshot is unavailable.");
@@ -182,20 +213,20 @@ async function dispatchDelivery(delivery: DeliveryRow) {
       items: (order.order_items ?? []).map((item) => ({
         name: item.variant_name_snapshot,
         quantity: item.quantity,
-        coatings: (item.order_item_coatings ?? []).map((coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`),
-        addon: (item.order_item_addons ?? []).map((addon) => `${addon.addon_name_snapshot} × ${addon.quantity}`).join(", ") || null,
+        coatings: (item.order_item_coatings ?? []).map(
+          (coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`,
+        ),
+        addon:
+          (item.order_item_addons ?? [])
+            .map((addon) =>
+              addon.is_complimentary
+                ? `Complimentary ${addon.addon_name_snapshot} × ${addon.quantity} per box — ₱0.00`
+                : `${addon.addon_name_snapshot} × ${addon.quantity} per box`,
+            )
+            .join(", ") || null,
       })),
     };
     const orderUrl = emailInput.orderUrl;
-    const refund = delivery.refund_id
-      ? (order.refunds ?? []).find((candidate) => candidate.id === delivery.refund_id) ?? null
-      : [...(order.refunds ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null;
-    const refundInput = refund ? {
-      orderNumber: order.order_number,
-      customerName: order.customer_name,
-      orderUrl,
-      refundAmount: Number(refund.amount),
-    } : null;
     let email;
     switch (delivery.event_type) {
       case "order.ready_for_pickup":
@@ -206,20 +237,7 @@ async function dispatchDelivery(delivery: DeliveryRow) {
           orderNumber: order.order_number,
           customerName: order.customer_name,
           orderUrl,
-          refundAmount: refund ? Number(refund.amount) : null,
         });
-        break;
-      case "refund.processing":
-        if (!refundInput) throw new Error("The processing refund snapshot is unavailable.");
-        email = buildRefundProcessingEmail(refundInput);
-        break;
-      case "refund.completed":
-        if (!refundInput) throw new Error("The completed refund snapshot is unavailable.");
-        email = buildRefundCompletedEmail(refundInput);
-        break;
-      case "refund.failed":
-        if (!refundInput) throw new Error("The failed refund snapshot is unavailable.");
-        email = buildRefundFailedEmail(refundInput);
         break;
       default:
         email = buildOrderConfirmationEmail(emailInput);
@@ -231,14 +249,19 @@ async function dispatchDelivery(delivery: DeliveryRow) {
       ...email,
     });
     const sentAt = new Date().toISOString();
-    const sentUpdate = await supabase.from("notification_deliveries").update({
-      status: "SENT",
-      provider_message_id: providerMessageId,
-      sent_at: sentAt,
-      next_attempt_at: sentAt,
-      last_error: null,
-    }).eq("id", delivery.id).eq("status", "PROCESSING");
-    if (sentUpdate.error) throw new Error("The sent notification could not be recorded.", { cause: sentUpdate.error });
+    const sentUpdate = await supabase
+      .from("notification_deliveries")
+      .update({
+        status: "SENT",
+        provider_message_id: providerMessageId,
+        sent_at: sentAt,
+        next_attempt_at: sentAt,
+        last_error: null,
+      })
+      .eq("id", delivery.id)
+      .eq("status", "PROCESSING");
+    if (sentUpdate.error)
+      throw new Error("The sent notification could not be recorded.", { cause: sentUpdate.error });
     try {
       await reconcilePendingResendEvents(providerMessageId);
     } catch (reconciliationError) {
@@ -249,28 +272,39 @@ async function dispatchDelivery(delivery: DeliveryRow) {
     }
     return true;
   } catch (error) {
-    const delayMinutes = Math.min(5 * (2 ** Math.max(nextAttempt - 1, 0)), 60);
-    await supabase.from("notification_deliveries").update({
-      status: "SEND_FAILED",
-      last_error: error instanceof Error ? error.message.slice(0, 500) : "Transactional email failed.",
-      next_attempt_at: new Date(Date.now() + delayMinutes * 60_000).toISOString(),
-    }).eq("id", delivery.id).eq("status", "PROCESSING");
+    const delayMinutes = Math.min(5 * 2 ** Math.max(nextAttempt - 1, 0), 60);
+    await supabase
+      .from("notification_deliveries")
+      .update({
+        status: "SEND_FAILED",
+        last_error:
+          error instanceof Error ? error.message.slice(0, 500) : "Transactional email failed.",
+        next_attempt_at: new Date(Date.now() + delayMinutes * 60_000).toISOString(),
+      })
+      .eq("id", delivery.id)
+      .eq("status", "PROCESSING");
     return false;
   }
 }
 
-export async function dispatchPendingNotifications(input: {
-  orderId?: string;
-  eventType?: string;
-  limit?: number;
-} = {}) {
+export async function dispatchPendingNotifications(
+  input: {
+    orderId?: string;
+    eventType?: string;
+    limit?: number;
+  } = {},
+) {
   const supabase = createAdminSupabaseClient();
   const now = new Date();
   const staleBefore = new Date(now.getTime() - PROCESSING_TIMEOUT_MS).toISOString();
   let query = supabase
     .from("notification_deliveries")
-    .select("id, order_id, refund_id, recipient_email, idempotency_key, event_type, status, attempt_count, last_attempt_at")
-    .or(`and(status.in.(PENDING,SEND_FAILED),next_attempt_at.lte.${now.toISOString()}),and(status.eq.PROCESSING,last_attempt_at.lte.${staleBefore})`)
+    .select(
+      "id, order_id, recipient_email, idempotency_key, event_type, status, attempt_count, last_attempt_at",
+    )
+    .or(
+      `and(status.in.(PENDING,SEND_FAILED),next_attempt_at.lte.${now.toISOString()}),and(status.eq.PROCESSING,last_attempt_at.lte.${staleBefore})`,
+    )
     .lt("attempt_count", MAX_ATTEMPTS)
     .order("created_at", { ascending: true })
     .limit(Math.max(1, Math.min(input.limit ?? 20, 50)));
@@ -279,7 +313,9 @@ export async function dispatchPendingNotifications(input: {
   const { data, error } = await query;
   if (error) throw new Error("Pending transactional emails could not be loaded.", { cause: error });
 
-  const deliveries = ((data ?? []) as DeliveryRow[]).filter((delivery) => canClaim(delivery, now.getTime()));
+  const deliveries = ((data ?? []) as DeliveryRow[]).filter((delivery) =>
+    canClaim(delivery, now.getTime()),
+  );
   let sent = 0;
   for (const delivery of deliveries) {
     if (await dispatchDelivery(delivery)) sent += 1;

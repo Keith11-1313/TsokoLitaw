@@ -71,19 +71,21 @@ on conflict (id) do update set
   is_default = excluded.is_default,
   sort_order = excluded.sort_order;
 
-insert into public.addons (id, name, slug, price, is_active)
+insert into public.addons (id, name, slug, price, is_active, is_default)
 values (
   '13000000-0000-4000-8000-000000000001',
-  'Extra sea salt cream',
+  'Sea salt cream',
   'extra-sea-salt-cream',
   18.00,
+  true,
   true
 )
 on conflict (id) do update set
   name = excluded.name,
   slug = excluded.slug,
   price = excluded.price,
-  is_active = excluded.is_active;
+  is_active = excluded.is_active,
+  is_default = excluded.is_default;
 
 insert into public.pickup_locations (id, name, description, is_active, sort_order)
 values
@@ -98,6 +100,7 @@ on conflict (id) do update set
 insert into public.business_settings (key, value)
 values
   ('payment_expiry_minutes', '15'::jsonb),
+  ('manual_payment_expiry_minutes', '30'::jsonb),
   ('pickup_grace_minutes', '15'::jsonb),
   ('minimum_lead_days', '1'::jsonb),
   ('daily_cutoff_time', '"17:00"'::jsonb),
@@ -113,7 +116,7 @@ where is_current;
 
 insert into public.terms_versions (version, content, effective_at, is_current)
 values (
-  '2026-09-01',
+  '2026-09-10',
   $terms$
 TsokoLitaw Terms & Conditions — educational project terms
 
@@ -121,7 +124,9 @@ TsokoLitaw is an academic e-commerce project for demonstration, testing, and eva
 
 Product descriptions, coatings, prices, availability, and pickup schedules may change. The server confirms the final payable amount and availability during checkout. Customers must provide accurate account, contact, order, and pickup information.
 
-Website checkout accepts QR Ph through PayMongo. A live order is confirmed only after PayMongo and TsokoLitaw verify payment. A redirect, screenshot, email, or browser message alone is not proof of payment. Sandbox transactions have no cash value.
+Checkout offers the payment method shown for that order: PayMongo QR Ph or Manual GCash. PayMongo payments require verified provider confirmation. Manual GCash requires a completed receipt and Admin verification against the actual incoming transaction before the order is confirmed. A redirect, screenshot, extracted text, email, or browser message alone is not proof of payment. Sandbox transactions have no cash value.
+
+For Manual GCash, send the exact order total and submit the receipt before the displayed deadline. Your bank or e-wallet may charge a separate fee. Under-review orders retain their reservation and cannot be cancelled online. Rejected receipts include a reason and a 15-minute correction window, after which an uncorrected unpaid order may expire. If money was sent late or details do not match, contact TsokoLitaw; do not pay again. Payment receipts and submitted details are stored privately for verification and dispute handling. Optional receipt extraction runs on your device.
 
 Orders are prepared only for the selected available UCC Congressional Campus pickup location and window. Customers must follow campus access requirements and arrive during the communicated window. Products are perishable and fulfilled when released to the customer or authorized recipient.
 
@@ -139,7 +144,7 @@ Order or payment concerns should first be sent to tsokolitaw@gmail.com. These te
 
 Selecting the Terms & Conditions checkbox and continuing records electronic acceptance of these terms, the Privacy Policy, allergen notice, pickup window, and no-show policy.
   $terms$,
-  '2026-09-01 00:00:00+08'::timestamptz,
+  '2026-09-10 00:00:00+08'::timestamptz,
   true
 )
 on conflict (version) do update set

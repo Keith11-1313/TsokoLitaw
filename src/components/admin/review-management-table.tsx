@@ -131,7 +131,7 @@ export function ReviewManagementTable({ reviews }: { reviews: AdminReviewSummary
         <div className="py-14 text-center">
           <h2 className="font-display text-2xl">No customer reviews yet</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Completed-order reviews will appear here.
+            Reviews from completed orders will appear here.
           </p>
         </div>
       )}

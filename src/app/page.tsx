@@ -6,7 +6,8 @@ import { HomeHero } from "@/components/home/home-hero";
 
 export const metadata: Metadata = {
   title: "TsokoLitaw | The Filipino Chocolate Xiao Long Bao",
-  description: "Order soft and chewy chocolate-filled palitaw online for scheduled pickup at UCC Congressional Campus.",
+  description:
+    "Order soft and chewy chocolate-filled palitaw online for scheduled pickup at UCC Congressional Campus.",
   alternates: { canonical: "/" },
 };
 
@@ -28,7 +29,7 @@ export default function Home() {
     "@type": "Organization",
     name: "TsokoLitaw",
     url: "https://www.tsokolitaw.com",
-    logo: "https://www.tsokolitaw.com/brand/logo.png",
+    logo: "https://www.tsokolitaw.com/brand/logo.webp",
     email: "tsokolitaw@gmail.com",
     address: {
       "@type": "PostalAddress",

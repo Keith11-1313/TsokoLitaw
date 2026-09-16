@@ -126,11 +126,18 @@ export function AccountDangerZone({
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 id="account-deletion-title" className="font-display text-2xl text-danger-foreground">
+                <h2
+                  id="account-deletion-title"
+                  className="font-display text-2xl text-danger-foreground"
+                >
                   Schedule account deletion
                 </h2>
-                <p id="account-deletion-description" className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Your TsokoLitaw account will be deleted after 90 days. You can cancel before then. Your Google account is not affected, and active orders or refunds must be resolved first.
+                <p
+                  id="account-deletion-description"
+                  className="mt-2 text-sm leading-6 text-muted-foreground"
+                >
+                  Your TsokoLitaw account will be deleted after 90 days. You can cancel before then.
+                  Your Google account is not affected, and active orders must be resolved first.
                 </p>
               </div>
               <button
@@ -158,9 +165,13 @@ export function AccountDangerZone({
                 value={confirmation}
                 onChange={(event) => setConfirmation(event.target.value)}
                 pattern="DELETE"
-                aria-invalid={confirmation.length > 0 && confirmation !== "DELETE" || undefined}
+                aria-invalid={(confirmation.length > 0 && confirmation !== "DELETE") || undefined}
               />
-              {confirmation.length > 0 && confirmation !== "DELETE" ? <p className="mt-2 text-xs font-bold text-danger-foreground">Type DELETE exactly as shown.</p> : null}
+              {confirmation.length > 0 && confirmation !== "DELETE" ? (
+                <p className="mt-2 text-xs font-bold text-danger-foreground">
+                  Type DELETE exactly as shown.
+                </p>
+              ) : null}
               {requestState.message ? <ActionMessage state={requestState} /> : null}
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <SecondaryButton className="w-full" type="button" onClick={() => setOpen(false)}>

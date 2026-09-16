@@ -3,3 +3,4 @@ node_modules/
 src/bones/
 src/types/database.generated.ts
 package-lock.json
+public/receipt-ocr/

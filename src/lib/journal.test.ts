@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getJournalCardSummary, legacyJournalIconForContentType } from "./journal";
+import { getJournalCardSummary } from "./journal";
 
 describe("Journal presentation", () => {
   it("uses the editor summary when one is available", () => {
@@ -13,14 +13,5 @@ describe("Journal presentation", () => {
     expect(summary.length).toBeLessThanOrEqual(181);
     expect(summary).toMatch(/…$/);
     expect(summary).not.toContain("  ");
-  });
-
-  it("derives the legacy database icon from the post type", () => {
-    expect(legacyJournalIconForContentType).toEqual({
-      announcement: "megaphone",
-      story: "file_text",
-      product_feature: "sparkles",
-      video: "video",
-    });
   });
 });

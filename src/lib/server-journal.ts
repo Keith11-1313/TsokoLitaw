@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { JournalContentType, JournalIconKey, JournalStatus } from "@/lib/journal";
+import type { JournalContentType, JournalStatus } from "@/lib/journal";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { validateUploadedImage } from "@/lib/server-image-validation";
@@ -12,7 +12,6 @@ export interface JournalPostSummary {
   excerpt: string | null;
   content: string;
   contentType: JournalContentType;
-  iconKey: JournalIconKey;
   displayDate: string;
   coverImageUrl: string | null;
   videoUrl: string | null;
@@ -27,7 +26,6 @@ interface JournalPostRow {
   excerpt: string | null;
   content: string;
   content_type: JournalContentType;
-  icon_key: JournalIconKey;
   display_date: string;
   cover_image_url: string | null;
   video_url: string | null;
@@ -42,7 +40,6 @@ const journalPostColumns = `
   excerpt,
   content,
   content_type,
-  icon_key,
   display_date,
   cover_image_url,
   video_url,
@@ -58,7 +55,6 @@ function toJournalPost(row: JournalPostRow): JournalPostSummary {
     excerpt: row.excerpt,
     content: row.content,
     contentType: row.content_type,
-    iconKey: row.icon_key,
     displayDate: row.display_date,
     coverImageUrl: row.cover_image_url,
     videoUrl: row.video_url,
@@ -116,7 +112,6 @@ export async function saveAdminJournalPost(input: {
   excerpt: string;
   content: string;
   contentType: JournalContentType;
-  iconKey: JournalIconKey;
   displayDate: string;
   coverImageUrl: string;
   videoUrl: string;
@@ -130,7 +125,6 @@ export async function saveAdminJournalPost(input: {
     excerpt_value: input.excerpt,
     content_value: input.content,
     content_type_value: input.contentType,
-    icon_key_value: input.iconKey,
     display_date_value: input.displayDate,
     cover_image_url_value: input.coverImageUrl,
     video_url_value: input.videoUrl,

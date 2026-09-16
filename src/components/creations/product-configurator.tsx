@@ -48,6 +48,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
     coatings,
   );
   const selectedAddon = addons.find((addon) => addon.id === addonId) ?? null;
+  const complimentaryAddon = addons.find((addon) => addon.isDefault)!;
   const unitTotal = calculateItemUnitTotal(
     variant.price,
     coatingCharge,
@@ -134,6 +135,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
       addonName: selectedAddon?.name ?? null,
       addonQuantity,
       addonPrice: selectedAddon?.price ?? 0,
+      complimentaryAddonName: complimentaryAddon.name,
       quantity: selectedQuantity,
     });
     setAddedItem({
@@ -150,17 +152,9 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_27rem]">
       <section className="order-2 min-w-0 lg:order-1" aria-labelledby="coatings-heading">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 id="coatings-heading" className="font-display text-3xl">
-              Choose your coating
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Select one finish or allocate a mixed box piece by piece.
-            </p>
-          </div>
-          <p className="text-xs font-bold text-subtle-foreground">{coatings.length} choices</p>
-        </div>
+        <h2 id="coatings-heading" className="font-display text-3xl">
+          Choose your coating
+        </h2>
 
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {coatings.map((coating) => {
@@ -337,27 +331,29 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
             </p>
 
             {addons.length ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <CustomSelect
-                  label="Add-on"
-                  value={addonId}
-                  onChange={changeAddon}
-                  options={[
-                    { value: "", label: "No add-on" },
-                    ...addons.map((addon) => ({
-                      value: addon.id,
-                      label: `${addon.name} — ${formatPhp(addon.price)}`,
-                    })),
-                  ]}
-                />
-                <QuantityInput
-                  label="Add-on quantity per box"
-                  value={addonQuantity}
-                  onChange={setAddonQuantity}
-                  min={selectedAddon ? 1 : 0}
-                  max={selectedAddon ? MAX_ADDON_QUANTITY : 0}
-                  disabled={!selectedAddon}
-                />
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                  <CustomSelect
+                    label="Additional extra"
+                    value={addonId}
+                    onChange={changeAddon}
+                    options={[
+                      { value: "", label: "No additional extra" },
+                      ...addons.map((addon) => ({
+                        value: addon.id,
+                        label: addon.name,
+                      })),
+                    ]}
+                  />
+                  <QuantityInput
+                    label="Additional quantity per box"
+                    value={addonQuantity}
+                    onChange={setAddonQuantity}
+                    min={selectedAddon ? 1 : 0}
+                    max={selectedAddon ? MAX_ADDON_QUANTITY : 0}
+                    disabled={!selectedAddon}
+                  />
+                </div>
               </div>
             ) : null}
             <QuantityInput

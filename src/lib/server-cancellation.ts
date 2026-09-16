@@ -21,12 +21,14 @@ export async function cancelCustomerOrder(orderId: string, userId: string) {
     target_user_id: userId,
   });
   if (preparationResult.error) {
-    throw new Error("This order is no longer eligible for cancellation.", { cause: preparationResult.error });
+    throw new Error("This order is no longer eligible for cancellation.", {
+      cause: preparationResult.error,
+    });
   }
   const preparation = preparationResult.data?.[0];
   if (!preparation) throw new Error("Cancellation details are unavailable.");
   if (preparation.cancellation_kind !== "UNPAID") {
-    throw new Error("Paid-order concerns must be settled directly with TsokoLitaw in person.");
+    throw new Error("Please speak with TsokoLitaw in person about a paid order.");
   }
   if (preparation.cancellation_checkout_id) {
     await expirePayMongoCheckoutSession(preparation.cancellation_checkout_id);
@@ -36,7 +38,8 @@ export async function cancelCustomerOrder(orderId: string, userId: string) {
     target_user_id: userId,
     expired_checkout_id: preparation.cancellation_checkout_id,
   });
-  if (result.error) throw new Error("The unpaid order could not be cancelled.", { cause: result.error });
+  if (result.error)
+    throw new Error("The unpaid order could not be cancelled.", { cause: result.error });
   await dispatchCancellationNotifications(orderId);
   return { message: "Order cancelled. No payment was collected." };
 }

@@ -18,7 +18,7 @@ select set_config(
    where pg_extension.extname = 'pgtap'),
   true
 );
-select plan(10);
+select plan(12);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -102,6 +102,20 @@ select is(
   )),
   1::bigint,
   'customer search matches name or email'
+);
+select is(
+  public.count_admin_customers(
+    'ca000000-0000-4000-8000-000000000001', 'summary'
+  ),
+  1::bigint,
+  'customer count uses the same search rules'
+);
+select is(
+  (select count(*) from public.get_admin_customer_summaries(
+    'ca000000-0000-4000-8000-000000000001', null, 1, 1
+  )),
+  1::bigint,
+  'customer summaries support bounded page offsets'
 );
 select is(
   (select completed_orders from public.get_admin_customer_summaries(

@@ -22,6 +22,7 @@ const item: CartLineItem = {
   addonName: "Sea salt cream",
   addonQuantity: 1,
   addonPrice: 18,
+  complimentaryAddonName: "Sea salt cream",
   quantity: 2,
 };
 
@@ -36,6 +37,7 @@ describe("CheckoutOrderSummary", () => {
     expect(screen.getByText("TsokoMini (4 pcs)")).toBeTruthy();
     expect(screen.getByText("Milk × 2 · Cocoa × 2")).toBeTruthy();
     expect(screen.queryByText(/Plain × 0/)).toBeNull();
+    expect(screen.getByText("Sea salt cream × 2 — ₱0.00")).toBeTruthy();
     expect(screen.getByText("Sea salt cream × 1")).toBeTruthy();
     expect(screen.getByText("In each box")).toBeTruthy();
     expect(container.textContent).toContain("2 boxes");
@@ -67,7 +69,7 @@ describe("CheckoutOrderSummary", () => {
       />,
     );
     expect(screen.getByText("In this box")).toBeTruthy();
-    expect(screen.queryByText("Add-on per box")).toBeNull();
-    expect(screen.queryByText("Sea salt cream × 1")).toBeNull();
+    expect(screen.queryByText("Additional extra per box")).toBeNull();
+    expect(screen.getByText("Sea salt cream × 1 — ₱0.00")).toBeTruthy();
   });
 });

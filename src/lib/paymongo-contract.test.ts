@@ -21,7 +21,6 @@ describe("PayMongo checkout contract", () => {
       totalPhp: 40,
       customerName: "Jerald Esmeria",
       customerEmail: "customer@example.test",
-      customerMobile: "+63 900 000 0000",
       successUrl: "http://localhost:3000/payment/success?order=order-id",
       cancelUrl: "http://localhost:3000/checkout?payment=cancelled",
     });
@@ -36,60 +35,76 @@ describe("PayMongo checkout contract", () => {
   });
 
   it("rejects non-absolute redirect URLs", () => {
-    expect(() => buildPayMongoCheckoutPayload({
-      idempotencyKey: "payment-order-id",
-      orderId: "order-id",
-      orderNumber: "TL-0003",
-      totalPhp: 40,
-      customerName: "Customer",
-      customerEmail: "customer@example.test",
-      successUrl: "/payment/success",
-      cancelUrl: "http://localhost:3000/checkout",
-    })).toThrow("absolute URL");
+    expect(() =>
+      buildPayMongoCheckoutPayload({
+        idempotencyKey: "payment-order-id",
+        orderId: "order-id",
+        orderNumber: "TL-0003",
+        totalPhp: 40,
+        customerName: "Customer",
+        customerEmail: "customer@example.test",
+        successUrl: "/payment/success",
+        cancelUrl: "http://localhost:3000/checkout",
+      }),
+    ).toThrow("absolute URL");
   });
 
   it("validates stable idempotency keys for safe retries", () => {
     expect(requirePayMongoIdempotencyKey(" payment:order-id ")).toBe("payment:order-id");
-    expect(() => requirePayMongoIdempotencyKey(""))
-      .toThrow("idempotency key is invalid");
-    expect(() => requirePayMongoIdempotencyKey("a".repeat(256)))
-      .toThrow("idempotency key is invalid");
+    expect(() => requirePayMongoIdempotencyKey("")).toThrow("idempotency key is invalid");
+    expect(() => requirePayMongoIdempotencyKey("a".repeat(256))).toThrow(
+      "idempotency key is invalid",
+    );
   });
 
   it("accepts only a test-mode PayMongo checkout response", () => {
-    expect(parsePayMongoCheckoutSession({
-      data: {
-        id: "cs_test_session",
-        attributes: {
-          checkout_url: "https://checkout.paymongo.com/cs_test_session",
-          livemode: false,
+    expect(
+      parsePayMongoCheckoutSession(
+        {
+          data: {
+            id: "cs_test_session",
+            attributes: {
+              checkout_url: "https://checkout.paymongo.com/cs_test_session",
+              livemode: false,
+            },
+          },
         },
-      },
-    }, "test")).toEqual({
+        "test",
+      ),
+    ).toEqual({
       id: "cs_test_session",
       checkoutUrl: "https://checkout.paymongo.com/cs_test_session",
       livemode: false,
     });
 
-    expect(() => parsePayMongoCheckoutSession({
-      data: {
-        id: "cs_live_session",
-        attributes: {
-          checkout_url: "https://checkout.paymongo.com/cs_live_session",
-          livemode: true,
+    expect(() =>
+      parsePayMongoCheckoutSession(
+        {
+          data: {
+            id: "cs_live_session",
+            attributes: {
+              checkout_url: "https://checkout.paymongo.com/cs_live_session",
+              livemode: true,
+            },
+          },
         },
-      },
-    }, "test")).toThrow("mode did not match");
+        "test",
+      ),
+    ).toThrow("mode did not match");
 
-    expect(parsePayMongoCheckoutSession({
-      data: {
-        id: "cs_live_session",
-        attributes: {
-          checkout_url: "https://checkout.paymongo.com/cs_live_session",
-          livemode: true,
+    expect(
+      parsePayMongoCheckoutSession(
+        {
+          data: {
+            id: "cs_live_session",
+            attributes: {
+              checkout_url: "https://checkout.paymongo.com/cs_live_session",
+              livemode: true,
+            },
+          },
         },
-      },
-    }, "live")).toMatchObject({ id: "cs_live_session", livemode: true });
+        "live",
+      ),
+    ).toMatchObject({ id: "cs_live_session", livemode: true });
   });
-
 });

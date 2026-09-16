@@ -31,7 +31,7 @@ export function DashboardCharts({
           <div>
             <h2 className="font-display text-2xl">Paid revenue</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Last 7 days from the recent order set
+              Last 7 days among the latest 100 orders
             </p>
           </div>
           <div className="w-full text-left sm:w-auto sm:text-right">
@@ -53,7 +53,7 @@ export function DashboardCharts({
                   className="truncate text-center text-[0.65rem] font-bold text-muted-foreground"
                   title={formatPhp(point.value)}
                 >
-                  {point.value > 0 ? formatPhp(point.value) : "—"}
+                  {formatPhp(point.value)}
                 </span>
                 <div className="flex h-32 items-end rounded-t-control bg-surface-muted sm:h-40">
                   <span
@@ -73,10 +73,7 @@ export function DashboardCharts({
 
       <article className="rounded-card border border-border bg-surface p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="font-display text-2xl">Order status</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Current fulfillment mix</p>
-          </div>
+          <h2 className="font-display text-2xl">Order status</h2>
           <p className="font-display text-3xl text-foreground">{orderTotal}</p>
         </div>
 

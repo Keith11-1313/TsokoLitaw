@@ -10,11 +10,7 @@ interface HomeHeroProps {
   description: string;
 }
 
-export function HomeHero({
-  heading,
-  tagline,
-  description,
-}: HomeHeroProps) {
+export function HomeHero({ heading, tagline, description }: HomeHeroProps) {
   return (
     <section
       className="flex min-h-[calc(100vh-5.5rem)] items-center py-10 sm:min-h-[calc(100svh-5.5rem)] sm:py-14 lg:py-16"
@@ -29,13 +25,11 @@ export function HomeHero({
             >
               {heading}
             </h1>
-            <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-              {tagline}
-            </p>
+            <p className="mt-4 text-base text-muted-foreground sm:text-lg">{tagline}</p>
             <p className="mt-7 max-w-2xl text-base leading-7 text-muted-foreground">
               {description}
             </p>
-            <div className="mt-8 hidden lg:block">
+            <div className="mt-8">
               <Link
                 className={cn(primaryButtonClassName, "w-full min-[420px]:w-auto")}
                 href="/our-creations"
@@ -47,7 +41,7 @@ export function HomeHero({
 
           <div className="relative aspect-[6/5] w-full overflow-hidden rounded-card bg-surface-muted lg:mr-8 lg:max-w-[32.5rem] lg:justify-self-end">
             <Image
-              src="/images/home/hero-image.png"
+              src="/images/home/hero-image.webp"
               alt="TsokoLitaw Mode switched on beside a chocolate-filled Palitaw dessert"
               fill
               preload
@@ -56,13 +50,6 @@ export function HomeHero({
               className="object-cover"
             />
           </div>
-
-          <Link
-            className={cn(primaryButtonClassName, "w-full min-[420px]:w-auto lg:hidden")}
-            href="/our-creations"
-          >
-            Order now
-          </Link>
         </div>
       </SiteContainer>
     </section>

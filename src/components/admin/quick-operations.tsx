@@ -4,7 +4,7 @@ import Link from "next/link";
 const operations = [
   {
     title: "Manage Catalog",
-    description: "Boxes, coatings, add-ons, images, and prices",
+    description: "Boxes, coatings, extras, images, and prices",
     icon: PlusCircle,
     href: "/admin/products",
   },

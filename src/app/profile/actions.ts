@@ -21,20 +21,19 @@ export async function updateProfileAction(
 ): Promise<ProfileFormState> {
   const profile = await requireCustomer("/profile");
   const fullName = String(formData.get("fullName") ?? "").trim();
-  const mobileNumber = String(formData.get("mobileNumber") ?? "").trim();
 
   if (fullName.length < 2 || fullName.length > 100) {
-    return { status: "error", message: "Enter a name between 2 and 100 characters.", fieldErrors: { fullName: "Enter a name between 2 and 100 characters." } };
-  }
-
-  if (mobileNumber.length > 30) {
-    return { status: "error", message: "Mobile number must be 30 characters or fewer.", fieldErrors: { mobileNumber: "Use 30 characters or fewer." } };
+    return {
+      status: "error",
+      message: "Enter a name between 2 and 100 characters.",
+      fieldErrors: { fullName: "Enter a name between 2 and 100 characters." },
+    };
   }
 
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase
     .from("profiles")
-    .update({ full_name: fullName, mobile_number: mobileNumber || null })
+    .update({ full_name: fullName })
     .eq("id", profile.id);
 
   if (error) {
@@ -60,8 +59,8 @@ export async function requestAccountDeletionAction(
   const { error } = await supabase.rpc("request_account_deletion");
 
   if (error) {
-    const message = error.message.includes("orders or refunds are active")
-      ? "Resolve active orders or refunds before scheduling account deletion."
+    const message = error.message.includes("orders are active")
+      ? "Resolve active orders before scheduling account deletion."
       : error.message.includes("Admin accounts")
         ? "Admin accounts must be removed through the controlled administrator process."
         : "Account deletion could not be scheduled. Please try again.";
@@ -81,7 +80,10 @@ export async function cancelAccountDeletionAction(
   const { error } = await supabase.rpc("cancel_account_deletion");
 
   if (error) {
-    return { status: "error", message: "Account deletion could not be cancelled. Please try again." };
+    return {
+      status: "error",
+      message: "Account deletion could not be cancelled. Please try again.",
+    };
   }
 
   revalidatePath("/profile");

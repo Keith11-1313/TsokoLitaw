@@ -50,14 +50,31 @@ export async function saveInventoryAction(
   const stockTotal = Number(stockTotalValue);
   const notes = String(formData.get("notes") ?? "").trim();
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(pickupDate) || !isUuid(productId)
-    || !stockTotalValue || !Number.isInteger(stockTotal) || stockTotal < 0 || stockTotal > 100000
-    || notes.length > 240) {
-    return { status: "error", message: "Check the pickup date, piece total, and notes.", fieldErrors: {
-      ...(!/^\d{4}-\d{2}-\d{2}$/.test(pickupDate) ? { pickupDate: "Choose a valid pickup date." } : {}),
-      ...(!stockTotalValue || !Number.isInteger(stockTotal) || stockTotal < 0 || stockTotal > 100000 ? { stockTotal: "Enter a whole-number total from 0 to 100,000." } : {}),
-      ...(notes.length > 240 ? { notes: "Use 240 characters or fewer." } : {}),
-    } };
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(pickupDate) ||
+    !isUuid(productId) ||
+    !stockTotalValue ||
+    !Number.isInteger(stockTotal) ||
+    stockTotal < 0 ||
+    stockTotal > 100000 ||
+    notes.length > 240
+  ) {
+    return {
+      status: "error",
+      message: "Check the pickup date, piece total, and notes.",
+      fieldErrors: {
+        ...(!/^\d{4}-\d{2}-\d{2}$/.test(pickupDate)
+          ? { pickupDate: "Choose a valid pickup date." }
+          : {}),
+        ...(!stockTotalValue ||
+        !Number.isInteger(stockTotal) ||
+        stockTotal < 0 ||
+        stockTotal > 100000
+          ? { stockTotal: "Enter a whole number from 0 to 100,000." }
+          : {}),
+        ...(notes.length > 240 ? { notes: "Use 240 characters or fewer." } : {}),
+      },
+    };
   }
 
   try {
@@ -67,11 +84,10 @@ export async function saveInventoryAction(
       pickupDate,
       productId,
       stockTotal,
-      isAvailable: true,
       notes,
     });
     refreshInventory();
-    return { status: "success", message: "Ready-stock pieces saved." };
+    return { status: "success", message: "Ready stock pieces saved." };
   } catch (error) {
     return failure(error, "Inventory could not be saved.");
   }
@@ -88,12 +104,25 @@ export async function consumeInventoryAction(
   const reason = String(formData.get("reason") ?? "");
   const notes = String(formData.get("notes") ?? "").trim();
 
-  if (!isUuid(inventoryId) || !quantityValue || !Number.isInteger(quantity) || quantity < 1 || quantity > 100000
-    || reason !== "WASTE" || notes.length > 240) {
-    return { status: "error", message: "Check the piece quantity, reason, and notes.", fieldErrors: {
-      ...(!quantityValue || !Number.isInteger(quantity) || quantity < 1 || quantity > 100000 ? { quantity: "Enter a whole-number quantity from 1 to 100,000." } : {}),
-      ...(notes.length > 240 ? { notes: "Use 240 characters or fewer." } : {}),
-    } };
+  if (
+    !isUuid(inventoryId) ||
+    !quantityValue ||
+    !Number.isInteger(quantity) ||
+    quantity < 1 ||
+    quantity > 100000 ||
+    reason !== "WASTE" ||
+    notes.length > 240
+  ) {
+    return {
+      status: "error",
+      message: "Check the piece quantity, reason, and notes.",
+      fieldErrors: {
+        ...(!quantityValue || !Number.isInteger(quantity) || quantity < 1 || quantity > 100000
+          ? { quantity: "Enter a whole number from 1 to 100,000." }
+          : {}),
+        ...(notes.length > 240 ? { notes: "Use 240 characters or fewer." } : {}),
+      },
+    };
   }
 
   try {

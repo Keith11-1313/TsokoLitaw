@@ -8,7 +8,6 @@ export interface AdminCustomerSummary {
   fullName: string;
   email: string;
   accountRole: "customer" | "admin";
-  mobileNumber: string | null;
   isActive: boolean;
   joinedAt: string;
   completedOrders: number;
@@ -25,7 +24,6 @@ interface AdminCustomerSummaryRow {
   full_name: string;
   email: string;
   account_role: "customer" | "admin";
-  mobile_number: string | null;
   is_active: boolean;
   joined_at: string;
   completed_orders: number | string;
@@ -37,32 +35,55 @@ interface AdminCustomerSummaryRow {
   redeemed_rewards: number | string;
 }
 
-export async function getAdminCustomerSummaries(adminId: string, search = "") {
+export async function getAdminCustomerSummaries(
+  adminId: string,
+  search = "",
+  page = 1,
+  pageSize = 20,
+) {
   const normalizedSearch = search.trim().slice(0, 100);
+  const normalizedPage = Math.max(1, Math.trunc(page));
+  const normalizedPageSize = Math.min(100, Math.max(1, Math.trunc(pageSize)));
   const supabase = createAdminSupabaseClient();
-  const { data, error } = await measureServerOperation("admin.customers.list", () => supabase
-    .rpc("get_admin_customer_summaries", {
-      target_admin_id: adminId,
-      search_value: normalizedSearch || null,
-      result_limit: 100,
-    }));
+  const [listResult, countResult] = await Promise.all([
+    measureServerOperation("admin.customers.list", () =>
+      supabase.rpc("get_admin_customer_summaries", {
+        target_admin_id: adminId,
+        search_value: normalizedSearch || undefined,
+        result_limit: normalizedPageSize,
+        result_offset: (normalizedPage - 1) * normalizedPageSize,
+      }),
+    ),
+    measureServerOperation("admin.customers.count", () =>
+      supabase.rpc("count_admin_customers", {
+        target_admin_id: adminId,
+        search_value: normalizedSearch || undefined,
+      }),
+    ),
+  ]);
 
-  if (error) throw new Error("Admin customer summaries could not be loaded.", { cause: error });
+  if (listResult.error || countResult.error) {
+    throw new Error("Admin customer summaries could not be loaded.", {
+      cause: listResult.error ?? countResult.error,
+    });
+  }
 
-  return ((data ?? []) as AdminCustomerSummaryRow[]).map((customer) => ({
-    id: customer.user_id,
-    fullName: customer.full_name,
-    email: customer.email,
-    accountRole: customer.account_role,
-    mobileNumber: customer.mobile_number,
-    isActive: customer.is_active,
-    joinedAt: customer.joined_at,
-    completedOrders: Number(customer.completed_orders),
-    completedSpend: Number(customer.completed_spend),
-    lastOrderAt: customer.last_order_at,
-    loyaltyCompletedOrders: Number(customer.loyalty_completed_orders),
-    loyaltyThreshold: Number(customer.loyalty_threshold),
-    availableRewards: Number(customer.available_rewards),
-    redeemedRewards: Number(customer.redeemed_rewards),
-  }));
+  return {
+    totalCount: Number(countResult.data ?? 0),
+    customers: ((listResult.data ?? []) as AdminCustomerSummaryRow[]).map((customer) => ({
+      id: customer.user_id,
+      fullName: customer.full_name,
+      email: customer.email,
+      accountRole: customer.account_role,
+      isActive: customer.is_active,
+      joinedAt: customer.joined_at,
+      completedOrders: Number(customer.completed_orders),
+      completedSpend: Number(customer.completed_spend),
+      lastOrderAt: customer.last_order_at,
+      loyaltyCompletedOrders: Number(customer.loyalty_completed_orders),
+      loyaltyThreshold: Number(customer.loyalty_threshold),
+      availableRewards: Number(customer.available_rewards),
+      redeemedRewards: Number(customer.redeemed_rewards),
+    })),
+  };
 }

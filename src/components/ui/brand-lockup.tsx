@@ -30,7 +30,7 @@ export function BrandLockup({
     <div className={cn("inline-flex items-center gap-3", className)}>
       {showMark ? (
         <Image
-          src="/brand/logo.png"
+          src="/brand/logo.webp"
           alt=""
           width={48}
           height={48}

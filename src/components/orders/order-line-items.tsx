@@ -9,7 +9,9 @@ interface OrderLineItemsProps {
 
 export function OrderLineItems({ items, className }: OrderLineItemsProps) {
   if (!items.length) {
-    return <p className={cn("text-sm text-muted-foreground", className)}>Order items unavailable</p>;
+    return (
+      <p className={cn("text-sm text-muted-foreground", className)}>Order items unavailable</p>
+    );
   }
 
   return (
@@ -31,7 +33,9 @@ export function OrderLineItems({ items, className }: OrderLineItemsProps) {
 
             <div className="mt-1 text-xs leading-5 text-muted-foreground">
               <p>
-                {boxQuantity}<span aria-hidden="true"> × </span><span className="sr-only"> at </span>
+                {boxQuantity}
+                <span aria-hidden="true"> × </span>
+                <span className="sr-only"> at </span>
                 <span className="tabular-nums">{formatPhp(unitTotal)}</span>
                 {item.quantity > 1 ? " each" : null}
               </p>
@@ -43,12 +47,17 @@ export function OrderLineItems({ items, className }: OrderLineItemsProps) {
                 </div>
               ) : null}
 
-              {item.addon ? (
-                <div className="mt-2">
-                  <p className="font-bold text-foreground">Add-on per box</p>
-                  <p>{item.addon.name} × {item.addon.quantity}</p>
+              {item.addons.map((addon) => (
+                <div className="mt-2" key={`${addon.name}-${addon.isComplimentary}`}>
+                  <p className="font-bold text-foreground">
+                    {addon.isComplimentary ? "Complimentary extra" : "Additional extra per box"}
+                  </p>
+                  <p>
+                    {addon.name} × {addon.isComplimentary ? addon.quantity : addon.quantityPerBox}
+                    {addon.isComplimentary ? ` — ${formatPhp(0)}` : ""}
+                  </p>
                 </div>
-              ) : null}
+              ))}
 
               <details className="group mt-3 border-t border-border/70 pt-3">
                 <summary className="w-fit cursor-pointer rounded-sm font-bold text-foreground underline decoration-border underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2">
@@ -64,12 +73,17 @@ export function OrderLineItems({ items, className }: OrderLineItemsProps) {
                     <dt>Coatings</dt>
                     <dd className="shrink-0 tabular-nums">{formatPhp(item.coatingTotal)}</dd>
                   </div>
-                  {item.addon ? (
-                    <div className="flex justify-between gap-4">
-                      <dt>Add-on</dt>
-                      <dd className="shrink-0 tabular-nums">{formatPhp(item.addon.lineTotal)}</dd>
+                  {item.addons.map((addon) => (
+                    <div
+                      key={`${addon.name}-${addon.isComplimentary}`}
+                      className="flex justify-between gap-4"
+                    >
+                      <dt>
+                        {addon.isComplimentary ? `Complimentary ${addon.name}` : "Additional extra"}
+                      </dt>
+                      <dd className="shrink-0 tabular-nums">{formatPhp(addon.lineTotal)}</dd>
                     </div>
-                  ) : null}
+                  ))}
                 </dl>
               </details>
             </div>

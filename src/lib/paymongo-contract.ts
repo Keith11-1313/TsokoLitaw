@@ -2,7 +2,7 @@ import type { PayMongoMode } from "@/lib/paymongo-mode";
 
 export const PAYMONGO_PAYMENT_METHOD_TYPES = ["qrph"] as const;
 
-export type PayMongoPaymentMethodType = typeof PAYMONGO_PAYMENT_METHOD_TYPES[number];
+export type PayMongoPaymentMethodType = (typeof PAYMONGO_PAYMENT_METHOD_TYPES)[number];
 
 export interface PayMongoCheckoutInput {
   idempotencyKey: string;
@@ -11,7 +11,6 @@ export interface PayMongoCheckoutInput {
   totalPhp: number;
   customerName: string;
   customerEmail: string;
-  customerMobile?: string | null;
   successUrl: string;
   cancelUrl: string;
 }
@@ -68,7 +67,6 @@ export function buildPayMongoCheckoutPayload(input: PayMongoCheckoutInput) {
   const orderNumber = input.orderNumber.trim();
   const customerName = input.customerName.trim();
   const customerEmail = input.customerEmail.trim();
-  const customerMobile = input.customerMobile?.trim() || undefined;
   if (!orderNumber || !customerName || !customerEmail) {
     throw new Error("Order number, customer name, and customer email are required.");
   }
@@ -79,17 +77,18 @@ export function buildPayMongoCheckoutPayload(input: PayMongoCheckoutInput) {
         billing: {
           name: customerName,
           email: customerEmail,
-          ...(customerMobile ? { phone: customerMobile } : {}),
         },
         cancel_url: requireRedirectUrl(input.cancelUrl, "PayMongo cancel URL"),
         description: `Campus pickup order ${orderNumber}`,
-        line_items: [{
-          name: `TsokoLitaw order ${orderNumber}`,
-          description: "Chocolate-filled Litaw for campus pickup",
-          amount: phpToCentavos(input.totalPhp),
-          currency: "PHP",
-          quantity: 1,
-        }],
+        line_items: [
+          {
+            name: `TsokoLitaw order ${orderNumber}`,
+            description: "Chocolate-filled Litaw for campus pickup",
+            amount: phpToCentavos(input.totalPhp),
+            currency: "PHP",
+            quantity: 1,
+          },
+        ],
         metadata: {
           order_id: input.orderId,
           order_number: orderNumber,
@@ -115,7 +114,10 @@ export function parsePayMongoCheckoutSession(
   if (typeof id !== "string" || !id.startsWith("cs_")) {
     throw new Error("PayMongo did not return a valid checkout session ID.");
   }
-  if (typeof checkoutUrl !== "string" || !checkoutUrl.startsWith("https://checkout.paymongo.com/")) {
+  if (
+    typeof checkoutUrl !== "string" ||
+    !checkoutUrl.startsWith("https://checkout.paymongo.com/")
+  ) {
     throw new Error("PayMongo did not return a valid checkout URL.");
   }
   const expectedLivemode = mode === "live";

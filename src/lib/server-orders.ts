@@ -4,6 +4,8 @@ import type { OrderStatus } from "@/components/ui/status-badge";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { measureServerOperation } from "@/lib/server-observability";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { PaymentMethod, PaymentStatus } from "@/lib/payment-status";
+import { expireDueDirectPayments } from "@/lib/server-payment";
 
 export const CUSTOMER_ORDERS_PAGE_SIZE = 20;
 
@@ -15,18 +17,29 @@ export interface CustomerOrderItemSummary {
   basePrice: number;
   coatingTotal: number;
   coatings: string[];
-  addon: {
+  addons: Array<{
     name: string;
     quantity: number;
+    quantityPerBox: number;
     lineTotal: number;
-  } | null;
+    isComplimentary: boolean;
+  }>;
+  configuration?: {
+    variantId: string;
+    pieceCount: number;
+    coatingCounts: Record<string, number>;
+    addonId: string | null;
+    addonQuantity: number;
+  };
 }
 
 export interface CustomerOrderSummary {
   id: string;
   orderNumber: string;
   status: OrderStatus;
-  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  paymentStatus: PaymentStatus;
+  paymentMethod?: PaymentMethod;
+  paymentWindowOpen: boolean;
   total: number;
   orderedAt: string;
   pickupDate: string;
@@ -44,7 +57,6 @@ export interface CustomerOrdersPage {
 export interface CustomerOrderDetail extends CustomerOrderSummary {
   customerName: string;
   customerEmail: string;
-  customerMobile: string | null;
   notes: string | null;
   cancelledAt: string | null;
   items: CustomerOrderItemSummary[];
@@ -54,7 +66,6 @@ export interface CustomerOrderDetail extends CustomerOrderSummary {
 export interface AdminOrderSummary extends CustomerOrderSummary {
   customerName: string;
   customerEmail: string;
-  customerMobile: string | null;
   notes: string | null;
   boxQuantity: number;
 }
@@ -63,6 +74,7 @@ interface CoatingRow {
   order_item_id: string;
   coating_name_snapshot: string;
   piece_count: number;
+  coating_id: string;
 }
 
 interface AddonRow {
@@ -70,15 +82,19 @@ interface AddonRow {
   addon_name_snapshot: string;
   quantity: number;
   line_total: number | string;
+  addon_id: string;
+  is_complimentary: boolean;
 }
 
 interface NestedOrderItemRow {
   id: string;
   order_id?: string;
   variant_name_snapshot: string;
+  variant_id: string;
+  piece_count_snapshot: number;
   quantity: number;
   unit_price_snapshot?: number | string;
-  extra_coating_total_snapshot?: number | string;
+  coating_total_snapshot?: number | string;
   line_subtotal?: number | string;
   order_item_coatings: CoatingRow[] | null;
   order_item_addons: AddonRow[] | null;
@@ -89,6 +105,8 @@ interface CustomerOrderRow {
   order_number: string;
   status: OrderStatus;
   payment_status: CustomerOrderSummary["paymentStatus"];
+  payment_method?: CustomerOrderSummary["paymentMethod"];
+  payment_expires_at: string | null;
   total: number | string;
   created_at: string;
   pickup_date: string;
@@ -100,7 +118,6 @@ interface CustomerOrderRow {
 interface CustomerOrderDetailRow extends CustomerOrderRow {
   customer_name: string;
   customer_email: string;
-  customer_mobile: string | null;
   customer_notes: string | null;
   cancelled_at: string | null;
 }
@@ -116,7 +133,9 @@ function decodeCursor(value: string | undefined): OrdersCursor | null {
   if (!value || value.length > 300) return null;
 
   try {
-    const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as Partial<OrdersCursor>;
+    const parsed = JSON.parse(
+      Buffer.from(value, "base64url").toString("utf8"),
+    ) as Partial<OrdersCursor>;
     if (typeof parsed.createdAt !== "string" || typeof parsed.id !== "string") return null;
     if (!UUID_PATTERN.test(parsed.id)) return null;
     const createdAt = new Date(parsed.createdAt);
@@ -128,36 +147,62 @@ function decodeCursor(value: string | undefined): OrdersCursor | null {
 }
 
 function encodeCursor(row: Pick<CustomerOrderRow, "created_at" | "id">) {
-  return Buffer.from(JSON.stringify({ createdAt: row.created_at, id: row.id })).toString("base64url");
+  return Buffer.from(JSON.stringify({ createdAt: row.created_at, id: row.id })).toString(
+    "base64url",
+  );
 }
 
 function toItemLine(item: NestedOrderItemRow): CustomerOrderItemSummary {
-  const addon = item.order_item_addons?.[0] ?? null;
+  const addons = item.order_item_addons ?? [];
+  const paidAddon = addons.find((addon) => !addon.is_complimentary) ?? null;
   return {
     id: item.id,
     name: item.variant_name_snapshot,
     quantity: item.quantity,
     lineTotal: Number(item.line_subtotal ?? 0),
     basePrice: Number(item.unit_price_snapshot ?? 0),
-    coatingTotal: Number(item.extra_coating_total_snapshot ?? 0),
-    coatings: (item.order_item_coatings ?? [])
-      .map((coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`),
-    addon: addon ? {
+    coatingTotal: Number(item.coating_total_snapshot ?? 0),
+    coatings: (item.order_item_coatings ?? []).map(
+      (coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`,
+    ),
+    addons: addons.map((addon) => ({
       name: addon.addon_name_snapshot,
-      quantity: addon.quantity,
-      lineTotal: Number(addon.line_total),
-    } : null,
+      quantity: addon.quantity * item.quantity,
+      quantityPerBox: addon.quantity,
+      lineTotal: Number(addon.line_total) * item.quantity,
+      isComplimentary: addon.is_complimentary,
+    })),
+    configuration: {
+      variantId: item.variant_id,
+      pieceCount: item.piece_count_snapshot,
+      coatingCounts: Object.fromEntries(
+        (item.order_item_coatings ?? []).map((coating) => [
+          coating.coating_id,
+          coating.piece_count,
+        ]),
+      ),
+      addonId: paidAddon?.addon_id ?? null,
+      addonQuantity: paidAddon?.quantity ?? 0,
+    },
   };
 }
 
 function summarizeItems(items: CustomerOrderItemSummary[]) {
-  return items.map((item) => {
-    const details = [
-      item.coatings.join(", "),
-      item.addon ? `${item.addon.name} × ${item.addon.quantity} per box` : "",
-    ].filter(Boolean).join(" · ");
-    return `${item.name} × ${item.quantity}${details ? ` · ${details}` : ""}`;
-  }).join("; ");
+  return items
+    .map((item) => {
+      const details = [
+        item.coatings.join(", "),
+        ...item.addons.map((addon) =>
+          addon.isComplimentary
+            ? `Complimentary ${addon.name} × ${addon.quantity}`
+            : `${addon.name} × ${addon.quantityPerBox} per box`,
+        ),
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      return `${item.name} × ${item.quantity}${details ? ` · ${details}` : ""}`;
+    })
+    .join("; ");
 }
 
 function toOrderSummary(order: CustomerOrderRow): CustomerOrderSummary {
@@ -167,6 +212,11 @@ function toOrderSummary(order: CustomerOrderRow): CustomerOrderSummary {
     orderNumber: order.order_number,
     status: order.status,
     paymentStatus: order.payment_status,
+    paymentMethod: order.payment_method,
+    paymentWindowOpen:
+      order.payment_status === "PENDING" &&
+      !!order.payment_expires_at &&
+      Date.parse(order.payment_expires_at) > Date.now(),
     total: Number(order.total),
     orderedAt: order.created_at,
     pickupDate: order.pickup_date,
@@ -181,15 +231,19 @@ export async function getCustomerOrders(
   userId: string,
   cursorValue?: string,
 ): Promise<CustomerOrdersPage> {
+  await expireDueDirectPayments();
   const supabase = await createServerSupabaseClient();
   const cursor = decodeCursor(cursorValue);
   let query = supabase
     .from("orders")
-    .select(`
+    .select(
+      `
       id,
       order_number,
       status,
       payment_status,
+      payment_method,
+      payment_expires_at,
       total,
       created_at,
       pickup_date,
@@ -198,24 +252,30 @@ export async function getCustomerOrders(
       order_items (
         id,
         order_id,
+        variant_id,
         variant_name_snapshot,
+        piece_count_snapshot,
         quantity,
         unit_price_snapshot,
-        extra_coating_total_snapshot,
+        coating_total_snapshot,
         line_subtotal,
         order_item_coatings (
           order_item_id,
+          coating_id,
           coating_name_snapshot,
           piece_count
         ),
         order_item_addons (
           order_item_id,
+          addon_id,
           addon_name_snapshot,
           quantity,
-          line_total
+          line_total,
+          is_complimentary
         )
       )
-    `)
+    `,
+    )
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
@@ -237,9 +297,8 @@ export async function getCustomerOrders(
 
   return {
     orders: visibleRows.map(toOrderSummary),
-    nextCursor: hasNextPage && visibleRows.length
-      ? encodeCursor(visibleRows[visibleRows.length - 1])
-      : null,
+    nextCursor:
+      hasNextPage && visibleRows.length ? encodeCursor(visibleRows[visibleRows.length - 1]) : null,
   };
 }
 
@@ -247,14 +306,19 @@ export async function getCustomerOrderDetail(
   userId: string,
   orderId: string,
 ): Promise<CustomerOrderDetail | null> {
+  await expireDueDirectPayments();
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await measureServerOperation("orders.detail", () => supabase
-    .from("orders")
-    .select(`
+  const { data, error } = await measureServerOperation("orders.detail", () =>
+    supabase
+      .from("orders")
+      .select(
+        `
       id,
       order_number,
       status,
       payment_status,
+      payment_method,
+      payment_expires_at,
       total,
       created_at,
       pickup_date,
@@ -262,34 +326,40 @@ export async function getCustomerOrderDetail(
       pickup_location_snapshot,
       customer_name,
       customer_email,
-      customer_mobile,
       customer_notes,
       cancelled_at,
       order_items (
         id,
         order_id,
+        variant_id,
         variant_name_snapshot,
+        piece_count_snapshot,
         quantity,
         unit_price_snapshot,
-        extra_coating_total_snapshot,
+        coating_total_snapshot,
         line_subtotal,
         order_item_coatings (
           order_item_id,
+          coating_id,
           coating_name_snapshot,
           piece_count
         ),
         order_item_addons (
           order_item_id,
+          addon_id,
           addon_name_snapshot,
           quantity,
-          line_total
+          line_total,
+          is_complimentary
         )
       )
-    `)
-    .eq("id", orderId)
-    .eq("user_id", userId)
-    .order("created_at", { referencedTable: "order_items", ascending: true })
-    .maybeSingle());
+    `,
+      )
+      .eq("id", orderId)
+      .eq("user_id", userId)
+      .order("created_at", { referencedTable: "order_items", ascending: true })
+      .maybeSingle(),
+  );
 
   if (error) throw new Error("Order detail could not be loaded.", { cause: error });
   if (!data) return null;
@@ -301,7 +371,6 @@ export async function getCustomerOrderDetail(
     itemSummary: "",
     customerName: order.customer_name,
     customerEmail: order.customer_email,
-    customerMobile: order.customer_mobile,
     notes: order.customer_notes,
     cancelledAt: order.cancelled_at,
     items: (order.order_items ?? []).map(toItemLine),
@@ -310,14 +379,15 @@ export async function getCustomerOrderDetail(
 }
 
 export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
+  await expireDueDirectPayments();
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await measureServerOperation("admin.orders.list", () => supabase
-    .from("orders")
-    .select(`
+  const selection = `
       id,
       order_number,
       status,
       payment_status,
+      payment_method,
+      payment_expires_at,
       total,
       created_at,
       pickup_date,
@@ -325,46 +395,64 @@ export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
       pickup_location_snapshot,
       customer_name,
       customer_email,
-      customer_mobile,
       customer_notes,
       order_items (
         id,
         order_id,
+        variant_id,
         variant_name_snapshot,
+        piece_count_snapshot,
         quantity,
         unit_price_snapshot,
-        extra_coating_total_snapshot,
+        coating_total_snapshot,
         line_subtotal,
         order_item_coatings (
           order_item_id,
+          coating_id,
           coating_name_snapshot,
           piece_count
         ),
         order_item_addons (
           order_item_id,
+          addon_id,
           addon_name_snapshot,
           quantity,
-          line_total
+          line_total,
+          is_complimentary
         )
       )
-    `)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .order("created_at", { referencedTable: "order_items", ascending: true })
-    .limit(100));
+    `;
+  const load = () =>
+    supabase
+      .from("orders")
+      .select(selection)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .order("created_at", { referencedTable: "order_items", ascending: true });
+  const [reviews, recent] = await measureServerOperation("admin.orders.list", () =>
+    Promise.all([load().eq("payment_status", "UNDER_REVIEW").limit(100), load().limit(100)]),
+  );
+  const error = reviews.error ?? recent.error;
+  const data = [
+    ...new Map(
+      [...(reviews.data ?? []), ...(recent.data ?? [])].map((order) => [order.id, order]),
+    ).values(),
+  ];
 
   if (error) throw new Error("Admin orders could not be loaded.", { cause: error });
 
-  return ((data ?? []) as unknown as Array<CustomerOrderRow & {
-    customer_name: string;
-    customer_email: string;
-    customer_mobile: string | null;
-    customer_notes: string | null;
-  }>).map((order) => ({
+  return (
+    (data ?? []) as unknown as Array<
+      CustomerOrderRow & {
+        customer_name: string;
+        customer_email: string;
+        customer_notes: string | null;
+      }
+    >
+  ).map((order) => ({
     ...toOrderSummary(order),
     customerName: order.customer_name,
     customerEmail: order.customer_email,
-    customerMobile: order.customer_mobile,
     notes: order.customer_notes,
     boxQuantity: (order.order_items ?? []).reduce((total, item) => total + item.quantity, 0),
   }));

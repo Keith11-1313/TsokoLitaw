@@ -58,6 +58,7 @@ function StockEditor({
   onDirtyChange,
   onPendingChange,
   onCancel,
+  showHeading = true,
 }: {
   product: { id: string; name: string };
   dates: AdminInventoryDate[];
@@ -66,6 +67,7 @@ function StockEditor({
   onDirtyChange?: (isDirty: boolean) => void;
   onPendingChange?: (pending: boolean) => void;
   onCancel?: () => void;
+  showHeading?: boolean;
 }) {
   const [state, action, pending] = useActionState(saveInventoryAction, initialState);
   const minimum = record ? record.stockReserved + record.stockConsumed : 0;
@@ -87,20 +89,15 @@ function StockEditor({
       className="rounded-card border border-border bg-surface p-5 sm:p-6"
     >
       <input type="hidden" name="productId" value={product.id} />
-      <div>
+      {showHeading ? (
         <div>
           <h2 className="font-display text-2xl">
             {record ? "Stock settings" : "Publish stock for another date"}
           </h2>
-          {!record ? (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Choose an eligible pickup date and enter the pieces prepared for it.
-            </p>
-          ) : null}
         </div>
-      </div>
+      ) : null}
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className={showHeading ? "mt-5 grid gap-4 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2"}>
         <div className="space-y-2 text-sm font-bold">
           <span className="block">Pickup date</span>
           {record ? (
@@ -115,7 +112,7 @@ function StockEditor({
               label="Choose date"
               name="pickupDate"
               required
-              placeholder="Choose a published ready-stock date"
+              placeholder="Choose a published Ready stock date"
               options={dates.map((date) => ({
                 value: date.pickupDate,
                 label: `${formatDate(date.pickupDate)} · ${modeLabel(date.availabilityMode)}`,
@@ -203,7 +200,7 @@ function ConsumptionForm({ record }: { record: AdminInventoryRecord }) {
           <input
             name="notes"
             maxLength={240}
-            placeholder="Short operational note"
+            placeholder="Example: 3 pieces damaged during preparation"
             className="min-h-12 w-full rounded-control bg-surface-control px-3 font-normal"
           />
         </label>
@@ -249,7 +246,7 @@ function PublishStockModal({
         <div className="flex items-start justify-between gap-4 px-5 pt-5 sm:px-7 sm:pt-7">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
-              Ready-stock inventory
+              Ready stock inventory
             </p>
             <h2 id="publish-stock-modal-title" className="mt-1 font-display text-3xl">
               Publish stock for another date
@@ -273,6 +270,7 @@ function PublishStockModal({
             onDirtyChange={setIsDirty}
             onPendingChange={setPending}
             onCancel={requestClose}
+            showHeading={false}
           />
         </div>
       </section>

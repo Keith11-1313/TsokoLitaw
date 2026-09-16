@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { calculateCartLineTotal, getBoxVariantLabel, MAX_CART_LINE_QUANTITY } from "@/lib/commerce";
 import type { CartLineItem } from "@/types/commerce";
 
@@ -17,15 +25,22 @@ interface CartContextValue {
   removeItem: (id: string) => void;
   setItemSelected: (id: string, selected: boolean) => void;
   setAllItemsSelected: (selected: boolean) => void;
-  markSelectedItemsPendingCheckout: () => void;
-  removePaidCheckoutItems: () => void;
+  removeCheckedOutItems: () => void;
   clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
-const STORAGE_KEY = "tsokolitaw-cart-v2";
-const SELECTION_STORAGE_KEY = "tsokolitaw-cart-selection-v1";
-const PENDING_CHECKOUT_STORAGE_KEY = "tsokolitaw-pending-checkout-items-v1";
+const subscribeToHydration = () => () => {};
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
+const STORAGE_KEY = "tsokolitaw-cart-v4";
+const SELECTION_STORAGE_KEY = "tsokolitaw-cart-selection-v2";
+const LEGACY_PENDING_CHECKOUT_STORAGE_KEY = "tsokolitaw-pending-checkout-items-v1";
+const LEGACY_CART_STORAGE_KEYS = [
+  "tsokolitaw-cart-v2",
+  "tsokolitaw-cart-v3",
+  "tsokolitaw-cart-selection-v1",
+];
 type StoredCartLine = Partial<CartLineItem> & {
   extraSauceAddonId?: string | null;
   extraSauceQuantity?: number;
@@ -45,25 +60,53 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     try {
+      LEGACY_CART_STORAGE_KEYS.forEach((key) => window.localStorage.removeItem(key));
       const stored = window.localStorage.getItem(STORAGE_KEY);
-      const parsed = stored ? JSON.parse(stored) as unknown : [];
-      const restored = Array.isArray(parsed)
-        ? (parsed as StoredCartLine[]).map((item) => ({
-          ...item,
-          addonId: item.addonId ?? item.extraSauceAddonId ?? null,
-          addonName: item.addonName ?? ((item.extraSauceQuantity ?? 0) > 0 ? "Extra sea salt cream" : null),
-          addonQuantity: item.addonQuantity ?? item.extraSauceQuantity ?? 0,
-          addonPrice: item.addonPrice ?? item.extraSaucePrice ?? 0,
-          coatingPrices: item.coatingPrices ?? {},
-          variantLabel: item.variantLabel ?? getBoxVariantLabel(item.pieceCount ?? 0),
-          quantity: normalizeQuantity(item.quantity ?? 1),
-        } as CartLineItem))
+      const parsed = stored ? (JSON.parse(stored) as unknown) : [];
+      let restored = Array.isArray(parsed)
+        ? (parsed as StoredCartLine[]).map(
+            (item) =>
+              ({
+                ...item,
+                addonId: item.addonId ?? item.extraSauceAddonId ?? null,
+                addonName:
+                  item.addonName ??
+                  ((item.extraSauceQuantity ?? 0) > 0 ? "Extra sea salt cream" : null),
+                addonQuantity: item.addonQuantity ?? item.extraSauceQuantity ?? 0,
+                addonPrice: item.addonPrice ?? item.extraSaucePrice ?? 0,
+                coatingPrices: item.coatingPrices ?? {},
+                variantLabel: item.variantLabel ?? getBoxVariantLabel(item.pieceCount ?? 0),
+                quantity: normalizeQuantity(item.quantity ?? 1),
+              }) as CartLineItem,
+          )
         : [];
+      const checkedOutIds = new Set<string>();
+      const legacyPrefix = `${LEGACY_PENDING_CHECKOUT_STORAGE_KEY}:`;
+      for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+        const key = window.localStorage.key(index);
+        if (!key?.startsWith(legacyPrefix)) continue;
+        try {
+          const value = JSON.parse(window.localStorage.getItem(key) ?? "[]") as unknown;
+          if (Array.isArray(value)) {
+            value.forEach((id) => {
+              if (typeof id === "string") checkedOutIds.add(id);
+            });
+          }
+        } catch {
+          // The legacy entry is removed below even when it cannot be parsed.
+        }
+        window.localStorage.removeItem(key);
+      }
+      window.localStorage.removeItem(LEGACY_PENDING_CHECKOUT_STORAGE_KEY);
+      restored = restored.filter((item) => !checkedOutIds.has(item.id));
+
       const storedSelection = window.localStorage.getItem(SELECTION_STORAGE_KEY);
-      const parsedSelection = storedSelection ? JSON.parse(storedSelection) as unknown : null;
+      const parsedSelection = storedSelection ? (JSON.parse(storedSelection) as unknown) : null;
       const restoredIds = new Set(restored.map((item) => item.id));
       const selectedIds = Array.isArray(parsedSelection)
-        ? parsedSelection.filter((id): id is string => typeof id === "string" && restoredIds.has(id))
+        ? parsedSelection.filter(
+            (id): id is string => typeof id === "string" && restoredIds.has(id),
+          )
         : restored.map((item) => item.id);
       queueMicrotask(() => {
         if (active) {
@@ -75,9 +118,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
       window.localStorage.removeItem(SELECTION_STORAGE_KEY);
-      queueMicrotask(() => { if (active) setReady(true); });
+      queueMicrotask(() => {
+        if (active) setReady(true);
+      });
     }
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -88,57 +135,75 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, ready, selectedItemIds]);
 
   const selectedItems = items.filter((item) => selectedItemIds.includes(item.id));
-
-  const value = useMemo<CartContextValue>(() => ({
-    isReady: ready,
-    items,
-    selectedItems,
-    selectedItemIds,
-    itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
-    subtotal: items.reduce((sum, item) => sum + calculateCartLineTotal(item), 0),
-    selectedSubtotal: selectedItems.reduce((sum, item) => sum + calculateCartLineTotal(item), 0),
-    addItem: (item) => {
-      const id = crypto.randomUUID();
-      setItems((current) => [...current, { ...item, id, quantity: normalizeQuantity(item.quantity) }]);
-      setSelectedItemIds((current) => [...current, id]);
-    },
-    updateQuantity: (id, quantity) => setItems((current) => current.map((item) => item.id === id ? { ...item, quantity: normalizeQuantity(quantity) } : item)),
-    removeItem: (id) => {
-      setItems((current) => current.filter((item) => item.id !== id));
-      setSelectedItemIds((current) => current.filter((itemId) => itemId !== id));
-    },
-    setItemSelected: (id, selected) => setSelectedItemIds((current) => selected
-      ? current.includes(id) ? current : [...current, id]
-      : current.filter((itemId) => itemId !== id)),
-    setAllItemsSelected: (selected) => setSelectedItemIds(selected ? items.map((item) => item.id) : []),
-    markSelectedItemsPendingCheckout: () => window.localStorage.setItem(PENDING_CHECKOUT_STORAGE_KEY, JSON.stringify(selectedItems.map((item) => item.id))),
-    removePaidCheckoutItems: () => {
-      let paidIds = new Set<string>();
-      try {
-        const storedIds = window.localStorage.getItem(PENDING_CHECKOUT_STORAGE_KEY);
-        const parsedIds = storedIds ? JSON.parse(storedIds) as unknown : [];
-        paidIds = new Set(Array.isArray(parsedIds) ? parsedIds.filter((id): id is string => typeof id === "string") : []);
-      } catch {
-        window.localStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
-      }
-      if (paidIds.size) {
-        setItems((current) => current.filter((item) => !paidIds.has(item.id)));
-        setSelectedItemIds((current) => current.filter((id) => !paidIds.has(id)));
-      }
-      window.localStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
-    },
-    clearCart: () => {
-      setItems([]);
-      setSelectedItemIds([]);
-      window.localStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
-    },
-  }), [items, ready, selectedItemIds, selectedItems]);
+  const value = useMemo<CartContextValue>(
+    () => ({
+      isReady: ready,
+      items,
+      selectedItems,
+      selectedItemIds,
+      itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
+      subtotal: items.reduce((sum, item) => sum + calculateCartLineTotal(item), 0),
+      selectedSubtotal: selectedItems.reduce((sum, item) => sum + calculateCartLineTotal(item), 0),
+      addItem: (item) => {
+        const id = crypto.randomUUID();
+        setItems((current) => [
+          ...current,
+          { ...item, id, quantity: normalizeQuantity(item.quantity) },
+        ]);
+        setSelectedItemIds((current) => [...current, id]);
+      },
+      updateQuantity: (id, quantity) =>
+        setItems((current) =>
+          current.map((item) =>
+            item.id === id ? { ...item, quantity: normalizeQuantity(quantity) } : item,
+          ),
+        ),
+      removeItem: (id) => {
+        setItems((current) => current.filter((item) => item.id !== id));
+        setSelectedItemIds((current) => current.filter((itemId) => itemId !== id));
+      },
+      setItemSelected: (id, selected) =>
+        setSelectedItemIds((current) =>
+          selected
+            ? current.includes(id)
+              ? current
+              : [...current, id]
+            : current.filter((itemId) => itemId !== id),
+        ),
+      setAllItemsSelected: (selected) =>
+        setSelectedItemIds(selected ? items.map((item) => item.id) : []),
+      removeCheckedOutItems: () => {
+        const checkedOutIds = new Set(selectedItems.map((item) => item.id));
+        setItems((current) => current.filter((item) => !checkedOutIds.has(item.id)));
+        setSelectedItemIds((current) => current.filter((id) => !checkedOutIds.has(id)));
+      },
+      clearCart: () => {
+        setItems([]);
+        setSelectedItemIds([]);
+      },
+    }),
+    [items, ready, selectedItemIds, selectedItems],
+  );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
 export function useCart() {
   const context = useContext(CartContext);
+  const hydrated = useSyncExternalStore(subscribeToHydration, clientSnapshot, serverSnapshot);
   if (!context) throw new Error("useCart must be used inside CartProvider");
+  // Streamed consumers can hydrate after the provider restores localStorage.
+  // Their first render must still match the empty server cart.
+  if (!hydrated)
+    return {
+      ...context,
+      isReady: false,
+      items: [],
+      selectedItems: [],
+      selectedItemIds: [],
+      itemCount: 0,
+      subtotal: 0,
+      selectedSubtotal: 0,
+    };
   return context;
 }
