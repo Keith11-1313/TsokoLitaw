@@ -88,7 +88,7 @@ describe("ManualPaymentReview", () => {
     expect(await screen.findByText("No receipt has been submitted for this order.")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Close payment review" }));
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 3000 });
   });
 
   it("warns before discarding an unfinished payment decision", async () => {

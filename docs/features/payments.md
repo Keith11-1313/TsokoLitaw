@@ -61,6 +61,8 @@ Screenshots/OCR/customer corrections are untrusted; the Admin checkbox is an ack
 not independent verification by an API.
 
 Reject requires a reason, retains the old receipt and opens a 15-minute correction window.
+Admin rejection uses editable text with optional suggestions; the final written reason is stored
+verbatim and shown on the customer's payment page.
 An uncorrected pending order can then expire/release normally. Do not reject an unresolved real
 transfer merely to clear the queue; resolve discrepancies with the customer first. Rejection and
 submission add no new email events; customers check their order status. Paid concerns remain in person.

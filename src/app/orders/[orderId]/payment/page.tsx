@@ -145,14 +145,17 @@ export default async function ManualPaymentPage({
                   : "Submit payment receipt"}
               </h2>
               {latest?.status === "REJECTED" ? (
-                <p
+                <div
                   role="alert"
                   className="mb-5 rounded-control bg-warning-background p-4 text-sm leading-6"
                 >
-                  We couldn’t approve this receipt because {latest.rejection_reason}. Please upload
-                  a corrected receipt within 15 minutes. If you already sent the payment, contact us
-                  instead of paying again.
-                </p>
+                  <p className="font-bold">We couldn’t approve this payment receipt.</p>
+                  <p className="mt-1">Reason: {latest.rejection_reason}</p>
+                  <p className="mt-1">
+                    Upload a corrected receipt within 15 minutes. If you already sent the payment,
+                    contact us instead of paying again.
+                  </p>
+                </div>
               ) : null}
               <ManualReceiptForm
                 orderId={orderId}

@@ -13,6 +13,16 @@ import { getPaymentStatusLabel } from "@/lib/payment-status";
 import type { PaymentStatus } from "@/lib/payment-status";
 import type { AdminManualPaymentDetails } from "@/lib/server-manual-payment";
 
+const REJECTION_REASON_SUGGESTIONS = [
+  "This payment reference was already used.",
+  "The amount does not match the order total.",
+  "The recipient does not match the expected GCash account.",
+  "We could not find this payment in the receiving GCash account.",
+  "The receipt belongs to a different transaction.",
+  "The receipt details are unclear or incomplete.",
+  "The payment date or time does not match this order.",
+] as const;
+
 interface ManualPaymentReviewProps {
   orderId: string;
   orderNumber: string;
@@ -289,17 +299,24 @@ function ManualPaymentReviewDialog({
                           onChange={(event) => onVerifiedChange(event.target.checked)}
                           className="mt-1 size-5 shrink-0 accent-brand"
                         />
-                        I found this payment in the receiving GCash account and checked its details.
+                        I checked the receiving GCash account and compared the receipt details.
                       </label>
                       <label className="block font-bold">
                         Reason if rejecting
-                        <textarea
+                        <input
+                          list={`rejection-reasons-${orderId}`}
                           value={reason}
                           disabled={pending}
                           onChange={(event) => onReasonChange(event.target.value)}
                           maxLength={500}
-                          className="mt-2 min-h-24 w-full rounded-control border border-border bg-surface p-3 font-normal outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
+                          placeholder="Type a reason or choose a suggestion"
+                          className="mt-2 min-h-12 w-full rounded-control border border-border bg-surface p-3 font-normal outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
                         />
+                        <datalist id={`rejection-reasons-${orderId}`}>
+                          {REJECTION_REASON_SUGGESTIONS.map((suggestion) => (
+                            <option key={suggestion} value={suggestion} />
+                          ))}
+                        </datalist>
                       </label>
                       <p className="text-xs leading-5 text-muted-foreground">
                         Approving confirms the order and queues its confirmation email. A rejection
