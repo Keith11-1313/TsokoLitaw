@@ -28,15 +28,23 @@ function refreshPickup() {
 }
 
 function failure(error: unknown, fallback: string): PickupActionState {
-  return {
-    status: "error",
-    message:
-      error instanceof MutationRateLimitError
-        ? `Too many pickup updates. Try again in about ${error.retryAfterSeconds} seconds.`
-        : error instanceof Error
-          ? error.message
-          : fallback,
-  };
+  if (error instanceof MutationRateLimitError) {
+    return {
+      status: "error",
+      message: `Too many pickup updates. Try again in about ${error.retryAfterSeconds} seconds.`,
+    };
+  }
+
+  const message = error instanceof Error ? error.message : fallback;
+  if (message.includes("Pickup window falls outside the configured rules")) {
+    return {
+      status: "error",
+      message:
+        "A pickup window is outside the operating hours in Pickup rules. Adjust the window and try again.",
+    };
+  }
+
+  return { status: "error", message };
 }
 
 async function guard(adminId: string) {

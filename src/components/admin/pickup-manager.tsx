@@ -65,13 +65,58 @@ interface WindowDraft {
   locationIds: string[];
 }
 
+interface WindowErrors {
+  startTime?: string;
+  endTime?: string;
+  locations?: string;
+}
+
+function getDefaultWindow(
+  settings: AdminPickupSettings,
+  locations: AdminPickupLocation[],
+): WindowDraft {
+  const startTime = settings.operatingStart.slice(0, 5);
+  const operatingEnd = settings.operatingEnd.slice(0, 5);
+  const [hour, minute] = startTime.split(":").map(Number);
+  const nextHour = `${String(Math.min(hour + 1, 23)).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+
+  return {
+    key: crypto.randomUUID(),
+    startTime,
+    endTime: nextHour < operatingEnd ? nextHour : operatingEnd,
+    locationIds: locations.map((location) => location.id),
+  };
+}
+
+function getWindowErrors(window: WindowDraft, settings: AdminPickupSettings): WindowErrors {
+  const operatingStart = settings.operatingStart.slice(0, 5);
+  const operatingEnd = settings.operatingEnd.slice(0, 5);
+  const errors: WindowErrors = {};
+
+  if (window.startTime < operatingStart) {
+    errors.startTime = `Start time must be at or after ${formatTime(operatingStart)}.`;
+  }
+  if (window.endTime > operatingEnd) {
+    errors.endTime = `End time must be at or before ${formatTime(operatingEnd)}.`;
+  } else if (window.endTime <= window.startTime) {
+    errors.endTime = "End time must be after the start time.";
+  }
+  if (window.locationIds.length === 0) {
+    errors.locations = "Choose at least one campus location.";
+  }
+
+  return errors;
+}
+
 function ScheduleEditor({
   date,
   locations,
+  settings,
   onClose,
 }: {
   date: AdminPickupDate | null;
   locations: AdminPickupLocation[];
+  settings: AdminPickupSettings;
   onClose: () => void;
 }) {
   const [state, action, pending] = useActionState(savePickupScheduleAction, initialState);
@@ -86,18 +131,12 @@ function ScheduleEditor({
         startTime: window.startTime,
         endTime: window.endTime,
         locationIds: window.locationIds.filter((id) => activeLocationIds.has(id)),
-      })) ?? [
-        {
-          key: "window-0",
-          startTime: "07:00",
-          endTime: "08:00",
-          locationIds: locations.map((location) => location.id),
-        },
-      ],
+      })) ?? [getDefaultWindow(settings, locations)],
   );
+  const windowErrors = windows.map((window) => getWindowErrors(window, settings));
   const windowsValid =
     windows.length > 0 &&
-    windows.every((window) => window.startTime < window.endTime && window.locationIds.length > 0);
+    windowErrors.every((errors) => !errors.startTime && !errors.endTime && !errors.locations);
   const { formRef, formProps, canSubmit, statusMessage, refresh, isDirty } = useFormGate({
     requireDirty: Boolean(date),
     extraValid: windowsValid && locations.length > 0,
@@ -207,24 +246,18 @@ function ScheduleEditor({
           </div>
 
           <div>
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="font-display text-2xl">Time windows</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Each window needs at least one campus location.
+                  Schedule pickups between {formatTime(settings.operatingStart)} and{" "}
+                  {formatTime(settings.operatingEnd)}. Each window needs at least one location.
                 </p>
               </div>
               <SecondaryButton
+                className="w-full sm:w-auto"
                 onClick={() =>
-                  setWindows((current) => [
-                    ...current,
-                    {
-                      key: crypto.randomUUID(),
-                      startTime: "07:00",
-                      endTime: "08:00",
-                      locationIds: locations.map((location) => location.id),
-                    },
-                  ])
+                  setWindows((current) => [...current, getDefaultWindow(settings, locations)])
                 }
               >
                 <Plus size={16} />
@@ -232,76 +265,85 @@ function ScheduleEditor({
               </SecondaryButton>
             </div>
             <div className="mt-4 space-y-4">
-              {windows.map((window, index) => (
-                <fieldset
-                  key={window.key}
-                  className="rounded-card border border-border bg-surface-muted p-4"
-                >
-                  <legend className="px-2 text-sm font-bold">Window {index + 1}</legend>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <FormField
-                      id={`start-${window.key}`}
-                      label="Start"
-                      required
-                      inputProps={{
-                        type: "time",
-                        value: window.startTime,
-                        onChange: (event) =>
-                          changeWindow(window.key, { startTime: event.target.value }),
-                      }}
-                    />
-                    <FormField
-                      id={`end-${window.key}`}
-                      label="End"
-                      required
-                      inputProps={{
-                        type: "time",
-                        value: window.endTime,
-                        onChange: (event) =>
-                          changeWindow(window.key, { endTime: event.target.value }),
-                      }}
-                    />
-                  </div>
-                  <div className="mt-4">
-                    <p className="text-sm font-bold">Locations</p>
-                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                      {locations.map((location) => (
-                        <label
-                          key={location.id}
-                          className="flex min-h-11 items-center gap-3 rounded-control bg-surface px-3 text-sm"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={window.locationIds.includes(location.id)}
-                            onChange={() => toggleLocation(window.key, location.id)}
-                            className="size-4 accent-brand"
-                          />
-                          {location.name}
-                        </label>
-                      ))}
+              {windows.map((window, index) => {
+                const errors = windowErrors[index];
+                return (
+                  <fieldset
+                    key={window.key}
+                    className="rounded-card border border-border bg-surface-muted p-4"
+                  >
+                    <legend className="px-2 text-sm font-bold">Window {index + 1}</legend>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField
+                        id={`start-${window.key}`}
+                        label="Start"
+                        error={errors.startTime}
+                        required
+                        inputProps={{
+                          type: "time",
+                          min: settings.operatingStart.slice(0, 5),
+                          max: settings.operatingEnd.slice(0, 5),
+                          value: window.startTime,
+                          onChange: (event) =>
+                            changeWindow(window.key, { startTime: event.target.value }),
+                        }}
+                      />
+                      <FormField
+                        id={`end-${window.key}`}
+                        label="End"
+                        error={errors.endTime}
+                        required
+                        inputProps={{
+                          type: "time",
+                          min: settings.operatingStart.slice(0, 5),
+                          max: settings.operatingEnd.slice(0, 5),
+                          value: window.endTime,
+                          onChange: (event) =>
+                            changeWindow(window.key, { endTime: event.target.value }),
+                        }}
+                      />
                     </div>
-                  </div>
-                  {windows.length > 1 ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setWindows((current) => current.filter((item) => item.key !== window.key))
-                      }
-                      className="mt-4 min-h-11 text-sm font-bold text-danger-foreground"
-                    >
-                      Remove window
-                    </button>
-                  ) : null}
-                </fieldset>
-              ))}
+                    <div className="mt-4">
+                      <p className="text-sm font-bold">Locations</p>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {locations.map((location) => (
+                          <label
+                            key={location.id}
+                            className="flex min-h-11 items-center gap-3 rounded-control bg-surface px-3 text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={window.locationIds.includes(location.id)}
+                              onChange={() => toggleLocation(window.key, location.id)}
+                              className="size-4 accent-brand"
+                            />
+                            {location.name}
+                          </label>
+                        ))}
+                      </div>
+                      {errors.locations ? (
+                        <p className="mt-2 text-xs font-bold text-danger-foreground" role="alert">
+                          {errors.locations}
+                        </p>
+                      ) : null}
+                    </div>
+                    {windows.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setWindows((current) => current.filter((item) => item.key !== window.key))
+                        }
+                        className="mt-4 min-h-11 text-sm font-bold text-danger-foreground"
+                      >
+                        Remove window
+                      </button>
+                    ) : null}
+                  </fieldset>
+                );
+              })}
             </div>
           </div>
           <ActionMessage state={state} />
-          {!windowsValid ? (
-            <p className="text-xs font-bold text-danger-foreground">
-              Each time window must end after it starts and include at least one location.
-            </p>
-          ) : null}
           <FormStatusHint message={statusMessage} />
           <div className="grid gap-3 sm:grid-cols-2">
             <SecondaryButton disabled={pending} onClick={requestClose}>
@@ -690,6 +732,7 @@ export function PickupManager({
           key={editor?.id ?? "new"}
           date={editor}
           locations={activeLocations}
+          settings={settings}
           onClose={() => setEditor(undefined)}
         />
       ) : null}

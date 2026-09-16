@@ -51,26 +51,33 @@ function ProductSettings({ product }: { product: AdminCatalogProduct }) {
       className="rounded-card border border-border bg-surface p-6"
     >
       <input type="hidden" name="productId" value={product.id} />
-      <h2 className="font-display text-2xl">Product pricing</h2>
-      <div className="mt-5 max-w-xl">
-        <NumberStepper
-          label="Price per piece (PHP)"
-          name="pricePerPiece"
-          required
-          min={0}
-          max={10000}
-          step={0.01}
-          defaultValue={product.pricePerPiece}
-        />
-        <input type="hidden" name="description" value={product.description} />
-      </div>
-      <div className="mt-5 space-y-3">
-        <ActionMessage state={state} />
-        <FormStatusHint message={statusMessage} />
-        <div className="flex justify-end">
-          <PrimaryButton type="submit" disabled={pending || !canSubmit}>
+      <div className="max-w-3xl">
+        <h2 className="font-display text-2xl">Product pricing</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Set the base price used for each piece in future orders.
+        </p>
+        <div className="mt-5 grid gap-4 sm:grid-cols-[minmax(16rem,28rem)_auto] sm:items-end">
+          <NumberStepper
+            label="Price per piece (PHP)"
+            name="pricePerPiece"
+            required
+            min={0}
+            max={10000}
+            step={0.01}
+            defaultValue={product.pricePerPiece}
+          />
+          <input type="hidden" name="description" value={product.description} />
+          <PrimaryButton
+            type="submit"
+            className="w-full sm:w-auto"
+            disabled={pending || !canSubmit}
+          >
             {pending ? "Saving…" : "Save product settings"}
           </PrimaryButton>
+        </div>
+        <div className="mt-4 space-y-3">
+          <ActionMessage state={state} />
+          <FormStatusHint message={statusMessage} />
         </div>
       </div>
     </form>
