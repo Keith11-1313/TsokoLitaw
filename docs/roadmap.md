@@ -61,6 +61,7 @@ Begin only after the website and Phase 15 APK are stable.
   Google Business Profile is optional and needs separate eligibility assessment.
 - Resolve reported dependency advisories in a targeted, tested maintenance update; do not mix
   forced upgrades into this documentation/structure pass.
-- Hosted Dev refund retirement and migration consolidation are complete. Finish matching Dev
-  code activation and resume its paused jobs using the database migration runbook.
-  Production promotion is blocked until a separate coordinated database plan is approved.
+- Hosted Dev refund retirement and migration consolidation are complete. Its three application
+  Cron jobs are active; verify them again after any future reset or deployment using the database
+  migration runbook. Production promotion remains blocked until a separate coordinated database
+  plan is approved.
