@@ -617,6 +617,18 @@ begin
 
   for line in select value from jsonb_array_elements(priced_lines)
   loop
+    if jsonb_typeof(line -> 'addons') <> 'array'
+      or (
+        select count(*)
+        from jsonb_array_elements(line -> 'addons') entry
+        where coalesce((entry ->> 'is_complimentary')::boolean, false)
+          and (entry ->> 'quantity')::integer = 1
+          and (entry ->> 'line_total')::numeric = 0
+      ) <> 1
+    then
+      raise exception 'Each box must include one complimentary extra';
+    end if;
+
     insert into public.order_items (
       order_id, product_id, variant_id, product_name_snapshot,
       variant_name_snapshot, piece_count_snapshot, unit_price_snapshot,
@@ -648,20 +660,21 @@ begin
       );
     end loop;
 
-    addon := line -> 'addon';
-    if addon is not null and addon <> 'null'::jsonb then
+    for addon in select value from jsonb_array_elements(line -> 'addons')
+    loop
       insert into public.order_item_addons (
         order_item_id, addon_id, addon_name_snapshot,
-        unit_price_snapshot, quantity, line_total
+        unit_price_snapshot, quantity, line_total, is_complimentary
       ) values (
         inserted_order_item_id,
         (addon ->> 'id')::uuid,
         addon ->> 'name',
         (addon ->> 'unit_price')::numeric,
         (addon ->> 'quantity')::integer,
-        (addon ->> 'line_total')::numeric
+        (addon ->> 'line_total')::numeric,
+        (addon ->> 'is_complimentary')::boolean
       );
-    end if;
+    end loop;
   end loop;
 
   if total_value = 0 then
@@ -2192,7 +2205,7 @@ ALTER FUNCTION "public"."update_pickup_settings"("target_admin_id" "uuid", "mini
 
 COMMENT ON FUNCTION "public"."update_pickup_settings"("target_admin_id" "uuid", "minimum_lead_days_value" integer, "daily_cutoff_time_value" time without time zone, "grace_minutes_value" integer, "operating_start_value" time without time zone, "operating_end_value" time without time zone) IS 'Service-role-only Pickup rules writer for lead time, cutoff, grace, and operating hours.';
 
-CREATE OR REPLACE FUNCTION "public"."upsert_catalog_addon"("target_admin_id" "uuid", "target_addon_id" "uuid", "name_value" "text", "price_value" numeric, "active_value" boolean) RETURNS "uuid"
+CREATE OR REPLACE FUNCTION "public"."upsert_catalog_addon"("target_admin_id" "uuid", "target_addon_id" "uuid", "name_value" "text", "price_value" numeric, "active_value" boolean, "default_value" boolean) RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -2208,31 +2221,39 @@ begin
   end if;
   if length(normalized_name) < 2 or length(normalized_name) > 80 then raise exception 'Add-on name must contain between 2 and 80 characters'; end if;
   if price_value is null or price_value < 0 or price_value > 10000 then raise exception 'Add-on price is invalid'; end if;
+  if default_value and not active_value then raise exception 'The complimentary extra must be active'; end if;
+
+  if default_value then
+    update public.addons set is_default = false, updated_at = now() where is_default and id <> saved_id;
+  elsif target_addon_id is null and not exists (select 1 from public.addons where is_default) then
+    raise exception 'Choose a complimentary extra';
+  end if;
 
   if target_addon_id is null then
     generated_slug := trim(both '-' from regexp_replace(lower(normalized_name), '[^a-z0-9]+', '-', 'g')) || '-' || left(saved_id::text, 8);
-    insert into public.addons (id, name, slug, price, is_active)
-    values (saved_id, normalized_name, generated_slug, price_value, active_value);
+    insert into public.addons (id, name, slug, price, is_active, is_default)
+    values (saved_id, normalized_name, generated_slug, price_value, active_value, default_value);
     audit_action := 'catalog.addon_created';
   else
     select * into target_addon from public.addons where id = target_addon_id for update;
     if target_addon.id is null then raise exception 'Add-on was not found'; end if;
+    if target_addon.is_default and not default_value then raise exception 'Choose another complimentary extra before changing this one'; end if;
     update public.addons
-    set name = normalized_name, price = price_value, is_active = active_value, updated_at = now()
+    set name = normalized_name, price = price_value, is_active = active_value, is_default = default_value, updated_at = now()
     where id = target_addon_id;
     audit_action := 'catalog.addon_updated';
   end if;
 
   insert into public.admin_audit_logs (admin_id, action, entity_type, entity_id, metadata)
   values (target_admin_id, audit_action, 'addon', saved_id::text,
-    jsonb_build_object('name', normalized_name, 'price', price_value, 'active', active_value));
+    jsonb_build_object('name', normalized_name, 'price', price_value, 'active', active_value, 'default', default_value));
   return saved_id;
 end;
 $$;
 
-ALTER FUNCTION "public"."upsert_catalog_addon"("target_admin_id" "uuid", "target_addon_id" "uuid", "name_value" "text", "price_value" numeric, "active_value" boolean) OWNER TO "postgres";
+ALTER FUNCTION "public"."upsert_catalog_addon"("target_admin_id" "uuid", "target_addon_id" "uuid", "name_value" "text", "price_value" numeric, "active_value" boolean, "default_value" boolean) OWNER TO "postgres";
 
-COMMENT ON FUNCTION "public"."upsert_catalog_addon"("target_admin_id" "uuid", "target_addon_id" "uuid", "name_value" "text", "price_value" numeric, "active_value" boolean) IS 'Service-role-only audited add-on create or update used by the public builder and checkout.';
+COMMENT ON FUNCTION "public"."upsert_catalog_addon"("target_admin_id" "uuid", "target_addon_id" "uuid", "name_value" "text", "price_value" numeric, "active_value" boolean, "default_value" boolean) IS 'Service-role-only audited add-on create or update used by the public builder and checkout.';
 
 CREATE OR REPLACE FUNCTION "public"."upsert_catalog_coating"("target_admin_id" "uuid", "target_coating_id" "uuid", "name_value" "text", "description_value" "text", "image_url_value" "text", "price_per_piece_value" numeric, "active_value" boolean, "default_value" boolean) RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -2720,9 +2741,11 @@ CREATE TABLE IF NOT EXISTS "public"."addons" (
     "slug" "text" NOT NULL,
     "price" numeric(10,2) NOT NULL,
     "is_active" boolean DEFAULT true NOT NULL,
+    "is_default" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "addons_price_check" CHECK (("price" >= (0)::numeric))
+    CONSTRAINT "addons_price_check" CHECK (("price" >= (0)::numeric)),
+    CONSTRAINT "addons_default_active_check" CHECK ((NOT "is_default" OR "is_active"))
 );
 
 ALTER TABLE "public"."addons" OWNER TO "postgres";
@@ -2925,8 +2948,10 @@ CREATE TABLE IF NOT EXISTS "public"."order_item_addons" (
     "unit_price_snapshot" numeric(10,2) NOT NULL,
     "quantity" integer NOT NULL,
     "line_total" numeric(10,2) NOT NULL,
+    "is_complimentary" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     CONSTRAINT "order_item_addons_line_total_check" CHECK (("line_total" >= (0)::numeric)),
+    CONSTRAINT "order_item_addons_complimentary_total_check" CHECK ((("is_complimentary" AND "line_total" = (0)::numeric) OR (NOT "is_complimentary" AND "line_total" = "unit_price_snapshot" * "quantity"))),
     CONSTRAINT "order_item_addons_quantity_check" CHECK (("quantity" > 0)),
     CONSTRAINT "order_item_addons_unit_price_snapshot_check" CHECK (("unit_price_snapshot" >= (0)::numeric))
 );
@@ -3238,7 +3263,7 @@ ALTER TABLE ONLY "public"."notification_webhook_events"
     ADD CONSTRAINT "notification_webhook_events_provider_event_id_key" UNIQUE ("provider_event_id");
 
 ALTER TABLE ONLY "public"."order_item_addons"
-    ADD CONSTRAINT "order_item_addons_order_item_id_addon_id_key" UNIQUE ("order_item_id", "addon_id");
+    ADD CONSTRAINT "order_item_addons_order_item_id_addon_id_key" UNIQUE ("order_item_id", "addon_id", "is_complimentary");
 
 ALTER TABLE ONLY "public"."order_item_addons"
     ADD CONSTRAINT "order_item_addons_pkey" PRIMARY KEY ("id");
@@ -3322,6 +3347,8 @@ CREATE INDEX "admin_audit_logs_admin_idx" ON "public"."admin_audit_logs" USING "
 CREATE INDEX "coatings_catalog_idx" ON "public"."coatings" USING "btree" ("is_active", "sort_order");
 
 CREATE UNIQUE INDEX "coatings_one_default_idx" ON "public"."coatings" USING "btree" ("is_default") WHERE "is_default";
+
+CREATE UNIQUE INDEX "addons_one_default_idx" ON "public"."addons" USING "btree" ("is_default") WHERE "is_default";
 
 CREATE INDEX "journal_posts_public_idx" ON "public"."journal_posts" USING "btree" ("status", "published_at" DESC);
 
@@ -3753,8 +3780,8 @@ GRANT ALL ON FUNCTION "public"."update_catalog_variant"("target_admin_id" "uuid"
 REVOKE ALL ON FUNCTION "public"."update_pickup_settings"("target_admin_id" "uuid", "minimum_lead_days_value" integer, "daily_cutoff_time_value" time without time zone, "grace_minutes_value" integer, "operating_start_value" time without time zone, "operating_end_value" time without time zone) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."update_pickup_settings"("target_admin_id" "uuid", "minimum_lead_days_value" integer, "daily_cutoff_time_value" time without time zone, "grace_minutes_value" integer, "operating_start_value" time without time zone, "operating_end_value" time without time zone) TO "service_role";
 
-REVOKE ALL ON FUNCTION "public"."upsert_catalog_addon"("target_admin_id" "uuid", "target_addon_id" "uuid", "name_value" "text", "price_value" numeric, "active_value" boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."upsert_catalog_addon"("target_admin_id" "uuid", "target_addon_id" "uuid", "name_value" "text", "price_value" numeric, "active_value" boolean) TO "service_role";
+REVOKE ALL ON FUNCTION "public"."upsert_catalog_addon"("target_admin_id" "uuid", "target_addon_id" "uuid", "name_value" "text", "price_value" numeric, "active_value" boolean, "default_value" boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."upsert_catalog_addon"("target_admin_id" "uuid", "target_addon_id" "uuid", "name_value" "text", "price_value" numeric, "active_value" boolean, "default_value" boolean) TO "service_role";
 
 REVOKE ALL ON FUNCTION "public"."upsert_catalog_coating"("target_admin_id" "uuid", "target_coating_id" "uuid", "name_value" "text", "description_value" "text", "image_url_value" "text", "price_per_piece_value" numeric, "active_value" boolean, "default_value" boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."upsert_catalog_coating"("target_admin_id" "uuid", "target_coating_id" "uuid", "name_value" "text", "description_value" "text", "image_url_value" "text", "price_per_piece_value" numeric, "active_value" boolean, "default_value" boolean) TO "service_role";

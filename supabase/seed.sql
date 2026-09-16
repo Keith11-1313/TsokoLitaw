@@ -71,19 +71,21 @@ on conflict (id) do update set
   is_default = excluded.is_default,
   sort_order = excluded.sort_order;
 
-insert into public.addons (id, name, slug, price, is_active)
+insert into public.addons (id, name, slug, price, is_active, is_default)
 values (
   '13000000-0000-4000-8000-000000000001',
-  'Extra sea salt cream',
+  'Sea salt cream',
   'extra-sea-salt-cream',
   18.00,
+  true,
   true
 )
 on conflict (id) do update set
   name = excluded.name,
   slug = excluded.slug,
   price = excluded.price,
-  is_active = excluded.is_active;
+  is_active = excluded.is_active,
+  is_default = excluded.is_default;
 
 insert into public.pickup_locations (id, name, description, is_active, sort_order)
 values

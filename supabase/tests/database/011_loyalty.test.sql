@@ -63,7 +63,7 @@ select is((
     'da000000-0000-4000-8000-000000000002', 'da500000-0000-4000-8000-000000000001',
     'da300000-0000-4000-8000-000000000001', 'da100000-0000-4000-8000-000000000001',
     'Loyalty Customer', null,
-    '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addon":null}]'::jsonb,
+    '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addons":[{"id":"13000000-0000-4000-8000-000000000001","name":"Extra sea salt cream","unit_price":18,"quantity":1,"line_total":0,"is_complimentary":true}]}]'::jsonb,
     40, 40, 0, 'loyalty-test',
     (select id from public.loyalty_rewards where user_id = 'da000000-0000-4000-8000-000000000002')
   ,'paymongo','')
@@ -77,7 +77,7 @@ select throws_ok(
     'da000000-0000-4000-8000-000000000002', 'da500000-0000-4000-8000-000000000002',
     'da300000-0000-4000-8000-000000000001', 'da100000-0000-4000-8000-000000000001',
     'Loyalty Customer', null,
-    '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addon":null}]'::jsonb,
+    '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addons":[{"id":"13000000-0000-4000-8000-000000000001","name":"Extra sea salt cream","unit_price":18,"quantity":1,"line_total":0,"is_complimentary":true}]}]'::jsonb,
     40, 40, 0, 'loyalty-test',
     (select id from public.loyalty_rewards where user_id = 'da000000-0000-4000-8000-000000000002')
   ,'paymongo','')$$,
