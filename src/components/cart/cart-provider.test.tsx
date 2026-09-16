@@ -21,7 +21,7 @@ function Probe() {
 beforeEach(() => {
   localStorage.clear();
   localStorage.setItem(
-    "tsokolitaw-cart-v3",
+    "tsokolitaw-cart-v4",
     JSON.stringify(
       ["a", "b"].map((id) => ({
         id,
@@ -59,7 +59,7 @@ it("removes checked-out lines immediately and preserves other cart items", async
   fireEvent.click(screen.getByText("Complete checkout"));
   await waitFor(() => expect(screen.getByTestId("items").textContent).toBe("b"));
   await waitFor(() =>
-    expect(JSON.parse(localStorage.getItem("tsokolitaw-cart-v3")!)).toHaveLength(1),
+    expect(JSON.parse(localStorage.getItem("tsokolitaw-cart-v4")!)).toHaveLength(1),
   );
 });
 it("removes cart lines locked by the retired pending-checkout storage", async () => {

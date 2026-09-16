@@ -29,7 +29,15 @@ const order: CustomerOrderSummary = {
       basePrice: 40,
       coatingTotal: 20,
       coatings: ["Milk × 1", "Palitaw × 1", "Crushed Nuts × 1", "Sesame Seeds × 1"],
-      addon: { name: "Sea salt cream", quantity: 10, lineTotal: 0 },
+      addons: [
+        {
+          name: "Sea salt cream",
+          quantity: 2,
+          quantityPerBox: 1,
+          lineTotal: 0,
+          isComplimentary: true,
+        },
+      ],
     },
   ],
 };
@@ -53,8 +61,8 @@ describe("OrdersList", () => {
     expect(
       screen.getByText("Milk × 1 · Palitaw × 1 · Crushed Nuts × 1 · Sesame Seeds × 1"),
     ).toBeTruthy();
-    expect(screen.getByText("Extra per box")).toBeTruthy();
-    expect(screen.getByText("Sea salt cream × 10")).toBeTruthy();
+    expect(screen.getByText("Complimentary extra")).toBeTruthy();
+    expect(screen.getByText("Sea salt cream × 2 — ₱0.00")).toBeTruthy();
     expect(screen.getByText("View price per box")).toBeTruthy();
     expect(screen.queryByText(order.itemSummary)).toBeNull();
   });

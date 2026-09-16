@@ -37,6 +37,7 @@ describe("ReorderButton", () => {
         addonName: null,
         addonQuantity: 0,
         addonPrice: 0,
+        complimentaryAddonName: "Sea salt cream",
         quantity: 1,
       },
     ];

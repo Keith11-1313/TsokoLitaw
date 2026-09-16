@@ -33,10 +33,14 @@ const CartContext = createContext<CartContextValue | null>(null);
 const subscribeToHydration = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;
-const STORAGE_KEY = "tsokolitaw-cart-v3";
+const STORAGE_KEY = "tsokolitaw-cart-v4";
 const SELECTION_STORAGE_KEY = "tsokolitaw-cart-selection-v2";
 const LEGACY_PENDING_CHECKOUT_STORAGE_KEY = "tsokolitaw-pending-checkout-items-v1";
-const LEGACY_CART_STORAGE_KEYS = ["tsokolitaw-cart-v2", "tsokolitaw-cart-selection-v1"];
+const LEGACY_CART_STORAGE_KEYS = [
+  "tsokolitaw-cart-v2",
+  "tsokolitaw-cart-v3",
+  "tsokolitaw-cart-selection-v1",
+];
 type StoredCartLine = Partial<CartLineItem> & {
   extraSauceAddonId?: string | null;
   extraSauceQuantity?: number;

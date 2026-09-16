@@ -84,9 +84,13 @@ export function CartPageContent() {
                         </p>
                         <h2 className="mt-1 font-display text-2xl">Chocolate Litaw box</h2>
                         <p className="mt-2 text-sm text-muted-foreground">{coatings}</p>
+                        <p className="mt-1 text-sm text-success-foreground">
+                          Complimentary {item.complimentaryAddonName} × {item.quantity} —{" "}
+                          {formatPhp(0)}
+                        </p>
                         {item.addonQuantity && item.addonName ? (
                           <p className="mt-1 text-sm text-muted-foreground">
-                            {item.addonName} × {item.addonQuantity} per box
+                            Additional {item.addonName} × {item.addonQuantity} per box
                           </p>
                         ) : null}
                       </div>

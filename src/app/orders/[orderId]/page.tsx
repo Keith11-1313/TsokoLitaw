@@ -67,6 +67,8 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
             addonName: addon?.name ?? null,
             addonQuantity: addon ? configuration.addonQuantity : 0,
             addonPrice: addon?.price ?? 0,
+            complimentaryAddonName:
+              catalog.addons.find((candidate) => candidate.isDefault)?.name ?? "Extra",
             quantity: item.quantity,
           },
         ];

@@ -24,14 +24,26 @@ export function CheckoutOrderSummary({
     coatings: Object.entries(item.coatingCounts)
       .filter(([, count]) => count > 0)
       .map(([id, count]) => `${item.coatingNames[id] ?? "Coating"} × ${count}`),
-    addon:
-      item.addonQuantity > 0
-        ? {
-            name: item.addonName ?? "Extra",
-            quantity: item.addonQuantity,
-            lineTotal: item.addonPrice * item.addonQuantity,
-          }
-        : null,
+    addons: [
+      {
+        name: item.complimentaryAddonName,
+        quantity: item.quantity,
+        quantityPerBox: 1,
+        lineTotal: 0,
+        isComplimentary: true,
+      },
+      ...(item.addonQuantity > 0
+        ? [
+            {
+              name: item.addonName ?? "Extra",
+              quantity: item.addonQuantity * item.quantity,
+              quantityPerBox: item.addonQuantity,
+              lineTotal: item.addonPrice * item.addonQuantity * item.quantity,
+              isComplimentary: false,
+            },
+          ]
+        : []),
+    ],
   }));
 
   return (
