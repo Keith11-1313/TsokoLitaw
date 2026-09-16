@@ -77,15 +77,14 @@ export async function createPendingOrder(
       piece_count: coating.pieceCount,
       additional_price: coating.additionalPrice,
     })),
-    addon: line.addon
-      ? {
-          id: line.addon.id,
-          name: line.addon.name,
-          unit_price: line.addon.unitPrice,
-          quantity: line.addon.quantity,
-          line_total: line.addon.lineTotal,
-        }
-      : null,
+    addons: line.addons.map((addon) => ({
+      id: addon.id,
+      name: addon.name,
+      unit_price: addon.unitPrice,
+      quantity: addon.quantity,
+      line_total: addon.lineTotal,
+      is_complimentary: addon.isComplimentary,
+    })),
   }));
 
   const method = getPaymentMethod();

@@ -110,7 +110,7 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
           .order("sort_order", { ascending: true }),
         supabase
           .from("addons")
-          .select("id, name, slug, price")
+          .select("id, name, slug, price, is_default")
           .eq("is_active", true)
           .order("created_at", { ascending: true }),
       ]),
@@ -160,9 +160,14 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
     name: addon.name,
     slug: addon.slug,
     price: asMoney(addon.price),
+    isDefault: addon.is_default,
   }));
 
-  if (!variants.length || !coatings.length) {
+  if (
+    !variants.length ||
+    !coatings.length ||
+    addons.filter((addon) => addon.isDefault).length !== 1
+  ) {
     throw new Error("The active commerce catalog is incomplete.");
   }
 

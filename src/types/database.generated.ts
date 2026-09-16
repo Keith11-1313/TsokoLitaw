@@ -15,6 +15,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          is_default: boolean
           name: string
           price: number
           slug: string
@@ -24,6 +25,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_default?: boolean
           name: string
           price: number
           slug: string
@@ -33,6 +35,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_default?: boolean
           name?: string
           price?: number
           slug?: string
@@ -581,6 +584,7 @@ export type Database = {
           addon_name_snapshot: string
           created_at: string
           id: string
+          is_complimentary: boolean
           line_total: number
           order_item_id: string
           quantity: number
@@ -591,6 +595,7 @@ export type Database = {
           addon_name_snapshot: string
           created_at?: string
           id?: string
+          is_complimentary?: boolean
           line_total: number
           order_item_id: string
           quantity: number
@@ -601,6 +606,7 @@ export type Database = {
           addon_name_snapshot?: string
           created_at?: string
           id?: string
+          is_complimentary?: boolean
           line_total?: number
           order_item_id?: string
           quantity?: number
@@ -1537,6 +1543,7 @@ export type Database = {
       upsert_catalog_addon: {
         Args: {
           active_value: boolean
+          default_value: boolean
           name_value: string
           price_value: number
           target_addon_id: string

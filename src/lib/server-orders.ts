@@ -17,11 +17,13 @@ export interface CustomerOrderItemSummary {
   basePrice: number;
   coatingTotal: number;
   coatings: string[];
-  addon: {
+  addons: Array<{
     name: string;
     quantity: number;
+    quantityPerBox: number;
     lineTotal: number;
-  } | null;
+    isComplimentary: boolean;
+  }>;
   configuration?: {
     variantId: string;
     pieceCount: number;
@@ -81,6 +83,7 @@ interface AddonRow {
   quantity: number;
   line_total: number | string;
   addon_id: string;
+  is_complimentary: boolean;
 }
 
 interface NestedOrderItemRow {
@@ -150,7 +153,8 @@ function encodeCursor(row: Pick<CustomerOrderRow, "created_at" | "id">) {
 }
 
 function toItemLine(item: NestedOrderItemRow): CustomerOrderItemSummary {
-  const addon = item.order_item_addons?.[0] ?? null;
+  const addons = item.order_item_addons ?? [];
+  const paidAddon = addons.find((addon) => !addon.is_complimentary) ?? null;
   return {
     id: item.id,
     name: item.variant_name_snapshot,
@@ -161,13 +165,13 @@ function toItemLine(item: NestedOrderItemRow): CustomerOrderItemSummary {
     coatings: (item.order_item_coatings ?? []).map(
       (coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`,
     ),
-    addon: addon
-      ? {
-          name: addon.addon_name_snapshot,
-          quantity: addon.quantity,
-          lineTotal: Number(addon.line_total),
-        }
-      : null,
+    addons: addons.map((addon) => ({
+      name: addon.addon_name_snapshot,
+      quantity: addon.quantity * item.quantity,
+      quantityPerBox: addon.quantity,
+      lineTotal: Number(addon.line_total) * item.quantity,
+      isComplimentary: addon.is_complimentary,
+    })),
     configuration: {
       variantId: item.variant_id,
       pieceCount: item.piece_count_snapshot,
@@ -177,8 +181,8 @@ function toItemLine(item: NestedOrderItemRow): CustomerOrderItemSummary {
           coating.piece_count,
         ]),
       ),
-      addonId: addon?.addon_id ?? null,
-      addonQuantity: addon?.quantity ?? 0,
+      addonId: paidAddon?.addon_id ?? null,
+      addonQuantity: paidAddon?.quantity ?? 0,
     },
   };
 }
@@ -188,7 +192,11 @@ function summarizeItems(items: CustomerOrderItemSummary[]) {
     .map((item) => {
       const details = [
         item.coatings.join(", "),
-        item.addon ? `${item.addon.name} × ${item.addon.quantity} per box` : "",
+        ...item.addons.map((addon) =>
+          addon.isComplimentary
+            ? `Complimentary ${addon.name} × ${addon.quantity}`
+            : `${addon.name} × ${addon.quantityPerBox} per box`,
+        ),
       ]
         .filter(Boolean)
         .join(" · ");
@@ -262,7 +270,8 @@ export async function getCustomerOrders(
           addon_id,
           addon_name_snapshot,
           quantity,
-          line_total
+          line_total,
+          is_complimentary
         )
       )
     `,
@@ -340,7 +349,8 @@ export async function getCustomerOrderDetail(
           addon_id,
           addon_name_snapshot,
           quantity,
-          line_total
+          line_total,
+          is_complimentary
         )
       )
     `,
@@ -407,7 +417,8 @@ export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
           addon_id,
           addon_name_snapshot,
           quantity,
-          line_total
+          line_total,
+          is_complimentary
         )
       )
     `;

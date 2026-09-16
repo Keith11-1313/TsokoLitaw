@@ -41,7 +41,11 @@ interface OrderRow {
     variant_name_snapshot: string;
     quantity: number;
     order_item_coatings: Array<{ coating_name_snapshot: string; piece_count: number }> | null;
-    order_item_addons: Array<{ addon_name_snapshot: string; quantity: number }> | null;
+    order_item_addons: Array<{
+      addon_name_snapshot: string;
+      quantity: number;
+      is_complimentary: boolean;
+    }> | null;
   }> | null;
 }
 
@@ -188,7 +192,7 @@ async function dispatchDelivery(delivery: DeliveryRow) {
         order_items (
           variant_name_snapshot, quantity,
           order_item_coatings (coating_name_snapshot, piece_count),
-          order_item_addons (addon_name_snapshot, quantity)
+          order_item_addons (addon_name_snapshot, quantity, is_complimentary)
         )
       `,
       )
@@ -214,7 +218,11 @@ async function dispatchDelivery(delivery: DeliveryRow) {
         ),
         addon:
           (item.order_item_addons ?? [])
-            .map((addon) => `${addon.addon_name_snapshot} × ${addon.quantity}`)
+            .map((addon) =>
+              addon.is_complimentary
+                ? `Complimentary ${addon.addon_name_snapshot} × ${addon.quantity} per box — ₱0.00`
+                : `${addon.addon_name_snapshot} × ${addon.quantity} per box`,
+            )
             .join(", ") || null,
       })),
     };
