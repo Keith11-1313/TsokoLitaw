@@ -48,6 +48,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
     coatings,
   );
   const selectedAddon = addons.find((addon) => addon.id === addonId) ?? null;
+  const complimentaryAddon = addons.find((addon) => addon.isDefault)!;
   const unitTotal = calculateItemUnitTotal(
     variant.price,
     coatingCharge,
@@ -134,6 +135,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
       addonName: selectedAddon?.name ?? null,
       addonQuantity,
       addonPrice: selectedAddon?.price ?? 0,
+      complimentaryAddonName: complimentaryAddon.name,
       quantity: selectedQuantity,
     });
     setAddedItem({
@@ -329,27 +331,35 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
             </p>
 
             {addons.length ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <CustomSelect
-                  label="Extra"
-                  value={addonId}
-                  onChange={changeAddon}
-                  options={[
-                    { value: "", label: "No extra" },
-                    ...addons.map((addon) => ({
-                      value: addon.id,
-                      label: addon.name,
-                    })),
-                  ]}
-                />
-                <QuantityInput
-                  label="Extra quantity per box"
-                  value={addonQuantity}
-                  onChange={setAddonQuantity}
-                  min={selectedAddon ? 1 : 0}
-                  max={selectedAddon ? MAX_ADDON_QUANTITY : 0}
-                  disabled={!selectedAddon}
-                />
+              <div className="space-y-4">
+                <div className="rounded-control bg-success-background p-4 text-sm text-success-foreground">
+                  <p className="font-bold">Complimentary {complimentaryAddon.name}</p>
+                  <p className="mt-1 text-xs leading-5">
+                    One is included with every box for {formatPhp(0)}.
+                  </p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                  <CustomSelect
+                    label="Additional extra"
+                    value={addonId}
+                    onChange={changeAddon}
+                    options={[
+                      { value: "", label: "No additional extra" },
+                      ...addons.map((addon) => ({
+                        value: addon.id,
+                        label: addon.name,
+                      })),
+                    ]}
+                  />
+                  <QuantityInput
+                    label="Additional quantity per box"
+                    value={addonQuantity}
+                    onChange={setAddonQuantity}
+                    min={selectedAddon ? 1 : 0}
+                    max={selectedAddon ? MAX_ADDON_QUANTITY : 0}
+                    disabled={!selectedAddon}
+                  />
+                </div>
               </div>
             ) : null}
             <QuantityInput

@@ -35,6 +35,7 @@ export interface AdminCatalogAddon {
   name: string;
   price: number;
   isActive: boolean;
+  isDefault: boolean;
 }
 
 interface ProductRow {
@@ -64,7 +65,7 @@ export async function getAdminCatalog() {
       .limit(1)
       .maybeSingle(),
     supabase.from("coatings").select().order("sort_order"),
-    supabase.from("addons").select("id,name,price,is_active").order("created_at"),
+    supabase.from("addons").select("id,name,price,is_active,is_default").order("created_at"),
   ]);
   if (productResult.error || !productResult.data || coatingsResult.error || addonsResult.error) {
     throw new Error("The Admin catalog could not be loaded.", {
@@ -103,6 +104,7 @@ export async function getAdminCatalog() {
     name: addon.name,
     price: Number(addon.price),
     isActive: addon.is_active,
+    isDefault: addon.is_default,
   }));
   return { product, coatings, addons };
 }
@@ -165,6 +167,7 @@ export async function saveCatalogAddon(input: {
   name: string;
   price: number;
   isActive: boolean;
+  isDefault: boolean;
 }) {
   const { error } = await createAdminSupabaseClient().rpc("upsert_catalog_addon", {
     target_admin_id: input.adminId,
@@ -172,6 +175,7 @@ export async function saveCatalogAddon(input: {
     name_value: input.name,
     price_value: input.price,
     active_value: input.isActive,
+    default_value: input.isDefault,
   });
   if (error) throw new Error("The extra could not be saved.", { cause: error });
 }

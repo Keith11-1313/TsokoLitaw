@@ -202,6 +202,7 @@ export async function saveAddonAction(
       name,
       price,
       isActive: formData.get("isActive") === "on",
+      isDefault: formData.get("isDefault") === "on",
     });
     refreshCatalog();
     return { status: "success", message: "Extra saved to the customer catalog." };

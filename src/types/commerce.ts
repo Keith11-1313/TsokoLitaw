@@ -20,6 +20,7 @@ export interface CommerceAddon {
   name: string;
   slug: string;
   price: number;
+  isDefault: boolean;
 }
 
 export interface CommerceCatalog {
@@ -46,6 +47,7 @@ export interface CartLineItem {
   addonName: string | null;
   addonQuantity: number;
   addonPrice: number;
+  complimentaryAddonName: string;
   quantity: number;
 }
 
@@ -73,13 +75,14 @@ export interface ServerPricedCartLine {
     pieceCount: number;
     additionalPrice: number;
   }>;
-  addon: {
+  addons: Array<{
     id: string;
     name: string;
     unitPrice: number;
     quantity: number;
     lineTotal: number;
-  } | null;
+    isComplimentary: boolean;
+  }>;
 }
 
 export interface ServerPricedCart {

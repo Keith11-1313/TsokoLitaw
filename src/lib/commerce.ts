@@ -170,16 +170,34 @@ export function priceCheckoutCart(
     if (item.addonQuantity > 0 && !selectedAddon) {
       throw new CommerceValidationError("That extra is no longer available.");
     }
-    const addon = selectedAddon
-      ? {
-          id: selectedAddon.id,
-          name: selectedAddon.name,
-          unitPrice: selectedAddon.price,
-          quantity: item.addonQuantity,
-          lineTotal: selectedAddon.price * item.addonQuantity,
-        }
-      : null;
-    const lineSubtotal = (variant.price + coatingTotal + (addon?.lineTotal ?? 0)) * item.quantity;
+    const defaultAddon = catalog.addons.find((addon) => addon.isDefault);
+    if (!defaultAddon) {
+      throw new CommerceValidationError("The complimentary extra is unavailable.");
+    }
+    const addons = [
+      {
+        id: defaultAddon.id,
+        name: defaultAddon.name,
+        unitPrice: defaultAddon.price,
+        quantity: 1,
+        lineTotal: 0,
+        isComplimentary: true,
+      },
+      ...(selectedAddon
+        ? [
+            {
+              id: selectedAddon.id,
+              name: selectedAddon.name,
+              unitPrice: selectedAddon.price,
+              quantity: item.addonQuantity,
+              lineTotal: selectedAddon.price * item.addonQuantity,
+              isComplimentary: false,
+            },
+          ]
+        : []),
+    ];
+    const paidAddonTotal = addons.reduce((total, addon) => total + addon.lineTotal, 0);
+    const lineSubtotal = (variant.price + coatingTotal + paidAddonTotal) * item.quantity;
 
     return {
       productId: catalog.productId,
@@ -192,7 +210,7 @@ export function priceCheckoutCart(
       quantity: item.quantity,
       lineSubtotal,
       coatings,
-      addon,
+      addons,
     };
   });
 

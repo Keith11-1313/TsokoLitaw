@@ -393,6 +393,15 @@ function AddonEditor({ addon, onClose }: { addon: AdminCatalogAddon | null; onCl
             />
             Available to customers
           </label>
+          <label className="flex min-h-11 items-center gap-3 rounded-control bg-surface-control px-4 py-3 text-sm font-bold sm:col-span-2">
+            <input
+              type="checkbox"
+              name="isDefault"
+              defaultChecked={addon?.isDefault ?? false}
+              className="size-4 accent-brand"
+            />
+            Complimentary extra included with every box
+          </label>
           <div className="sm:col-span-2">
             <ActionMessage state={state} />
             <FormStatusHint message={statusMessage} />
@@ -537,11 +546,18 @@ export function CatalogManager({
                     Price: <strong>{formatPhp(addon.price)}</strong>
                   </p>
                 </div>
-                <span
-                  className={`rounded-lg px-2.5 py-1 text-xs font-bold ${addon.isActive ? "bg-success-background text-success-foreground" : "bg-surface-muted text-muted-foreground"}`}
-                >
-                  {addon.isActive ? "Active" : "Hidden"}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold ${addon.isActive ? "bg-success-background text-success-foreground" : "bg-surface-muted text-muted-foreground"}`}
+                  >
+                    {addon.isActive ? "Active" : "Hidden"}
+                  </span>
+                  {addon.isDefault ? (
+                    <span className="rounded-lg bg-brand px-2.5 py-1 text-xs font-bold text-surface">
+                      Complimentary
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <SecondaryButton className="mt-5 w-full" onClick={() => setAddonEditor(addon)}>
                 <Pencil aria-hidden="true" size={15} />

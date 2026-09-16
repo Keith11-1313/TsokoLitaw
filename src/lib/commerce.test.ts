@@ -94,7 +94,7 @@ describe("server-authoritative cart pricing", () => {
         tone: "milk" as const,
       },
     ],
-    addons: [{ id: "cream", name: "Cream", slug: "cream", price: 18 }],
+    addons: [{ id: "cream", name: "Cream", slug: "cream", price: 18, isDefault: true }],
   };
 
   it("ignores browser prices and calculates current catalog totals", () => {
@@ -117,6 +117,24 @@ describe("server-authoritative cart pricing", () => {
       coatingTotal: 22,
       lineSubtotal: 160,
     });
+    expect(priced.lines[0].addons).toEqual([
+      {
+        id: "cream",
+        name: "Cream",
+        unitPrice: 18,
+        quantity: 1,
+        lineTotal: 0,
+        isComplimentary: true,
+      },
+      {
+        id: "cream",
+        name: "Cream",
+        unitPrice: 18,
+        quantity: 1,
+        lineTotal: 18,
+        isComplimentary: false,
+      },
+    ]);
   });
 
   it("rejects incomplete allocations and unavailable identifiers", () => {
