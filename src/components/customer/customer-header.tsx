@@ -62,7 +62,7 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
             <Menu aria-hidden="true" size={21} />
             <span className="sr-only">Open navigation</span>
           </summary>
-          <div className="absolute right-0 top-16 w-72 rounded-card border border-border bg-surface p-4 shadow-xl shadow-brand/10">
+          <div className="absolute right-0 top-16 max-h-[calc(100dvh-5.5rem)] w-72 overflow-y-auto rounded-card border border-border bg-surface p-4 shadow-xl shadow-brand/10">
             <nav className="flex flex-col" aria-label="Mobile navigation">
               {navigationItems.map((item) => {
                 const isActive = activePath === item.href;
