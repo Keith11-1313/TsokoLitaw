@@ -57,6 +57,9 @@ a clear global fallback, also used for non-Admin requests to Admin routes.
 - Log out uses the shared confirmation dialog and returns Home only on confirmation.
 - Image preview is not persisted publication. Browser and server decode JPG/PNG/WebP ≤3 MiB;
   coatings must be square, Journal covers need not be. Do not crop/transform automatically.
+- Admin image fields reuse `ImageUploadField` for the same accessible drag-and-drop presentation.
+  Keep file-specific validation beside the field. The generic incomplete-form message remains
+  available to assistive technology without repeating visible instructions above every action row.
 
 Contract tests: `src/hooks/editor-contracts.test.tsx`, form and image validation tests. See
 [testing](../maintenance/testing.md) for manual keyboard/responsive checks.

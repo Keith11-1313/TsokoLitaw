@@ -19,9 +19,25 @@ interface NumberStepperProps {
   error?: string;
   hint?: string;
   className?: string;
+  layout?: "stacked" | "inline";
 }
 
-export function NumberStepper({ label, name, value, defaultValue, onChange, min, max, step = 1, required, disabled, error, hint, className }: NumberStepperProps) {
+export function NumberStepper({
+  label,
+  name,
+  value,
+  defaultValue,
+  onChange,
+  min,
+  max,
+  step = 1,
+  required,
+  disabled,
+  error,
+  hint,
+  className,
+  layout = "stacked",
+}: NumberStepperProps) {
   const id = useId();
   const controlled = value !== undefined;
   const [rawValue, setRawValue] = useState(String(value ?? defaultValue ?? min));
@@ -61,10 +77,31 @@ export function NumberStepper({ label, name, value, defaultValue, onChange, min,
   }
 
   return (
-    <div className={cn("block min-w-0 space-y-2", className)}>
-      <label className="block text-sm font-bold text-foreground" htmlFor={id}>{label}</label>
-      <div className={cn("grid min-h-12 grid-cols-[3rem_minmax(3rem,1fr)_3rem] overflow-hidden rounded-control border bg-surface-control transition focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/20", shownError ? "border-danger-foreground" : "border-transparent", disabled && "opacity-50")}>
-        <button type="button" aria-label={`Decrease ${label}`} disabled={!canDecrease} onClick={() => commit(parsed - step)} className="grid min-h-12 place-items-center border-r border-border-subtle p-0 text-foreground transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-35">
+    <div
+      className={cn(
+        "block min-w-0 space-y-2",
+        layout === "inline" &&
+          "sm:grid sm:grid-cols-[auto_minmax(12rem,1fr)] sm:items-center sm:gap-x-4 sm:space-y-0",
+        className,
+      )}
+    >
+      <label className="block text-sm font-bold text-foreground" htmlFor={id}>
+        {label}
+      </label>
+      <div
+        className={cn(
+          "grid min-h-12 grid-cols-[3rem_minmax(3rem,1fr)_3rem] overflow-hidden rounded-control border bg-surface-control transition focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/20",
+          shownError ? "border-danger-foreground" : "border-transparent",
+          disabled && "opacity-50",
+        )}
+      >
+        <button
+          type="button"
+          aria-label={`Decrease ${label}`}
+          disabled={!canDecrease}
+          onClick={() => commit(parsed - step)}
+          className="grid min-h-12 place-items-center border-r border-border-subtle p-0 text-foreground transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-35"
+        >
           <Minus aria-hidden="true" className="block" size={18} />
         </button>
         <input
@@ -88,9 +125,12 @@ export function NumberStepper({ label, name, value, defaultValue, onChange, min,
           }}
           onChange={(event) => {
             const next = event.target.value;
-            const nextError = next.trim() === ""
-              ? required ? `${label} is required.` : ""
-              : numberError(next, label, min, max, step);
+            const nextError =
+              next.trim() === ""
+                ? required
+                  ? `${label} is required.`
+                  : ""
+                : numberError(next, label, min, max, step);
             event.currentTarget.setCustomValidity(nextError);
             updateRaw(next);
           }}
@@ -105,12 +145,35 @@ export function NumberStepper({ label, name, value, defaultValue, onChange, min,
           }}
           className="min-w-0 bg-transparent px-2 text-center text-sm text-foreground outline-none disabled:cursor-not-allowed"
         />
-        <button type="button" aria-label={`Increase ${label}`} disabled={!canIncrease} onClick={() => commit(parsed + step)} className="grid min-h-12 place-items-center border-l border-border-subtle p-0 text-foreground transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-35">
+        <button
+          type="button"
+          aria-label={`Increase ${label}`}
+          disabled={!canIncrease}
+          onClick={() => commit(parsed + step)}
+          className="grid min-h-12 place-items-center border-l border-border-subtle p-0 text-foreground transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-35"
+        >
           <Plus aria-hidden="true" className="block" size={18} />
         </button>
       </div>
-      {hint && !shownError ? <p id={`${id}-hint`} className="text-xs text-foreground-muted">{hint}</p> : null}
-      {shownError ? <p id={`${id}-error`} className="text-xs font-bold text-danger-foreground">{shownError}</p> : null}
+      {hint && !shownError ? (
+        <p
+          id={`${id}-hint`}
+          className={cn("text-xs text-foreground-muted", layout === "inline" && "sm:col-start-2")}
+        >
+          {hint}
+        </p>
+      ) : null}
+      {shownError ? (
+        <p
+          id={`${id}-error`}
+          className={cn(
+            "text-xs font-bold text-danger-foreground",
+            layout === "inline" && "sm:col-start-2",
+          )}
+        >
+          {shownError}
+        </p>
+      ) : null}
     </div>
   );
 }

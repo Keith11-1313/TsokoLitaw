@@ -639,12 +639,7 @@ export function PickupManager({
   return (
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-display text-2xl">Upcoming pickup dates</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Create the schedule here; Ready Stock and Hybrid dates will then appear in Inventory.
-          </p>
-        </div>
+        <h2 className="font-display text-2xl">Upcoming pickup dates</h2>
         <PrimaryButton onClick={() => setEditor(null)}>
           <Plus size={17} />
           Add pickup date
@@ -685,13 +680,7 @@ export function PickupManager({
       </div>
       <section className="mt-8 rounded-card border border-border bg-surface p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-display text-2xl">Campus locations</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Inactive locations remain on historical orders but cannot be assigned to new
-              schedules.
-            </p>
-          </div>
+          <h2 className="font-display text-2xl">Campus locations</h2>
           <SecondaryButton onClick={() => setLocationEditor(null)}>
             <Plus size={16} />
             Add location

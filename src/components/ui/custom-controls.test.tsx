@@ -4,6 +4,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { FormStatusHint } from "@/components/ui/form-status-hint";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { NumberStepper } from "@/components/ui/quantity-input";
 
 afterEach(cleanup);
@@ -12,10 +14,24 @@ describe("NumberStepper", () => {
   it("supports buttons, direct entry, keyboard steps, and form values", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    const { container } = render(<form><NumberStepper label="Quantity" name="quantity" min={1} max={3} defaultValue={2} onChange={onChange} required /></form>);
+    const { container } = render(
+      <form>
+        <NumberStepper
+          label="Quantity"
+          name="quantity"
+          min={1}
+          max={3}
+          defaultValue={2}
+          onChange={onChange}
+          required
+        />
+      </form>,
+    );
     await user.click(screen.getByRole("button", { name: "Increase Quantity" }));
     expect(onChange).toHaveBeenLastCalledWith(3);
-    expect((screen.getByRole("button", { name: "Increase Quantity" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (screen.getByRole("button", { name: "Increase Quantity" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
     const input = screen.getByRole("spinbutton");
     fireEvent.change(input, { target: { value: "2" } });
     fireEvent.keyDown(input, { key: "ArrowDown" });
@@ -24,7 +40,17 @@ describe("NumberStepper", () => {
   });
 
   it("does not silently accept wrong-step values", () => {
-    render(<NumberStepper label="Price" name="price" min={0} max={100} step={0.01} defaultValue={5} required />);
+    render(
+      <NumberStepper
+        label="Price"
+        name="price"
+        min={0}
+        max={100}
+        step={0.01}
+        defaultValue={5}
+        required
+      />,
+    );
     const input = screen.getByRole("spinbutton") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "5.005" } });
     expect(input.checkValidity()).toBe(false);
@@ -40,7 +66,11 @@ describe("CustomSelect", () => {
 
   it("supports keyboard selection, disabled options, hidden form values, and focus restoration", async () => {
     const user = userEvent.setup();
-    const { container } = render(<form><CustomSelect label="Coating" name="coating" defaultValue="a" options={options} required /></form>);
+    const { container } = render(
+      <form>
+        <CustomSelect label="Coating" name="coating" defaultValue="a" options={options} required />
+      </form>,
+    );
     const button = screen.getByRole("combobox");
     button.focus();
     await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
@@ -58,5 +88,37 @@ describe("CustomSelect", () => {
     await user.click(button);
     await user.keyboard("{Escape}");
     expect(document.activeElement).toBe(button);
+  });
+});
+
+describe("ImageUploadField", () => {
+  it("keeps the file input accessible inside the shared drop zone", () => {
+    const onChange = vi.fn();
+    render(
+      <ImageUploadField
+        id="cover"
+        name="cover"
+        label="Cover image"
+        fileName="new-cover.webp"
+        error="Choose a valid image."
+        onChange={onChange}
+      />,
+    );
+
+    const input = screen.getByLabelText("Cover image") as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(["image"], "new-cover.webp", { type: "image/webp" })] },
+    });
+
+    expect(onChange).toHaveBeenCalledOnce();
+    expect(input.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByRole("alert").textContent).toBe("Choose a valid image.");
+  });
+});
+
+describe("FormStatusHint", () => {
+  it("announces the generic form status without showing another visible instruction", () => {
+    render(<FormStatusHint message="Complete the required fields." />);
+    expect(screen.getByText("Complete the required fields.").className).toContain("sr-only");
   });
 });

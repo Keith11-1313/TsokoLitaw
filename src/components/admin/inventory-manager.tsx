@@ -58,6 +58,7 @@ function StockEditor({
   onDirtyChange,
   onPendingChange,
   onCancel,
+  showHeading = true,
 }: {
   product: { id: string; name: string };
   dates: AdminInventoryDate[];
@@ -66,6 +67,7 @@ function StockEditor({
   onDirtyChange?: (isDirty: boolean) => void;
   onPendingChange?: (pending: boolean) => void;
   onCancel?: () => void;
+  showHeading?: boolean;
 }) {
   const [state, action, pending] = useActionState(saveInventoryAction, initialState);
   const minimum = record ? record.stockReserved + record.stockConsumed : 0;
@@ -87,20 +89,15 @@ function StockEditor({
       className="rounded-card border border-border bg-surface p-5 sm:p-6"
     >
       <input type="hidden" name="productId" value={product.id} />
-      <div>
+      {showHeading ? (
         <div>
           <h2 className="font-display text-2xl">
             {record ? "Stock settings" : "Publish stock for another date"}
           </h2>
-          {!record ? (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Choose an eligible pickup date and enter the pieces prepared for it.
-            </p>
-          ) : null}
         </div>
-      </div>
+      ) : null}
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className={showHeading ? "mt-5 grid gap-4 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2"}>
         <div className="space-y-2 text-sm font-bold">
           <span className="block">Pickup date</span>
           {record ? (
@@ -273,6 +270,7 @@ function PublishStockModal({
             onDirtyChange={setIsDirty}
             onPendingChange={setPending}
             onCancel={requestClose}
+            showHeading={false}
           />
         </div>
       </section>

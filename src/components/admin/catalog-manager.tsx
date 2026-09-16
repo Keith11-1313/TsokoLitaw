@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState, useTransition, type ChangeEvent } from "react";
-import { ImagePlus, Pencil, Plus, X } from "lucide-react";
+import { Pencil, Plus, X } from "lucide-react";
 import {
   saveAddonAction,
   saveCoatingAction,
@@ -14,6 +14,7 @@ import { DiscardChangesDialog } from "@/components/admin/discard-changes-dialog"
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { FormStatusHint } from "@/components/ui/form-status-hint";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { NumberStepper } from "@/components/ui/quantity-input";
 import { useFormGate } from "@/hooks/use-form-gate";
 import { useEditorDialog } from "@/hooks/use-editor-dialog";
@@ -53,10 +54,7 @@ function ProductSettings({ product }: { product: AdminCatalogProduct }) {
       <input type="hidden" name="productId" value={product.id} />
       <div className="max-w-3xl">
         <h2 className="font-display text-2xl">Product pricing</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Set the base price used for each piece in future orders.
-        </p>
-        <div className="mt-5 grid gap-4 sm:grid-cols-[minmax(16rem,28rem)_auto] sm:items-end">
+        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <NumberStepper
             label="Price per piece (PHP)"
             name="pricePerPiece"
@@ -65,11 +63,12 @@ function ProductSettings({ product }: { product: AdminCatalogProduct }) {
             max={10000}
             step={0.01}
             defaultValue={product.pricePerPiece}
+            layout="inline"
           />
           <input type="hidden" name="description" value={product.description} />
           <PrimaryButton
             type="submit"
-            className="w-full sm:w-auto"
+            className="w-full lg:w-auto lg:min-w-64"
             disabled={pending || !canSubmit}
           >
             {pending ? "Saving…" : "Save product settings"}
@@ -153,6 +152,7 @@ function CoatingEditor({
 }) {
   const [state, action, pending] = useActionState(saveCoatingAction, initialState);
   const [preview, setPreview] = useState(coating?.imageUrl ?? "");
+  const [imageName, setImageName] = useState("");
   const [imageError, setImageError] = useState("");
   const [imageChecking, setImageChecking] = useState(false);
   const { formRef, formProps, canSubmit, statusMessage, isDirty } = useFormGate({
@@ -168,6 +168,7 @@ function CoatingEditor({
     const input = event.currentTarget;
     const file = input.files?.[0];
     setImageError("");
+    setImageName(file?.name ?? "");
     if (!file) return;
     setImageChecking(true);
     try {
@@ -235,7 +236,6 @@ function CoatingEditor({
           <NumberStepper
             label="Coating price per piece (PHP)"
             error={state.fieldErrors?.pricePerPiece}
-            hint="Charged for every piece using this coating."
             name="pricePerPiece"
             required
             min={0}
@@ -257,47 +257,19 @@ function CoatingEditor({
               defaultValue: coating?.description,
             }}
           />
-          <div className="space-y-2 sm:col-span-2">
-            <label htmlFor="coating-image" className="block text-sm font-bold">
-              Square image (1:1){coating?.imageUrl ? "" : " *"}
-            </label>
-            <label
-              htmlFor="coating-image"
-              className="flex min-h-32 cursor-pointer items-center gap-4 rounded-card border border-dashed border-border bg-surface-control p-4"
-            >
-              {preview ? (
-                <span
-                  role="img"
-                  aria-label="Coating image preview"
-                  className="size-24 shrink-0 rounded-control bg-cover bg-center"
-                  style={{ backgroundImage: `url(${preview})` }}
-                />
-              ) : (
-                <ImagePlus aria-hidden="true" className="text-brand" size={30} />
-              )}
-              <span className="text-sm">
-                <strong className="block">
-                  {imageChecking
-                    ? "Checking image…"
-                    : preview
-                      ? "Choose another square image"
-                      : "Choose a square product image"}
-                </strong>
-                <span className="text-xs text-muted-foreground">JPG, PNG, or WebP up to 3 MB</span>
-              </span>
-              <input
-                id="coating-image"
-                name="image"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="sr-only"
-                onChange={selectImage}
-              />
-            </label>
-            {imageError ? (
-              <p className="text-xs font-bold text-danger-foreground">{imageError}</p>
-            ) : null}
-          </div>
+          <ImageUploadField
+            id="coating-image"
+            name="image"
+            label="Square image (1:1)"
+            required={!coating?.imageUrl}
+            disabled={pending}
+            busy={imageChecking}
+            fileName={imageName}
+            previewUrl={preview}
+            error={imageError}
+            className="sm:col-span-2"
+            onChange={selectImage}
+          />
           <label className="flex min-h-11 items-center gap-3 rounded-control bg-surface-control px-4 py-3 text-sm font-bold">
             <input
               type="checkbox"
