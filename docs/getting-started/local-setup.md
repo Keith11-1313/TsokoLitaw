@@ -52,6 +52,6 @@ Local Supabase OAuth needs its own deliberately configured provider callback if 
 For an explicitly approved Admin bootstrap only: the Google identity must sign in first, then
 set `INITIAL_ADMIN_EMAIL` privately in `.env.local` and run `npm run admin:bootstrap` against the
 verified intended database. This changes a role; it is not a routine onboarding command.
-The database permits at most five equal-permission Admin profiles.
+The database permits at most ten equal-permission Admin profiles.
 
 Before handoff follow [testing](../maintenance/testing.md). No keys belong in Git.

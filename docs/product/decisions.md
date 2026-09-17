@@ -26,7 +26,7 @@ actions and keeps private activity separate from public discovery.
 
 - Google OAuth through Supabase; no guest checkout. Same sign-in flow for new/returning users.
 - Customer contact is email-only; no phone number is collected or forwarded to providers. Logout requires confirmation and returns Home.
-- Up to five approved Google identities share one equal-permission Admin role, checked server-side.
+- Up to ten approved Google identities share one equal-permission Admin role, checked server-side.
   Active Admins may place their own customer orders, not choose another owner at checkout.
 - Default environment-specific Supabase Auth domains are intentional; no paid custom Auth domain.
 - Account deletion is a cancellable 90-day request followed by permanent profile deactivation,

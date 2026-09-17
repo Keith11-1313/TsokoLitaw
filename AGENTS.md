@@ -83,7 +83,7 @@ Each date has an independent balance. Historical snapshots must not follow later
 Customer navigation is Home, Our Creations, Journal; Profile and Cart are actions.
 Customer contact is email-only; do not reintroduce unused mobile-number collection.
 My Orders belongs inside Account. Reviews originate only from owned completed orders and require
-moderation for public visibility. Admin has one equal-permission role with at most five approved identities.
+moderation for public visibility. Admin has one equal-permission role with at most ten approved identities.
 
 ## Implementation
 
