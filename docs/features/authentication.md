@@ -11,7 +11,7 @@ Signed-in non-Admins receive Not Found at Admin URLs. Hiding a link is not autho
 `profiles` references `auth.users`; the initial migration's Auth trigger creates the profile.
 RLS and `is_active_user`/`is_admin` protect reads. Role/active fields are not customer-editable.
 The service-only bootstrap (`scripts/bootstrap-admin.mjs`, `promote_admin_by_email`) requires an
-approved existing Google identity and enforces the five-Admin limit. See [setup](../getting-started/local-setup.md).
+approved existing Google identity and enforces the ten-Admin limit. See [setup](../getting-started/local-setup.md).
 
 Profile updates and deletion requests enter `src/app/profile/actions.ts`. The authenticated
 `request_account_deletion`/`cancel_account_deletion` RPCs derive the owner from the session.

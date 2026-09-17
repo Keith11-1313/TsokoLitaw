@@ -24,7 +24,7 @@ select set_config(
   ),
   true
 );
-select plan(32);
+select plan(34);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -371,6 +371,45 @@ select throws_ok(
   'P0001',
   'Admin accounts require controlled removal',
   'admin cannot self-schedule destructive account deletion'
+);
+
+set local role postgres;
+
+insert into auth.users (
+  id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
+  created_at, updated_at
+)
+select
+  ('91000000-0000-4000-8000-' || lpad(admin_number::text, 12, '0'))::uuid,
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'rls-admin-' || admin_number || '@example.test',
+  '{"provider":"google","providers":["google"]}',
+  jsonb_build_object('name', 'RLS Admin ' || admin_number),
+  now(),
+  now()
+from generate_series(10, 19) as admin_number;
+
+select lives_ok(
+  $$
+    update public.profiles
+    set role = 'admin'
+    where id between
+      '91000000-0000-4000-8000-000000000010'::uuid and
+      '91000000-0000-4000-8000-000000000018'::uuid
+  $$,
+  'the tenth approved administrator is allowed'
+);
+select throws_ok(
+  $$
+    update public.profiles
+    set role = 'admin'
+    where id = '91000000-0000-4000-8000-000000000019'
+  $$,
+  'P0001',
+  'TsokoLitaw supports at most ten administrators',
+  'an eleventh administrator is rejected'
 );
 
 select * from finish();

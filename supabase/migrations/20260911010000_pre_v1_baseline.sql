@@ -755,12 +755,12 @@ CREATE OR REPLACE FUNCTION "public"."enforce_admin_limit"() RETURNS "trigger"
 begin
   if new.role = 'admin' then
     if tg_op = 'INSERT' then
-      if (select count(*) from public.profiles where role = 'admin') >= 5 then
-        raise exception 'TsokoLitaw supports at most five administrators';
+      if (select count(*) from public.profiles where role = 'admin') >= 10 then
+        raise exception 'TsokoLitaw supports at most ten administrators';
       end if;
     elsif old.role is distinct from 'admin'
-      and (select count(*) from public.profiles where role = 'admin') >= 5 then
-      raise exception 'TsokoLitaw supports at most five administrators';
+      and (select count(*) from public.profiles where role = 'admin') >= 10 then
+      raise exception 'TsokoLitaw supports at most ten administrators';
     end if;
   end if;
 
