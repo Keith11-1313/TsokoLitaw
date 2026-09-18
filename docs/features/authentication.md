@@ -8,7 +8,7 @@ Signed-in non-Admins receive Not Found at Admin URLs. Hiding a link is not autho
 
 ## Database and external dependencies
 
-`profiles` references `auth.users`; the initial migration's Auth trigger creates the profile.
+`profiles` references `auth.users`; the pre-v1 baseline's Auth trigger creates the profile.
 RLS and `is_active_user`/`is_admin` protect reads. Role/active fields are not customer-editable.
 The service-only bootstrap (`scripts/bootstrap-admin.mjs`, `promote_admin_by_email`) requires an
 approved existing Google identity and enforces the ten-Admin limit. See [setup](../getting-started/local-setup.md).

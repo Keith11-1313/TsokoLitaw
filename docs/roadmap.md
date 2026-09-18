@@ -5,24 +5,25 @@ Until then the whole application is pre-release, including the Vercel Production
 Disposable test data does not require backward-compatibility layers. Database cleanup/rebaselining
 is approved in principle; each hosted reset still needs its exact project and scope confirmed.
 
-The production/security baseline (Phase 13) is complete. Phase 14 UI Overhaul remains in progress.
+The production/security baseline (Phase 13) and UI stabilization (Phase 14) are complete. Phase 15
+Android APK work is active.
 Completion of an earlier smoke test does not establish that every future deployment is healthy.
 Use the current [release checks](operations/deployment.md), not old checked-off implementation lists.
 
-## Phase 14 — stabilize the existing UI
+## Phase 14 — UI stabilization (complete)
 
-- Complete remaining customer/Admin responsive, accessibility and loading/empty/error-state review.
-- Preserve server pricing, SQL inventory/reward concurrency, ownership, signed payment verification,
-  notification idempotency, and current unpaid-only cancellation throughout UI work.
-- Verify Dev behavior and promote reviewed fixes through the normal PR/migration workflow.
-- Maintainer handover now uses task-oriented docs, generated schema types, shared form contracts,
-  and discoverable feature paths; do not add abstract layers merely for junior onboarding.
+- Customer and Admin responsive behavior, accessibility, and loading/empty/error states were reviewed
+  and stabilized through the normal Dev and PR workflow.
+- Server pricing, SQL inventory/reward concurrency, ownership, signed payment verification,
+  notification idempotency, and unpaid-only cancellation remain protected boundaries.
+- Maintainer handover uses task-oriented docs, generated schema types, shared form contracts, and
+  discoverable feature paths; do not add abstract layers merely for junior onboarding.
 
-## Phase 15 — required Android APK (not implemented)
+## Phase 15 — required Android APK (active)
 
-Begin only when Phase 14 is stable. Use a PWABuilder/Bubblewrap **Trusted Web Activity** around
-`https://www.tsokolitaw.com`, not Capacitor, an embedded WebView, React Native or native commerce.
-The existing online website remains the single application. No offline ordering or payment.
+Build a PWABuilder/Bubblewrap **Trusted Web Activity** around `https://www.tsokolitaw.com`, not
+Capacitor, an embedded WebView, React Native or native commerce. The existing online website remains
+the single application. No offline ordering or payment.
 
 - Add the production manifest, canonical start URL/scope, brand colors and Android-compatible icons.
 - Choose the package name, build a versioned signed APK, and keep keystore/passwords outside Git
@@ -61,7 +62,6 @@ Begin only after the website and Phase 15 APK are stable.
   Google Business Profile is optional and needs separate eligibility assessment.
 - Resolve reported dependency advisories in a targeted, tested maintenance update; do not mix
   forced upgrades into this documentation/structure pass.
-- Hosted Dev refund retirement and migration consolidation are complete. Its three application
-  Cron jobs are active; verify them again after any future reset or deployment using the database
-  migration runbook. Production promotion remains blocked until a separate coordinated database
-  plan is approved.
+- Hosted Dev and Production refund retirement, migration consolidation, and matching application
+  deployment are complete. Each environment has exactly three active application Cron jobs. Verify
+  them again after any future reset or deployment using the database migration runbook.

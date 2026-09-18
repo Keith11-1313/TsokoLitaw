@@ -68,7 +68,8 @@ transfer merely to clear the queue; resolve discrepancies with the customer firs
 submission add no new email events; customers check their order status. Paid concerns remain in person.
 
 Local tests: `012_manual_gcash.test.sql`, `gcash-qr.test.ts`, `receipt-details.test.ts`, plus the
-existing payment/loyalty/inventory suite. Apply the pre-v1 baseline only through the coordinated reset workflow before the dependent app. Validate the complete flow on Dev, then deliberately promote to Production.
+existing payment/loyalty/inventory suite. For future database-dependent payment changes, validate SQL
+and application behavior on Dev before deliberately coordinating the Production migration and deployment.
 
 Local acceptance (September 11, 2026): production-build browser checks at 390, 768 and 1440 px
 covered QR display, on-device OCR of a synthetic receipt, submission, owner/anonymous receipt

@@ -86,8 +86,8 @@ Order and payment status remain distinct; see [orders](../features/orders.md). W
 is **pending unpaid only**, not “until preparation.” Paid settlement concerns are handled in person.
 No new online refunds or destination collection. Prepared/no-show orders are non-refundable subject
 to non-waivable rights. The retired refund rows, states and reconciliation code are removed in the
-pre-v1 baseline. Hosted Dev was rebaselined with approved disposable-data removal; Production was
-not reset and remains untouched.
+pre-v1 baseline. Hosted Dev and Production were rebaselined through separate, explicitly approved
+disposable-data resets before Phase 15 began.
 
 ## Loyalty, Journal and communication
 
@@ -110,7 +110,8 @@ Dev and Production remain isolated deployments/data/providers. SQL promotion is 
 Ordinary work follows development → reviewed PR → main; feature branches are reserved for risky/large work.
 See [environments](../getting-started/environments.md) and [deployment](../operations/deployment.md).
 
-Phase 15's approved thin TWA APK and optional Phase 16 public-only analytics are **planned**, not
-implemented features. Their scope and remaining work live only in the [roadmap](../roadmap.md).
+Phase 15's approved thin TWA APK is active work but is not implemented or accepted yet. Optional
+Phase 16 public-only analytics remains planned. Their scope and remaining work live only in the
+[roadmap](../roadmap.md).
 Completed phase-by-phase implementation checklists remain recoverable through Git rather than
 being repeated as current instructions. Applied SQL history is retained in place.

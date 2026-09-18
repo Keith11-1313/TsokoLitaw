@@ -1,6 +1,6 @@
 # Database changes and promotion
 
-## Pre-v1 rebaseline — completed on hosted Dev
+## Pre-v1 rebaseline — completed on hosted Dev and Production
 
 The owner approved discarding pre-release Dev records, Auth users and Storage files.
 On September 11, 2026, hosted Dev `mgkzphpznamjlgrpumjd` was rebuilt from
@@ -22,11 +22,15 @@ submission and its orphaned Storage object. The single baseline marker, empty Au
 linked schema lint, all 327 linked PostgreSQL assertions, and all three Cron endpoint HTTP 200 responses
 were verified afterward. The three named Cron jobs were recreated with their existing Vault configuration.
 
-**Production `zkmlzktvjkjrbznvrsxb` was not reset or changed. Do not push this baseline there.**
-The baseline is for an empty database, not an incremental upgrade over Production's old schema.
-Do not merge this cleanup into `main` until a separately approved coordinated Production plan exists.
+On September 17, 2026, the owner separately approved the coordinated reset of Production
+`zkmlzktvjkjrbznvrsxb` after confirming its records involved no real funds and required no retention.
+The reset discarded its pre-release database records, Auth users, Storage objects and old migration
+history, then installed the same baseline and controlled seed. Verification found the single matching
+migration marker, empty customer/order/receipt state, no retired refund or phone fields, and the seeded
+default catalog data. Matching application code was deployed before the three authenticated Cron
+endpoints returned HTTP 200 and exactly the three expected jobs were activated.
 
-## Finish Dev activation
+## Hosted activation and ongoing checks
 
 Hosted Dev has exactly these three app Cron job definitions as of September 13, 2026:
 `tsokolitaw-payment-expirations`, `tsokolitaw-notification-retries`, and
@@ -42,17 +46,15 @@ successfully. On September 14, the corrected Resend sender and credentials were 
 previously failed messages were retried successfully, and all seven current delivery records reached
 `DELIVERED`. The notification retry job is active again on its five minute schedule.
 
-1. The user deploys the matching cleanup code to the Dev Vercel project.
-2. Verify Dev Supabase URL/keys and payment mode. Manual GCash needs the actual server-only QR payload.
-3. Sign in with Google again. Recreate the approved Admin through `npm run admin:bootstrap`
-   using the documented Dev environment and intended identity; never promote an arbitrary first user.
-4. Re-upload catalog images and publish real available pickup dates/windows/locations in Admin.
-5. Smoke-test email-only Profile/Checkout, PayMongo test or Manual GCash, receipt access/review,
-   unpaid cancellation and inventory/reward behavior. Sending actual email requires approved recipients.
-6. Confirm only these three named Cron jobs remain active after any future database reset.
+1. Verify the exact Vercel and Supabase target before changing either hosted environment.
+2. Verify environment-specific Supabase keys, payment mode, provider webhooks, Resend credentials and
+   Manual GCash QR payload where applicable.
+3. After a separately approved reset, deploy matching application code, recreate only approved Admins,
+   restore intended catalog/pickup data, and repeat the relevant smoke tests.
+4. Confirm only these three named Cron jobs remain active after any future database reset.
    Do not leave review/payment work unmonitored while jobs are absent or paused.
 
-The hosted Dev site is not considered operationally ready merely because the database reset passed.
+Neither hosted site is operationally ready merely because its database reset passed.
 
 The baseline includes the narrowly scoped `profiles` `SELECT` privilege required by the server-only
 OAuth callback.
@@ -60,10 +62,10 @@ OAuth callback.
 ## Database changes before v1.0
 
 Until the Android APK is accepted as v1.0, keep one clean baseline migration. Fold reviewed schema
-fixes into that baseline, reset disposable local/hosted Dev data only with explicit approval, and keep
-hosted Dev's migration marker aligned to `20260911010000`. Do not accumulate compatibility or patch
-migrations for disposable pre-release data. Preserve RLS/grants, exact payment matching, and atomic
-inventory/reward transitions. Read the [function map](../architecture/database.md).
+fixes into that baseline, reset disposable local or hosted data only with exact-target approval, and
+keep both hosted migration markers aligned to `20260911010000`. Do not accumulate compatibility or
+patch migrations for disposable pre-release data. Preserve RLS/grants, exact payment matching, and
+atomic inventory/reward transitions. Read the [function map](../architecture/database.md).
 
 After v1.0, treat the accepted baseline as immutable and use reviewed forward migrations for every
 schema change.

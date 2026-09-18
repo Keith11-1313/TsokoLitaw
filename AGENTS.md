@@ -28,9 +28,9 @@ baseline over compatibility solely for disposable pre-release data. A coordinate
 replace migration history after dependency review and local validation; confirm the exact hosted
 project and destructive scope before resetting it. Never infer that provider funds are disposable.
 
-Phase 13 production/security is complete; Phase 14 UI stabilization is in progress.
-Phase 15 is the approved thin TWA Android APK after UI stability. Optional Phase 16 is public-page
-aggregate Web Analytics after APK stability. See [roadmap](docs/roadmap.md); planned features are not implemented.
+Phase 13 production/security and Phase 14 UI stabilization are complete. Phase 15, the approved
+thin TWA Android APK, is active. Optional Phase 16 is public-page aggregate Web Analytics after APK
+stability. See [roadmap](docs/roadmap.md); work listed there is not implemented until verified.
 
 Keep one Next.js application with Admin under `/admin`, suited to a campus business of roughly
 1,000 customers. Avoid unnecessary dependencies, services, repositories/factories, generic layers,
@@ -52,10 +52,10 @@ or speculative abstractions. Readability cleanup must not redesign working archi
 - Keep payment and fulfillment state separate. Website cancellation is pending-unpaid only.
   Paid concerns are settled in person; no new refund API or destination collection.
   The retired refund subsystem was removed in the pre-v1 baseline. Hosted Dev
-  `mgkzphpznamjlgrpumjd` was rebaselined with approved Auth/test-data/Storage disposal on
-  September 11, 2026. Its app Cron jobs remain paused pending matching code activation;
-  follow the database migration runbook. This is not ongoing reset permission.
-  Production `zkmlzktvjkjrbznvrsxb` is untouched and not approved for reset or baseline push.
+  `mgkzphpznamjlgrpumjd` and Production `zkmlzktvjkjrbznvrsxb` were rebaselined through separate,
+  explicitly approved resets with Auth/test-data/Storage disposal. Matching application code and
+  exactly three app Cron jobs were activated and verified in each environment; follow the database
+  migration runbook. Those completed approvals are not ongoing reset permission.
 - Preserve bounded validation, distributed rate limiting, provider timeouts, notification claim/
   retry/idempotency rules, and audit records. Email delivery never changes payment state.
 - Dev and Production have separate Vercel projects, Supabase data/Auth/Storage, credentials,

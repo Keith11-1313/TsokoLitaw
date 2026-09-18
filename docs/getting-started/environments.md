@@ -12,8 +12,8 @@
 Project IDs and domains above are public identifiers, not secrets. Verify them against the owner's
 current dashboards before any hosted operation; this document does not query deployment state.
 
-`development` → Dev deployment → Dev Supabase → PayMongo test mode.
-`main` → Production deployment → Production Supabase → PayMongo live mode.
+`development` → Dev deployment → Dev Supabase → configured payment method; PayMongo uses test mode.
+`main` → Production deployment → Production Supabase → configured payment method; PayMongo uses live mode.
 
 ## What actually chooses the environment
 
@@ -57,8 +57,8 @@ and environment scope. Local server-variable changes require restarting the Next
 `PAYMENT_METHOD=paymongo` is the backward-compatible default. `manual_gcash` also requires
 server-only `GCASH_BASE_QR_PAYLOAD` (decoded recipient QR). Do not put the actual payload in Git.
 Keep PayMongo configuration/webhooks working for pre-existing PayMongo orders when switching modes.
-Both methods require the new pre-v1 baseline. Old Production is incompatible with the cleanup branch;
-do not merge/deploy it there until a separately approved coordinated database replacement.
+Both methods require the pre-v1 baseline now installed in Dev and Production. A Git deployment still
+does not apply SQL; verify the target schema and environment-specific configuration independently.
 
 - PayMongo: separate Dev/test and Production/live webhook endpoints, both subscribed only to
   `checkout_session.payment.paid`. Secrets and signature mode must match. Never copy a live key to Preview.

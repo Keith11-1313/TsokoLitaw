@@ -27,4 +27,4 @@ npm run load:100
 
 The test fails when unexpected HTTP errors reach 1% or warm p95 response time reaches one second. Also inspect Vercel route durations and Supabase database metrics during the run. Passing response thresholds is not sufficient if database connections saturate, lock waits accumulate, or any ownership/inventory/idempotency invariant fails.
 
-Checkout, cancellation, refund, and webhook writes require unique seeded users and provider fixtures. Keep those in a separate low-rate test so this read-capacity script cannot create real operational records or call third parties.
+Checkout, cancellation, payment, and webhook writes require unique seeded users and provider fixtures. Keep those in a separate low-rate test so this read-capacity script cannot create real operational records or call third parties.
