@@ -61,11 +61,15 @@ OAuth callback.
 
 ## Database changes before v1.0
 
-Until the Android APK is accepted as v1.0, keep one clean baseline migration. Fold reviewed schema
-fixes into that baseline, reset disposable local or hosted data only with exact-target approval, and
-keep both hosted migration markers aligned to `20260911010000`. Do not accumulate compatibility or
-patch migrations for disposable pre-release data. Preserve RLS/grants, exact payment matching, and
-atomic inventory/reward transitions. Read the [function map](../architecture/database.md).
+Until the Android APK is accepted as v1.0, the accepted release state must return to one clean baseline
+migration. Temporary forward migrations may be used during active development so a bounded change can
+be tested safely in Dev without rewriting an already-applied file. Before the final APK build, review
+and fold every such migration into the baseline, then perform one coordinated Dev and Production
+rebaseline with exact-target approval so both hosted migration markers return to `20260911010000`.
+Do not delete a temporary migration while hosted history still records it, and do not accumulate
+compatibility layers for disposable pre-release data. Preserve RLS/grants, exact payment matching,
+and atomic inventory/reward transitions. Read the [function map](../architecture/database.md) and the
+required pre-APK freeze gate in the [roadmap](../roadmap.md).
 
 After v1.0, treat the accepted baseline as immutable and use reviewed forward migrations for every
 schema change.

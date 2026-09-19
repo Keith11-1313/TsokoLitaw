@@ -7,7 +7,11 @@ Inspect the relevant page and assets before editing UI.
 ## Sources and assets
 
 - Tokens: `src/app/globals.css`. Warm cream background/surfaces, chocolate text/actions, soft borders.
-  Body font Lato; display font DM Serif Display. Prefer existing Tailwind spacing/token classes.
+  The typography system uses Neco Regular for reading, true Italic for semantic
+  notes, Medium for navigation, and Bold for actions and emphasis. Pally uses Regular for display
+  figures, Medium for the brand wordmark, and Bold for headings. Three variable WOFF2 files are
+  externally hosted in each environment's public-read Supabase `brand-fonts/v1/` path and are not
+  stored in the public repository. Prefer existing Tailwind spacing/token classes.
 - Customer navigation uses a sticky floating treatment: separate opaque brand, navigation, and action
   surfaces on tablet/desktop, with the existing compact menu on mobile. It remains in document flow
   before the page hero and does not alter Admin navigation. The surfaces share one height and sit over

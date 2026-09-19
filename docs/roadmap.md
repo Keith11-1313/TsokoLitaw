@@ -25,6 +25,23 @@ Build a PWABuilder/Bubblewrap **Trusted Web Activity** around `https://www.tsoko
 Capacitor, an embedded WebView, React Native or native commerce. The existing online website remains
 the single application. No offline ordering or payment.
 
+### Required v1 database freeze before the APK
+
+Complete this gate before building and accepting the signed v1 APK:
+
+- Finish database and Storage-backed feature work, then review every migration added after
+  `20260911010000_pre_v1_baseline.sql`.
+- Fold the reviewed final schema, Storage bucket metadata, grants, policies and functions into that
+  single baseline; remove temporary post-baseline migration files only as part of this coordinated
+  squash, never while hosted migration history still depends on them.
+- Obtain exact-target approval before resetting Dev or Production. Confirm that no records, Auth
+  identities, Storage files or provider-linked funds require retention before deleting anything.
+- Rebaseline both hosted projects to the same single migration marker, restore required public assets
+  such as the versioned brand fonts, deploy matching application code, and recreate only the three
+  approved Cron jobs with each environment's existing secrets.
+- Re-run database, web, payment, notification and hosted smoke checks. Do not start the final APK
+  build while either environment has unmatched migration history or missing required Storage assets.
+
 - Add the production manifest, canonical start URL/scope, brand colors and Android-compatible icons.
 - Choose the package name, build a versioned signed APK, and keep keystore/passwords outside Git
   with secure backups. Updates must reuse the same signing identity and increase the version.

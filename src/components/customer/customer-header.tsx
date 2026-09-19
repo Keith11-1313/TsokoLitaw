@@ -43,7 +43,7 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-3 text-sm text-muted-foreground transition-colors hover:bg-surface-muted hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:px-4",
+                  "inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-muted hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:px-4",
                   isActive && "bg-brand font-bold text-surface hover:bg-brand hover:text-surface",
                 )}
               >
@@ -73,7 +73,7 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
                     href={item.href}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "rounded-control px-4 py-3 text-sm text-muted-foreground hover:bg-surface-muted hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
+                      "rounded-control px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-surface-muted hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
                       isActive && "bg-surface-muted font-bold text-brand",
                     )}
                   >

@@ -24,7 +24,7 @@ select set_config(
   true
 );
 
-select plan(76);
+select plan(77);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -46,6 +46,16 @@ select hasnt_column('public', 'coatings', 'additional_type_price', 'obsolete add
 select hasnt_column('public', 'coatings', 'is_allergen', 'obsolete per-coating allergen flag is removed');
 select hasnt_column('public', 'coatings', 'allergen_note', 'obsolete per-coating allergen note is removed');
 select hasnt_column('public', 'journal_posts', 'icon_key', 'unused Journal icon storage is absent');
+select ok(
+  (
+    select public
+      and file_size_limit = 262144
+      and allowed_mime_types = array['font/woff2']
+    from storage.buckets
+    where id = 'brand-fonts'
+  ),
+  'brand font bucket is public-read and limited to small WOFF2 files'
+);
 select hasnt_column('public', 'order_item_coatings', 'is_included_type', 'retired coating pricing distinction is absent');
 select has_column('public', 'order_items', 'coating_total_snapshot', 'order items store the complete coating total');
 select hasnt_column('public', 'order_items', 'extra_coating_total_snapshot', 'retired extra-coating name is absent');

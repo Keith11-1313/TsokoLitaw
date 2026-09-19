@@ -43,7 +43,7 @@ export function BrandLockup({
         <span className="flex flex-col">
           <span
             className={cn(
-              "font-display text-2xl leading-none",
+              "font-display text-2xl font-medium leading-none",
               inverted ? "text-surface" : "text-brand",
               titleClassName,
             )}

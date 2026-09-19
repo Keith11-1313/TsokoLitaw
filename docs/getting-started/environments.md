@@ -46,6 +46,11 @@ project. The **Dev Vercel project can have that label** while remaining the Dev 
 | `INITIAL_ADMIN_EMAIL`                  | Private local-only bootstrap input; not a Vercel variable                              |
 | `SUPABASE_DB_PASSWORD`                 | CLI-only password for deliberate hosted database operations, not browser configuration |
 
+The public Supabase URL also selects the environment-specific `brand-fonts` Storage bucket used for
+the licensed Pally and Neco WOFF2 files. Font binaries stay outside the public Git repository. Dev
+and Production must each receive the same three versioned objects after the bucket migration is
+applied; uploading to one project does not populate the other.
+
 Use `.env.example` as the maintained application-variable template. Do not restore the retired
 `REFUND_DESTINATION_ENCRYPTION_KEY` or add unused email settings from old docs.
 Public variables are built into the client, while server variables are captured by the running deployment.

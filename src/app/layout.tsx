@@ -1,22 +1,39 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { DM_Serif_Display, Lato } from "next/font/google";
 import "./globals.css";
 import "@/bones/registry";
 import { CartProvider } from "@/components/cart/cart-provider";
 import { AppLoadingSkeleton } from "@/components/layout/app-loading-skeleton";
+import { getSupabasePublicEnvironment } from "@/lib/supabase/env";
 
-const lato = Lato({
-  variable: "--font-lato",
-  subsets: ["latin"],
-  weight: ["400", "700", "900"],
-});
+const brandFontsBaseUrl = new URL(
+  "/storage/v1/object/public/brand-fonts/v1/",
+  getSupabasePublicEnvironment().url,
+).toString();
 
-const dmSerifDisplay = DM_Serif_Display({
-  variable: "--font-dm-serif",
-  subsets: ["latin"],
-  weight: "400",
-});
+const brandFontFaces = `
+@font-face {
+  font-family: "Pally";
+  src: url("${brandFontsBaseUrl}pally-variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Neco";
+  src: url("${brandFontsBaseUrl}neco-variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Neco";
+  src: url("${brandFontsBaseUrl}neco-variable-italic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 400 900;
+  font-display: swap;
+}
+`;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.tsokolitaw.com"),
@@ -43,7 +60,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${lato.variable} ${dmSerifDisplay.variable} antialiased`}>
+      <head>
+        <link rel="preconnect" href={getSupabasePublicEnvironment().url} crossOrigin="anonymous" />
+        <style>{brandFontFaces}</style>
+      </head>
+      <body className="antialiased">
         <a
           href="#main-content"
           className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-full bg-brand px-5 py-3 text-sm font-bold text-surface shadow-xl transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2"
