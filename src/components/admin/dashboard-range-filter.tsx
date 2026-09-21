@@ -31,7 +31,7 @@ export function DashboardRangeFilter({
         value={selected}
         onChange={(value) => setSelected(value as DashboardRangePreset)}
         options={options}
-        className="w-full sm:w-52"
+        className="w-full self-end sm:w-52"
       />
       {selected === "custom" ? (
         <>
@@ -59,7 +59,7 @@ export function DashboardRangeFilter({
       ) : null}
       <button
         type="submit"
-        className="min-h-12 rounded-full bg-brand px-5 text-sm font-bold text-brand-foreground transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        className="inline-flex h-12 self-end items-center justify-center rounded-full bg-brand px-5 text-sm font-bold text-surface transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
         Apply
       </button>

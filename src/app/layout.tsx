@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   description:
     "Soft and chewy palitaw filled with warm, melted chocolate and served fresh with your choice of coating.",
   applicationName: "TsokoLitaw",
-  icons: { icon: "/icon.png" },
+  icons: { icon: [{ url: "/brand/logo.webp?v=20260922", type: "image/webp" }] },
   openGraph: {
     type: "website",
     siteName: "TsokoLitaw",
