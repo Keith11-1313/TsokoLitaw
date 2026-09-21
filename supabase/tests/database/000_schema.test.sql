@@ -24,7 +24,7 @@ select set_config(
   true
 );
 
-select plan(77);
+select plan(79);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -243,6 +243,14 @@ select ok(
 select ok(
   has_function_privilege('service_role', 'public.count_admin_customers(uuid,text)', 'EXECUTE'),
   'service role can count Admin customers'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.get_admin_dashboard_summary(uuid,timestamp with time zone,timestamp with time zone,timestamp with time zone,timestamp with time zone)', 'EXECUTE'),
+  'authenticated clients cannot invoke Admin dashboard aggregates directly'
+);
+select ok(
+  has_function_privilege('service_role', 'public.get_admin_dashboard_summary(uuid,timestamp with time zone,timestamp with time zone,timestamp with time zone,timestamp with time zone)', 'EXECUTE'),
+  'service role can invoke Admin dashboard aggregates'
 );
 select ok(
   not has_function_privilege('authenticated', 'public.replace_paymongo_checkout(uuid,text,text,text)', 'EXECUTE'),

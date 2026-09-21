@@ -3,7 +3,6 @@ import {
   ArrowRight,
   Banknote,
   CalendarDays,
-  Clock3,
   Cookie,
   Newspaper,
   Package,
@@ -25,8 +24,7 @@ import { AdminContent } from "@/components/layout/admin-content";
 import { requireAdmin } from "@/lib/auth";
 import { formatPhp } from "@/lib/commerce";
 import { getAdminCatalog } from "@/lib/server-catalog";
-import { getAdminCustomerSummaries } from "@/lib/server-customers";
-import { getAdminInventory } from "@/lib/server-inventory";
+import { getAdminDashboardSummary, resolveDashboardDateRange } from "@/lib/server-dashboard";
 import { getAdminJournalPosts } from "@/lib/server-journal";
 import { getAdminOrders } from "@/lib/server-orders";
 import { getAdminPickup } from "@/lib/server-pickup";
@@ -38,67 +36,37 @@ export const metadata: Metadata = {
   description: "TsokoLitaw order and operations dashboard.",
 };
 
-function manilaDateKey(value: Date) {
-  const parts = new Intl.DateTimeFormat("en", {
-    timeZone: "Asia/Manila",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(value);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
-function buildRevenuePoints(
-  orders: Awaited<ReturnType<typeof getAdminOrders>>,
-): DailyRevenuePoint[] {
-  const paidByDay = new Map<string, number>();
-  for (const order of orders) {
-    if (order.paymentStatus !== "PAID") continue;
-    const key = manilaDateKey(new Date(order.orderedAt));
-    paidByDay.set(key, (paidByDay.get(key) ?? 0) + order.total);
+function comparisonText(current: number, previous: number, label: string, rate = false) {
+  if (rate) {
+    const difference = current - previous;
+    return `${difference >= 0 ? "+" : ""}${difference.toFixed(1)} points vs ${label}`;
   }
-
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(Date.now() - (6 - index) * 86_400_000);
-    const key = manilaDateKey(date);
-    return {
-      dateLabel: new Intl.DateTimeFormat("en-PH", {
-        timeZone: "Asia/Manila",
-        month: "short",
-        day: "numeric",
-      }).format(date),
-      dayLabel: new Intl.DateTimeFormat("en-PH", {
-        timeZone: "Asia/Manila",
-        weekday: "short",
-      }).format(date),
-      value: paidByDay.get(key) ?? 0,
-    };
-  });
+  if (previous === 0) return current > 0 ? `New vs ${label}` : `No change vs ${label}`;
+  const difference = ((current - previous) / previous) * 100;
+  return `${difference >= 0 ? "+" : ""}${difference.toFixed(1)}% vs ${label}`;
 }
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string | string[] }>;
+}) {
   const admin = await requireAdmin("/admin");
-  // Keep order and inventory dashboard reads on the same post-expiration snapshot.
+  const params = await searchParams;
+  const range = resolveDashboardDateRange(
+    typeof params.range === "string" ? params.range : undefined,
+  );
+  // Expire due direct payments before loading the dashboard's read-only summaries.
   await expireDueDirectPayments();
-  const [orders, catalog, pickup, inventory, customers, posts, reviews] = await Promise.all([
+  const [dashboard, orders, catalog, pickup, posts, reviews] = await Promise.all([
+    getAdminDashboardSummary(admin.id, range),
     getAdminOrders(),
     getAdminCatalog(),
     getAdminPickup(),
-    getAdminInventory(),
-    getAdminCustomerSummaries(admin.id),
     getAdminJournalPosts(),
     getAdminReviews(),
   ]);
-  const paidOrders = orders.filter((order) => order.paymentStatus === "PAID");
-  const activeOrders = orders.filter((order) =>
-    ["CONFIRMED", "PREPARING", "READY_FOR_PICKUP"].includes(order.status),
-  );
   const openPickupDates = pickup.dates.filter((date) => date.isOpen);
-  const availablePieces = inventory.records.reduce(
-    (total, record) => total + Math.max(record.stockAvailable, 0),
-    0,
-  );
   const publishedPosts = posts.filter((post) => post.status === "published").length;
   const draftPosts = posts.length - publishedPosts;
   const visibleReviews = reviews.filter((review) => review.isVisible).length;
@@ -118,52 +86,119 @@ export default async function AdminDashboardPage() {
     },
     { statuses: ["COMPLETED"], label: "Completed", colorClassName: "bg-success-foreground" },
     {
-      statuses: ["CANCELLED", "EXPIRED"],
-      label: "Closed without pickup",
+      statuses: ["CANCELLED"],
+      label: "Cancelled",
+      colorClassName: "bg-muted-foreground",
+    },
+    {
+      statuses: ["EXPIRED"],
+      label: "Expired",
       colorClassName: "bg-muted-foreground",
     },
   ] as const;
   const statusPoints: OrderStatusPoint[] = statusDefinitions.map((definition) => ({
     label: definition.label,
-    value: orders.filter((order) =>
-      (definition.statuses as readonly string[]).includes(order.status),
-    ).length,
+    value: dashboard.orderOutcomes
+      .filter((outcome) => (definition.statuses as readonly string[]).includes(outcome.status))
+      .reduce((total, outcome) => total + outcome.count, 0),
     colorClassName: definition.colorClassName,
   }));
+  const revenuePoints: DailyRevenuePoint[] = dashboard.dailySales.map((point) => {
+    const date = new Date(`${point.date}T12:00:00+08:00`);
+    return {
+      dateLabel: new Intl.DateTimeFormat("en-PH", {
+        timeZone: "Asia/Manila",
+        month: "short",
+        day: "numeric",
+      }).format(date),
+      dayLabel: new Intl.DateTimeFormat("en-PH", {
+        timeZone: "Asia/Manila",
+        weekday: "short",
+      }).format(date),
+      value: point.paidSales,
+      orderCount: point.paidOrders,
+    };
+  });
   const dashboardStats = [
     {
-      label: "Recent Orders",
-      value: String(orders.length),
-      supportingText: "Latest 100 order snapshots",
-      icon: ShoppingCart,
-    },
-    {
-      label: "Paid Value",
-      value: formatPhp(paidOrders.reduce((total, order) => total + order.total, 0)),
-      supportingText: "Paid orders in the recent set",
+      label: "Paid sales",
+      value: formatPhp(dashboard.current.paidSales),
+      supportingText: comparisonText(
+        dashboard.current.paidSales,
+        dashboard.previous.paidSales,
+        range.comparisonLabel,
+      ),
       icon: Banknote,
     },
     {
-      label: "Active Fulfillment",
-      value: String(activeOrders.length),
-      supportingText: "Confirmed through ready",
-      icon: Clock3,
+      label: "Paid orders",
+      value: String(dashboard.current.paidOrders),
+      supportingText: comparisonText(
+        dashboard.current.paidOrders,
+        dashboard.previous.paidOrders,
+        range.comparisonLabel,
+      ),
+      icon: ShoppingCart,
     },
     {
-      label: "Available Pieces",
-      value: String(availablePieces),
-      supportingText: "Across upcoming stock dates",
-      icon: Package,
+      label: "Average order value",
+      value: formatPhp(dashboard.current.averageOrderValue),
+      supportingText: comparisonText(
+        dashboard.current.averageOrderValue,
+        dashboard.previous.averageOrderValue,
+        range.comparisonLabel,
+      ),
+      icon: ShoppingBag,
+    },
+    {
+      label: "Repeat buyer share",
+      value: `${dashboard.current.repeatCustomerRate.toFixed(1)}%`,
+      supportingText: comparisonText(
+        dashboard.current.repeatCustomerRate,
+        dashboard.previous.repeatCustomerRate,
+        range.comparisonLabel,
+        true,
+      ),
+      icon: Users,
     },
   ] as const;
 
   return (
     <AdminShell activePath="/admin">
       <AdminContent>
-        <header>
-          <h1 className="font-display text-[2rem] leading-tight sm:text-[2.25rem]">
-            Admin overview
-          </h1>
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-[2rem] leading-tight sm:text-[2.25rem]">
+              Admin overview
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Business performance and current operational workload
+            </p>
+          </div>
+          <form action="/admin" className="flex flex-wrap items-end gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-muted-foreground" htmlFor="dashboard-range">
+                Reporting period
+              </label>
+              <select
+                id="dashboard-range"
+                name="range"
+                defaultValue={range.preset}
+                className="min-h-11 rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              >
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="this_month">This month</option>
+                <option value="last_month">Last month</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              className="min-h-11 rounded-full bg-brand px-5 text-sm font-bold text-brand-foreground transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            >
+              Apply
+            </button>
+          </form>
         </header>
 
         <section
@@ -176,7 +211,13 @@ export default async function AdminDashboardPage() {
         </section>
 
         <div className="mt-8">
-          <DashboardCharts revenue={buildRevenuePoints(orders)} statuses={statusPoints} />
+          <DashboardCharts
+            periodLabel={range.label}
+            comparisonLabel={range.comparisonLabel}
+            previousRevenue={dashboard.previous.paidSales}
+            revenue={revenuePoints}
+            statuses={statusPoints}
+          />
         </div>
 
         <section className="mt-8" aria-labelledby="operations-overview-heading">
@@ -192,8 +233,11 @@ export default async function AdminDashboardPage() {
               {
                 href: "/admin/orders",
                 title: "Orders",
-                value: `${activeOrders.length} active orders`,
-                detail: `${orders.filter((order) => order.status === "COMPLETED").length} completed in the recent set`,
+                value: `${dashboard.operations.activeFulfillment} active orders`,
+                detail:
+                  dashboard.operations.receiptsAwaitingReview > 0
+                    ? `${dashboard.operations.receiptsAwaitingReview} payment receipts awaiting review`
+                    : "No payment receipts awaiting review",
                 icon: ShoppingBag,
               },
               {
@@ -213,15 +257,15 @@ export default async function AdminDashboardPage() {
               {
                 href: "/admin/inventory",
                 title: "Inventory",
-                value: `${availablePieces} pieces available`,
-                detail: `${inventory.records.length} stocked ${inventory.records.length === 1 ? "date" : "dates"}`,
+                value: `${dashboard.operations.availablePieces} pieces available`,
+                detail: "Across open upcoming stock dates",
                 icon: Package,
               },
               {
                 href: "/admin/customers",
                 title: "Customers",
-                value: `${customers.totalCount} accounts`,
-                detail: `${customers.customers.filter((customer) => customer.completedOrders >= 2).length} returning among the latest accounts`,
+                value: `${dashboard.current.purchasingCustomers} purchasing customers`,
+                detail: `${dashboard.current.repeatCustomers} returning during ${range.label.toLowerCase()}`,
                 icon: Users,
               },
               {

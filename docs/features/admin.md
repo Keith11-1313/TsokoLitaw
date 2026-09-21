@@ -6,7 +6,7 @@ and business state, and record audited mutations. Browser visibility is not acce
 
 | Area      | Entry and implementation                                                          | Customer effect                                                      |
 | --------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Dashboard | `/admin`, `dashboard-charts.tsx`, bounded server summaries                        | Read-only operational overview, not lifetime totals                  |
+| Dashboard | `/admin`, `dashboard-charts.tsx`, `server-dashboard.ts`                           | Period KPIs plus a separate current operational overview             |
 | Orders    | `/admin/orders`, `order-management-table.tsx`, `server-orders.ts`                 | Paid fulfillment, readiness and completed-review eligibility         |
 | Catalog   | `/admin/products`, `catalog-manager.tsx`, `server-catalog.ts`                     | Available boxes/coatings/add-ons, images and future prices           |
 | Pickup    | `/admin/pickup`, `pickup-manager.tsx`, `server-pickup.ts`                         | Explicit published dates/windows/locations and rules                 |
@@ -41,6 +41,26 @@ Read [shared control contracts](../ui/design.md#forms-and-editors).
 The fixed brand, credentials, and arbitrary global settings are not Admin-editable features.
 New capabilities require an operational purpose and approval, not just a new table/control.
 
-Tests: `editor-contracts.test.tsx`, form/image validation tests, and matching local pgTAP suites
-`004_admin_orders` through `010_customers`. Check mobile cards/drawer, tablet editors, desktop
+## Dashboard reporting
+
+The Dashboard defaults to the last seven Manila calendar days through the current time and also
+supports 30 days, this month to date, and the complete previous month. Paid sales and paid-order trends use the confirmed
+payment timestamp rather than order creation time. Comparisons use the immediately preceding range
+of equal length. A zero previous value is presented as new or unchanged instead of a fabricated
+percentage.
+
+Headline KPIs cover paid sales, paid orders, average order value for revenue-bearing orders, and
+repeat-buyer share. Zero-total loyalty orders remain paid orders but do not lower average order
+value. A returning buyer is an identified customer who paid during the selected period and had a
+paid order before that period. These aggregates cover the full selected range and are independent
+of the bounded Orders review/recent list.
+
+The paid-sales chart groups by `payments.paid_at`. The order-outcomes chart is a creation cohort:
+it groups orders created during the selected period by their current fulfillment status. Current
+active fulfillment, receipts awaiting review, and upcoming available stock are operational counts
+and do not inherit the historical reporting filter. Paid sales are order values after discounts,
+not profit, provider settlement, or net revenue after fees.
+
+Tests: `editor-contracts.test.tsx`, form/image validation tests, and matching local pgTAP suites,
+including `013_dashboard`. Check mobile cards/drawer, tablet editors, desktop
 tables, keyboard focus, save/discard/stay, and unsuccessful server mutations.

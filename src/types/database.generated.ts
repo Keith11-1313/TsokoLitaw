@@ -1358,6 +1358,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_admin_dashboard_summary: {
+        Args: {
+          period_end: string
+          period_start: string
+          previous_end: string
+          previous_start: string
+          target_admin_id: string
+        }
+        Returns: Json
+      }
       get_public_pickup_inventory: {
         Args: never
         Returns: {
