@@ -189,6 +189,21 @@ export type Database = {
           },
         ]
       }
+      daily_order_counters: {
+        Row: {
+          last_value: number
+          order_date: string
+        }
+        Insert: {
+          last_value: number
+          order_date: string
+        }
+        Update: {
+          last_value?: number
+          order_date?: string
+        }
+        Relationships: []
+      }
       inventory_adjustments: {
         Row: {
           created_at: string
@@ -1357,6 +1372,16 @@ export type Database = {
           redeemed_rewards: number
           user_id: string
         }[]
+      }
+      get_admin_dashboard_decisions: {
+        Args: {
+          period_end: string
+          period_start: string
+          previous_end: string
+          previous_start: string
+          target_admin_id: string
+        }
+        Returns: Json
       }
       get_admin_dashboard_summary: {
         Args: {

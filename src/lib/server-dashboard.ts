@@ -2,7 +2,7 @@ import "server-only";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
-export type DashboardRangePreset = "7d" | "30d" | "this_month" | "last_month";
+export type DashboardRangePreset = "7d" | "30d" | "this_month" | "last_month" | "custom";
 
 export interface DashboardMetricSet {
   paidSales: number;
@@ -23,12 +23,29 @@ export interface AdminDashboardSummary {
   orderOutcomes: Array<{ status: string; count: number }>;
   boxMix: Array<{ label: string; boxes: number; pieces: number }>;
   paymentMix: Array<{ provider: string; paidOrders: number; paidSales: number }>;
+  currentDecisionMetrics: DashboardDecisionMetrics;
+  previousDecisionMetrics: DashboardDecisionMetrics;
+  coatingMix: Array<{ label: string; pieces: number }>;
+  extraMix: Array<{ label: string; quantity: number; sales: number }>;
+  reviews: { count: number; averageRating: number; visible: number; featured: number };
+  reviewOperations: { visible: number; featured: number };
   operations: {
     activeFulfillment: number;
     receiptsAwaitingReview: number;
     oldestReceiptSubmittedAt: string | null;
     availablePieces: number;
+    committedPieces: number;
   };
+}
+
+export interface DashboardDecisionMetrics {
+  completionRate: number;
+  completedOrders: number;
+  eligibleOrders: number;
+  lostOrderRate: number;
+  lostOrders: number;
+  createdOrders: number;
+  averageFulfillmentHours: number;
 }
 
 export interface DashboardDateRange {
@@ -74,8 +91,12 @@ function boundary(key: string) {
   return `${key}T00:00:00${MANILA_OFFSET}`;
 }
 
-export function resolveDashboardDateRange(value?: string): DashboardDateRange {
-  const preset: DashboardRangePreset = ["7d", "30d", "this_month", "last_month"].includes(
+export function resolveDashboardDateRange(
+  value?: string,
+  customStart?: string,
+  customEnd?: string,
+): DashboardDateRange {
+  const preset: DashboardRangePreset = ["7d", "30d", "this_month", "last_month", "custom"].includes(
     value ?? "",
   )
     ? (value as DashboardRangePreset)
@@ -87,15 +108,36 @@ export function resolveDashboardDateRange(value?: string): DashboardDateRange {
   let label = "Last 7 days";
   let comparisonLabel = "previous 7 days";
 
-  if (preset === "30d") {
+  if (preset === "custom") {
+    const validDate = /^\d{4}-\d{2}-\d{2}$/;
+    if (validDate.test(customStart ?? "") && validDate.test(customEnd ?? "")) {
+      const requestedStart = customStart as string;
+      const requestedEndExclusive = shiftDate(customEnd as string, 1);
+      const duration =
+        new Date(boundary(requestedEndExclusive)).getTime() -
+        new Date(boundary(requestedStart)).getTime();
+      if (duration > 0 && duration <= 366 * 86400000) {
+        start = requestedStart;
+        end = boundary(requestedEndExclusive);
+        label = `${requestedStart} to ${customEnd}`;
+        comparisonLabel = "previous matching period";
+      } else {
+        value = "7d";
+      }
+    } else {
+      value = "7d";
+    }
+  }
+
+  if (value === "30d") {
     start = shiftDate(today, -29);
     label = "Last 30 days";
     comparisonLabel = "previous 30 days";
-  } else if (preset === "this_month") {
+  } else if (value === "this_month") {
     start = monthStart(today, 0);
     label = "This month";
     comparisonLabel = "previous matching period";
-  } else if (preset === "last_month") {
+  } else if (value === "last_month") {
     start = monthStart(today, -1);
     end = boundary(monthStart(today, 0));
     label = "Last month";
@@ -110,7 +152,7 @@ export function resolveDashboardDateRange(value?: string): DashboardDateRange {
       (new Date(endTimestamp).getTime() - new Date(startTimestamp).getTime()),
   ).toISOString();
   return {
-    preset,
+    preset: value === "7d" ? "7d" : preset,
     label,
     comparisonLabel,
     start: startTimestamp,
@@ -140,11 +182,24 @@ function parseMetricSet(value: unknown): DashboardMetricSet {
   };
 }
 
+function parseDecisionMetrics(value: unknown): DashboardDecisionMetrics {
+  const row = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  return {
+    completionRate: toNumber(row.completionRate),
+    completedOrders: toNumber(row.completedOrders),
+    eligibleOrders: toNumber(row.eligibleOrders),
+    lostOrderRate: toNumber(row.lostOrderRate),
+    lostOrders: toNumber(row.lostOrders),
+    createdOrders: toNumber(row.createdOrders),
+    averageFulfillmentHours: toNumber(row.averageFulfillmentHours),
+  };
+}
+
 export async function getAdminDashboardSummary(
   adminId: string,
   range: DashboardDateRange,
 ): Promise<AdminDashboardSummary> {
-  const { data, error } = await createAdminSupabaseClient().rpc("get_admin_dashboard_summary", {
+  const { data, error } = await createAdminSupabaseClient().rpc("get_admin_dashboard_decisions", {
     target_admin_id: adminId,
     period_start: range.start,
     period_end: range.end,
@@ -196,6 +251,46 @@ export async function getAdminDashboardSummary(
           };
         })
       : [],
+    currentDecisionMetrics: parseDecisionMetrics(result.currentDecisionMetrics),
+    previousDecisionMetrics: parseDecisionMetrics(result.previousDecisionMetrics),
+    coatingMix: Array.isArray(result.coatingMix)
+      ? result.coatingMix.map((row) => {
+          const point = row as Record<string, unknown>;
+          return { label: String(point.label), pieces: toNumber(point.pieces) };
+        })
+      : [],
+    extraMix: Array.isArray(result.extraMix)
+      ? result.extraMix.map((row) => {
+          const point = row as Record<string, unknown>;
+          return {
+            label: String(point.label),
+            quantity: toNumber(point.quantity),
+            sales: toNumber(point.sales),
+          };
+        })
+      : [],
+    reviews: (() => {
+      const row =
+        result.reviews && typeof result.reviews === "object"
+          ? (result.reviews as Record<string, unknown>)
+          : {};
+      return {
+        count: toNumber(row.count),
+        averageRating: toNumber(row.averageRating),
+        visible: toNumber(row.visible),
+        featured: toNumber(row.featured),
+      };
+    })(),
+    reviewOperations: (() => {
+      const row =
+        result.reviewOperations && typeof result.reviewOperations === "object"
+          ? (result.reviewOperations as Record<string, unknown>)
+          : {};
+      return {
+        visible: toNumber(row.visible),
+        featured: toNumber(row.featured),
+      };
+    })(),
     operations: {
       activeFulfillment: toNumber(operations.activeFulfillment),
       receiptsAwaitingReview: toNumber(operations.receiptsAwaitingReview),
@@ -204,6 +299,7 @@ export async function getAdminDashboardSummary(
           ? operations.oldestReceiptSubmittedAt
           : null,
       availablePieces: toNumber(operations.availablePieces),
+      committedPieces: toNumber(result.committedPieces),
     },
   };
 }

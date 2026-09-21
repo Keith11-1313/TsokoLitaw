@@ -11,8 +11,14 @@ export const metadata: Metadata = {
   description: "Manage paid TsokoLitaw orders through campus pickup fulfillment.",
 };
 
-export default async function AdminOrdersPage() {
+export default async function AdminOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ query?: string | string[] }>;
+}) {
   await requireAdmin("/admin/orders");
+  const params = await searchParams;
+  const initialQuery = typeof params.query === "string" ? params.query.slice(0, 80) : "";
   const orders = await getAdminOrders();
   const orderStats = [
     { label: "Loaded Orders", value: String(orders.length) },
@@ -54,7 +60,7 @@ export default async function AdminOrdersPage() {
         </section>
 
         <div className="mt-8">
-          <OrderManagementTable orders={orders} />
+          <OrderManagementTable orders={orders} initialQuery={initialQuery} />
         </div>
       </AdminContent>
     </AdminShell>

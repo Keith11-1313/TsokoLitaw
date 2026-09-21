@@ -49,6 +49,11 @@ payment timestamp rather than order creation time. Comparisons use the immediate
 of equal length. A zero previous value is presented as new or unchanged instead of a fabricated
 percentage.
 
+Admins can also choose an inclusive custom Manila date range of up to 366 days. The sales chart
+keeps daily points for short ranges and groups longer ranges into seven-day periods so labels and
+values remain readable. Bars expose the exact paid value and order count on pointer hover and
+keyboard focus.
+
 Headline KPIs cover paid sales, paid orders, average order value for revenue-bearing orders, and
 repeat-buyer share. Zero-total loyalty orders remain paid orders but do not lower average order
 value. A returning buyer is an identified customer who paid during the selected period and had a
@@ -60,6 +65,13 @@ reports paid add-on value separately from the complimentary per-box extra, and s
 purchasing customer. Product mix groups paid boxes by their saved variant name; payment mix groups
 confirmed order value and count by provider. These figures follow the same selected period and
 previous-period comparison as the headline KPIs.
+
+Completion rate uses paid orders from the selected payment period and reports how many are now
+completed. Cancelled or expired rate uses orders created in the selected period. Average fulfillment
+time runs from confirmed payment to completion, and appears only when a completed sample exists.
+Coating mix counts immutable paid-order piece allocations; extra mix excludes the complimentary
+per-box extra. Review count and average rating follow the selected period. These sections remain
+separate from current operational workload such as receipt-review age and upcoming inventory.
 
 The paid-sales chart groups by `payments.paid_at`. The order-outcomes chart is a creation cohort:
 it groups orders created during the selected period by their current fulfillment status. Current

@@ -1,4 +1,6 @@
 import type { LucideIcon } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/cn";
 
 interface AdminStatCardProps {
@@ -8,6 +10,8 @@ interface AdminStatCardProps {
   icon?: LucideIcon;
   accentClassName?: string;
   compact?: boolean;
+  href?: string;
+  trend?: "positive" | "negative" | "neutral";
 }
 
 export function AdminStatCard({
@@ -17,8 +21,12 @@ export function AdminStatCard({
   icon: Icon,
   accentClassName,
   compact = false,
+  href,
+  trend = "neutral",
 }: AdminStatCardProps) {
-  return (
+  const TrendIcon =
+    trend === "positive" ? ArrowUpRight : trend === "negative" ? ArrowDownRight : Minus;
+  const card = (
     <article
       className={cn(
         "rounded-card border border-border bg-surface",
@@ -52,8 +60,27 @@ export function AdminStatCard({
         ) : null}
       </div>
       {supportingText ? (
-        <p className="mt-1 text-xs text-subtle-foreground">{supportingText}</p>
+        <p
+          className={cn(
+            "mt-1 flex items-center gap-1 text-xs text-subtle-foreground",
+            trend === "positive" && "text-success-foreground",
+            trend === "negative" && "text-danger-foreground",
+          )}
+        >
+          <TrendIcon aria-hidden="true" size={14} />
+          {supportingText}
+        </p>
       ) : null}
     </article>
+  );
+  return href ? (
+    <Link
+      href={href}
+      className="block rounded-card transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+    >
+      {card}
+    </Link>
+  ) : (
+    card
   );
 }

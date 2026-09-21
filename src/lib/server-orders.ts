@@ -378,8 +378,10 @@ export async function getCustomerOrderDetail(
   };
 }
 
-export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
-  await expireDueDirectPayments();
+export async function getAdminOrders(
+  options: { expirePayments?: boolean } = {},
+): Promise<AdminOrderSummary[]> {
+  if (options.expirePayments !== false) await expireDueDirectPayments();
   const supabase = await createServerSupabaseClient();
   const selection = `
       id,

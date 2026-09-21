@@ -117,7 +117,7 @@ export function parsePayMongoPaidEvent(
   if (typeof orderId !== "string" || !UUID_PATTERN.test(orderId)) {
     throw new Error("PayMongo order metadata is invalid.");
   }
-  if (typeof orderNumber !== "string" || !/^TL-[0-9]{4,}$/.test(orderNumber)) {
+  if (typeof orderNumber !== "string" || !/^TL(?:-\d{4,}|\d{9})$/.test(orderNumber)) {
     throw new Error("PayMongo order reference is invalid.");
   }
   if (typeof paymentId !== "string" || !/^pay_[A-Za-z0-9_-]+$/.test(paymentId)) {

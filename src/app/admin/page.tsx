@@ -4,13 +4,15 @@ import {
   Banknote,
   Boxes,
   CalendarDays,
-  CircleDollarSign,
   Cookie,
+  Gauge,
   Newspaper,
   Package,
   PackageCheck,
   ShoppingBag,
   ShoppingCart,
+  Star,
+  Timer,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -18,9 +20,11 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import {
   DashboardCharts,
+  DashboardMixCharts,
   type DailyRevenuePoint,
   type OrderStatusPoint,
 } from "@/components/admin/dashboard-charts";
+import { DashboardRangeFilter } from "@/components/admin/dashboard-range-filter";
 import { QuickOperations } from "@/components/admin/quick-operations";
 import { RecentOrdersTable } from "@/components/admin/recent-orders-table";
 import { AdminContent } from "@/components/layout/admin-content";
@@ -31,7 +35,6 @@ import { getAdminDashboardSummary, resolveDashboardDateRange } from "@/lib/serve
 import { getAdminJournalPosts } from "@/lib/server-journal";
 import { getAdminOrders } from "@/lib/server-orders";
 import { getAdminPickup } from "@/lib/server-pickup";
-import { getAdminReviews } from "@/lib/server-reviews";
 import { expireDueDirectPayments } from "@/lib/server-payment";
 
 export const metadata: Metadata = {
@@ -49,30 +52,73 @@ function comparisonText(current: number, previous: number, label: string, rate =
   return `${difference >= 0 ? "+" : ""}${difference.toFixed(1)}% vs ${label}`;
 }
 
+function comparisonTrend(current: number, previous: number, increaseIsGood = true) {
+  if (current === previous) return "neutral" as const;
+  const improved = current > previous ? increaseIsGood : !increaseIsGood;
+  return improved ? ("positive" as const) : ("negative" as const);
+}
+
+function groupRevenue(points: DailyRevenuePoint[]) {
+  if (points.length <= 14) return points;
+  const grouped: DailyRevenuePoint[] = [];
+  for (let index = 0; index < points.length; index += 7) {
+    const group = points.slice(index, index + 7);
+    const first = group[0];
+    const last = group.at(-1);
+    if (!first || !last) continue;
+    grouped.push({
+      dateLabel:
+        first.dateLabel === last.dateLabel
+          ? first.dateLabel
+          : `${first.dateLabel}–${last.dateLabel}`,
+      dayLabel: `Week ${grouped.length + 1}`,
+      value: group.reduce((sum, point) => sum + point.value, 0),
+      orderCount: group.reduce((sum, point) => sum + point.orderCount, 0),
+    });
+  }
+  return grouped;
+}
+
+function formatHours(value: number) {
+  if (value <= 0) return "No completed orders";
+  if (value < 1) return `${Math.round(value * 60)} min`;
+  return `${value.toFixed(1)} hr`;
+}
+
+function receiptWaitText(value: string | null) {
+  if (!value) return "No payment receipts awaiting review";
+  const minutes = Math.max(0, Math.round((Date.now() - new Date(value).getTime()) / 60000));
+  if (minutes < 60) return `Oldest waiting ${minutes} min`;
+  return `Oldest waiting ${Math.floor(minutes / 60)} hr ${minutes % 60} min`;
+}
+
 export default async function AdminDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string | string[] }>;
+  searchParams: Promise<{
+    range?: string | string[];
+    from?: string | string[];
+    to?: string | string[];
+  }>;
 }) {
   const admin = await requireAdmin("/admin");
   const params = await searchParams;
-  const range = resolveDashboardDateRange(
-    typeof params.range === "string" ? params.range : undefined,
-  );
+  const rangeValue = typeof params.range === "string" ? params.range : undefined;
+  const fromValue = typeof params.from === "string" ? params.from : undefined;
+  const toValue = typeof params.to === "string" ? params.to : undefined;
+  const range = resolveDashboardDateRange(rangeValue, fromValue, toValue);
   // Expire due direct payments before loading the dashboard's read-only summaries.
   await expireDueDirectPayments();
-  const [dashboard, orders, catalog, pickup, posts, reviews] = await Promise.all([
+  const [dashboard, orders, catalog, pickup, posts] = await Promise.all([
     getAdminDashboardSummary(admin.id, range),
-    getAdminOrders(),
+    getAdminOrders({ expirePayments: false }),
     getAdminCatalog(),
     getAdminPickup(),
     getAdminJournalPosts(),
-    getAdminReviews(),
   ]);
   const openPickupDates = pickup.dates.filter((date) => date.isOpen);
   const publishedPosts = posts.filter((post) => post.status === "published").length;
   const draftPosts = posts.length - publishedPosts;
-  const visibleReviews = reviews.filter((review) => review.isVisible).length;
   const statusDefinitions = [
     {
       statuses: ["PENDING_PAYMENT"],
@@ -106,7 +152,7 @@ export default async function AdminDashboardPage({
       .reduce((total, outcome) => total + outcome.count, 0),
     colorClassName: definition.colorClassName,
   }));
-  const revenuePoints: DailyRevenuePoint[] = dashboard.dailySales.map((point) => {
+  const dailyRevenuePoints: DailyRevenuePoint[] = dashboard.dailySales.map((point) => {
     const date = new Date(`${point.date}T12:00:00+08:00`);
     return {
       dateLabel: new Intl.DateTimeFormat("en-PH", {
@@ -122,6 +168,7 @@ export default async function AdminDashboardPage({
       orderCount: point.paidOrders,
     };
   });
+  const revenuePoints = groupRevenue(dailyRevenuePoints);
   const dashboardStats = [
     {
       label: "Paid sales",
@@ -132,6 +179,8 @@ export default async function AdminDashboardPage({
         range.comparisonLabel,
       ),
       icon: Banknote,
+      href: "/admin/orders",
+      trend: comparisonTrend(dashboard.current.paidSales, dashboard.previous.paidSales),
     },
     {
       label: "Paid orders",
@@ -142,6 +191,8 @@ export default async function AdminDashboardPage({
         range.comparisonLabel,
       ),
       icon: ShoppingCart,
+      href: "/admin/orders",
+      trend: comparisonTrend(dashboard.current.paidOrders, dashboard.previous.paidOrders),
     },
     {
       label: "Average order value",
@@ -152,17 +203,22 @@ export default async function AdminDashboardPage({
         range.comparisonLabel,
       ),
       icon: ShoppingBag,
+      href: "/admin/orders",
+      trend: comparisonTrend(
+        dashboard.current.averageOrderValue,
+        dashboard.previous.averageOrderValue,
+      ),
     },
     {
       label: "Repeat buyer share",
       value: `${dashboard.current.repeatCustomerRate.toFixed(1)}%`,
-      supportingText: comparisonText(
+      supportingText: `${dashboard.current.repeatCustomers} of ${dashboard.current.purchasingCustomers} purchasing customers returned`,
+      icon: Users,
+      href: "/admin/customers",
+      trend: comparisonTrend(
         dashboard.current.repeatCustomerRate,
         dashboard.previous.repeatCustomerRate,
-        range.comparisonLabel,
-        true,
       ),
-      icon: Users,
     },
   ] as const;
   const salesDetails = [
@@ -175,6 +231,8 @@ export default async function AdminDashboardPage({
         range.comparisonLabel,
       ),
       icon: Boxes,
+      href: "/admin/products",
+      trend: comparisonTrend(dashboard.current.boxesSold, dashboard.previous.boxesSold),
     },
     {
       label: "Pieces sold",
@@ -185,26 +243,31 @@ export default async function AdminDashboardPage({
         range.comparisonLabel,
       ),
       icon: PackageCheck,
+      href: "/admin/products",
+      trend: comparisonTrend(dashboard.current.piecesSold, dashboard.previous.piecesSold),
     },
     {
-      label: "Sales per buyer",
-      value: formatPhp(
-        dashboard.current.purchasingCustomers > 0
-          ? dashboard.current.paidSales / dashboard.current.purchasingCustomers
-          : 0,
+      label: "Completion rate",
+      value: `${dashboard.currentDecisionMetrics.completionRate.toFixed(1)}%`,
+      supportingText: `${dashboard.currentDecisionMetrics.completedOrders} of ${dashboard.currentDecisionMetrics.eligibleOrders} paid orders completed`,
+      icon: Gauge,
+      href: "/admin/orders",
+      trend: comparisonTrend(
+        dashboard.currentDecisionMetrics.completionRate,
+        dashboard.previousDecisionMetrics.completionRate,
       ),
-      supportingText: `${dashboard.current.purchasingCustomers} purchasing ${dashboard.current.purchasingCustomers === 1 ? "customer" : "customers"}`,
-      icon: Users,
     },
     {
-      label: "Paid extras",
-      value: formatPhp(dashboard.current.extraSales),
-      supportingText: comparisonText(
-        dashboard.current.extraSales,
-        dashboard.previous.extraSales,
-        range.comparisonLabel,
+      label: "Cancelled or expired",
+      value: `${dashboard.currentDecisionMetrics.lostOrderRate.toFixed(1)}%`,
+      supportingText: `${dashboard.currentDecisionMetrics.lostOrders} of ${dashboard.currentDecisionMetrics.createdOrders} created orders`,
+      icon: ShoppingCart,
+      href: "/admin/orders",
+      trend: comparisonTrend(
+        dashboard.currentDecisionMetrics.lostOrderRate,
+        dashboard.previousDecisionMetrics.lostOrderRate,
+        false,
       ),
-      icon: CircleDollarSign,
     },
   ] as const;
   const maximumBoxCount = Math.max(...dashboard.boxMix.map((item) => item.boxes), 0);
@@ -213,6 +276,13 @@ export default async function AdminDashboardPage({
     manual_gcash: "Manual GCash",
     loyalty: "Loyalty reward",
   };
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const firstName = admin.fullName.trim().split(/\s+/)[0] || "Admin";
 
   return (
     <AdminShell activePath="/admin">
@@ -220,36 +290,17 @@ export default async function AdminDashboardPage({
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-display text-[2rem] leading-tight sm:text-[2.25rem]">
-              Admin overview
+              Good day, {firstName}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Business performance and current operational workload
             </p>
           </div>
-          <form action="/admin" className="flex flex-wrap items-end gap-2">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-bold text-muted-foreground" htmlFor="dashboard-range">
-                Reporting period
-              </label>
-              <select
-                id="dashboard-range"
-                name="range"
-                defaultValue={range.preset}
-                className="min-h-11 rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-              >
-                <option value="7d">Last 7 days</option>
-                <option value="30d">Last 30 days</option>
-                <option value="this_month">This month</option>
-                <option value="last_month">Last month</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              className="min-h-11 rounded-full bg-brand px-5 text-sm font-bold text-brand-foreground transition-colors hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-            >
-              Apply
-            </button>
-          </form>
+          <DashboardRangeFilter
+            preset={range.preset}
+            startDate={fromValue ?? range.start.slice(0, 10)}
+            endDate={toValue ?? today}
+          />
         </header>
 
         <section
@@ -282,7 +333,7 @@ export default async function AdminDashboardPage({
 
         <section className="mt-5 grid min-w-0 gap-5 lg:grid-cols-2" aria-label="Sales mix">
           <article className="min-w-0 rounded-card border border-border bg-surface p-5 sm:p-6">
-            <h2 className="font-display text-2xl">What customers bought</h2>
+            <h2 className="font-display text-2xl">Top box sizes</h2>
             <p className="mt-1 text-xs text-muted-foreground">Paid boxes · {range.label}</p>
             {dashboard.boxMix.length === 0 ? (
               <p className="mt-5 rounded-control bg-surface-muted px-4 py-8 text-center text-sm text-muted-foreground">
@@ -297,7 +348,10 @@ export default async function AdminDashboardPage({
                         {item.label}
                       </span>
                       <span className="shrink-0 tabular-nums text-muted-foreground">
-                        {item.boxes} {item.boxes === 1 ? "box" : "boxes"} · {item.pieces} pieces
+                        {item.boxes} {item.boxes === 1 ? "box" : "boxes"} ·{" "}
+                        {dashboard.current.boxesSold > 0
+                          ? `${Math.round((item.boxes / dashboard.current.boxesSold) * 100)}% of boxes`
+                          : "0% of boxes"}
                       </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
@@ -346,6 +400,55 @@ export default async function AdminDashboardPage({
           </article>
         </section>
 
+        <div className="mt-5">
+          <DashboardMixCharts
+            periodLabel={range.label}
+            coatings={dashboard.coatingMix.map((item) => ({
+              label: item.label,
+              value: item.pieces,
+              detail: `${item.pieces} ${item.pieces === 1 ? "piece" : "pieces"}`,
+            }))}
+            extras={dashboard.extraMix.map((item) => ({
+              label: item.label,
+              value: item.quantity,
+              detail: `${item.quantity} sold · ${formatPhp(item.sales)}`,
+            }))}
+          />
+        </div>
+
+        <section className="mt-8" aria-labelledby="performance-details-heading">
+          <h2 id="performance-details-heading" className="font-display text-2xl">
+            Performance details
+          </h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <AdminStatCard
+              compact
+              label="Average fulfillment time"
+              value={formatHours(dashboard.currentDecisionMetrics.averageFulfillmentHours)}
+              supportingText="From confirmed payment to completion"
+              icon={Timer}
+              href="/admin/orders"
+            />
+            <AdminStatCard
+              compact
+              label="Customer reviews"
+              value={`${dashboard.reviews.averageRating.toFixed(1)} / 5`}
+              supportingText={`${dashboard.reviews.count} submitted · ${dashboard.reviews.visible} visible`}
+              icon={Star}
+              href="/admin/reviews"
+            />
+            <AdminStatCard
+              compact
+              label="Inventory coverage"
+              value={`${dashboard.operations.availablePieces} available`}
+              supportingText={`${dashboard.operations.committedPieces} committed · ${dashboard.operations.availablePieces === 0 ? "Out of stock" : dashboard.operations.availablePieces < 16 ? "Low stock" : "Stock available"}`}
+              icon={Package}
+              href="/admin/inventory"
+              trend={dashboard.operations.availablePieces === 0 ? "negative" : "neutral"}
+            />
+          </div>
+        </section>
+
         <section className="mt-8" aria-labelledby="operations-overview-heading">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -362,7 +465,7 @@ export default async function AdminDashboardPage({
                 value: `${dashboard.operations.activeFulfillment} active orders`,
                 detail:
                   dashboard.operations.receiptsAwaitingReview > 0
-                    ? `${dashboard.operations.receiptsAwaitingReview} payment receipts awaiting review`
+                    ? `${dashboard.operations.receiptsAwaitingReview} awaiting review · ${receiptWaitText(dashboard.operations.oldestReceiptSubmittedAt)}`
                     : "No payment receipts awaiting review",
                 icon: ShoppingBag,
               },
@@ -397,8 +500,8 @@ export default async function AdminDashboardPage({
               {
                 href: "/admin/journal",
                 title: "Journal",
-                value: `${publishedPosts} published · ${visibleReviews} reviews`,
-                detail: `${draftPosts} drafts · ${reviews.filter((review) => review.isFeatured).length} featured reviews`,
+                value: `${publishedPosts} published · ${dashboard.reviewOperations.visible} reviews`,
+                detail: `${draftPosts} drafts · ${dashboard.reviewOperations.featured} featured reviews`,
                 icon: Newspaper,
               },
             ].map((area) => {

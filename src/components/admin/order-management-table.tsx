@@ -254,8 +254,14 @@ function FulfillmentAction({ order }: { order: AdminOrderSummary }) {
   );
 }
 
-export function OrderManagementTable({ orders }: { orders: AdminOrderSummary[] }) {
-  const [query, setQuery] = useState("");
+export function OrderManagementTable({
+  orders,
+  initialQuery = "",
+}: {
+  orders: AdminOrderSummary[];
+  initialQuery?: string;
+}) {
+  const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState<"ALL" | OrderStatus>("ALL");
 
   const visibleOrders = useMemo(() => {

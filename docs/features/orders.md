@@ -2,7 +2,9 @@
 
 `/orders` and `/orders/[orderId]` use `server-orders.ts` ownership-scoped snapshot reads.
 `orders-list.tsx` owns filters/pagination presentation; `order-line-items.tsx` renders the shared receipt.
-Order numbers come from PostgreSQL's shared sequence (`TL-0001` style), not per-page counters.
+New order numbers are allocated atomically in PostgreSQL as `TLDDMMYY001`, with the final three
+digits restarting for each Manila calendar date. Existing `TL-0001` style numbers remain valid
+historical references and provider callbacks accept both formats.
 Receipts show the snapshotted complimentary extra as a separate `₱0.00` line. Paid extras remain
 separate. Reordering copies paid selections only; the new checkout applies the current complimentary extra.
 Cancelled, expired, and completed order details offer `Order again` only when every saved catalog

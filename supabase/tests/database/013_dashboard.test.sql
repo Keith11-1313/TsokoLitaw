@@ -19,7 +19,7 @@ select set_config(
   true
 );
 
-select plan(15);
+select plan(25);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -99,6 +99,23 @@ insert into public.order_item_addons (
   'Sea salt cream', 18, 1, 18, false
 );
 
+insert into public.order_item_coatings (
+  order_item_id, coating_id, coating_name_snapshot, piece_count, additional_price_snapshot
+) values
+  ('da500000-0000-4000-8000-000000000002', '12000000-0000-4000-8000-000000000001', 'Cocoa', 4, 5),
+  ('da500000-0000-4000-8000-000000000003', '12000000-0000-4000-8000-000000000002', 'Milk', 8, 5);
+
+update public.orders
+set status = 'COMPLETED', completed_at = '2099-06-02 12:00+08'
+where id = 'da400000-0000-4000-8000-000000000002';
+
+insert into public.reviews (
+  user_id, order_id, display_name_snapshot, rating, comment, is_visible, created_at
+) values (
+  'da000000-0000-4000-8000-000000000002', 'da400000-0000-4000-8000-000000000002',
+  'Dashboard Buyer', 5, 'Dashboard test review', true, '2099-06-04 10:00+08'
+);
+
 create temporary table dashboard_result as
 select public.get_admin_dashboard_summary(
   'da000000-0000-4000-8000-000000000001',
@@ -129,6 +146,34 @@ select throws_ok(
   'P0001', 'Active Admin access is required',
   'non-Admin callers cannot request dashboard aggregates'
 );
+
+create temporary table dashboard_decisions as
+select public.get_admin_dashboard_decisions(
+  'da000000-0000-4000-8000-000000000001',
+  '2099-06-01 00:00+08', '2099-06-08 00:00+08',
+  '2099-05-25 00:00+08', '2099-06-01 00:00+08'
+) as summary;
+
+select is((summary->'currentDecisionMetrics'->>'completionRate')::numeric, 50::numeric, 'completion rate uses paid orders in the period') from dashboard_decisions;
+select is((summary->'currentDecisionMetrics'->>'averageFulfillmentHours')::numeric, 2::numeric, 'fulfillment time runs from payment to completion') from dashboard_decisions;
+select is((select sum((point->>'pieces')::integer) from dashboard_decisions, jsonb_array_elements(summary->'coatingMix') point), 16::bigint, 'coating mix counts paid pieces') from dashboard_decisions;
+select is((summary->'reviews'->>'count')::integer, 1, 'review metrics follow the reporting period') from dashboard_decisions;
+select is((summary->'reviews'->>'averageRating')::numeric, 5::numeric, 'review metrics include average rating') from dashboard_decisions;
+select is((summary->'reviewOperations'->>'visible')::integer, 1, 'review operations include all visible reviews') from dashboard_decisions;
+select is((summary->'reviewOperations'->>'featured')::integer, 0, 'review operations include all featured reviews') from dashboard_decisions;
+
+insert into public.orders (
+  id, order_number, user_id, checkout_idempotency_key, status, payment_status,
+  customer_name, customer_email, pickup_date, pickup_window_id, pickup_location_id,
+  pickup_window_snapshot, pickup_location_snapshot, subtotal, discount_total, total,
+  terms_version, terms_accepted_at, created_at
+) values
+  ('da600000-0000-4000-8000-000000000001', 'TL-9998', 'da000000-0000-4000-8000-000000000002', 'da700000-0000-4000-8000-000000000001', 'PENDING_PAYMENT', 'PENDING', 'Dashboard Buyer', 'dashboard-buyer@example.test', '2099-06-10', 'da300000-0000-4000-8000-000000000001', 'da100000-0000-4000-8000-000000000001', '10:00 AM–11:00 AM', 'Dashboard location', 50, 0, 50, 'dashboard-test', '2099-06-04 09:00+08', '2099-06-04 09:00+08'),
+  ('da600000-0000-4000-8000-000000000002', 'TL-9999', 'da000000-0000-4000-8000-000000000002', 'da700000-0000-4000-8000-000000000002', 'PENDING_PAYMENT', 'PENDING', 'Dashboard Buyer', 'dashboard-buyer@example.test', '2099-06-10', 'da300000-0000-4000-8000-000000000001', 'da100000-0000-4000-8000-000000000001', '10:00 AM–11:00 AM', 'Dashboard location', 50, 0, 50, 'dashboard-test', '2099-06-04 09:00+08', '2099-06-04 09:01+08');
+
+select is((select order_number from public.orders where id = 'da600000-0000-4000-8000-000000000001'), 'TL040699001', 'first checkout receives the first daily order number');
+select is((select order_number from public.orders where id = 'da600000-0000-4000-8000-000000000002'), 'TL040699002', 'daily order numbers increment atomically');
+select is((select last_value from public.daily_order_counters where order_date = '2099-06-04'), 2, 'daily order counter records the allocated suffix');
 
 select * from finish();
 rollback;
