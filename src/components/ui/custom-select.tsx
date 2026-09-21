@@ -154,7 +154,7 @@ export function CustomSelect({
   }
 
   return (
-    <div ref={rootRef} className={cn("relative min-w-0 space-y-2", className)}>
+    <div ref={rootRef} className={cn("relative flex min-w-0 flex-col gap-2", className)}>
       <label id={`${id}-label`} className="block text-sm font-bold text-foreground">
         {label}
       </label>
