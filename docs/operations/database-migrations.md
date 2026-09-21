@@ -30,6 +30,16 @@ migration marker, empty customer/order/receipt state, no retired refund or phone
 default catalog data. Matching application code was deployed before the three authenticated Cron
 endpoints returned HTTP 200 and exactly the three expected jobs were activated.
 
+On September 21, 2026, the owner approved a new Dev-only pre-v1 rebaseline after the Admin
+decision dashboard and dated order-number work. The four temporary post-baseline migrations were
+folded into `20260911010000_pre_v1_baseline.sql`, and hosted Dev `mgkzphpznamjlgrpumjd` was reset
+to that single migration marker. The reset deleted 3 test Auth users, 3 profiles, 3 orders,
+3 payments, 1 pickup date and the 3 hosted font objects; there were no pending provider checkout
+sessions, receipt submissions, reviews or Journal posts. The controlled seed and all three versioned
+Pally/Neco font objects were restored. Linked schema lint and all 361 linked PostgreSQL assertions
+passed, and the three existing app Cron jobs remained active. Production was not changed and still
+requires separate exact-target approval and validation before receiving this revised baseline.
+
 ## Hosted activation and ongoing checks
 
 Hosted Dev has exactly these three app Cron job definitions as of September 13, 2026:
