@@ -332,7 +332,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
 
             {addons.length ? (
               <div className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <div className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   <CustomSelect
                     label="Additional extra"
                     value={addonId}

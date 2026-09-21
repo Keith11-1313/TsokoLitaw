@@ -42,7 +42,7 @@ export function DashboardRangeFilter({
               name="from"
               required
               defaultValue={startDate}
-              className="min-h-12 rounded-control border border-transparent bg-surface-control px-3 text-sm text-foreground focus-visible:border-focus focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/20"
+              className="h-12 rounded-control border border-transparent bg-surface-control px-3 text-sm text-foreground focus-visible:border-focus focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/20"
             />
           </label>
           <label className="flex w-[calc(50%-0.25rem)] min-w-32 flex-col gap-2 text-sm font-bold text-foreground sm:w-auto">
@@ -52,7 +52,7 @@ export function DashboardRangeFilter({
               name="to"
               required
               defaultValue={endDate}
-              className="min-h-12 rounded-control border border-transparent bg-surface-control px-3 text-sm text-foreground focus-visible:border-focus focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/20"
+              className="h-12 rounded-control border border-transparent bg-surface-control px-3 text-sm text-foreground focus-visible:border-focus focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/20"
             />
           </label>
         </>

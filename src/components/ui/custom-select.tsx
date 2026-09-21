@@ -178,7 +178,7 @@ export function CustomSelect({
           setOpen((current) => !current);
         }}
         onKeyDown={handleKeyDown}
-        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-control border border-transparent bg-surface-control px-4 text-left text-sm text-foreground outline-none transition focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/20 disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-danger-foreground"
+        className="flex h-12 w-full items-center justify-between gap-3 rounded-control border border-transparent bg-surface-control px-4 text-left text-sm text-foreground outline-none transition focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/20 disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-danger-foreground"
       >
         <span className={cn("truncate", !selectedOption && "text-foreground-muted")}>
           {selectedOption?.label ?? placeholder}
