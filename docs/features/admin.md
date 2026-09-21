@@ -55,6 +55,12 @@ value. A returning buyer is an identified customer who paid during the selected 
 paid order before that period. These aggregates cover the full selected range and are independent
 of the bounded Orders review/recent list.
 
+The supporting sales row uses immutable paid-order item snapshots for boxes and pieces sold,
+reports paid add-on value separately from the complimentary per-box extra, and shows sales per
+purchasing customer. Product mix groups paid boxes by their saved variant name; payment mix groups
+confirmed order value and count by provider. These figures follow the same selected period and
+previous-period comparison as the headline KPIs.
+
 The paid-sales chart groups by `payments.paid_at`. The order-outcomes chart is a creation cohort:
 it groups orders created during the selected period by their current fulfillment status. Current
 active fulfillment, receipts awaiting review, and upcoming available stock are operational counts

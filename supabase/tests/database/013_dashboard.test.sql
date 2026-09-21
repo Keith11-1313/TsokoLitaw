@@ -19,7 +19,7 @@ select set_config(
   true
 );
 
-select plan(10);
+select plan(15);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -84,6 +84,21 @@ insert into public.payments (order_id, provider, amount, status, paid_at) values
   ('da400000-0000-4000-8000-000000000002', 'paymongo', 100, 'PAID', '2099-06-02 10:00+08'),
   ('da400000-0000-4000-8000-000000000003', 'loyalty', 0, 'PAID', '2099-06-03 10:00+08');
 
+insert into public.order_items (
+  id, order_id, product_id, variant_id, product_name_snapshot, variant_name_snapshot,
+  piece_count_snapshot, unit_price_snapshot, quantity, line_subtotal
+) values
+  ('da500000-0000-4000-8000-000000000001', 'da400000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '11000000-0000-4000-8000-000000000004', 'Chocolate-Filled Litaw', 'TsokoMini (4 pcs)', 4, 50, 1, 50),
+  ('da500000-0000-4000-8000-000000000002', 'da400000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', '11000000-0000-4000-8000-000000000004', 'Chocolate-Filled Litaw', 'TsokoMini (4 pcs)', 4, 50, 2, 100),
+  ('da500000-0000-4000-8000-000000000003', 'da400000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000001', '11000000-0000-4000-8000-000000000008', 'Chocolate-Filled Litaw', 'TsokoMuch (8 pcs)', 8, 40, 1, 40);
+
+insert into public.order_item_addons (
+  order_item_id, addon_id, addon_name_snapshot, unit_price_snapshot, quantity, line_total, is_complimentary
+) values (
+  'da500000-0000-4000-8000-000000000002', '13000000-0000-4000-8000-000000000001',
+  'Sea salt cream', 18, 1, 18, false
+);
+
 create temporary table dashboard_result as
 select public.get_admin_dashboard_summary(
   'da000000-0000-4000-8000-000000000001',
@@ -97,6 +112,11 @@ select is((summary->'current'->>'averageOrderValue')::numeric, 100::numeric, 'av
 select is((summary->'current'->>'purchasingCustomers')::integer, 1, 'purchasing customers are distinct identified buyers') from dashboard_result;
 select is((summary->'current'->>'repeatCustomers')::integer, 1, 'returning buyers require an earlier paid order') from dashboard_result;
 select is((summary->'current'->>'repeatCustomerRate')::numeric, 100::numeric, 'repeat-buyer share uses current purchasing customers') from dashboard_result;
+select is((summary->'current'->>'boxesSold')::integer, 3, 'boxes sold use paid order item quantities') from dashboard_result;
+select is((summary->'current'->>'piecesSold')::integer, 16, 'pieces sold use immutable piece snapshots') from dashboard_result;
+select is((summary->'current'->>'extraSales')::numeric, 36::numeric, 'paid extra sales account for boxes ordered') from dashboard_result;
+select is((select sum((point->>'boxes')::integer) from dashboard_result, jsonb_array_elements(summary->'boxMix') point), 3::bigint, 'box mix covers paid boxes in the period') from dashboard_result;
+select is((select sum((point->>'paidOrders')::integer) from dashboard_result, jsonb_array_elements(summary->'paymentMix') point), 2::bigint, 'payment mix covers confirmed payments in the period') from dashboard_result;
 select is(jsonb_array_length(summary->'dailySales'), 7, 'daily sales include zero-filled Manila calendar days') from dashboard_result;
 select is((select sum((point->>'paidOrders')::integer) from dashboard_result, jsonb_array_elements(summary->'dailySales') point), 2::bigint, 'daily paid-order totals match the period') from dashboard_result;
 select is((select sum((point->>'count')::integer) from dashboard_result, jsonb_array_elements(summary->'orderOutcomes') point), 2::bigint, 'order outcomes cover the full creation cohort') from dashboard_result;

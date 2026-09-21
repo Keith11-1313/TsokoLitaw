@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import {
   ArrowRight,
   Banknote,
+  Boxes,
   CalendarDays,
+  CircleDollarSign,
   Cookie,
   Newspaper,
   Package,
+  PackageCheck,
   ShoppingBag,
   ShoppingCart,
   Users,
@@ -162,6 +165,54 @@ export default async function AdminDashboardPage({
       icon: Users,
     },
   ] as const;
+  const salesDetails = [
+    {
+      label: "Boxes sold",
+      value: String(dashboard.current.boxesSold),
+      supportingText: comparisonText(
+        dashboard.current.boxesSold,
+        dashboard.previous.boxesSold,
+        range.comparisonLabel,
+      ),
+      icon: Boxes,
+    },
+    {
+      label: "Pieces sold",
+      value: String(dashboard.current.piecesSold),
+      supportingText: comparisonText(
+        dashboard.current.piecesSold,
+        dashboard.previous.piecesSold,
+        range.comparisonLabel,
+      ),
+      icon: PackageCheck,
+    },
+    {
+      label: "Sales per buyer",
+      value: formatPhp(
+        dashboard.current.purchasingCustomers > 0
+          ? dashboard.current.paidSales / dashboard.current.purchasingCustomers
+          : 0,
+      ),
+      supportingText: `${dashboard.current.purchasingCustomers} purchasing ${dashboard.current.purchasingCustomers === 1 ? "customer" : "customers"}`,
+      icon: Users,
+    },
+    {
+      label: "Paid extras",
+      value: formatPhp(dashboard.current.extraSales),
+      supportingText: comparisonText(
+        dashboard.current.extraSales,
+        dashboard.previous.extraSales,
+        range.comparisonLabel,
+      ),
+      icon: CircleDollarSign,
+    },
+  ] as const;
+  const maximumBoxCount = Math.max(...dashboard.boxMix.map((item) => item.boxes), 0);
+  const paymentLabels: Record<string, string> = {
+    paymongo: "PayMongo",
+    manual_gcash: "Manual GCash",
+    loyalty: "Loyalty reward",
+  };
 
   return (
     <AdminShell activePath="/admin">
@@ -210,6 +261,15 @@ export default async function AdminDashboardPage({
           ))}
         </section>
 
+        <section
+          className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
+          aria-label="Sales details"
+        >
+          {salesDetails.map((stat) => (
+            <AdminStatCard key={stat.label} compact {...stat} />
+          ))}
+        </section>
+
         <div className="mt-8">
           <DashboardCharts
             periodLabel={range.label}
@@ -219,6 +279,72 @@ export default async function AdminDashboardPage({
             statuses={statusPoints}
           />
         </div>
+
+        <section className="mt-5 grid min-w-0 gap-5 lg:grid-cols-2" aria-label="Sales mix">
+          <article className="min-w-0 rounded-card border border-border bg-surface p-5 sm:p-6">
+            <h2 className="font-display text-2xl">What customers bought</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Paid boxes · {range.label}</p>
+            {dashboard.boxMix.length === 0 ? (
+              <p className="mt-5 rounded-control bg-surface-muted px-4 py-8 text-center text-sm text-muted-foreground">
+                No paid products in this period yet.
+              </p>
+            ) : (
+              <div className="mt-5 space-y-4">
+                {dashboard.boxMix.map((item) => (
+                  <div key={item.label}>
+                    <div className="mb-1 flex items-end justify-between gap-4 text-sm">
+                      <span className="min-w-0 truncate font-bold text-foreground">
+                        {item.label}
+                      </span>
+                      <span className="shrink-0 tabular-nums text-muted-foreground">
+                        {item.boxes} {item.boxes === 1 ? "box" : "boxes"} · {item.pieces} pieces
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
+                      <span
+                        className="block h-full rounded-full bg-brand"
+                        style={{
+                          width: `${maximumBoxCount > 0 ? (item.boxes / maximumBoxCount) * 100 : 0}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </article>
+
+          <article className="min-w-0 rounded-card border border-border bg-surface p-5 sm:p-6">
+            <h2 className="font-display text-2xl">How customers paid</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Confirmed payments · {range.label}</p>
+            {dashboard.paymentMix.length === 0 ? (
+              <p className="mt-5 rounded-control bg-surface-muted px-4 py-8 text-center text-sm text-muted-foreground">
+                No confirmed payments in this period yet.
+              </p>
+            ) : (
+              <div className="mt-5 divide-y divide-border">
+                {dashboard.paymentMix.map((item) => (
+                  <div
+                    key={item.provider}
+                    className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                  >
+                    <div>
+                      <p className="font-bold text-foreground">
+                        {paymentLabels[item.provider] ?? item.provider}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.paidOrders} paid {item.paidOrders === 1 ? "order" : "orders"}
+                      </p>
+                    </div>
+                    <p className="shrink-0 font-display text-xl text-foreground">
+                      {formatPhp(item.paidSales)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </article>
+        </section>
 
         <section className="mt-8" aria-labelledby="operations-overview-heading">
           <div className="flex flex-wrap items-end justify-between gap-3">

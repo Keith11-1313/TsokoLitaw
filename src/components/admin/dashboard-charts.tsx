@@ -37,8 +37,11 @@ export function DashboardCharts({
       : `${((revenueTotal - previousRevenue) / previousRevenue) * 100 >= 0 ? "+" : ""}${(((revenueTotal - previousRevenue) / previousRevenue) * 100).toFixed(1)}%`;
 
   return (
-    <section className="grid items-start gap-5 xl:grid-cols-[1.35fr_1fr]" aria-label="Order charts">
-      <article className="rounded-card border border-border bg-surface p-5 sm:p-6">
+    <section
+      className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,1fr)]"
+      aria-label="Order charts"
+    >
+      <article className="min-w-0 rounded-card border border-border bg-surface p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="font-display text-2xl">Paid sales</h2>
@@ -59,7 +62,8 @@ export function DashboardCharts({
           </div>
         ) : (
           <div
-            className="mt-6 flex h-52 items-end gap-2 overflow-x-auto border-b border-border px-1 sm:h-60 sm:gap-3"
+            className="mt-6 grid h-52 min-w-0 items-end gap-1 overflow-hidden border-b border-border px-1 sm:h-60 sm:gap-2"
+            style={{ gridTemplateColumns: `repeat(${revenue.length}, minmax(0, 1fr))` }}
             role="img"
             aria-label={`Paid sales for ${periodLabel} total ${formatPhp(revenueTotal)}. ${revenue.map((point) => `${point.dateLabel}: ${formatPhp(point.value)} from ${point.orderCount} paid orders`).join("; ")}`}
           >
@@ -70,22 +74,22 @@ export function DashboardCharts({
               return (
                 <div
                   key={point.dateLabel}
-                  className="flex h-full min-w-10 flex-1 flex-col justify-end gap-2"
+                  className="flex h-full min-w-0 flex-col justify-end gap-2"
                 >
                   <span
-                    className="text-center text-[0.65rem] font-bold text-muted-foreground"
+                    className="overflow-hidden whitespace-nowrap text-center text-[0.65rem] font-bold text-muted-foreground"
                     title={`${formatPhp(point.value)} from ${point.orderCount} paid orders`}
                   >
                     {point.value > 0 && revenue.length <= 14 ? formatPhp(point.value) : ""}
                   </span>
-                  <div className="flex h-32 items-end rounded-t-control bg-surface-muted sm:h-40">
+                  <div className="flex h-32 items-end sm:h-40">
                     <span
-                      className="block w-full rounded-t-control bg-brand transition-[height]"
+                      className="block w-full min-w-0 rounded-t-sm bg-brand transition-[height]"
                       style={{ height: point.value > 0 ? `${height}%` : "0%" }}
                       title={`${point.dateLabel}: ${formatPhp(point.value)} from ${point.orderCount} paid orders`}
                     />
                   </div>
-                  <span className="pb-2 text-center text-[0.65rem] font-bold uppercase text-muted-foreground sm:text-xs">
+                  <span className="overflow-hidden whitespace-nowrap pb-2 text-center text-[0.6rem] font-bold uppercase text-muted-foreground sm:text-[0.7rem]">
                     {showLabel ? (revenue.length <= 7 ? point.dayLabel : point.dateLabel) : ""}
                   </span>
                 </div>
@@ -95,7 +99,7 @@ export function DashboardCharts({
         )}
       </article>
 
-      <article className="rounded-card border border-border bg-surface p-5 sm:p-6">
+      <article className="min-w-0 rounded-card border border-border bg-surface p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="font-display text-2xl">Order outcomes</h2>

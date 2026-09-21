@@ -11,6 +11,9 @@ export interface DashboardMetricSet {
   purchasingCustomers: number;
   repeatCustomers: number;
   repeatCustomerRate: number;
+  boxesSold: number;
+  piecesSold: number;
+  extraSales: number;
 }
 
 export interface AdminDashboardSummary {
@@ -18,6 +21,8 @@ export interface AdminDashboardSummary {
   previous: DashboardMetricSet;
   dailySales: Array<{ date: string; paidSales: number; paidOrders: number }>;
   orderOutcomes: Array<{ status: string; count: number }>;
+  boxMix: Array<{ label: string; boxes: number; pieces: number }>;
+  paymentMix: Array<{ provider: string; paidOrders: number; paidSales: number }>;
   operations: {
     activeFulfillment: number;
     receiptsAwaitingReview: number;
@@ -129,6 +134,9 @@ function parseMetricSet(value: unknown): DashboardMetricSet {
     purchasingCustomers: toNumber(row.purchasingCustomers),
     repeatCustomers: toNumber(row.repeatCustomers),
     repeatCustomerRate: toNumber(row.repeatCustomerRate),
+    boxesSold: toNumber(row.boxesSold),
+    piecesSold: toNumber(row.piecesSold),
+    extraSales: toNumber(row.extraSales),
   };
 }
 
@@ -166,6 +174,26 @@ export async function getAdminDashboardSummary(
       ? result.orderOutcomes.map((row) => {
           const point = row as Record<string, unknown>;
           return { status: String(point.status), count: toNumber(point.count) };
+        })
+      : [],
+    boxMix: Array.isArray(result.boxMix)
+      ? result.boxMix.map((row) => {
+          const point = row as Record<string, unknown>;
+          return {
+            label: String(point.label),
+            boxes: toNumber(point.boxes),
+            pieces: toNumber(point.pieces),
+          };
+        })
+      : [],
+    paymentMix: Array.isArray(result.paymentMix)
+      ? result.paymentMix.map((row) => {
+          const point = row as Record<string, unknown>;
+          return {
+            provider: String(point.provider),
+            paidOrders: toNumber(point.paidOrders),
+            paidSales: toNumber(point.paidSales),
+          };
         })
       : [],
     operations: {
