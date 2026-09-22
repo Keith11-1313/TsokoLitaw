@@ -62,6 +62,15 @@ changed.
 
 ## Hosted activation and ongoing checks
 
+During post-reset review-image testing on September 22, 2026, the application-equivalent
+`service_role` request exposed incomplete table ACLs inherited from the dumped baseline: the
+private review-image route could not read `public.reviews` and converted that authorization error
+to its generic unavailable-image response. Temporary forward migration
+`20260922050000_restore_service_role_table_grants.sql` restores server-only CRUD privileges on
+current public tables and usage on public sequences without expanding `anon` or `authenticated`
+access. Keep it applied during active Dev testing, then fold it into the single baseline during the
+next separately approved pre-v1 rebaseline.
+
 Hosted Dev has exactly these three app Cron job definitions as of September 22, 2026:
 `tsokolitaw-payment-expirations`, `tsokolitaw-notification-retries`, and
 `tsokolitaw-account-deletions`. The second pre-v1 linked reset removed the `pg_cron` extension and

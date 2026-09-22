@@ -24,7 +24,7 @@ select set_config(
   true
 );
 
-select plan(79);
+select plan(84);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -99,6 +99,36 @@ select ok(not has_table_privilege('anon', 'public.profiles', 'SELECT'), 'anon ca
 select ok(
   has_table_privilege('service_role', 'public.profiles', 'SELECT'),
   'service role can verify profile state during authentication callbacks'
+);
+select ok(
+  (select bool_and(has_table_privilege('service_role', format('%I.%I', n.nspname, c.relname), 'SELECT'))
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind in ('r', 'p')),
+  'service role can select every public application table'
+);
+select ok(
+  (select bool_and(has_table_privilege('service_role', format('%I.%I', n.nspname, c.relname), 'INSERT'))
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind in ('r', 'p')),
+  'service role can insert into every public application table'
+);
+select ok(
+  (select bool_and(has_table_privilege('service_role', format('%I.%I', n.nspname, c.relname), 'UPDATE'))
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind in ('r', 'p')),
+  'service role can update every public application table'
+);
+select ok(
+  (select bool_and(has_table_privilege('service_role', format('%I.%I', n.nspname, c.relname), 'DELETE'))
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind in ('r', 'p')),
+  'service role can delete from every public application table'
+);
+select ok(
+  (select bool_and(has_sequence_privilege('service_role', format('%I.%I', n.nspname, c.relname), 'USAGE,SELECT,UPDATE'))
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind = 'S'),
+  'service role can use every public application sequence'
 );
 select ok(not has_table_privilege('authenticated', 'public.payment_webhook_events', 'INSERT'), 'authenticated clients cannot insert webhook events');
 select ok(not has_table_privilege('authenticated', 'public.business_settings', 'UPDATE'), 'authenticated clients cannot update settings directly');
