@@ -1,6 +1,6 @@
 # Database changes and promotion
 
-## Pre-v1 rebaseline — completed on hosted Dev and Production
+## Pre-v1 rebaseline history and current activation state
 
 The owner approved discarding pre-release Dev records, Auth users and Storage files.
 On September 11, 2026, hosted Dev `mgkzphpznamjlgrpumjd` was rebuilt from
@@ -40,9 +40,19 @@ Pally/Neco font objects were restored. Linked schema lint and all 361 linked Pos
 passed, and the three existing app Cron jobs remained active. Production was not changed and still
 requires separate exact-target approval and validation before receiving this revised baseline.
 
+On September 22, 2026, the owner approved another Dev-only reset to activate the expanded moderated
+review contract and private `review-media` bucket already folded into the single baseline. The target
+was confirmed as `mgkzphpznamjlgrpumjd`; the discarded state contained 3 test Auth users, 2 test
+orders and 2 paid PayMongo **test-mode** payment records, with no pending provider checkout, manual
+receipt or live-fund obligation. The reset restored the controlled seed and all three versioned brand
+font objects. The single migration marker, linked schema lint and all 364 linked PostgreSQL assertions
+passed. Because the reset removed `pg_cron`, the three approved jobs were recreated from the surviving
+Dev Vault entries; their schedules were verified and one authorized smoke request per endpoint returned
+HTTP 200 with zero work and zero failures. Production was not changed.
+
 ## Hosted activation and ongoing checks
 
-Hosted Dev has exactly these three app Cron job definitions as of September 13, 2026:
+Hosted Dev has exactly these three app Cron job definitions as of September 22, 2026:
 `tsokolitaw-payment-expirations`, `tsokolitaw-notification-retries`, and
 `tsokolitaw-account-deletions`. The second pre-v1 linked reset removed the `pg_cron` extension and
 jobs while retaining Vault. The extension and exactly these three jobs were recreated afterward.

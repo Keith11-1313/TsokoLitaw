@@ -29,6 +29,12 @@ the single application. No offline ordering or payment.
 
 Complete this gate before building and accepting the signed v1 APK:
 
+Current status (September 22, 2026): the expanded review contract and private `review-media`
+bucket are folded into the single baseline and activated in hosted Dev. Dev was reset, its licensed
+brand fonts restored, all 364 linked database assertions passed, and exactly three Cron jobs were
+recreated and smoke-tested. Production was not changed by that reset. The final coordinated
+Production activation and cross-environment verification below therefore remain open.
+
 - Finish database and Storage-backed feature work, then review every migration added after
   `20260911010000_pre_v1_baseline.sql`.
 - Fold the reviewed final schema, Storage bucket metadata, grants, policies and functions into that
@@ -80,5 +86,7 @@ Begin only after the website and Phase 15 APK are stable.
 - Resolve reported dependency advisories in a targeted, tested maintenance update; do not mix
   forced upgrades into this documentation/structure pass.
 - Hosted Dev and Production refund retirement, migration consolidation, and matching application
-  deployment are complete. Each environment has exactly three active application Cron jobs. Verify
-  them again after any future reset or deployment using the database migration runbook.
+  deployment were completed for the earlier shared baseline. Hosted Dev now has the later review
+  baseline; Production still requires its own exact-target approval and coordinated activation before
+  the APK freeze can close. Each environment must have exactly three active application Cron jobs;
+  verify them after every reset or relevant deployment using the database migration runbook.

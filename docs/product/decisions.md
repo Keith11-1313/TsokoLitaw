@@ -86,16 +86,21 @@ Order and payment status remain distinct; see [orders](../features/orders.md). W
 is **pending unpaid only**, not “until preparation.” Paid settlement concerns are handled in person.
 No new online refunds or destination collection. Prepared/no-show orders are non-refundable subject
 to non-waivable rights. The retired refund rows, states and reconciliation code are removed in the
-pre-v1 baseline. Hosted Dev and Production were rebaselined through separate, explicitly approved
-disposable-data resets before Phase 15 began.
+pre-v1 baseline. Hosted Dev and Production received the earlier shared baseline through separate,
+explicitly approved disposable-data resets before Phase 15 began. Dev later received the expanded
+review baseline on September 22; Production still requires separate exact-target approval before that
+revision is activated there.
 
 ## Loyalty, Journal and communication
 
 - Seven completed orders earn one free 4-piece reward; only the eligible base box price is discounted.
   Coatings/add-ons remain payable. SQL protects single use, restores pending redemptions on
   cancellation/expiry, and settles a zero-total order without PayMongo.
-- One review per owned completed order; rating 1–5 and bounded comment. Order detail opens the
-  review modal. New reviews are hidden until Admin moderation. Public cards do not disclose email.
+- One review per owned completed order. Rating 1–5 is required; the bounded comment, allow-listed
+  tasting highlights and validated JPG/PNG/WebP image are optional. Review images remain in private
+  Storage and are available only to the owner or an Admin until Admin publication. Order detail opens
+  the review modal. New reviews are hidden until moderation, and public cards expose neither customer
+  email nor raw Storage paths.
 - Journal includes announcements, stories, features, community highlights and optional videos.
   Admin Journal owns draft/publication and review moderation; reviews remain distinct records.
 - Resend sends confirmation, readiness, and unpaid cancellation events. No refund lifecycle events remain.
@@ -114,4 +119,5 @@ Phase 15's approved thin TWA APK is active work but is not implemented or accept
 Phase 16 public-only analytics remains planned. Their scope and remaining work live only in the
 [roadmap](../roadmap.md).
 Completed phase-by-phase implementation checklists remain recoverable through Git rather than
-being repeated as current instructions. Applied SQL history is retained in place.
+being repeated as current instructions. Ordinary applied migrations are immutable; the explicitly
+approved pre-v1 baseline replacement follows the separate database migration runbook.

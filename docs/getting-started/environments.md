@@ -51,6 +51,12 @@ the licensed Pally and Neco WOFF2 files. Font binaries stay outside the public G
 and Production must each receive the same three versioned objects after the bucket migration is
 applied; uploading to one project does not populate the other.
 
+Other Storage is isolated too. `catalog-media` and `journal-media` are public application media;
+`payment-receipts` and `review-media` are private. Review uploads must remain private until an Admin
+publishes the associated review, and public rendering must use the authorized application route rather
+than exposing raw object paths. A hosted reset clears these objects even when Vault survives, so audit
+and restore only required assets for the exact target before declaring that environment healthy.
+
 Use `.env.example` as the maintained application-variable template. Do not restore the retired
 `REFUND_DESTINATION_ENCRYPTION_KEY` or add unused email settings from old docs.
 Public variables are built into the client, while server variables are captured by the running deployment.
@@ -62,8 +68,10 @@ and environment scope. Local server-variable changes require restarting the Next
 `PAYMENT_METHOD=paymongo` is the backward-compatible default. `manual_gcash` also requires
 server-only `GCASH_BASE_QR_PAYLOAD` (decoded recipient QR). Do not put the actual payload in Git.
 Keep PayMongo configuration/webhooks working for pre-existing PayMongo orders when switching modes.
-Both methods require the pre-v1 baseline now installed in Dev and Production. A Git deployment still
-does not apply SQL; verify the target schema and environment-specific configuration independently.
+Both methods require a compatible pre-v1 baseline. Hosted Dev has the September 22 review revision;
+Production remains on the earlier shared baseline until a separately approved coordinated activation.
+A Git deployment still does not apply SQL; verify the target schema and environment-specific
+configuration independently.
 
 - PayMongo: separate Dev/test and Production/live webhook endpoints, both subscribed only to
   `checkout_session.payment.paid`. Secrets and signature mode must match. Never copy a live key to Preview.
