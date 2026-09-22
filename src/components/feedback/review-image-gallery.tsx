@@ -30,6 +30,7 @@ export function ReviewImageGallery({
             src={`/api/review-images/${reviewId}?index=${index}`}
             alt={`Customer review image ${index + 1} of ${imageCount}`}
             fill
+            unoptimized
             sizes="(min-width: 768px) 50vw, 100vw"
             className="object-cover"
             onError={() =>

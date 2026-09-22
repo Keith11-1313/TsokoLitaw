@@ -49,6 +49,8 @@ after authorized Admin publication through `moderate_order_review`. Public Journ
 approved display data from `get_public_featured_reviews`: masked customer names, immutable ordered-box
 summaries, review date, rating, highlights, comment, and image count. No customer emails, full public
 names, or raw Storage paths are exposed. Image galleries do not autoplay and handle unavailable files.
+Because `review-media` is private, galleries load the authorized application route directly in the
+signed-in browser instead of sending that route through the unauthenticated Next.js image optimizer.
 
 Tests: `order-status.test.ts`, `components/orders/orders-list.test.tsx`, local `001_auth_rls`,
 `002_payments`, `003_cancellation`,
