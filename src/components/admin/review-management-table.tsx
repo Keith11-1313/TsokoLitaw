@@ -76,6 +76,28 @@ export function ReviewManagementTable({ reviews }: { reviews: AdminReviewSummary
                   </span>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">{review.comment}</p>
+                {review.highlights.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {review.highlights.map((highlight) => (
+                      <span
+                        key={highlight}
+                        className="rounded-full bg-surface-muted px-3 py-1 text-xs font-bold"
+                      >
+                        {highlight}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {review.hasImage ? (
+                  <a
+                    href={`/api/review-images/${review.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex min-h-11 items-center font-bold text-brand underline underline-offset-4"
+                  >
+                    View review image
+                  </a>
+                ) : null}
                 <p className="mt-4 text-xs font-bold uppercase tracking-wide text-foreground">
                   {review.isFeatured ? "Featured" : review.isVisible ? "Visible" : "Hidden"}
                 </p>
@@ -113,7 +135,22 @@ export function ReviewManagementTable({ reviews }: { reviews: AdminReviewSummary
                       </span>
                     </td>
                     <td className="max-w-md px-4 py-4 leading-6 text-muted-foreground">
-                      {review.comment}
+                      {review.comment || <span className="italic">No comment</span>}
+                      {review.highlights.length ? (
+                        <p className="mt-2 text-xs font-bold text-foreground">
+                          {review.highlights.join(" · ")}
+                        </p>
+                      ) : null}
+                      {review.hasImage ? (
+                        <a
+                          href={`/api/review-images/${review.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex min-h-11 items-center font-bold text-brand underline underline-offset-4"
+                        >
+                          View image
+                        </a>
+                      ) : null}
                     </td>
                     <td className="px-4 py-4 text-xs font-bold text-foreground">
                       {review.isFeatured ? "Featured" : review.isVisible ? "Visible" : "Hidden"}

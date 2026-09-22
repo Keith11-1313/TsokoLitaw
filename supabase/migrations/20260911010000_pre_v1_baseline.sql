@@ -2539,7 +2539,7 @@ ALTER FUNCTION "public"."submit_manual_payment"("target_user_id" "uuid", "target
 -- Name: submit_order_review("uuid", "uuid", integer, "text"); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE OR REPLACE FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text") RETURNS "uuid"
+CREATE OR REPLACE FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[] DEFAULT '{}'::"text"[], "image_path_value" "text" DEFAULT NULL::"text") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -2547,7 +2547,8 @@ declare
   customer_profile public.profiles%rowtype;
   target_order public.orders%rowtype;
   created_review_id uuid;
-  normalized_comment text := trim(comment_value);
+  normalized_comment text := trim(coalesce(comment_value, ''));
+  normalized_highlights text[] := coalesce(highlights_value, array[]::text[]);
 begin
   select * into customer_profile
   from public.profiles
@@ -2562,11 +2563,21 @@ begin
     raise exception 'Rating must be between one and five';
   end if;
 
-  if normalized_comment is null
-    or length(normalized_comment) < 10
-    or length(normalized_comment) > 1000
+  if length(normalized_comment) > 1000 then
+    raise exception 'Review comment cannot exceed 1000 characters';
+  end if;
+
+  if cardinality(normalized_highlights) > 6
+    or exists (
+      select 1 from unnest(normalized_highlights) as highlight
+      where highlight not in (
+        'Rich cocoa flavor', 'Soft and chewy', 'Balanced sweetness',
+        'Fresh at pickup', 'Neatly packed', 'Would order again'
+      )
+    )
+    or cardinality(normalized_highlights) <> cardinality(array(select distinct highlight from unnest(normalized_highlights) as highlight))
   then
-    raise exception 'Review comment must contain between 10 and 1000 characters';
+    raise exception 'Review highlights are invalid';
   end if;
 
   select * into target_order
@@ -2587,12 +2598,24 @@ begin
     raise exception 'This order already has a review';
   end if;
 
+  if image_path_value is not null and (
+    image_path_value !~ ('^' || target_user_id::text || '/' || target_order_id::text || '/[0-9a-f-]{36}[.](jpg|png|webp)$')
+    or not exists (
+      select 1 from storage.objects
+      where bucket_id = 'review-media' and name = image_path_value
+    )
+  ) then
+    raise exception 'Review image is invalid';
+  end if;
+
   insert into public.reviews (
     user_id,
     order_id,
     display_name_snapshot,
     rating,
     comment,
+    highlights,
+    image_path,
     is_visible,
     is_featured
   ) values (
@@ -2601,6 +2624,8 @@ begin
     customer_profile.full_name,
     rating_value,
     normalized_comment,
+    normalized_highlights,
+    image_path_value,
     false,
     false
   )
@@ -2611,13 +2636,13 @@ end;
 $$;
 
 
-ALTER FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text") OWNER TO "postgres";
+ALTER FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_path_value" "text") OWNER TO "postgres";
 
 --
 -- Name: FUNCTION "submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text"); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text") IS 'Service-role-only customer review writer that enforces active ownership, completed fulfillment, and one review per order.';
+COMMENT ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_path_value" "text") IS 'Service-role-only customer review writer that enforces active ownership, completed fulfillment, bounded optional content, and one review per order.';
 
 
 --
@@ -4093,11 +4118,14 @@ CREATE TABLE IF NOT EXISTS "public"."reviews" (
     "display_name_snapshot" "text" NOT NULL,
     "rating" integer NOT NULL,
     "comment" "text" NOT NULL,
+    "highlights" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
+    "image_path" "text",
     "is_visible" boolean DEFAULT false NOT NULL,
     "is_featured" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "reviews_comment_check" CHECK (("length"(TRIM(BOTH FROM "comment")) > 0)),
+    CONSTRAINT "reviews_comment_check" CHECK (("length"(TRIM(BOTH FROM "comment")) <= 1000)),
+    CONSTRAINT "reviews_highlights_check" CHECK ((cardinality("highlights") <= 6)),
     CONSTRAINT "reviews_rating_check" CHECK ((("rating" >= 1) AND ("rating" <= 5)))
 );
 
@@ -5808,8 +5836,8 @@ GRANT ALL ON FUNCTION "public"."submit_manual_payment"("target_user_id" "uuid", 
 -- Name: FUNCTION "submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text"); Type: ACL; Schema: public; Owner: postgres
 --
 
-REVOKE ALL ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_path_value" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_path_value" "text") TO "service_role";
 
 
 --
@@ -6287,6 +6315,7 @@ values
   ('catalog-media','catalog-media',true,3145728,array['image/jpeg','image/png','image/webp']),
   ('journal-media','journal-media',true,3145728,array['image/jpeg','image/png','image/webp']),
   ('payment-receipts','payment-receipts',false,3145728,array['image/jpeg','image/png','image/webp']),
+  ('review-media','review-media',false,3145728,array['image/jpeg','image/png','image/webp']),
   ('brand-fonts','brand-fonts',true,262144,array['font/woff2'])
 on conflict (id) do update set public = excluded.public, file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;

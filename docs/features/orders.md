@@ -42,9 +42,11 @@ The pre-v1 baseline removes the retired online refund subsystem.
 ## Reviews
 
 Order detail opens the review modal. `orders/[orderId]/review/actions.ts` → `server-reviews.ts`
-→ `submit_order_review`: active owner, completed order, one review, bounded text and rating.
-Reviews are hidden until authorized Admin moderation through `moderate_order_review`.
-Public Journal shows only safe approved display data; no customer emails.
+→ `submit_order_review`: active owner, completed order, one review, a required one-to-five rating,
+an optional bounded comment, allow-listed tasting highlights, and an optional validated review image.
+Review images use the private `review-media` bucket and are served only to the owner, an Admin, or
+after authorized Admin publication through `moderate_order_review`. Public Journal shows only safe
+approved display data; no customer emails or raw Storage paths.
 
 Tests: `order-status.test.ts`, `components/orders/orders-list.test.tsx`, local `001_auth_rls`,
 `002_payments`, `003_cancellation`,

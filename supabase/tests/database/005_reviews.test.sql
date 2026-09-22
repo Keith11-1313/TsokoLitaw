@@ -18,7 +18,7 @@ select set_config(
    where pg_extension.extname = 'pgtap'),
   true
 );
-select plan(18);
+select plan(21);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -47,21 +47,30 @@ insert into public.orders (
   ('d5000000-0000-4000-8000-000000000002', 'TL-9302', 'd1000000-0000-4000-8000-000000000002', 'CONFIRMED', 'PAID', 'Review Owner', 'review-owner@example.test', '2099-05-01', 'd4000000-0000-4000-8000-000000000001', 'd2000000-0000-4000-8000-000000000001', '10:00 AM–11:00 AM', 'Review test location', 40, 40, 'review-test', now()),
   ('d5000000-0000-4000-8000-000000000003', 'TL-9303', 'd1000000-0000-4000-8000-000000000003', 'COMPLETED', 'PAID', 'Other Customer', 'review-other@example.test', '2099-05-01', 'd4000000-0000-4000-8000-000000000001', 'd2000000-0000-4000-8000-000000000001', '10:00 AM–11:00 AM', 'Review test location', 40, 40, 'review-test', now());
 
-select ok(not has_function_privilege('authenticated', 'public.submit_order_review(uuid,uuid,integer,text)', 'EXECUTE'), 'customers cannot call the review writer directly');
-select ok(has_function_privilege('service_role', 'public.submit_order_review(uuid,uuid,integer,text)', 'EXECUTE'), 'service role can invoke the review writer');
+select ok(not has_function_privilege('authenticated', 'public.submit_order_review(uuid,uuid,integer,text,text[],text)', 'EXECUTE'), 'customers cannot call the review writer directly');
+select ok(has_function_privilege('service_role', 'public.submit_order_review(uuid,uuid,integer,text,text[],text)', 'EXECUTE'), 'service role can invoke the review writer');
 select ok(not has_function_privilege('authenticated', 'public.moderate_order_review(uuid,uuid,boolean,boolean)', 'EXECUTE'), 'customers cannot call review moderation directly');
 select ok(has_function_privilege('service_role', 'public.moderate_order_review(uuid,uuid,boolean,boolean)', 'EXECUTE'), 'service role can invoke review moderation');
 
 select lives_ok(
-  $$select public.submit_order_review('d1000000-0000-4000-8000-000000000002','d5000000-0000-4000-8000-000000000001',5,'Warm, soft, and easy to pick up on campus.')$$,
+  $$select public.submit_order_review('d1000000-0000-4000-8000-000000000002','d5000000-0000-4000-8000-000000000001',5,'Warm, soft, and easy to pick up on campus.',array['Rich cocoa flavor','Fresh at pickup'],null)$$,
   'completed order owner can submit a review'
 );
 select is((select rating from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'), 5, 'rating is persisted');
 select is((select display_name_snapshot from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'), 'Review Owner', 'display name is snapshotted');
+select is((select highlights from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'), array['Rich cocoa flavor','Fresh at pickup']::text[], 'approved tasting highlights are persisted');
 select ok((select not is_visible and not is_featured from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'), 'new reviews await Admin publication');
 select throws_ok(
   $$select public.submit_order_review('d1000000-0000-4000-8000-000000000002','d5000000-0000-4000-8000-000000000001',4,'A second review must not be accepted.')$$,
   'P0001', 'This order already has a review', 'one order cannot receive two reviews'
+);
+select throws_ok(
+  $$select public.submit_order_review('d1000000-0000-4000-8000-000000000003','d5000000-0000-4000-8000-000000000003',4,'',array['Unsupported highlight'],null)$$,
+  'P0001', 'Review highlights are invalid', 'unknown tasting highlights are rejected'
+);
+select lives_ok(
+  $$delete from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'; select public.submit_order_review('d1000000-0000-4000-8000-000000000002','d5000000-0000-4000-8000-000000000001',5,'',array[]::text[],null)$$,
+  'a rating-only review is accepted'
 );
 select throws_ok(
   $$select public.submit_order_review('d1000000-0000-4000-8000-000000000002','d5000000-0000-4000-8000-000000000002',4,'This order has not completed fulfillment.')$$,

@@ -177,9 +177,6 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
               ) : null}
               {canOrderAgain ? (
                 <div className="mt-5 border-t border-border pt-5">
-                  <p className="mb-3 text-xs leading-5 text-muted-foreground">
-                    Current prices and availability are checked again at checkout.
-                  </p>
                   {exactOrderCanBeRepeated ? (
                     <ReorderButton items={reorderItems} />
                   ) : (
@@ -197,7 +194,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
               <section className="rounded-card border border-border bg-surface p-6">
                 <h2 className="font-display text-2xl">Share your experience</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Each completed order can receive one customer review.
+                  {reviewContext.existingReview
+                    ? "You already reviewed this order. You can view your submitted review below."
+                    : "Each completed order can receive one customer review."}
                 </p>
                 <OrderReviewModal
                   orderId={reviewContext.orderId}

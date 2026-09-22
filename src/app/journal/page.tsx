@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, FileText, PlayCircle, Sparkles, Star } from "lucide-react";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
@@ -260,7 +261,30 @@ export default async function JournalPage() {
                       />
                     ))}
                   </div>
-                  <p className="mt-4 leading-7">“{review.comment}”</p>
+                  {review.hasImage ? (
+                    <div className="relative mt-4 aspect-[4/3] overflow-hidden rounded-control">
+                      <Image
+                        src={`/api/review-images/${review.id}`}
+                        alt="Customer-submitted TsokoLitaw order"
+                        fill
+                        sizes="(min-width: 768px) 50vw, 100vw"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : null}
+                  {review.highlights.length ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {review.highlights.map((highlight) => (
+                        <span
+                          key={highlight}
+                          className="rounded-full bg-surface-muted px-3 py-1 text-xs font-bold text-brand"
+                        >
+                          {highlight}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  {review.comment ? <p className="mt-4 leading-7">“{review.comment}”</p> : null}
                   <footer className="mt-4 text-sm font-bold text-muted-foreground">
                     {review.customerName}
                   </footer>

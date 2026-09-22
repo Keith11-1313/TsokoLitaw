@@ -60,7 +60,8 @@ a clear global fallback, also used for non-Admin requests to Admin routes.
   returned refs/handlers. Successful save may close directly. Discard/stay must not accidentally submit.
 - Log out uses the shared confirmation dialog and returns Home only on confirmation.
 - Image preview is not persisted publication. Browser and server decode JPG/PNG/WebP ≤3 MiB;
-  coatings must be square, Journal covers need not be. Do not crop/transform automatically.
+  coatings must be square; Journal covers and optional review images need not be. Review images stay
+  private until the review is published by an Admin. Do not crop/transform automatically.
 - Admin image fields reuse `ImageUploadField` for the same accessible drag-and-drop presentation.
   Keep file-specific validation beside the field. The generic incomplete-form message remains
   available to assistive technology without repeating visible instructions above every action row.

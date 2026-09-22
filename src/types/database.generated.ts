@@ -1203,7 +1203,9 @@ export type Database = {
           comment: string
           created_at: string
           display_name_snapshot: string
+          highlights: string[]
           id: string
+          image_path: string | null
           is_featured: boolean
           is_visible: boolean
           order_id: string
@@ -1215,7 +1217,9 @@ export type Database = {
           comment: string
           created_at?: string
           display_name_snapshot: string
+          highlights?: string[]
           id?: string
+          image_path?: string | null
           is_featured?: boolean
           is_visible?: boolean
           order_id: string
@@ -1227,7 +1231,9 @@ export type Database = {
           comment?: string
           created_at?: string
           display_name_snapshot?: string
+          highlights?: string[]
           id?: string
+          image_path?: string | null
           is_featured?: boolean
           is_visible?: boolean
           order_id?: string
@@ -1531,6 +1537,8 @@ export type Database = {
       submit_order_review: {
         Args: {
           comment_value: string
+          highlights_value?: string[]
+          image_path_value?: string
           rating_value: number
           target_order_id: string
           target_user_id: string

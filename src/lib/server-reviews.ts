@@ -2,15 +2,19 @@ import "server-only";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { validateUploadedImage } from "@/lib/server-image-validation";
+import type { ReviewOrderItemSummary } from "@/lib/reviews";
 
 export interface CustomerReviewContext {
   orderId: string;
   orderNumber: string;
-  itemSummary: string;
+  itemSummary: ReviewOrderItemSummary[];
   existingReview: null | {
     id: string;
     rating: number;
     comment: string;
+    highlights: string[];
+    hasImage: boolean;
     createdAt: string;
   };
 }
@@ -22,6 +26,8 @@ export interface AdminReviewSummary {
   customerName: string;
   rating: number;
   comment: string;
+  highlights: string[];
+  hasImage: boolean;
   isVisible: boolean;
   isFeatured: boolean;
   createdAt: string;
@@ -32,6 +38,8 @@ export interface PublicFeaturedReview {
   customerName: string;
   rating: number;
   comment: string;
+  highlights: string[];
+  hasImage: boolean;
 }
 
 interface ReviewContextRow {
@@ -50,6 +58,8 @@ interface ReviewContextRow {
     id: string;
     rating: number;
     comment: string;
+    highlights: string[];
+    image_path: string | null;
     created_at: string;
   }> | null;
 }
@@ -61,7 +71,8 @@ export async function getCustomerReviewContext(
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("orders")
-    .select(`
+    .select(
+      `
       id,
       order_number,
       status,
@@ -77,9 +88,12 @@ export async function getCustomerReviewContext(
         id,
         rating,
         comment,
+        highlights,
+        image_path,
         created_at
       )
-    `)
+    `,
+    )
     .eq("id", orderId)
     .eq("user_id", userId)
     .eq("status", "COMPLETED")
@@ -93,20 +107,23 @@ export async function getCustomerReviewContext(
   return {
     orderId: order.id,
     orderNumber: order.order_number,
-    itemSummary: (order.order_items ?? [])
-      .map((item) => {
-        const coatings = (item.order_item_coatings ?? [])
-          .map((coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`)
-          .join(", ");
-        return `${item.variant_name_snapshot} × ${item.quantity}${coatings ? ` · ${coatings}` : ""}`;
-      })
-      .join("; "),
-    existingReview: existingReview ? {
-      id: existingReview.id,
-      rating: existingReview.rating,
-      comment: existingReview.comment,
-      createdAt: existingReview.created_at,
-    } : null,
+    itemSummary: (order.order_items ?? []).map((item) => ({
+      name: item.variant_name_snapshot,
+      quantity: item.quantity,
+      coatings: (item.order_item_coatings ?? []).map(
+        (coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`,
+      ),
+    })),
+    existingReview: existingReview
+      ? {
+          id: existingReview.id,
+          rating: existingReview.rating,
+          comment: existingReview.comment,
+          highlights: existingReview.highlights,
+          hasImage: Boolean(existingReview.image_path),
+          createdAt: existingReview.created_at,
+        }
+      : null,
   };
 }
 
@@ -115,6 +132,8 @@ export async function submitCustomerReview(input: {
   orderId: string;
   rating: number;
   comment: string;
+  highlights: string[];
+  imagePath: string | null;
 }) {
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin.rpc("submit_order_review", {
@@ -122,6 +141,8 @@ export async function submitCustomerReview(input: {
     target_order_id: input.orderId,
     rating_value: input.rating,
     comment_value: input.comment,
+    highlights_value: input.highlights,
+    ...(input.imagePath ? { image_path_value: input.imagePath } : {}),
   });
 
   if (error) {
@@ -136,21 +157,44 @@ export async function submitCustomerReview(input: {
   return data as string;
 }
 
+export async function uploadReviewImage(input: { userId: string; orderId: string; file: File }) {
+  const validated = await validateUploadedImage(input.file, { label: "review image" });
+  const path = `${input.userId}/${input.orderId}/${crypto.randomUUID()}.${validated.extension}`;
+  const { error } = await createAdminSupabaseClient()
+    .storage.from("review-media")
+    .upload(path, validated.buffer, {
+      contentType: validated.contentType,
+      cacheControl: "3600",
+      upsert: false,
+    });
+  if (error) throw new Error("Your review image could not be uploaded.", { cause: error });
+  return path;
+}
+
+export async function removeReviewImage(path: string) {
+  const { error } = await createAdminSupabaseClient().storage.from("review-media").remove([path]);
+  if (error) throw new Error("The new review image could not be cleaned up.", { cause: error });
+}
+
 export async function getAdminReviews(): Promise<AdminReviewSummary[]> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("reviews")
-    .select(`
+    .select(
+      `
       id,
       order_id,
       display_name_snapshot,
       rating,
       comment,
+      highlights,
+      image_path,
       is_visible,
       is_featured,
       created_at,
       orders (order_number)
-    `)
+    `,
+    )
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -165,6 +209,8 @@ export async function getAdminReviews(): Promise<AdminReviewSummary[]> {
       customerName: review.display_name_snapshot,
       rating: review.rating,
       comment: review.comment,
+      highlights: review.highlights,
+      hasImage: Boolean(review.image_path),
       isVisible: review.is_visible,
       isFeatured: review.is_featured,
       createdAt: review.created_at,
@@ -176,7 +222,7 @@ export async function getPublicFeaturedReviews(): Promise<PublicFeaturedReview[]
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("reviews")
-    .select("id, display_name_snapshot, rating, comment")
+    .select("id, display_name_snapshot, rating, comment, highlights, image_path")
     .eq("is_featured", true)
     .order("created_at", { ascending: false })
     .limit(6);
@@ -188,6 +234,8 @@ export async function getPublicFeaturedReviews(): Promise<PublicFeaturedReview[]
     customerName: review.display_name_snapshot,
     rating: review.rating,
     comment: review.comment,
+    highlights: review.highlights,
+    hasImage: Boolean(review.image_path),
   }));
 }
 
