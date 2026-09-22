@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { OrderReviewForm } from "@/components/feedback/order-review-form";
-import { primaryButtonClassName } from "@/components/ui/button";
+import { primaryButtonClassName, secondaryButtonClassName } from "@/components/ui/button";
 import type { ReviewOrderItemSummary } from "@/lib/reviews";
 
 interface OrderReviewModalProps {
@@ -54,10 +54,10 @@ export function OrderReviewModal(props: OrderReviewModalProps) {
       <button
         ref={triggerRef}
         type="button"
-        className={`${primaryButtonClassName} mt-5 w-full`}
+        className={`${submitted ? secondaryButtonClassName : primaryButtonClassName} mt-5 w-full`}
         onClick={() => setOpen(true)}
       >
-        {submitted ? "View submitted review" : "Review this order"}
+        {submitted ? "View my review" : "Review this order"}
       </button>
       {open ? (
         <div
@@ -73,7 +73,7 @@ export function OrderReviewModal(props: OrderReviewModalProps) {
           >
             <div className="flex items-start justify-between gap-4">
               <h2 id="order-review-title" className="font-display text-3xl">
-                Review {props.orderNumber}
+                {submitted ? "My review" : "Review"} {props.orderNumber}
               </h2>
               <button
                 ref={closeRef}

@@ -86,6 +86,11 @@ describe("OrderReviewForm", () => {
 
     expect(screen.getByRole("heading", { name: "Review submitted" })).toBeTruthy();
     expect(screen.getByText(/You already reviewed this order/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "View submitted review" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Review this order" })).toBeNull();
+    expect(screen.getByRole("button", { name: "View my review" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "View my review" }));
+    expect(screen.getByRole("heading", { name: "My review TL220926001" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Submit review" })).toBeNull();
   });
 });
