@@ -1399,6 +1399,17 @@ export type Database = {
         }
         Returns: Json
       }
+      get_public_featured_reviews: {
+        Args: { result_limit?: number }
+        Returns: {
+          comment_value: string
+          customer_name: string
+          has_image: boolean
+          highlight_values: string[]
+          rating_value: number
+          review_id: string
+        }[]
+      }
       get_public_pickup_inventory: {
         Args: never
         Returns: {

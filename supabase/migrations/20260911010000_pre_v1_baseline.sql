@@ -1560,6 +1560,34 @@ COMMENT ON FUNCTION "public"."get_admin_dashboard_summary"("target_admin_id" "uu
 
 
 --
+-- Name: get_public_featured_reviews(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE OR REPLACE FUNCTION "public"."get_public_featured_reviews"("result_limit" integer DEFAULT 6) RETURNS TABLE("review_id" "uuid", "customer_name" "text", "rating_value" integer, "comment_value" "text", "highlight_values" "text"[], "has_image" boolean)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  select
+    reviews.id,
+    reviews.display_name_snapshot,
+    reviews.rating,
+    reviews.comment,
+    reviews.highlights,
+    reviews.image_path is not null
+  from public.reviews
+  where reviews.is_visible
+    and reviews.is_featured
+  order by reviews.created_at desc
+  limit greatest(1, least(coalesce(result_limit, 6), 12));
+$$;
+
+
+ALTER FUNCTION "public"."get_public_featured_reviews"(integer) OWNER TO "postgres";
+
+COMMENT ON FUNCTION "public"."get_public_featured_reviews"(integer) IS 'Returns only moderated featured-review display fields and an image-presence flag; private Storage paths remain undisclosed.';
+
+
+--
 -- Name: get_public_pickup_inventory(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -5668,6 +5696,15 @@ GRANT ALL ON FUNCTION "public"."get_admin_dashboard_decisions"("target_admin_id"
 
 REVOKE ALL ON FUNCTION "public"."get_admin_dashboard_summary"("target_admin_id" "uuid", "period_start" timestamp with time zone, "period_end" timestamp with time zone, "previous_start" timestamp with time zone, "previous_end" timestamp with time zone) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_admin_dashboard_summary"("target_admin_id" "uuid", "period_start" timestamp with time zone, "period_end" timestamp with time zone, "previous_start" timestamp with time zone, "previous_end" timestamp with time zone) TO "service_role";
+
+
+--
+-- Name: FUNCTION "get_public_featured_reviews"(integer); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION "public"."get_public_featured_reviews"(integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_public_featured_reviews"(integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."get_public_featured_reviews"(integer) TO "authenticated";
 
 
 --

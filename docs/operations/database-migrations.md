@@ -50,6 +50,16 @@ passed. Because the reset removed `pg_cron`, the three approved jobs were recrea
 Dev Vault entries; their schedules were verified and one authorized smoke request per endpoint returned
 HTTP 200 with zero work and zero failures. Production was not changed.
 
+Later on September 22, the owner approved a further Dev-only pre-v1 rebaseline to activate the safe
+anonymous featured-review projection used by Journal. The confirmed target was again
+`mgkzphpznamjlgrpumjd`; the discarded state contained 2 test Auth users, 1 test order and 1 paid
+PayMongo **test-mode** payment, with no provider-bound pending checkout or manual receipt submission.
+The controlled catalog seed and all three versioned Pally/Neco font objects were restored. Anonymous
+Journal access, zero customer/order/review state, the three active app Cron jobs, the single
+`20260911010000` migration marker, linked schema lint and all 368 linked PostgreSQL assertions were
+verified afterward. Temporary activation and verification markers were removed. Production was not
+changed.
+
 ## Hosted activation and ongoing checks
 
 Hosted Dev has exactly these three app Cron job definitions as of September 22, 2026:

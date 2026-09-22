@@ -54,14 +54,15 @@ interface ReviewContextRow {
       piece_count: number;
     }> | null;
   }> | null;
-  reviews: Array<{
-    id: string;
-    rating: number;
-    comment: string;
-    highlights: string[];
-    image_path: string | null;
-    created_at: string;
-  }> | null;
+}
+
+interface CustomerReviewRow {
+  id: string;
+  rating: number;
+  comment: string;
+  highlights: string[];
+  image_path: string | null;
+  created_at: string;
 }
 
 export async function getCustomerReviewContext(
@@ -83,14 +84,6 @@ export async function getCustomerReviewContext(
           coating_name_snapshot,
           piece_count
         )
-      ),
-      reviews (
-        id,
-        rating,
-        comment,
-        highlights,
-        image_path,
-        created_at
       )
     `,
     )
@@ -103,7 +96,18 @@ export async function getCustomerReviewContext(
   if (!data) return null;
 
   const order = data as unknown as ReviewContextRow;
-  const existingReview = order.reviews?.[0] ?? null;
+  const { data: reviewData, error: reviewError } = await supabase
+    .from("reviews")
+    .select("id, rating, comment, highlights, image_path, created_at")
+    .eq("order_id", order.id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (reviewError) {
+    throw new Error("Submitted review could not be loaded.", { cause: reviewError });
+  }
+
+  const existingReview = reviewData as CustomerReviewRow | null;
   return {
     orderId: order.id,
     orderNumber: order.order_number,
@@ -220,22 +224,19 @@ export async function getAdminReviews(): Promise<AdminReviewSummary[]> {
 
 export async function getPublicFeaturedReviews(): Promise<PublicFeaturedReview[]> {
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase
-    .from("reviews")
-    .select("id, display_name_snapshot, rating, comment, highlights, image_path")
-    .eq("is_featured", true)
-    .order("created_at", { ascending: false })
-    .limit(6);
+  const { data, error } = await supabase.rpc("get_public_featured_reviews", {
+    result_limit: 6,
+  });
 
   if (error) throw new Error("Featured reviews could not be loaded.", { cause: error });
 
   return (data ?? []).map((review) => ({
-    id: review.id,
-    customerName: review.display_name_snapshot,
-    rating: review.rating,
-    comment: review.comment,
-    highlights: review.highlights,
-    hasImage: Boolean(review.image_path),
+    id: review.review_id,
+    customerName: review.customer_name,
+    rating: review.rating_value,
+    comment: review.comment_value,
+    highlights: review.highlight_values,
+    hasImage: review.has_image,
   }));
 }
 

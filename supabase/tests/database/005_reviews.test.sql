@@ -18,7 +18,7 @@ select set_config(
    where pg_extension.extname = 'pgtap'),
   true
 );
-select plan(21);
+select plan(25);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -51,6 +51,8 @@ select ok(not has_function_privilege('authenticated', 'public.submit_order_revie
 select ok(has_function_privilege('service_role', 'public.submit_order_review(uuid,uuid,integer,text,text[],text)', 'EXECUTE'), 'service role can invoke the review writer');
 select ok(not has_function_privilege('authenticated', 'public.moderate_order_review(uuid,uuid,boolean,boolean)', 'EXECUTE'), 'customers cannot call review moderation directly');
 select ok(has_function_privilege('service_role', 'public.moderate_order_review(uuid,uuid,boolean,boolean)', 'EXECUTE'), 'service role can invoke review moderation');
+select ok(has_function_privilege('anon', 'public.get_public_featured_reviews(integer)', 'EXECUTE'), 'anonymous Journal can read the safe featured-review projection');
+select ok(has_function_privilege('authenticated', 'public.get_public_featured_reviews(integer)', 'EXECUTE'), 'signed-in Journal can read the safe featured-review projection');
 
 select lives_ok(
   $$select public.submit_order_review('d1000000-0000-4000-8000-000000000002','d5000000-0000-4000-8000-000000000001',5,'Warm, soft, and easy to pick up on campus.',array['Rich cocoa flavor','Fresh at pickup'],null)$$,
@@ -60,6 +62,7 @@ select is((select rating from public.reviews where order_id = 'd5000000-0000-400
 select is((select display_name_snapshot from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'), 'Review Owner', 'display name is snapshotted');
 select is((select highlights from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'), array['Rich cocoa flavor','Fresh at pickup']::text[], 'approved tasting highlights are persisted');
 select ok((select not is_visible and not is_featured from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'), 'new reviews await Admin publication');
+select is((select count(*)::integer from public.get_public_featured_reviews()), 0, 'unpublished reviews never enter the public projection');
 select throws_ok(
   $$select public.submit_order_review('d1000000-0000-4000-8000-000000000002','d5000000-0000-4000-8000-000000000001',4,'A second review must not be accepted.')$$,
   'P0001', 'This order already has a review', 'one order cannot receive two reviews'
@@ -91,6 +94,11 @@ select throws_ok(
 );
 select ok(public.moderate_order_review('d1000000-0000-4000-8000-000000000001',(select id from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'),true,true), 'admin can feature a visible review');
 select ok((select is_visible and is_featured from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'), 'featured review remains visible');
+select is(
+  (select row(customer_name, rating_value, highlight_values, has_image)::text from public.get_public_featured_reviews()),
+  row('Review Owner', 5, array[]::text[], false)::text,
+  'public projection returns moderated display data without a private image path'
+);
 select ok(public.moderate_order_review('d1000000-0000-4000-8000-000000000001',(select id from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'),false,false), 'admin can hide and unfeature a review');
 select ok((select not is_visible and not is_featured from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'), 'hidden review is no longer featured');
 select is((select count(*)::integer from public.admin_audit_logs where action = 'review.moderated'), 2, 'successful moderation actions are audited');
