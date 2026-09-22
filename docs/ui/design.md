@@ -21,7 +21,9 @@ Inspect the relevant page and assets before editing UI.
 - Customer canvas: `public/images/photo-bg.webp`; opaque cream cards/navigation preserve readability.
   Admin uses a denser flat operational background, not a separate brand system.
 - Logo: `public/brand/logo.webp`; local Home media: `public/images/home/`, `public/videos/home/`.
-  Coating images: persisted Supabase `catalog-media` URLs. Journal covers: `journal-media`.
+  The shared missing-media fallback is `public/images/placeholder.webp`; do not add page-specific
+  placeholder variants. Coating images: persisted Supabase `catalog-media` URLs. Journal covers:
+  `journal-media`.
 - Use Lucide for missing simple icons; no new icon/UI library without a concrete need.
 - Reuse `CustomerPageShell`, header/footer, `SiteContainer`, buttons, `FormField`, `CustomSelect`,
   number stepper, `StatusBadge`, `AdminPageLayout`, and existing table/card patterns.
@@ -63,8 +65,10 @@ a clear global fallback, also used for non-Admin requests to Admin routes.
   coatings must be square; Journal covers and optional review images need not be. Review images stay
   private until the review is published by an Admin. Do not crop/transform automatically.
 - Admin image fields reuse `ImageUploadField` for the same accessible drag-and-drop presentation.
-  Keep file-specific validation beside the field. The generic incomplete-form message remains
-  available to assistive technology without repeating visible instructions above every action row.
+  Keep file-specific validation beside the field and preview a valid local selection before Save;
+  the preview does not imply that the upload has persisted. The generic incomplete-form message
+  remains available to assistive technology without repeating visible instructions above every
+  action row.
 
 Contract tests: `src/hooks/editor-contracts.test.tsx`, form and image validation tests. See
 [testing](../maintenance/testing.md) for manual keyboard/responsive checks.

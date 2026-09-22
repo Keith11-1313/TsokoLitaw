@@ -27,6 +27,8 @@ The editor controls type/display date/text, optional cover/video, and draft/publ
 Video posts require a secure video URL. Published cards use the summary (or a compact
 content fallback) and link by stable slug to a full public post page; drafts are not publicly readable.
 Cover uploads use `journal-media` and validated JPG/PNG/WebP ≤3 MiB (square not required).
+The editor previews a selected local cover before Save; persistence and publication still occur only
+after a successful server action.
 Stable slugs, publication timestamps, and audit entries are handled by SQL. Public `/journal`
 loads published content plus visible featured order reviews. Reviews remain in `reviews`, not
 duplicated Journal posts; moderation actions are under `src/app/admin/reviews/actions.ts`. The review

@@ -44,7 +44,7 @@ export function FeaturedMediaCarousel() {
               playsInline
               controls
               preload="metadata"
-              poster="/images/home/placeholder-portrait-9x16.jpg"
+              poster="/images/placeholder.webp"
               aria-label="Featured TsokoLitaw product video"
               onEnded={() => showSlide(1)}
               onVolumeChange={(event) => setMuted(event.currentTarget.muted)}

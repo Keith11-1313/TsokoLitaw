@@ -42,6 +42,7 @@ function JournalEditor({
   const [imageError, setImageError] = useState("");
   const [imageChecking, setImageChecking] = useState(false);
   const [coverName, setCoverName] = useState("");
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState("");
   const [contentType, setContentType] = useState<JournalContentType>(
     post?.contentType ?? "announcement",
   );
@@ -59,16 +60,26 @@ function JournalEditor({
     setCoverName(file?.name ?? "");
     input.setCustomValidity("");
     if (!file) {
+      setCoverPreviewUrl("");
       refresh();
       return;
     }
+    setCoverPreviewUrl(URL.createObjectURL(file));
     setImageChecking(true);
     const nextError = await browserImageError(file);
     setImageError(nextError);
     input.setCustomValidity(nextError);
+    if (nextError) setCoverPreviewUrl("");
     setImageChecking(false);
     refresh();
   }
+
+  useEffect(
+    () => () => {
+      if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
+    },
+    [coverPreviewUrl],
+  );
 
   useEffect(() => {
     if (state.status === "success") onClose();
@@ -191,7 +202,7 @@ function JournalEditor({
             disabled={pending}
             busy={imageChecking}
             fileName={coverName}
-            previewUrl={post?.coverImageUrl ?? ""}
+            previewUrl={coverPreviewUrl || post?.coverImageUrl || ""}
             onChange={validateCover}
           />
           <FormField

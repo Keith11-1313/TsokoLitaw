@@ -6,18 +6,9 @@ interface DessertPlaceholderProps {
   className?: string;
 }
 
-export function DessertPlaceholder({
-  variant,
-  className,
-}: DessertPlaceholderProps) {
+export function DessertPlaceholder({ variant, className }: DessertPlaceholderProps) {
   const isFeatured = variant === "featured";
-  const label = isFeatured
-    ? "TsokoLitaw featured media artwork"
-    : "TsokoLitaw product artwork";
-  const source = isFeatured
-    ? "/images/home/placeholder-landscape-16x9.jpg"
-    : "/images/home/placeholder-landscape-4x3.jpg";
-
+  const label = isFeatured ? "TsokoLitaw featured media artwork" : "TsokoLitaw product artwork";
   return (
     <div
       className={cn(
@@ -27,7 +18,7 @@ export function DessertPlaceholder({
       )}
     >
       <Image
-        src={source}
+        src="/images/placeholder.webp"
         alt={label}
         fill
         sizes={

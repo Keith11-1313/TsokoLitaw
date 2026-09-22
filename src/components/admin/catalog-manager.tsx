@@ -26,7 +26,7 @@ import type {
 } from "@/lib/server-catalog";
 
 const initialState: CatalogActionState = { status: "idle", message: "" };
-const catalogImagePlaceholder = "/images/home/placeholder-square.jpg";
+const catalogImagePlaceholder = "/images/placeholder.webp";
 
 function ActionMessage({ state }: { state: CatalogActionState }) {
   if (state.status === "idle") return null;
