@@ -18,8 +18,10 @@ Inspect the relevant page and assets before editing UI.
   the customer photo background; the customer-header logo mark matches the cart action's 44px circle.
   A small downward scroll keeps navigation visible; continued downward scrolling hides it, and upward
   scrolling reveals it immediately.
-- Customer canvas: `public/images/photo-bg.webp`; opaque cream cards/navigation preserve readability.
-  Admin uses a denser flat operational background, not a separate brand system.
+- Customer canvas: a plain warm cream surface with a repeating
+  `public/images/paper-texture.webp` layer at the shared customer-surface opacity. The texture
+  continues through the customer header so the canvas has no flat-color seam. Admin uses a denser
+  flat operational background, not a separate brand system.
 - Logo: `public/brand/logo.webp`; local Home media: `public/images/home/`, `public/videos/home/`.
   The shared missing-media fallback is `public/images/placeholder.webp`; do not add page-specific
   placeholder variants. Coating images: persisted Supabase `catalog-media` URLs. Journal covers:

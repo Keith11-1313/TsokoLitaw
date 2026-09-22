@@ -47,13 +47,13 @@ export const metadata: Metadata = {
     siteName: "TsokoLitaw",
     title: "TsokoLitaw",
     description: "The Filipino chocolate Xiao Long Bao, prepared for campus pickup.",
-    images: [{ url: "/images/home/hero-image.webp", alt: "TsokoLitaw chocolate-filled palitaw" }],
+    images: [{ url: "/images/home/hero.webp", alt: "TsokoLitaw chocolate-filled palitaw" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "TsokoLitaw",
     description: "The Filipino chocolate Xiao Long Bao, prepared for campus pickup.",
-    images: ["/images/home/hero-image.webp"],
+    images: ["/images/home/hero.webp"],
   },
 };
 

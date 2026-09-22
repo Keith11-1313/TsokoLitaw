@@ -51,7 +51,7 @@ export default function Home() {
         }}
       />
       <CustomerHeader activePath="/" />
-      <main id="main-content" className="customer-photo-background" tabIndex={-1}>
+      <main id="main-content" className="customer-paper-surface" tabIndex={-1}>
         <HomeHero {...homeContent.hero} />
         <FeaturedVideoSection {...homeContent.featuredVideo} />
       </main>

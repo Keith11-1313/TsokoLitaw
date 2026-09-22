@@ -39,15 +39,15 @@ export function HomeHero({ heading, tagline, description }: HomeHeroProps) {
             </div>
           </div>
 
-          <div className="relative aspect-[6/5] w-full overflow-hidden rounded-card bg-surface-muted lg:mr-8 lg:max-w-[32.5rem] lg:justify-self-end">
+          <div className="relative aspect-square w-full lg:mr-8 lg:max-w-[32.5rem] lg:justify-self-end">
             <Image
-              src="/images/home/hero-image.webp"
+              src="/images/home/hero.webp"
               alt="TsokoLitaw Mode switched on beside a chocolate-filled Palitaw dessert"
               fill
               preload
               fetchPriority="high"
               sizes="(min-width: 1024px) 32.5rem, calc(100vw - 2rem)"
-              className="object-cover"
+              className="object-contain"
             />
           </div>
         </div>

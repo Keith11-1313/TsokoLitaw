@@ -48,7 +48,7 @@ export function CustomerHeaderFrame({ children }: { children: ReactNode }) {
       ref={headerRef}
       data-scroll-state={visible ? "visible" : "hidden"}
       className={cn(
-        "customer-photo-background sticky top-0 z-40 py-3 transition-transform duration-300 ease-out will-change-transform motion-reduce:transition-none",
+        "customer-header-paper sticky top-0 z-40 py-3 transition-transform duration-300 ease-out will-change-transform motion-reduce:transition-none",
         !visible && "-translate-y-full",
       )}
     >
