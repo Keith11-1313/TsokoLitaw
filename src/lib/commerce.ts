@@ -7,26 +7,12 @@ import type {
   ServerPricedCart,
 } from "@/types/commerce";
 
-export const INITIAL_PIECE_PRICE = 10;
-
 const BOX_SIZES = [
-  { id: "box-4", label: "TsokoMini (4 pcs)", pieceCount: 4 },
-  { id: "box-6", label: "TsokoMore (6 pcs)", pieceCount: 6 },
-  { id: "box-8", label: "TsokoMuch (8 pcs)", pieceCount: 8 },
+  { id: "box-4", label: "TsokoMini (4 pcs)", pieceCount: 4, price: 40 },
+  { id: "box-6", label: "TsokoMore (6 pcs)", pieceCount: 6, price: 55 },
+  { id: "box-8", label: "TsokoMuch (8 pcs)", pieceCount: 8, price: 75 },
 ] as const;
-
-export function calculateBoxPrice(pieceCount: number, piecePrice: number) {
-  return pieceCount * piecePrice;
-}
-
-export function createBoxVariants(piecePrice: number): readonly BoxVariant[] {
-  return BOX_SIZES.map((variant) => ({
-    ...variant,
-    price: calculateBoxPrice(variant.pieceCount, piecePrice),
-  }));
-}
-
-export const BOX_VARIANTS = createBoxVariants(INITIAL_PIECE_PRICE);
+export const BOX_VARIANTS: readonly BoxVariant[] = BOX_SIZES;
 
 export function getBoxVariantLabel(pieceCount: number) {
   return (

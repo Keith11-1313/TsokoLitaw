@@ -27,7 +27,6 @@ export interface CommerceCatalog {
   productId: string;
   productName: string;
   productDescription: string;
-  piecePrice: number;
   variants: readonly BoxVariant[];
   coatings: readonly Coating[];
   addons: readonly CommerceAddon[];

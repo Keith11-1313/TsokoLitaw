@@ -14,7 +14,7 @@ export interface CustomerReviewContext {
     rating: number;
     comment: string;
     highlights: string[];
-    hasImage: boolean;
+    imageCount: number;
     createdAt: string;
   };
 }
@@ -27,7 +27,7 @@ export interface AdminReviewSummary {
   rating: number;
   comment: string;
   highlights: string[];
-  hasImage: boolean;
+  imageCount: number;
   isVisible: boolean;
   isFeatured: boolean;
   createdAt: string;
@@ -39,7 +39,9 @@ export interface PublicFeaturedReview {
   rating: number;
   comment: string;
   highlights: string[];
-  hasImage: boolean;
+  imageCount: number;
+  reviewedAt: string;
+  orderedItems: Array<{ name: string; quantity: number; pieceCount: number }>;
 }
 
 interface ReviewContextRow {
@@ -61,7 +63,7 @@ interface CustomerReviewRow {
   rating: number;
   comment: string;
   highlights: string[];
-  image_path: string | null;
+  image_paths: string[];
   created_at: string;
 }
 
@@ -98,7 +100,7 @@ export async function getCustomerReviewContext(
   const order = data as unknown as ReviewContextRow;
   const { data: reviewData, error: reviewError } = await supabase
     .from("reviews")
-    .select("id, rating, comment, highlights, image_path, created_at")
+    .select("id, rating, comment, highlights, image_paths, created_at")
     .eq("order_id", order.id)
     .eq("user_id", userId)
     .maybeSingle();
@@ -124,7 +126,7 @@ export async function getCustomerReviewContext(
           rating: existingReview.rating,
           comment: existingReview.comment,
           highlights: existingReview.highlights,
-          hasImage: Boolean(existingReview.image_path),
+          imageCount: existingReview.image_paths.length,
           createdAt: existingReview.created_at,
         }
       : null,
@@ -137,7 +139,7 @@ export async function submitCustomerReview(input: {
   rating: number;
   comment: string;
   highlights: string[];
-  imagePath: string | null;
+  imagePaths: string[];
 }) {
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin.rpc("submit_order_review", {
@@ -146,7 +148,7 @@ export async function submitCustomerReview(input: {
     rating_value: input.rating,
     comment_value: input.comment,
     highlights_value: input.highlights,
-    ...(input.imagePath ? { image_path_value: input.imagePath } : {}),
+    image_paths_value: input.imagePaths,
   });
 
   if (error) {
@@ -161,23 +163,39 @@ export async function submitCustomerReview(input: {
   return data as string;
 }
 
-export async function uploadReviewImage(input: { userId: string; orderId: string; file: File }) {
-  const validated = await validateUploadedImage(input.file, { label: "review image" });
-  const path = `${input.userId}/${input.orderId}/${crypto.randomUUID()}.${validated.extension}`;
-  const { error } = await createAdminSupabaseClient()
-    .storage.from("review-media")
-    .upload(path, validated.buffer, {
-      contentType: validated.contentType,
-      cacheControl: "3600",
-      upsert: false,
-    });
-  if (error) throw new Error("Your review image could not be uploaded.", { cause: error });
-  return path;
+export async function uploadReviewImages(input: {
+  userId: string;
+  orderId: string;
+  files: File[];
+}) {
+  const validated = await Promise.all(
+    input.files.map((file) => validateUploadedImage(file, { label: "review image" })),
+  );
+  const uploaded: string[] = [];
+  try {
+    for (const image of validated) {
+      const path = `${input.userId}/${input.orderId}/${crypto.randomUUID()}.${image.extension}`;
+      const { error } = await createAdminSupabaseClient()
+        .storage.from("review-media")
+        .upload(path, image.buffer, {
+          contentType: image.contentType,
+          cacheControl: "3600",
+          upsert: false,
+        });
+      if (error) throw error;
+      uploaded.push(path);
+    }
+    return uploaded;
+  } catch (error) {
+    if (uploaded.length)
+      await createAdminSupabaseClient().storage.from("review-media").remove(uploaded);
+    throw new Error("Your review images could not be uploaded.", { cause: error });
+  }
 }
 
-export async function removeReviewImage(path: string) {
-  const { error } = await createAdminSupabaseClient().storage.from("review-media").remove([path]);
-  if (error) throw new Error("The new review image could not be cleaned up.", { cause: error });
+export async function removeReviewImages(paths: string[]) {
+  const { error } = await createAdminSupabaseClient().storage.from("review-media").remove(paths);
+  if (error) throw new Error("The new review images could not be cleaned up.", { cause: error });
 }
 
 export async function getAdminReviews(): Promise<AdminReviewSummary[]> {
@@ -192,7 +210,7 @@ export async function getAdminReviews(): Promise<AdminReviewSummary[]> {
       rating,
       comment,
       highlights,
-      image_path,
+      image_paths,
       is_visible,
       is_featured,
       created_at,
@@ -214,7 +232,7 @@ export async function getAdminReviews(): Promise<AdminReviewSummary[]> {
       rating: review.rating,
       comment: review.comment,
       highlights: review.highlights,
-      hasImage: Boolean(review.image_path),
+      imageCount: review.image_paths.length,
       isVisible: review.is_visible,
       isFeatured: review.is_featured,
       createdAt: review.created_at,
@@ -236,7 +254,11 @@ export async function getPublicFeaturedReviews(): Promise<PublicFeaturedReview[]
     rating: review.rating_value,
     comment: review.comment_value,
     highlights: review.highlight_values,
-    hasImage: review.has_image,
+    imageCount: review.image_count,
+    reviewedAt: review.reviewed_at,
+    orderedItems: Array.isArray(review.ordered_items)
+      ? (review.ordered_items as Array<{ name: string; quantity: number; pieceCount: number }>)
+      : [],
   }));
 }
 

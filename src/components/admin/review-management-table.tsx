@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Star } from "lucide-react";
 import { moderateReviewAction } from "@/app/admin/reviews/actions";
+import { ReviewImageGallery } from "@/components/feedback/review-image-gallery";
 import type { AdminReviewSummary } from "@/lib/server-reviews";
 
 function ReviewActions({ review }: { review: AdminReviewSummary }) {
@@ -23,22 +24,14 @@ function ReviewActions({ review }: { review: AdminReviewSummary }) {
 
   return (
     <div className="min-w-44">
-      <div className="flex flex-wrap gap-2">
+      <div>
         <button
           type="button"
           disabled={pending}
-          onClick={() => update(!review.isVisible, false)}
-          className="min-h-11 rounded-full border border-brand px-4 text-xs font-bold text-brand disabled:opacity-60"
-        >
-          {pending ? "Saving…" : review.isVisible ? "Hide" : "Show"}
-        </button>
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => update(true, !review.isFeatured)}
+          onClick={() => update(!review.isFeatured, !review.isFeatured)}
           className="min-h-11 rounded-full bg-brand px-4 text-xs font-bold text-surface disabled:opacity-60"
         >
-          {pending ? "Saving…" : review.isFeatured ? "Unfeature" : "Feature"}
+          {pending ? "Saving…" : review.isFeatured ? "Remove from Journal" : "Publish in Journal"}
         </button>
       </div>
       {message ? (
@@ -75,7 +68,9 @@ export function ReviewManagementTable({ reviews }: { reviews: AdminReviewSummary
                     {review.rating}
                   </span>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-muted-foreground">{review.comment}</p>
+                <p className="mt-4 break-words text-sm leading-6 text-muted-foreground [overflow-wrap:anywhere]">
+                  {review.comment}
+                </p>
                 {review.highlights.length ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {review.highlights.map((highlight) => (
@@ -88,18 +83,9 @@ export function ReviewManagementTable({ reviews }: { reviews: AdminReviewSummary
                     ))}
                   </div>
                 ) : null}
-                {review.hasImage ? (
-                  <a
-                    href={`/api/review-images/${review.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-flex min-h-11 items-center font-bold text-brand underline underline-offset-4"
-                  >
-                    View review image
-                  </a>
-                ) : null}
+                <ReviewImageGallery reviewId={review.id} imageCount={review.imageCount} />
                 <p className="mt-4 text-xs font-bold uppercase tracking-wide text-foreground">
-                  {review.isFeatured ? "Featured" : review.isVisible ? "Visible" : "Hidden"}
+                  {review.isFeatured ? "Published in Journal" : "Not published"}
                 </p>
                 <div className="mt-4">
                   <ReviewActions review={review} />
@@ -134,26 +120,17 @@ export function ReviewManagementTable({ reviews }: { reviews: AdminReviewSummary
                         {review.rating}
                       </span>
                     </td>
-                    <td className="max-w-md px-4 py-4 leading-6 text-muted-foreground">
+                    <td className="max-w-md break-words px-4 py-4 leading-6 text-muted-foreground [overflow-wrap:anywhere]">
                       {review.comment || <span className="italic">No comment</span>}
                       {review.highlights.length ? (
                         <p className="mt-2 text-xs font-bold text-foreground">
                           {review.highlights.join(" · ")}
                         </p>
                       ) : null}
-                      {review.hasImage ? (
-                        <a
-                          href={`/api/review-images/${review.id}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-2 inline-flex min-h-11 items-center font-bold text-brand underline underline-offset-4"
-                        >
-                          View image
-                        </a>
-                      ) : null}
+                      <ReviewImageGallery reviewId={review.id} imageCount={review.imageCount} />
                     </td>
                     <td className="px-4 py-4 text-xs font-bold text-foreground">
-                      {review.isFeatured ? "Featured" : review.isVisible ? "Visible" : "Hidden"}
+                      {review.isFeatured ? "Published in Journal" : "Not published"}
                     </td>
                     <td className="px-4 py-4">
                       <ReviewActions review={review} />

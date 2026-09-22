@@ -6,6 +6,7 @@ import { submitReviewAction, type ReviewActionState } from "@/app/orders/[orderI
 import { PrimaryButton } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
+import { ReviewImageGallery } from "@/components/feedback/review-image-gallery";
 import { cn } from "@/lib/cn";
 import { REVIEW_HIGHLIGHTS, type ReviewOrderItemSummary } from "@/lib/reviews";
 
@@ -20,7 +21,7 @@ interface OrderReviewFormProps {
     rating: number;
     comment: string;
     highlights: string[];
-    hasImage: boolean;
+    imageCount: number;
     createdAt: string;
   };
   onSubmitted?: () => void;
@@ -59,15 +60,16 @@ export function OrderReviewForm({
 }: OrderReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [image, setImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState("");
+  const [images, setImages] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [imageError, setImageError] = useState("");
   const [state, formAction, pending] = useActionState(submitReviewAction, initialState);
 
   useEffect(
     () => () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
     },
-    [previewUrl],
+    [previewUrls],
   );
 
   useEffect(() => {
@@ -83,6 +85,23 @@ export function OrderReviewForm({
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
           Your review is very much appreciated.
         </p>
+        <div className="mx-auto mt-5 max-w-xl rounded-control border border-border bg-surface-muted p-4 text-left text-sm">
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+            Your order
+          </p>
+          {itemSummary.map((item, index) => (
+            <div key={`${item.name}-${index}`} className="mt-3">
+              <p className="font-bold">
+                {item.name} × {item.quantity}
+              </p>
+              {item.coatings.length ? (
+                <p className="mt-1 break-words leading-6 text-muted-foreground">
+                  {item.coatings.join(" · ")}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
         {existingReview?.comment ? (
           <p className="mx-auto mt-4 max-w-xl rounded-control bg-surface-muted p-4 text-sm leading-6">
             {existingReview.comment}
@@ -100,15 +119,13 @@ export function OrderReviewForm({
             ))}
           </div>
         ) : null}
-        {existingReview?.hasImage ? (
-          <a
-            href={`/api/review-images/${existingReview.id}`}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 inline-flex min-h-11 items-center font-bold text-brand underline underline-offset-4"
-          >
-            View your review image
-          </a>
+        {existingReview ? (
+          <div className="mx-auto max-w-xl">
+            <ReviewImageGallery
+              reviewId={existingReview.id}
+              imageCount={existingReview.imageCount}
+            />
+          </div>
         ) : null}
       </section>
     );
@@ -204,17 +221,35 @@ export function OrderReviewForm({
       </p>
       <ImageUploadField
         id="review-image"
-        name="image"
-        label="Add a review image (optional)"
+        name="images"
+        label="Add review images (optional)"
         className="mt-6"
         disabled={pending}
-        fileName={image?.name}
-        previewUrl={previewUrl}
-        error={state.fieldErrors?.image}
+        multiple
+        maxFiles={5}
+        fileNames={images.map((image) => image.name)}
+        previewUrls={previewUrls}
+        error={imageError || state.fieldErrors?.image}
         onChange={(event) => {
-          const nextImage = event.currentTarget.files?.[0] ?? null;
-          setImage(nextImage);
-          setPreviewUrl(nextImage ? URL.createObjectURL(nextImage) : "");
+          const nextImages = Array.from(event.currentTarget.files ?? []);
+          const invalid =
+            nextImages.length > 5 ||
+            nextImages.some(
+              (image) =>
+                !["image/jpeg", "image/png", "image/webp"].includes(image.type) ||
+                image.size > 3 * 1024 * 1024,
+            );
+          previewUrls.forEach((url) => URL.revokeObjectURL(url));
+          if (invalid) {
+            event.currentTarget.value = "";
+            setImages([]);
+            setPreviewUrls([]);
+            setImageError("Choose up to five JPG, PNG, or WebP images no larger than 3 MB each.");
+            return;
+          }
+          setImageError("");
+          setImages(nextImages);
+          setPreviewUrls(nextImages.map((image) => URL.createObjectURL(image)));
         }}
       />
       {state.status === "error" ? (

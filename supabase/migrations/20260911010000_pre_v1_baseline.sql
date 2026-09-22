@@ -1563,17 +1563,19 @@ COMMENT ON FUNCTION "public"."get_admin_dashboard_summary"("target_admin_id" "uu
 -- Name: get_public_featured_reviews(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE OR REPLACE FUNCTION "public"."get_public_featured_reviews"("result_limit" integer DEFAULT 6) RETURNS TABLE("review_id" "uuid", "customer_name" "text", "rating_value" integer, "comment_value" "text", "highlight_values" "text"[], "has_image" boolean)
+CREATE OR REPLACE FUNCTION "public"."get_public_featured_reviews"("result_limit" integer DEFAULT 6) RETURNS TABLE("review_id" "uuid", "customer_name" "text", "rating_value" integer, "comment_value" "text", "highlight_values" "text"[], "image_count" integer, "reviewed_at" timestamp with time zone, "ordered_items" jsonb)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
   select
     reviews.id,
-    reviews.display_name_snapshot,
+    (select string_agg(substring(part from 1 for least(2, length(part))) || repeat('*', greatest(length(part) - 2, 1)), ' ' order by ordinality) from unnest(regexp_split_to_array(trim(reviews.display_name_snapshot), '\s+')) with ordinality as names(part, ordinality)),
     reviews.rating,
     reviews.comment,
     reviews.highlights,
-    reviews.image_path is not null
+    cardinality(reviews.image_paths),
+    reviews.created_at,
+    coalesce((select jsonb_agg(jsonb_build_object('name', order_items.variant_name_snapshot, 'quantity', order_items.quantity, 'pieceCount', order_items.piece_count_snapshot) order by order_items.created_at) from public.order_items where order_items.order_id = reviews.order_id), '[]'::jsonb)
   from public.reviews
   where reviews.is_visible
     and reviews.is_featured
@@ -1584,7 +1586,7 @@ $$;
 
 ALTER FUNCTION "public"."get_public_featured_reviews"(integer) OWNER TO "postgres";
 
-COMMENT ON FUNCTION "public"."get_public_featured_reviews"(integer) IS 'Returns only moderated featured-review display fields and an image-presence flag; private Storage paths remain undisclosed.';
+COMMENT ON FUNCTION "public"."get_public_featured_reviews"(integer) IS 'Returns masked customer names, order snapshots, review date, and image counts for moderated Journal reviews; private Storage paths remain undisclosed.';
 
 
 --
@@ -2567,7 +2569,7 @@ ALTER FUNCTION "public"."submit_manual_payment"("target_user_id" "uuid", "target
 -- Name: submit_order_review("uuid", "uuid", integer, "text"); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE OR REPLACE FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[] DEFAULT '{}'::"text"[], "image_path_value" "text" DEFAULT NULL::"text") RETURNS "uuid"
+CREATE OR REPLACE FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[] DEFAULT '{}'::"text"[], "image_paths_value" "text"[] DEFAULT '{}'::"text"[]) RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -2577,6 +2579,7 @@ declare
   created_review_id uuid;
   normalized_comment text := trim(coalesce(comment_value, ''));
   normalized_highlights text[] := coalesce(highlights_value, array[]::text[]);
+  normalized_image_paths text[] := coalesce(image_paths_value, array[]::text[]);
 begin
   select * into customer_profile
   from public.profiles
@@ -2626,13 +2629,10 @@ begin
     raise exception 'This order already has a review';
   end if;
 
-  if image_path_value is not null and (
-    image_path_value !~ ('^' || target_user_id::text || '/' || target_order_id::text || '/[0-9a-f-]{36}[.](jpg|png|webp)$')
-    or not exists (
-      select 1 from storage.objects
-      where bucket_id = 'review-media' and name = image_path_value
-    )
-  ) then
+  if cardinality(normalized_image_paths) > 5
+    or cardinality(normalized_image_paths) <> cardinality(array(select distinct path from unnest(normalized_image_paths) as path))
+    or exists (select 1 from unnest(normalized_image_paths) as path where path !~ ('^' || target_user_id::text || '/' || target_order_id::text || '/[0-9a-f-]{36}[.](jpg|png|webp)$') or not exists (select 1 from storage.objects where bucket_id = 'review-media' and name = path))
+  then
     raise exception 'Review image is invalid';
   end if;
 
@@ -2643,7 +2643,7 @@ begin
     rating,
     comment,
     highlights,
-    image_path,
+    image_paths,
     is_visible,
     is_featured
   ) values (
@@ -2653,7 +2653,7 @@ begin
     rating_value,
     normalized_comment,
     normalized_highlights,
-    image_path_value,
+    normalized_image_paths,
     false,
     false
   )
@@ -2664,13 +2664,13 @@ end;
 $$;
 
 
-ALTER FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_path_value" "text") OWNER TO "postgres";
+ALTER FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_paths_value" "text"[]) OWNER TO "postgres";
 
 --
 -- Name: FUNCTION "submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text"); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_path_value" "text") IS 'Service-role-only customer review writer that enforces active ownership, completed fulfillment, bounded optional content, and one review per order.';
+COMMENT ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_paths_value" "text"[]) IS 'Service-role-only customer review writer that enforces active ownership, completed fulfillment, bounded optional content, up to five validated images, and one review per order.';
 
 
 --
@@ -2873,7 +2873,7 @@ COMMENT ON FUNCTION "public"."update_catalog_product"("target_admin_id" "uuid", 
 -- Name: update_catalog_variant("uuid", "uuid", boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE OR REPLACE FUNCTION "public"."update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean) RETURNS boolean
+CREATE OR REPLACE FUNCTION "public"."update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean, "base_price_value" numeric) RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -2886,23 +2886,24 @@ begin
   select * into target_variant from public.product_variants where id = target_variant_id for update;
   if target_variant.id is null then raise exception 'Product variant was not found'; end if;
   if target_variant.piece_count not in (4, 6, 8) then raise exception 'Unsupported box size'; end if;
+  if base_price_value is null or base_price_value < 0 or base_price_value > 10000 then raise exception 'Box price is invalid'; end if;
 
-  update public.product_variants set is_active = active_value, updated_at = now() where id = target_variant_id;
+  update public.product_variants set is_active = active_value, base_price = base_price_value, updated_at = now() where id = target_variant_id;
   insert into public.admin_audit_logs (admin_id, action, entity_type, entity_id, metadata)
   values (target_admin_id, 'catalog.variant_updated', 'product_variant', target_variant_id::text,
-    jsonb_build_object('piece_count', target_variant.piece_count, 'previous_active', target_variant.is_active, 'active', active_value));
+    jsonb_build_object('piece_count', target_variant.piece_count, 'previous_price', target_variant.base_price, 'price', base_price_value, 'previous_active', target_variant.is_active, 'active', active_value));
   return true;
 end;
 $$;
 
 
-ALTER FUNCTION "public"."update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean) OWNER TO "postgres";
+ALTER FUNCTION "public"."update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean, "base_price_value" numeric) OWNER TO "postgres";
 
 --
 -- Name: FUNCTION "update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION "public"."update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean) IS 'Service-role-only audited availability update for approved 4, 6, and 8 piece boxes.';
+COMMENT ON FUNCTION "public"."update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean, "base_price_value" numeric) IS 'Service-role-only audited price and availability update for approved 4, 6, and 8 piece boxes.';
 
 
 --
@@ -4083,11 +4084,13 @@ CREATE TABLE IF NOT EXISTS "public"."product_variants" (
     "product_id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
     "piece_count" integer NOT NULL,
+    "base_price" numeric(10,2) NOT NULL,
     "is_active" boolean DEFAULT true NOT NULL,
     "sort_order" integer DEFAULT 0 NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "product_variants_piece_count_check" CHECK (("piece_count" > 0))
+    CONSTRAINT "product_variants_piece_count_check" CHECK (("piece_count" > 0)),
+    CONSTRAINT "product_variants_base_price_check" CHECK (("base_price" >= (0)::numeric))
 );
 
 
@@ -4147,13 +4150,14 @@ CREATE TABLE IF NOT EXISTS "public"."reviews" (
     "rating" integer NOT NULL,
     "comment" "text" NOT NULL,
     "highlights" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "image_path" "text",
+    "image_paths" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
     "is_visible" boolean DEFAULT false NOT NULL,
     "is_featured" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     CONSTRAINT "reviews_comment_check" CHECK (("length"(TRIM(BOTH FROM "comment")) <= 1000)),
     CONSTRAINT "reviews_highlights_check" CHECK ((cardinality("highlights") <= 6)),
+    CONSTRAINT "reviews_image_paths_check" CHECK ((cardinality("image_paths") <= 5)),
     CONSTRAINT "reviews_rating_check" CHECK ((("rating" >= 1) AND ("rating" <= 5)))
 );
 
@@ -5873,8 +5877,8 @@ GRANT ALL ON FUNCTION "public"."submit_manual_payment"("target_user_id" "uuid", 
 -- Name: FUNCTION "submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text"); Type: ACL; Schema: public; Owner: postgres
 --
 
-REVOKE ALL ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_path_value" "text") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_path_value" "text") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_paths_value" "text"[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."submit_order_review"("target_user_id" "uuid", "target_order_id" "uuid", "rating_value" integer, "comment_value" "text", "highlights_value" "text"[], "image_paths_value" "text"[]) TO "service_role";
 
 
 --
@@ -5904,8 +5908,8 @@ GRANT ALL ON FUNCTION "public"."update_catalog_product"("target_admin_id" "uuid"
 -- Name: FUNCTION "update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean); Type: ACL; Schema: public; Owner: postgres
 --
 
-REVOKE ALL ON FUNCTION "public"."update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean) TO "service_role";
+REVOKE ALL ON FUNCTION "public"."update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean, "base_price_value" numeric) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."update_catalog_variant"("target_admin_id" "uuid", "target_variant_id" "uuid", "active_value" boolean, "base_price_value" numeric) TO "service_role";
 
 
 --

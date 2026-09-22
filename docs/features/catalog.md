@@ -6,12 +6,14 @@ Admin writes: `/admin/products/actions.ts` → `server-catalog.ts` → catalog R
 
 ## Authoritative rules
 
-`products.price_per_piece × product_variants.piece_count` is the base box price. Every allocated
-piece adds its coating's current `coatings.price_per_piece`; an optional paid add-on has a quantity
+Each `product_variants.base_price` is the authoritative fixed base box price. The controlled seed is
+TsokoMini ₱40, TsokoMore ₱55, and TsokoMuch ₱75. Every allocated piece adds its coating's current `coatings.price_per_piece`; an optional paid add-on has a quantity
 per box. Box sizes are 4, 6, 8. Mixed allocations must account for every piece. Exactly one active
 coating is the storefront default. Exactly one active extra is complimentary; checkout snapshots
 one free portion per box and charges only the customer's additional selected quantity. PHP seed
-values are editable catalog data, not hardcoded prices.
+values are editable catalog data, not hardcoded checkout prices. The initial default coating is Plain
+at ₱0 per piece; the default complimentary Sea salt cream is ₱0 once per box and ₱15 for each
+additional portion.
 
 Browser calculation in `commerce.ts` is an estimate. Checkout reloads the catalog and calls
 `priceCheckoutCart` on the server; existing orders retain their old snapshot prices/names.

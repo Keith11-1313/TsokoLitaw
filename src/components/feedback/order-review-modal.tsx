@@ -15,7 +15,7 @@ interface OrderReviewModalProps {
     rating: number;
     comment: string;
     highlights: string[];
-    hasImage: boolean;
+    imageCount: number;
     createdAt: string;
   };
 }

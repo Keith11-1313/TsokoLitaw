@@ -13,6 +13,10 @@ interface ImageUploadFieldProps {
   busy?: boolean;
   fileName?: string;
   previewUrl?: string;
+  fileNames?: readonly string[];
+  previewUrls?: readonly string[];
+  multiple?: boolean;
+  maxFiles?: number;
   error?: string;
   className?: string;
   onChange: ChangeEventHandler<HTMLInputElement>;
@@ -27,14 +31,22 @@ export function ImageUploadField({
   busy,
   fileName,
   previewUrl,
+  fileNames,
+  previewUrls,
+  multiple,
+  maxFiles,
   error,
   className,
   onChange,
 }: ImageUploadFieldProps) {
   const errorId = error ? `${id}-error` : undefined;
+  const selectedNames = fileNames ?? (fileName ? [fileName] : []);
+  const selectedPreviews = previewUrls ?? (previewUrl ? [previewUrl] : []);
   const prompt = busy
     ? "Checking image…"
-    : fileName || (previewUrl ? "Drag and drop or browse to replace" : "Drag and drop or browse");
+    : selectedNames.length
+      ? `${selectedNames.length} image${selectedNames.length === 1 ? "" : "s"} selected`
+      : "Drag and drop or browse";
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -54,19 +66,24 @@ export function ImageUploadField({
           disabled && "cursor-not-allowed opacity-60",
         )}
       >
-        {previewUrl ? (
-          <span
-            role="img"
-            aria-label={`${label} preview`}
-            className="size-20 rounded-control bg-cover bg-center"
-            style={{ backgroundImage: `url(${previewUrl})` }}
-          />
+        {selectedPreviews.length ? (
+          <span className="flex max-w-full flex-wrap justify-center gap-2">
+            {selectedPreviews.map((url, index) => (
+              <span
+                key={url}
+                role="img"
+                aria-label={`${label} preview ${index + 1}`}
+                className="size-20 rounded-control bg-cover bg-center"
+                style={{ backgroundImage: `url(${url})` }}
+              />
+            ))}
+          </span>
         ) : (
           <ImageUp aria-hidden="true" size={34} className="text-brand" />
         )}
         <span className="mt-3 max-w-full break-words font-bold text-foreground">{prompt}</span>
         <span className="mt-1 text-xs font-normal text-muted-foreground">
-          JPG, PNG or WebP up to 3 MB
+          JPG, PNG or WebP up to 3 MB{multiple && maxFiles ? ` each, up to ${maxFiles} images` : ""}
         </span>
         <input
           id={id}
@@ -76,6 +93,7 @@ export function ImageUploadField({
           aria-describedby={errorId}
           aria-invalid={Boolean(error) || undefined}
           accept="image/jpeg,image/png,image/webp"
+          multiple={multiple}
           required={required}
           disabled={disabled}
           className="absolute inset-0 size-full cursor-pointer opacity-0 disabled:cursor-not-allowed"

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireCustomer } from "@/lib/auth";
 import { isUuid } from "@/lib/identifiers";
-import { removeReviewImage, submitCustomerReview, uploadReviewImage } from "@/lib/server-reviews";
+import { removeReviewImages, submitCustomerReview, uploadReviewImages } from "@/lib/server-reviews";
 import { REVIEW_HIGHLIGHTS } from "@/lib/reviews";
 import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
 
@@ -22,7 +22,9 @@ export async function submitReviewAction(
   const rating = Number(formData.get("rating"));
   const comment = String(formData.get("comment") ?? "").trim();
   const highlights = formData.getAll("highlights").map(String);
-  const image = formData.get("image");
+  const images = formData
+    .getAll("images")
+    .filter((image): image is File => image instanceof File && image.size > 0);
 
   if (!isUuid(orderId)) {
     return { status: "error", message: "That completed order is unavailable." };
@@ -50,20 +52,22 @@ export async function submitReviewAction(
   ) {
     return { status: "error", message: "Choose valid tasting highlights." };
   }
-  if (image instanceof File && image.size > 0) {
-    if (
-      !new Set(["image/jpeg", "image/png", "image/webp"]).has(image.type) ||
-      image.size > 3 * 1024 * 1024
-    ) {
-      return {
-        status: "error",
-        message: "Upload a JPG, PNG, or WebP image no larger than 3 MB.",
-        fieldErrors: { image: "Choose a JPG, PNG, or WebP image no larger than 3 MB." },
-      };
-    }
+  if (
+    images.length > 5 ||
+    images.some(
+      (image) =>
+        !new Set(["image/jpeg", "image/png", "image/webp"]).has(image.type) ||
+        image.size > 3 * 1024 * 1024,
+    )
+  ) {
+    return {
+      status: "error",
+      message: "Upload up to five JPG, PNG, or WebP images no larger than 3 MB each.",
+      fieldErrors: { image: "Choose up to five valid images no larger than 3 MB each." },
+    };
   }
 
-  let uploadedPath: string | null = null;
+  let uploadedPaths: string[] = [];
   try {
     await enforceMutationRateLimit({
       scope: "review-submit",
@@ -71,16 +75,15 @@ export async function submitReviewAction(
       maximumRequests: 4,
       windowSeconds: 600,
     });
-    if (image instanceof File && image.size > 0) {
-      uploadedPath = await uploadReviewImage({ userId: profile.id, orderId, file: image });
-    }
+    if (images.length)
+      uploadedPaths = await uploadReviewImages({ userId: profile.id, orderId, files: images });
     await submitCustomerReview({
       userId: profile.id,
       orderId,
       rating,
       comment,
       highlights,
-      imagePath: uploadedPath,
+      imagePaths: uploadedPaths,
     });
     revalidatePath("/orders");
     revalidatePath(`/orders/${orderId}`);
@@ -88,9 +91,9 @@ export async function submitReviewAction(
     revalidatePath("/admin/journal");
     return { status: "success", message: "Thank you. Your review is very much appreciated." };
   } catch (error) {
-    if (uploadedPath) {
+    if (uploadedPaths.length) {
       try {
-        await removeReviewImage(uploadedPath);
+        await removeReviewImages(uploadedPaths);
       } catch (cleanupError) {
         console.error("Review image cleanup failed", cleanupError);
       }

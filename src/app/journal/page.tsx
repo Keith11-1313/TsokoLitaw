@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, FileText, PlayCircle, Sparkles, Star } from "lucide-react";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
+import { ReviewImageGallery } from "@/components/feedback/review-image-gallery";
 import { DessertPlaceholder } from "@/components/home/dessert-placeholder";
 import { SiteContainer } from "@/components/layout/site-container";
 import { primaryButtonClassName, secondaryButtonClassName } from "@/components/ui/button";
@@ -261,15 +261,17 @@ export default async function JournalPage() {
                       />
                     ))}
                   </div>
-                  {review.hasImage ? (
-                    <div className="relative mt-4 aspect-[4/3] overflow-hidden rounded-control">
-                      <Image
-                        src={`/api/review-images/${review.id}`}
-                        alt="Customer-submitted TsokoLitaw order"
-                        fill
-                        sizes="(min-width: 768px) 50vw, 100vw"
-                        className="object-cover"
-                      />
+                  <ReviewImageGallery reviewId={review.id} imageCount={review.imageCount} />
+                  {review.orderedItems.length ? (
+                    <div className="mt-4 rounded-control bg-surface-muted p-4 text-sm">
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                        Ordered
+                      </p>
+                      {review.orderedItems.map((item, index) => (
+                        <p key={`${item.name}-${index}`} className="mt-2 break-words font-bold">
+                          {item.name} × {item.quantity}
+                        </p>
+                      ))}
                     </div>
                   ) : null}
                   {review.highlights.length ? (
@@ -284,9 +286,19 @@ export default async function JournalPage() {
                       ))}
                     </div>
                   ) : null}
-                  {review.comment ? <p className="mt-4 leading-7">“{review.comment}”</p> : null}
-                  <footer className="mt-4 text-sm font-bold text-muted-foreground">
-                    {review.customerName}
+                  {review.comment ? (
+                    <p className="mt-4 break-words leading-7 [overflow-wrap:anywhere]">
+                      “{review.comment}”
+                    </p>
+                  ) : null}
+                  <footer className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm font-bold text-muted-foreground">
+                    <span>{review.customerName}</span>
+                    <time dateTime={review.reviewedAt}>
+                      {new Intl.DateTimeFormat("en-PH", {
+                        dateStyle: "medium",
+                        timeZone: "Asia/Manila",
+                      }).format(new Date(review.reviewedAt))}
+                    </time>
                   </footer>
                 </blockquote>
               ))}

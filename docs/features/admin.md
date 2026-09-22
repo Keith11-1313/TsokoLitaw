@@ -29,7 +29,10 @@ content fallback) and link by stable slug to a full public post page; drafts are
 Cover uploads use `journal-media` and validated JPG/PNG/WebP ≤3 MiB (square not required).
 Stable slugs, publication timestamps, and audit entries are handled by SQL. Public `/journal`
 loads published content plus visible featured order reviews. Reviews remain in `reviews`, not
-duplicated Journal posts; moderation actions are under `src/app/admin/reviews/actions.ts`.
+duplicated Journal posts; moderation actions are under `src/app/admin/reviews/actions.ts`. The review
+queue intentionally exposes one publication action: `Publish in Journal` sets the required visible and
+featured state together, while `Remove from Journal` clears both. This avoids unsupported intermediate
+visibility states in the Admin interface.
 
 ## Maintaining an editor
 

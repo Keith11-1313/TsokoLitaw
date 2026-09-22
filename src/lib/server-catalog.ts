@@ -8,7 +8,6 @@ export interface AdminCatalogProduct {
   id: string;
   name: string;
   description: string;
-  pricePerPiece: number;
   isActive: boolean;
   variants: Array<{
     id: string;
@@ -16,6 +15,7 @@ export interface AdminCatalogProduct {
     pieceCount: number;
     isActive: boolean;
     sortOrder: number;
+    basePrice: number;
   }>;
 }
 
@@ -42,7 +42,6 @@ interface ProductRow {
   id: string;
   name: string;
   description: string;
-  price_per_piece: number | string;
   is_active: boolean;
   product_variants: Array<{
     id: string;
@@ -50,6 +49,7 @@ interface ProductRow {
     piece_count: number;
     is_active: boolean;
     sort_order: number;
+    base_price: number | string;
   }> | null;
 }
 
@@ -59,7 +59,7 @@ export async function getAdminCatalog() {
     supabase
       .from("products")
       .select(
-        `id,name,description,price_per_piece,is_active,product_variants(id,name,piece_count,is_active,sort_order)`,
+        `id,name,description,is_active,product_variants(id,name,piece_count,base_price,is_active,sort_order)`,
       )
       .order("created_at")
       .limit(1)
@@ -77,7 +77,6 @@ export async function getAdminCatalog() {
     id: row.id,
     name: row.name,
     description: row.description,
-    pricePerPiece: Number(row.price_per_piece),
     isActive: row.is_active,
     variants: (row.product_variants ?? [])
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -87,6 +86,7 @@ export async function getAdminCatalog() {
         pieceCount: variant.piece_count,
         isActive: variant.is_active,
         sortOrder: variant.sort_order,
+        basePrice: Number(variant.base_price),
       })),
   };
   const coatings: AdminCatalogCoating[] = (coatingsResult.data ?? []).map((coating, index) => ({
@@ -109,31 +109,17 @@ export async function getAdminCatalog() {
   return { product, coatings, addons };
 }
 
-export async function updateCatalogProduct(input: {
-  adminId: string;
-  productId: string;
-  description: string;
-  pricePerPiece: number;
-}) {
-  const { error } = await createAdminSupabaseClient().rpc("update_catalog_product", {
-    target_admin_id: input.adminId,
-    target_product_id: input.productId,
-    description_value: input.description,
-    price_per_piece_value: input.pricePerPiece,
-    active_value: true,
-  });
-  if (error) throw new Error("Product settings could not be saved.", { cause: error });
-}
-
 export async function updateCatalogVariant(input: {
   adminId: string;
   variantId: string;
   isActive: boolean;
+  basePrice: number;
 }) {
   const { error } = await createAdminSupabaseClient().rpc("update_catalog_variant", {
     target_admin_id: input.adminId,
     target_variant_id: input.variantId,
     active_value: input.isActive,
+    base_price_value: input.basePrice,
   });
   if (error) throw new Error("Box availability could not be saved.", { cause: error });
 }

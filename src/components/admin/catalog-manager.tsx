@@ -5,7 +5,6 @@ import { Pencil, Plus, X } from "lucide-react";
 import {
   saveAddonAction,
   saveCoatingAction,
-  saveProductAction,
   saveVariantAction,
   type CatalogActionState,
 } from "@/app/admin/products/actions";
@@ -41,68 +40,24 @@ function ActionMessage({ state }: { state: CatalogActionState }) {
   );
 }
 
-function ProductSettings({ product }: { product: AdminCatalogProduct }) {
-  const [state, action, pending] = useActionState(saveProductAction, initialState);
-  const { formRef, formProps, canSubmit, statusMessage } = useFormGate({ requireDirty: true });
-  return (
-    <form
-      ref={formRef}
-      {...formProps}
-      action={action}
-      className="rounded-card border border-border bg-surface p-6"
-    >
-      <input type="hidden" name="productId" value={product.id} />
-      <div className="max-w-3xl">
-        <h2 className="font-display text-2xl">Product pricing</h2>
-        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-          <NumberStepper
-            label="Price per piece (PHP)"
-            name="pricePerPiece"
-            required
-            min={0}
-            max={10000}
-            step={0.01}
-            defaultValue={product.pricePerPiece}
-            layout="inline"
-          />
-          <input type="hidden" name="description" value={product.description} />
-          <PrimaryButton
-            type="submit"
-            className="w-full lg:w-auto lg:min-w-64"
-            disabled={pending || !canSubmit}
-          >
-            {pending ? "Saving…" : "Save product settings"}
-          </PrimaryButton>
-        </div>
-        <div className="mt-4 space-y-3">
-          <ActionMessage state={state} />
-          <FormStatusHint message={statusMessage} />
-        </div>
-      </div>
-    </form>
-  );
-}
-
-function VariantCard({
-  variant,
-  piecePrice,
-}: {
-  variant: AdminCatalogProduct["variants"][number];
-  piecePrice: number;
-}) {
+function VariantCard({ variant }: { variant: AdminCatalogProduct["variants"][number] }) {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<CatalogActionState>(initialState);
+  const [basePrice, setBasePrice] = useState(variant.basePrice);
+  const validPrice = Number.isFinite(basePrice) && basePrice >= 0 && basePrice <= 10000;
+
+  function save(isActive: boolean) {
+    startTransition(async () =>
+      setMessage(await saveVariantAction({ variantId: variant.id, isActive, basePrice })),
+    );
+  }
+
   return (
     <article className="rounded-card border border-border bg-surface p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="font-display text-xl">{variant.name}</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {variant.pieceCount} × {formatPhp(piecePrice)} ={" "}
-            <strong className="text-foreground">
-              {formatPhp(variant.pieceCount * piecePrice)}
-            </strong>
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{variant.pieceCount} pieces</p>
         </div>
         <span
           className={`rounded-lg px-2.5 py-1 text-xs font-bold ${variant.isActive ? "bg-success-background text-success-foreground" : "bg-surface-muted text-muted-foreground"}`}
@@ -110,19 +65,29 @@ function VariantCard({
           {variant.isActive ? "Available" : "Hidden"}
         </span>
       </div>
-      <SecondaryButton
-        className="mt-5 w-full"
-        disabled={pending}
-        onClick={() =>
-          startTransition(async () =>
-            setMessage(
-              await saveVariantAction({ variantId: variant.id, isActive: !variant.isActive }),
-            ),
-          )
-        }
-      >
-        {pending ? "Saving…" : variant.isActive ? "Hide box size" : "Make available"}
-      </SecondaryButton>
+      <div className="mt-5">
+        <NumberStepper
+          label="Base box price (PHP)"
+          name={`base-price-${variant.id}`}
+          min={0}
+          max={10000}
+          step={0.01}
+          value={basePrice}
+          onChange={setBasePrice}
+          layout="inline"
+        />
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <PrimaryButton
+          disabled={pending || !validPrice || basePrice === variant.basePrice}
+          onClick={() => save(variant.isActive)}
+        >
+          {pending ? "Saving…" : `Save ${formatPhp(basePrice)}`}
+        </PrimaryButton>
+        <SecondaryButton disabled={pending || !validPrice} onClick={() => save(!variant.isActive)}>
+          {pending ? "Saving…" : variant.isActive ? "Hide box size" : "Make available"}
+        </SecondaryButton>
+      </div>
       <div className="mt-3">
         <ActionMessage state={message} />
       </div>
@@ -459,9 +424,6 @@ export function CatalogManager({
           accentClassName="text-warning-foreground"
         />
       </section>
-      <section className="mt-7">
-        <ProductSettings product={product} />
-      </section>
       <section className="mt-7" aria-labelledby="box-sizes-heading">
         <h2 id="box-sizes-heading" className="font-display text-2xl">
           Box sizes
@@ -469,9 +431,8 @@ export function CatalogManager({
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {product.variants.map((variant) => (
             <VariantCard
-              key={`${variant.id}-${variant.isActive}`}
+              key={`${variant.id}-${variant.isActive}-${variant.basePrice}`}
               variant={variant}
-              piecePrice={product.pricePerPiece}
             />
           ))}
         </div>

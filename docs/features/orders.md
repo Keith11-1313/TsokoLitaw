@@ -43,10 +43,12 @@ The pre-v1 baseline removes the retired online refund subsystem.
 
 Order detail opens the review modal. `orders/[orderId]/review/actions.ts` → `server-reviews.ts`
 → `submit_order_review`: active owner, completed order, one review, a required one-to-five rating,
-an optional bounded comment, allow-listed tasting highlights, and an optional validated review image.
+an optional bounded comment, allow-listed tasting highlights, and up to five validated review images.
 Review images use the private `review-media` bucket and are served only to the owner, an Admin, or
 after authorized Admin publication through `moderate_order_review`. Public Journal shows only safe
-approved display data from `get_public_featured_reviews`; no customer emails or raw Storage paths.
+approved display data from `get_public_featured_reviews`: masked customer names, immutable ordered-box
+summaries, review date, rating, highlights, comment, and image count. No customer emails, full public
+names, or raw Storage paths are exposed. Image galleries do not autoplay and handle unavailable files.
 
 Tests: `order-status.test.ts`, `components/orders/orders-list.test.tsx`, local `001_auth_rls`,
 `002_payments`, `003_cancellation`,

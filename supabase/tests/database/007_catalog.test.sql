@@ -22,7 +22,7 @@ select ok(has_function_privilege('service_role','public.update_catalog_product(u
 select throws_ok($$select public.update_catalog_product('e2000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000001','A valid customer-blocked description.',12,true)$$,'P0001','Active administrator access is required','customer cannot update product');
 select lives_ok($$select public.update_catalog_product('e2000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001','Updated chocolate-filled product description.',12,true)$$,'admin updates product');
 select is((select price_per_piece from public.products where id='10000000-0000-4000-8000-000000000001'),12.00::numeric,'product price persisted');
-select lives_ok($$select public.update_catalog_variant('e2000000-0000-4000-8000-000000000001','11000000-0000-4000-8000-000000000006',false)$$,'admin hides approved variant');
+select lives_ok($$select public.update_catalog_variant('e2000000-0000-4000-8000-000000000001','11000000-0000-4000-8000-000000000006',false,55)$$,'admin updates an approved variant');
 select is((select is_active from public.product_variants where id='11000000-0000-4000-8000-000000000006'),false,'variant availability persisted');
 select ok(not has_function_privilege('authenticated','public.upsert_catalog_coating(uuid,uuid,text,text,text,numeric,boolean,boolean)','EXECUTE'),'customers cannot call coating writer');
 select ok(has_function_privilege('service_role','public.upsert_catalog_coating(uuid,uuid,text,text,text,numeric,boolean,boolean)','EXECUTE'),'service role can call coating writer');

@@ -29,16 +29,18 @@ insert into public.product_variants (
   product_id,
   name,
   piece_count,
+  base_price,
   is_active,
   sort_order
 )
 values
-  ('11000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000001', 'TsokoMini (4 pcs)', 4, true, 1),
-  ('11000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000001', 'TsokoMore (6 pcs)', 6, true, 2),
-  ('11000000-0000-4000-8000-000000000008', '10000000-0000-4000-8000-000000000001', 'TsokoMuch (8 pcs)', 8, true, 3)
+  ('11000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000001', 'TsokoMini (4 pcs)', 4, 40.00, true, 1),
+  ('11000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000001', 'TsokoMore (6 pcs)', 6, 55.00, true, 2),
+  ('11000000-0000-4000-8000-000000000008', '10000000-0000-4000-8000-000000000001', 'TsokoMuch (8 pcs)', 8, 75.00, true, 3)
 on conflict (id) do update set
   name = excluded.name,
   piece_count = excluded.piece_count,
+  base_price = excluded.base_price,
   is_active = excluded.is_active,
   sort_order = excluded.sort_order;
 
@@ -54,11 +56,11 @@ insert into public.coatings (
   sort_order
 )
 values
-  ('12000000-0000-4000-8000-000000000001', 'Cocoa', 'cocoa', 'A rich cocoa coating over the chocolate-filled base.', null, 5.00, true, true, 1),
+  ('12000000-0000-4000-8000-000000000001', 'Cocoa', 'cocoa', 'A rich cocoa coating over the chocolate-filled base.', null, 5.00, true, false, 1),
   ('12000000-0000-4000-8000-000000000002', 'Milk', 'milk', 'A creamy milk coating with a soft, mellow finish.', null, 5.00, true, false, 2),
   ('12000000-0000-4000-8000-000000000003', 'Palitaw', 'palitaw', 'A combination of sugar, niyog, and sesame seeds.', null, 5.00, true, false, 3),
   ('12000000-0000-4000-8000-000000000004', 'Crushed Nuts', 'crushed-nuts', 'A crunchy crushed-nut coating for added texture.', null, 5.00, true, false, 4),
-  ('12000000-0000-4000-8000-000000000005', 'Plain', 'plain', 'The soft Litaw exterior with no additional coating.', null, 5.00, true, false, 5),
+  ('12000000-0000-4000-8000-000000000005', 'Plain', 'plain', 'The soft Litaw exterior with no additional coating.', null, 0.00, true, true, 5),
   ('12000000-0000-4000-8000-000000000006', 'Sesame Seeds', 'sesame-seeds', 'A toasted sesame seed coating with a nutty aroma.', null, 5.00, true, false, 6),
   ('12000000-0000-4000-8000-000000000007', 'Cookies and Cream', 'cookies-and-cream', 'Crushed chocolate cookies blended with a creamy coating.', null, 5.00, true, false, 7)
 on conflict (id) do update set
@@ -76,7 +78,7 @@ values (
   '13000000-0000-4000-8000-000000000001',
   'Sea salt cream',
   'extra-sea-salt-cream',
-  18.00,
+  15.00,
   true,
   true
 )

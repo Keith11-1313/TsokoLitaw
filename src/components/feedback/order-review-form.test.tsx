@@ -45,7 +45,7 @@ describe("OrderReviewForm", () => {
       false,
     );
     expect(screen.getByLabelText("Rich cocoa flavor")).toBeTruthy();
-    expect(screen.getByLabelText("Add a review image (optional)")).toBeTruthy();
+    expect(screen.getByLabelText("Add review images (optional)")).toBeTruthy();
   });
 
   it("shows the reviewed state without asking for another submission", () => {
@@ -57,7 +57,7 @@ describe("OrderReviewForm", () => {
           rating: 4,
           comment: "Fresh and neatly packed.",
           highlights: ["Fresh at pickup"],
-          hasImage: false,
+          imageCount: 0,
           createdAt: "2026-09-22T08:00:00Z",
         }}
       />,
@@ -78,7 +78,7 @@ describe("OrderReviewForm", () => {
           rating: 4,
           comment: "",
           highlights: [],
-          hasImage: false,
+          imageCount: 0,
           createdAt: "2026-09-22T08:00:00Z",
         }}
       />,

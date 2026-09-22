@@ -6,7 +6,6 @@ import { isUuid } from "@/lib/identifiers";
 import {
   saveCatalogAddon,
   saveCatalogCoating,
-  updateCatalogProduct,
   updateCatalogVariant,
   uploadCatalogImage,
   removeCatalogImage,
@@ -49,43 +48,19 @@ async function guard(adminId: string) {
   });
 }
 
-export async function saveProductAction(
-  _state: CatalogActionState,
-  formData: FormData,
-): Promise<CatalogActionState> {
-  const admin = await requireAdmin("/admin/products");
-  const productId = String(formData.get("productId") ?? "");
-  const description = String(formData.get("description") ?? "").trim();
-  const priceValue = String(formData.get("pricePerPiece") ?? "").trim();
-  const price = Number(priceValue);
-  if (
-    !isUuid(productId) ||
-    description.length < 10 ||
-    description.length > 500 ||
-    !priceValue ||
-    !Number.isFinite(price) ||
-    price < 0 ||
-    price > 10000 ||
-    !Number.isInteger(price * 100)
-  ) {
-    return { status: "error", message: "Check the product description and price." };
-  }
-  try {
-    await guard(admin.id);
-    await updateCatalogProduct({ adminId: admin.id, productId, description, pricePerPiece: price });
-    refreshCatalog();
-    return { status: "success", message: "Product pricing saved." };
-  } catch (error) {
-    return failure(error, "Product settings could not be saved.");
-  }
-}
-
 export async function saveVariantAction(input: {
   variantId: string;
   isActive: boolean;
+  basePrice: number;
 }): Promise<CatalogActionState> {
   const admin = await requireAdmin("/admin/products");
-  if (!isUuid(input.variantId))
+  if (
+    !isUuid(input.variantId) ||
+    !Number.isFinite(input.basePrice) ||
+    input.basePrice < 0 ||
+    input.basePrice > 10000 ||
+    !Number.isInteger(input.basePrice * 100)
+  )
     return { status: "error", message: "That box size is unavailable." };
   try {
     await guard(admin.id);

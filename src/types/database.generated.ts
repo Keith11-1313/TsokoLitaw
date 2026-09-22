@@ -1084,6 +1084,7 @@ export type Database = {
       }
       product_variants: {
         Row: {
+          base_price: number
           created_at: string
           id: string
           is_active: boolean
@@ -1094,6 +1095,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          base_price: number
           created_at?: string
           id?: string
           is_active?: boolean
@@ -1104,6 +1106,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          base_price?: number
           created_at?: string
           id?: string
           is_active?: boolean
@@ -1205,7 +1208,7 @@ export type Database = {
           display_name_snapshot: string
           highlights: string[]
           id: string
-          image_path: string | null
+          image_paths: string[]
           is_featured: boolean
           is_visible: boolean
           order_id: string
@@ -1219,7 +1222,7 @@ export type Database = {
           display_name_snapshot: string
           highlights?: string[]
           id?: string
-          image_path?: string | null
+          image_paths?: string[]
           is_featured?: boolean
           is_visible?: boolean
           order_id: string
@@ -1233,7 +1236,7 @@ export type Database = {
           display_name_snapshot?: string
           highlights?: string[]
           id?: string
-          image_path?: string | null
+          image_paths?: string[]
           is_featured?: boolean
           is_visible?: boolean
           order_id?: string
@@ -1404,10 +1407,12 @@ export type Database = {
         Returns: {
           comment_value: string
           customer_name: string
-          has_image: boolean
           highlight_values: string[]
+          image_count: number
+          ordered_items: Json
           rating_value: number
           review_id: string
+          reviewed_at: string
         }[]
       }
       get_public_pickup_inventory: {
@@ -1549,7 +1554,7 @@ export type Database = {
         Args: {
           comment_value: string
           highlights_value?: string[]
-          image_path_value?: string
+          image_paths_value?: string[]
           rating_value: number
           target_order_id: string
           target_user_id: string
@@ -1578,6 +1583,7 @@ export type Database = {
       update_catalog_variant: {
         Args: {
           active_value: boolean
+          base_price_value: number
           target_admin_id: string
           target_variant_id: string
         }
