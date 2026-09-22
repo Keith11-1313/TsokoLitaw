@@ -3,6 +3,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OrderReviewForm } from "./order-review-form";
+import { OrderReviewModal } from "./order-review-modal";
 
 vi.mock("@/app/orders/[orderId]/review/actions", () => ({
   submitReviewAction: vi.fn(),
@@ -28,7 +29,11 @@ describe("OrderReviewForm", () => {
     render(<OrderReviewForm {...props} />);
 
     expect(screen.getByText("4-piece box")).toBeTruthy();
+    expect(screen.getByText("2 boxes")).toBeTruthy();
     expect(screen.getByText("Sea salt cream × 4")).toBeTruthy();
+    expect(screen.queryByText("Select one to five stars")).toBeNull();
+    expect(screen.getByText("What stood out?")).toBeTruthy();
+    expect(screen.getByLabelText("Tell us about your experience")).toBeTruthy();
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Submit review" }).disabled).toBe(
       true,
     );
@@ -58,8 +63,29 @@ describe("OrderReviewForm", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "Thank you" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Review submitted" })).toBeTruthy();
+    expect(screen.getByText("Your review is very much appreciated.")).toBeTruthy();
     expect(screen.getByText("Fresh and neatly packed.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Submit review" })).toBeNull();
+  });
+
+  it("labels an existing review clearly before opening the dialog", () => {
+    render(
+      <OrderReviewModal
+        {...props}
+        existingReview={{
+          id: "e5000000-0000-4000-8000-000000000001",
+          rating: 4,
+          comment: "",
+          highlights: [],
+          hasImage: false,
+          createdAt: "2026-09-22T08:00:00Z",
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Review submitted" })).toBeTruthy();
+    expect(screen.getByText(/You already reviewed this order/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "View submitted review" })).toBeTruthy();
   });
 });

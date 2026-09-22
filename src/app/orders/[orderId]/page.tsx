@@ -191,20 +191,12 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
               ) : null}
             </section>
             {reviewContext ? (
-              <section className="rounded-card border border-border bg-surface p-6">
-                <h2 className="font-display text-2xl">Share your experience</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {reviewContext.existingReview
-                    ? "You already reviewed this order. You can view your submitted review below."
-                    : "Each completed order can receive one customer review."}
-                </p>
-                <OrderReviewModal
-                  orderId={reviewContext.orderId}
-                  orderNumber={reviewContext.orderNumber}
-                  itemSummary={reviewContext.itemSummary}
-                  existingReview={reviewContext.existingReview}
-                />
-              </section>
+              <OrderReviewModal
+                orderId={reviewContext.orderId}
+                orderNumber={reviewContext.orderNumber}
+                itemSummary={reviewContext.itemSummary}
+                existingReview={reviewContext.existingReview}
+              />
             ) : null}
             {order.canCancel ? (
               <section className="rounded-card border border-danger-foreground/30 bg-surface p-6">

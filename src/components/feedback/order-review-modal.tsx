@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { OrderReviewForm } from "@/components/feedback/order-review-form";
 import { primaryButtonClassName } from "@/components/ui/button";
@@ -22,8 +22,10 @@ interface OrderReviewModalProps {
 
 export function OrderReviewModal(props: OrderReviewModalProps) {
   const [open, setOpen] = useState(false);
+  const [submitted, setSubmitted] = useState(Boolean(props.existingReview));
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const handleSubmitted = useCallback(() => setSubmitted(true), []);
 
   useEffect(() => {
     if (!open) return;
@@ -40,14 +42,22 @@ export function OrderReviewModal(props: OrderReviewModalProps) {
   }, [open]);
 
   return (
-    <>
+    <section className="rounded-card border border-border bg-surface p-6">
+      <h2 className="font-display text-2xl">
+        {submitted ? "Review submitted" : "Share your experience"}
+      </h2>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+        {submitted
+          ? "You already reviewed this order. You can view your submitted review below."
+          : "Each completed order can receive one customer review."}
+      </p>
       <button
         ref={triggerRef}
         type="button"
         className={`${primaryButtonClassName} mt-5 w-full`}
         onClick={() => setOpen(true)}
       >
-        {props.existingReview ? "View your review" : "Review this order"}
+        {submitted ? "View submitted review" : "Review this order"}
       </button>
       {open ? (
         <div
@@ -76,11 +86,11 @@ export function OrderReviewModal(props: OrderReviewModalProps) {
               </button>
             </div>
             <div className="mt-6">
-              <OrderReviewForm {...props} />
+              <OrderReviewForm {...props} onSubmitted={handleSubmitted} />
             </div>
           </section>
         </div>
       ) : null}
-    </>
+    </section>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { Sparkles, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { submitReviewAction, type ReviewActionState } from "@/app/orders/[orderId]/review/actions";
 import { PrimaryButton } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
@@ -23,6 +23,7 @@ interface OrderReviewFormProps {
     hasImage: boolean;
     createdAt: string;
   };
+  onSubmitted?: () => void;
 }
 
 const ratingDescriptions = [
@@ -54,6 +55,7 @@ export function OrderReviewForm({
   orderNumber,
   itemSummary,
   existingReview,
+  onSubmitted,
 }: OrderReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -68,19 +70,18 @@ export function OrderReviewForm({
     [previewUrl],
   );
 
+  useEffect(() => {
+    if (state.status === "success") onSubmitted?.();
+  }, [onSubmitted, state.status]);
+
   if (existingReview || state.status === "success") {
     const savedRating = existingReview?.rating ?? rating;
     return (
-      <section className="relative overflow-hidden py-4 text-center">
-        <Sparkles
-          aria-hidden="true"
-          className="mx-auto mb-3 text-warning-foreground motion-safe:animate-pulse"
-          size={34}
-        />
+      <section className="py-4 text-center">
         <ReviewStars rating={savedRating} />
-        <h2 className="mt-4 font-display text-2xl">Thank you</h2>
+        <h2 className="mt-4 font-display text-2xl">Review submitted</h2>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-          Thank you. Your review is very much appreciated.
+          Your review is very much appreciated.
         </p>
         {existingReview?.comment ? (
           <p className="mx-auto mt-4 max-w-xl rounded-control bg-surface-muted p-4 text-sm leading-6">
@@ -117,20 +118,27 @@ export function OrderReviewForm({
     <form action={formAction}>
       <input type="hidden" name="orderId" value={orderId} />
       <input type="hidden" name="rating" value={rating || ""} />
-      <div className="rounded-control bg-surface-muted p-4 text-sm">
-        <p className="font-bold">Your order</p>
-        <ul className="mt-3 space-y-3">
+      <div className="rounded-control border border-border bg-surface-muted p-4 text-sm sm:p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+          Order summary
+        </p>
+        <ul className="mt-4 space-y-4">
           {itemSummary.map((item, index) => (
             <li
               key={`${item.name}-${index}`}
-              className="border-t border-border pt-3 first:border-0 first:pt-0"
+              className="border-t border-border pt-4 first:border-0 first:pt-0"
             >
-              <p className="flex justify-between gap-4 font-bold">
-                <span>{item.name}</span>
-                <span>× {item.quantity}</span>
-              </p>
+              <div className="flex items-start justify-between gap-4">
+                <p className="font-bold leading-6">{item.name}</p>
+                <span className="shrink-0 rounded-full border border-border bg-surface px-3 py-1 text-xs font-bold">
+                  {item.quantity} {item.quantity === 1 ? "box" : "boxes"}
+                </span>
+              </div>
               {item.coatings.length ? (
-                <p className="mt-1 leading-6 text-muted-foreground">{item.coatings.join(" · ")}</p>
+                <div className="mt-3 border-l-2 border-brand/25 pl-3">
+                  <p className="text-xs font-bold text-muted-foreground">Coatings</p>
+                  <p className="mt-1 leading-6 text-brand">{item.coatings.join(" · ")}</p>
+                </div>
               ) : null}
             </li>
           ))}
@@ -158,13 +166,14 @@ export function OrderReviewForm({
             </button>
           ))}
         </div>
-        <p className="mt-3 min-h-6 text-center text-sm font-bold text-brand" aria-live="polite">
-          {rating ? ratingDescriptions[rating] : "Select one to five stars"}
-        </p>
+        {rating ? (
+          <p className="mt-3 text-center text-sm font-bold text-brand" aria-live="polite">
+            {ratingDescriptions[rating]}
+          </p>
+        ) : null}
       </fieldset>
       <fieldset className="mt-6">
-        <legend className="text-sm font-bold">Tasting highlights (optional)</legend>
-        <p className="mt-1 text-xs text-muted-foreground">Choose every detail that stood out.</p>
+        <legend className="text-sm font-bold">What stood out?</legend>
         <div className="mt-3 flex flex-wrap gap-2">
           {REVIEW_HIGHLIGHTS.map((highlight) => (
             <label key={highlight} className="cursor-pointer">
@@ -178,7 +187,7 @@ export function OrderReviewForm({
       </fieldset>
       <FormField
         id="review-comment"
-        label="Tell us about your box and pickup experience (optional)"
+        label="Tell us about your experience"
         as="textarea"
         error={state.fieldErrors?.comment}
         className="mt-6"
@@ -208,9 +217,6 @@ export function OrderReviewForm({
           setPreviewUrl(nextImage ? URL.createObjectURL(nextImage) : "");
         }}
       />
-      <p className="mt-2 text-xs leading-5 text-muted-foreground">
-        Your image stays private unless an administrator approves this review for public display.
-      </p>
       {state.status === "error" ? (
         <p
           role="alert"
