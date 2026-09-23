@@ -60,6 +60,19 @@ Journal access, zero customer/order/review state, the three active app Cron jobs
 verified afterward. Temporary activation and verification markers were removed. Production was not
 changed.
 
+On September 24, 2026, the owner approved the Dev-only coordinated reset for the final Phase 15A
+commerce/payment contract. The linked target was confirmed as `mgkzphpznamjlgrpumjd`; Production
+`zkmlzktvjkjrbznvrsxb` remained unlinked and unchanged. The reset discarded the approved disposable
+Dev database, Auth and Storage state without a backup, reapplied the baseline plus the service-role
+grant migration, and loaded the controlled seed containing Chocolate Sprinkles and the current
+₱40/₱55/₱75 box prices. The three licensed Pally/Neco font objects were restored and returned HTTP
+200 from the Dev `brand-fonts/v1/` paths. Linked schema lint and all 385 PostgreSQL assertions passed,
+including the new pay-at-counter authorization and paid-before-completion contract. Because the reset
+removed `pg_cron`, exactly the three approved jobs were recreated from surviving Vault values; their
+names, schedules and endpoint paths passed seven direct SQL assertions, and one authorized request to
+each endpoint returned HTTP 200. The temporary Cron activation migration/history marker and verification
+files were removed, leaving the two intended application migration markers.
+
 ## Hosted activation and ongoing checks
 
 During post-reset review-image testing on September 22, 2026, the application-equivalent
@@ -71,7 +84,7 @@ current public tables and usage on public sequences without expanding `anon` or 
 access. Keep it applied during active Dev testing, then fold it into the single baseline during the
 next separately approved pre-v1 rebaseline.
 
-Hosted Dev has exactly these three app Cron job definitions as of September 22, 2026:
+Hosted Dev has exactly these three app Cron job definitions as of September 24, 2026:
 `tsokolitaw-payment-expirations`, `tsokolitaw-notification-retries`, and
 `tsokolitaw-account-deletions`. The second pre-v1 linked reset removed the `pg_cron` extension and
 jobs while retaining Vault. The extension and exactly these three jobs were recreated afterward.

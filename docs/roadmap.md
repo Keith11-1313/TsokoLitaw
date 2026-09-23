@@ -20,7 +20,7 @@ Use the current [release checks](operations/deployment.md), not old checked-off 
 - Maintainer handover uses task-oriented docs, generated schema types, shared form contracts, and
   discoverable feature paths; do not add abstract layers merely for junior onboarding.
 
-## Phase 15A — final commerce and payment update (local implementation complete; Dev activation pending)
+## Phase 15A — final commerce and payment update (Dev database activated; deployment acceptance pending)
 
 - Add Chocolate Sprinkles to the controlled coating seed with a stable identity, active catalog
   placement, provisional price and the shared placeholder until its square catalog image is uploaded.
@@ -34,8 +34,10 @@ Use the current [release checks](operations/deployment.md), not old checked-off 
   is added. SQL blocks completion until an Admin records received funds.
 - Update the single pre-v1 baseline, generated types, environment guidance, payment/order/customer/Admin
   interfaces, notifications and dashboard provider labels. Validate locally before any hosted reset.
-- Activate the completed contract in hosted Dev only after exact-target reset approval. Production
-  remains a later, separately approved coordinated activation.
+- Hosted Dev received the approved coordinated reset on September 24, including seed data, restored
+  fonts, linked database validation and recreated Cron jobs. Deploy and smoke-test the matching app
+  configuration before marking Phase 15A complete. Production remains a later, separately approved
+  coordinated activation.
 
 ## Phase 15B — Admin Dashboard decision support (planned, required)
 
