@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { OrderReviewForm } from "@/components/feedback/order-review-form";
 import { primaryButtonClassName, secondaryButtonClassName } from "@/components/ui/button";
@@ -25,18 +26,39 @@ export function OrderReviewModal(props: OrderReviewModalProps) {
   const [submitted, setSubmitted] = useState(Boolean(props.existingReview));
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const handleSubmitted = useCallback(() => setSubmitted(true), []);
 
   useEffect(() => {
     if (!open) return;
     const trigger = triggerRef.current;
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     closeRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Tab") return;
+
+      const focusable = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
       trigger?.focus();
     };
   }, [open]);
@@ -59,38 +81,42 @@ export function OrderReviewModal(props: OrderReviewModalProps) {
       >
         {submitted ? "View my review" : "Review this order"}
       </button>
-      {open ? (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-foreground/40 p-4"
-          onPointerDown={() => setOpen(false)}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="order-review-title"
-            onPointerDown={(event) => event.stopPropagation()}
-            className="my-auto w-full max-w-2xl rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <h2 id="order-review-title" className="font-display text-3xl">
-                {submitted ? "My review" : "Review"} {props.orderNumber}
-              </h2>
-              <button
-                ref={closeRef}
-                type="button"
-                aria-label="Close review dialog"
-                onClick={() => setOpen(false)}
-                className="flex size-11 shrink-0 items-center justify-center text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      {open
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[110] flex items-start justify-center overflow-y-auto bg-foreground/40 p-3 sm:p-6"
+              onPointerDown={() => setOpen(false)}
+            >
+              <section
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="order-review-title"
+                onPointerDown={(event) => event.stopPropagation()}
+                className="my-auto w-full max-w-2xl rounded-card border border-border bg-surface p-5 shadow-2xl sm:p-8"
               >
-                <X aria-hidden="true" size={22} />
-              </button>
-            </div>
-            <div className="mt-6">
-              <OrderReviewForm {...props} onSubmitted={handleSubmitted} />
-            </div>
-          </section>
-        </div>
-      ) : null}
+                <div className="flex items-start justify-between gap-4">
+                  <h2 id="order-review-title" className="font-display text-3xl">
+                    {submitted ? "My review" : "Review"} {props.orderNumber}
+                  </h2>
+                  <button
+                    ref={closeRef}
+                    type="button"
+                    aria-label="Close review dialog"
+                    onClick={() => setOpen(false)}
+                    className="flex size-11 shrink-0 items-center justify-center text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                  >
+                    <X aria-hidden="true" size={22} />
+                  </button>
+                </div>
+                <div className="mt-6">
+                  <OrderReviewForm {...props} onSubmitted={handleSubmitted} />
+                </div>
+              </section>
+            </div>,
+            document.body,
+          )
+        : null}
     </section>
   );
 }
