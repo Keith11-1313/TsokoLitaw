@@ -5,10 +5,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ManualPaymentReview } from "./manual-payment-review";
 
 const loadManualPaymentAction = vi.fn();
+const reviewManualPaymentAction = vi.fn();
 
 vi.mock("@/app/admin/orders/actions", () => ({
   loadManualPaymentAction: (...args: unknown[]) => loadManualPaymentAction(...args),
-  reviewManualPaymentAction: vi.fn(),
+  reviewManualPaymentAction: (...args: unknown[]) => reviewManualPaymentAction(...args),
 }));
 
 afterEach(() => {
@@ -129,5 +130,49 @@ describe("ManualPaymentReview", () => {
     fireEvent.click(screen.getByRole("button", { name: "Keep editing" }));
     await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     expect(screen.getByRole("dialog")).toBeTruthy();
+  });
+
+  it("reveals the rejection reason only after reject is selected", async () => {
+    loadManualPaymentAction.mockResolvedValue({
+      manual_qr_payload: "test",
+      status: "UNDER_REVIEW",
+      recipientName: "JE***D E.",
+      accepting: false,
+      expiresAt: null,
+      approvedReferenceConflict: null,
+      submissions: [
+        {
+          id: "b6000000-0000-4000-8000-000000000005",
+          reported_reference: "2041737988651",
+          reported_amount: 60,
+          reported_paid_at: "2026-09-14T00:03:00.000Z",
+          reported_recipient: "Jerald Esmeria",
+          status: "UNDER_REVIEW",
+          submitted_at: "2026-09-14T00:03:45.000Z",
+          rejection_reason: null,
+        },
+      ],
+    });
+
+    render(
+      <ManualPaymentReview
+        orderId="b5000000-0000-4000-8000-000000000005"
+        orderNumber="TL-0021"
+        paymentStatus="UNDER_REVIEW"
+        total={60}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Review payment for TL-0021" }));
+    expect(await screen.findByRole("dialog")).toBeTruthy();
+    expect(screen.queryByLabelText("Why are you rejecting this receipt?")).toBeNull();
+
+    await waitFor(() =>
+      expect(
+        (screen.getByRole("button", { name: "Reject receipt" }) as HTMLButtonElement).disabled,
+      ).toBe(false),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Reject receipt" }));
+    expect(screen.getByLabelText("Why are you rejecting this receipt?")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Confirm rejection" })).toBeTruthy();
   });
 });

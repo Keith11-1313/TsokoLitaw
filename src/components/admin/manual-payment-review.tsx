@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { CheckCircle2, CircleX, X } from "lucide-react";
 import { loadManualPaymentAction, reviewManualPaymentAction } from "@/app/admin/orders/actions";
 import { DiscardChangesDialog } from "@/components/admin/discard-changes-dialog";
 import { PrimaryButton, SecondaryButton } from "@/components/ui/button";
+import { Toast } from "@/components/ui/toast";
 import { useEditorDialog } from "@/hooks/use-editor-dialog";
 import { cn } from "@/lib/cn";
 import { formatPhp } from "@/lib/commerce";
@@ -43,17 +44,32 @@ export function ManualPaymentReview({
   const [message, setMessage] = useState("");
   const [reason, setReason] = useState("");
   const [verified, setVerified] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [messageTone, setMessageTone] = useState<"success" | "error">("success");
+  const [toast, setToast] = useState<{
+    id: number;
+    message: string;
+    tone: "success" | "error";
+  } | null>(null);
   const [pending, startTransition] = useTransition();
   const label = paymentStatus === "UNDER_REVIEW" ? "Review payment" : "View payment";
   const proof = payment?.submissions[0];
 
-  function load() {
+  function notify(message: string, tone: "success" | "error") {
+    setMessageTone(tone);
+    setToast({ id: Date.now(), message, tone });
+  }
+
+  function load(announce = false) {
     setMessage("");
     startTransition(async () => {
       try {
         setPayment(await loadManualPaymentAction(orderId));
+        if (announce) notify("Payment details refreshed.", "success");
       } catch {
-        setMessage("We couldn’t load the payment details. Please try again.");
+        const nextMessage = "We couldn’t load the payment details. Please try again.";
+        setMessage(nextMessage);
+        notify(nextMessage, "error");
       }
     });
   }
@@ -63,6 +79,7 @@ export function ManualPaymentReview({
     setMessage("");
     setReason("");
     setVerified(false);
+    setRejecting(false);
     setOpen(true);
     load();
   }
@@ -79,19 +96,32 @@ export function ManualPaymentReview({
           verified,
         });
         setMessage(result.message);
+        notify(result.message, result.status === "success" ? "success" : "error");
         if (result.status === "success") {
           setVerified(false);
           setReason("");
+          setRejecting(false);
           setPayment(await loadManualPaymentAction(orderId));
         }
       } catch {
-        setMessage("We lost the connection. Refresh the payment details before trying again.");
+        const nextMessage =
+          "We lost the connection. Refresh the payment details before trying again.";
+        setMessage(nextMessage);
+        notify(nextMessage, "error");
       }
     });
   }
 
   return (
     <>
+      {toast ? (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          tone={toast.tone}
+          onDismiss={() => setToast(null)}
+        />
+      ) : null}
       <SecondaryButton
         aria-label={`${label} for ${orderNumber}`}
         className={cn("w-full px-4", className)}
@@ -109,10 +139,13 @@ export function ManualPaymentReview({
               message={message}
               reason={reason}
               verified={verified}
+              rejecting={rejecting}
               pending={pending}
+              messageTone={messageTone}
               onReasonChange={setReason}
               onVerifiedChange={setVerified}
-              onRefresh={load}
+              onRejectingChange={setRejecting}
+              onRefresh={() => load(true)}
               onReview={review}
               onClose={() => setOpen(false)}
             />,
@@ -131,9 +164,12 @@ function ManualPaymentReviewDialog({
   message,
   reason,
   verified,
+  rejecting,
   pending,
+  messageTone,
   onReasonChange,
   onVerifiedChange,
+  onRejectingChange,
   onRefresh,
   onReview,
   onClose,
@@ -145,14 +181,17 @@ function ManualPaymentReviewDialog({
   message: string;
   reason: string;
   verified: boolean;
+  rejecting: boolean;
   pending: boolean;
+  messageTone: "success" | "error";
   onReasonChange: (value: string) => void;
   onVerifiedChange: (value: boolean) => void;
+  onRejectingChange: (value: boolean) => void;
   onRefresh: () => void;
   onReview: (approve: boolean) => void;
   onClose: () => void;
 }) {
-  const isDirty = verified || reason.trim().length > 0;
+  const isDirty = verified || rejecting || reason.trim().length > 0;
   const { dialogRef, discardDialogRef, confirmDiscard, requestClose, keepEditing, discardChanges } =
     useEditorDialog({ isDirty, pending, onClose });
 
@@ -263,14 +302,26 @@ function ManualPaymentReviewDialog({
                       </dd>
                     </div>
                   </dl>
-                  <a
-                    className="inline-flex min-h-11 items-center rounded-sm font-bold text-brand underline decoration-border underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-                    href={`/api/payment-receipts/${proof.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View original receipt
-                  </a>
+                  <figure className="overflow-hidden rounded-control border border-border">
+                    {/* Private Admin-authorized route; do not send it through the public image optimizer. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/api/payment-receipts/${proof.id}`}
+                      alt={`Submitted GCash receipt for ${orderNumber}`}
+                      className="max-h-[32rem] w-full bg-surface-muted object-contain"
+                    />
+                    <figcaption className="flex flex-col gap-2 border-t border-border bg-surface-muted p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <span className="font-bold">Submitted receipt</span>
+                      <a
+                        className="inline-flex min-h-11 items-center rounded-sm font-bold text-brand underline decoration-border underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                        href={`/api/payment-receipts/${proof.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open full size
+                      </a>
+                    </figcaption>
+                  </figure>
                   {referenceConflict ? (
                     <div
                       role="alert"
@@ -301,54 +352,97 @@ function ManualPaymentReviewDialog({
                         />
                         I checked the receiving GCash account and compared the receipt details.
                       </label>
-                      <label className="block font-bold">
-                        Reason if rejecting
-                        <input
-                          list={`rejection-reasons-${orderId}`}
-                          value={reason}
-                          disabled={pending}
-                          onChange={(event) => onReasonChange(event.target.value)}
-                          maxLength={500}
-                          placeholder="Type a reason or choose a suggestion"
-                          className="mt-2 min-h-12 w-full rounded-control border border-border bg-surface p-3 font-normal outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
-                        />
-                        <datalist id={`rejection-reasons-${orderId}`}>
-                          {REJECTION_REASON_SUGGESTIONS.map((suggestion) => (
-                            <option key={suggestion} value={suggestion} />
-                          ))}
-                        </datalist>
-                      </label>
                       <p className="text-xs leading-5 text-muted-foreground">
                         Approving confirms the order and queues its confirmation email. A rejection
                         gives the customer 15 minutes to send a corrected receipt. If they do not,
                         the unpaid order can expire.
                       </p>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <SecondaryButton
-                          disabled={pending || !verified || reason.trim().length < 3}
-                          onClick={() => onReview(false)}
-                          className="border-danger-foreground text-danger-foreground"
-                        >
-                          Reject receipt
-                        </SecondaryButton>
-                        <PrimaryButton
-                          disabled={
-                            pending ||
-                            !verified ||
-                            proof.reported_amount !== total ||
-                            !!referenceConflict
-                          }
-                          onClick={() => onReview(true)}
-                        >
-                          Approve payment
-                        </PrimaryButton>
-                      </div>
+                      {rejecting ? (
+                        <div className="rounded-control border border-danger-foreground/30 bg-danger/5 p-4">
+                          <label className="block font-bold text-danger-foreground">
+                            Why are you rejecting this receipt?
+                            <input
+                              list={`rejection-reasons-${orderId}`}
+                              value={reason}
+                              disabled={pending}
+                              onChange={(event) => onReasonChange(event.target.value)}
+                              maxLength={500}
+                              placeholder="Type a reason or choose a suggestion"
+                              className="mt-2 min-h-12 w-full rounded-control border border-border bg-surface p-3 font-normal text-foreground outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
+                            />
+                            <datalist id={`rejection-reasons-${orderId}`}>
+                              {REJECTION_REASON_SUGGESTIONS.map((suggestion) => (
+                                <option key={suggestion} value={suggestion} />
+                              ))}
+                            </datalist>
+                          </label>
+                          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <SecondaryButton
+                              disabled={pending}
+                              onClick={() => {
+                                onReasonChange("");
+                                onRejectingChange(false);
+                              }}
+                            >
+                              Cancel
+                            </SecondaryButton>
+                            <PrimaryButton
+                              disabled={pending || !verified || reason.trim().length < 3}
+                              onClick={() => onReview(false)}
+                              className="bg-danger-foreground"
+                            >
+                              Confirm rejection
+                            </PrimaryButton>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <SecondaryButton
+                            disabled={pending}
+                            onClick={() => onRejectingChange(true)}
+                            className="border-danger-foreground text-danger-foreground"
+                          >
+                            Reject receipt
+                          </SecondaryButton>
+                          <PrimaryButton
+                            disabled={
+                              pending ||
+                              !verified ||
+                              proof.reported_amount !== total ||
+                              !!referenceConflict
+                            }
+                            onClick={() => onReview(true)}
+                          >
+                            Approve payment
+                          </PrimaryButton>
+                        </div>
+                      )}
                     </>
                   ) : (
-                    <p>
-                      {proof.status.toLowerCase()}
-                      {proof.rejection_reason ? `: ${proof.rejection_reason}` : ""}
-                    </p>
+                    <div
+                      className={cn(
+                        "flex items-start gap-3 rounded-control border p-4",
+                        proof.status === "APPROVED"
+                          ? "border-border bg-surface-muted text-brand"
+                          : "border-danger-foreground/30 bg-danger/5 text-danger-foreground",
+                      )}
+                    >
+                      {proof.status === "APPROVED" ? (
+                        <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={20} />
+                      ) : (
+                        <CircleX aria-hidden="true" className="mt-0.5 shrink-0" size={20} />
+                      )}
+                      <div>
+                        <p className="font-bold">
+                          {proof.status === "APPROVED" ? "Payment approved" : "Receipt rejected"}
+                        </p>
+                        <p className="mt-1 leading-6">
+                          {proof.status === "APPROVED"
+                            ? "Payment was verified and the order was confirmed."
+                            : proof.rejection_reason}
+                        </p>
+                      </div>
+                    </div>
                   )}
                   {payment.submissions.slice(1).map((previous) => (
                     <p key={previous.id}>
@@ -369,9 +463,14 @@ function ManualPaymentReviewDialog({
             </>
           ) : null}
 
-          <p role="status" aria-live="polite" className="leading-6">
-            {message}
-          </p>
+          {message && messageTone === "error" ? (
+            <p
+              role="alert"
+              className="rounded-control bg-danger/5 p-4 leading-6 text-danger-foreground"
+            >
+              {message}
+            </p>
+          ) : null}
         </div>
       </section>
 

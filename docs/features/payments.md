@@ -47,6 +47,9 @@ Manual correction remains required because wallet layouts and OCR output can cha
 Server validation accepts only decoded JPG/PNG/WebP up to 3 MiB. Originals are in private
 `payment-receipts` Storage; `manual_payment_submissions` retains attempts and decisions with
 owner/Admin read RLS. Receipt URLs authenticate each request; no public Storage URL is returned.
+The customer payment page and Admin review dialog show the authorized receipt inline, with an
+optional full-size link. Under-review status is already authoritative on the page, so the customer
+does not receive a redundant manual status-check control.
 Customer-entered receipt details use `reported_reference`, `reported_amount`, `reported_paid_at`,
 and `reported_recipient` so they cannot be confused with the verified payment record.
 Known SQL failures clean up only the newly uploaded file. Unknown commit outcomes retain evidence;
@@ -69,7 +72,10 @@ event. Known reused references are detected before the review mutation, and Admi
 that already used the reference before approval. The partial unique index remains the final
 concurrency safeguard so one normalized reference cannot pay multiple orders.
 Screenshots/OCR/customer corrections are untrusted; the Admin checkbox is an acknowledgment,
-not independent verification by an API.
+not independent verification by an API. The decision controls appear only for an under-review
+submission. Choosing rejection progressively reveals the required reason field; approved and
+rejected submissions use read-only outcome panels. Refresh and decision results use accessible,
+auto-dismissing toast feedback while actionable errors remain visible in the dialog.
 
 Reject requires a reason, retains the old receipt and opens a 15-minute correction window.
 Admin rejection uses editable text with optional suggestions; the final written reason is stored

@@ -9,7 +9,7 @@ import {
   ManualPaymentStatusPanel,
   type ManualPaymentPageState,
 } from "@/components/orders/manual-payment-status-panel";
-import { PaymentDeadline, PaymentStatusRefresh } from "@/components/orders/payment-status-refresh";
+import { PaymentDeadline } from "@/components/orders/payment-status-refresh";
 import { requireCustomer } from "@/lib/auth";
 import { formatPhp } from "@/lib/commerce";
 import { getManualPayment, type ManualPaymentDetails } from "@/lib/server-manual-payment";
@@ -20,24 +20,47 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-function ReceiptHistory({ payment }: { payment: ManualPaymentDetails }) {
+function ReceiptHistory({
+  payment,
+  orderNumber,
+}: {
+  payment: ManualPaymentDetails;
+  orderNumber: string;
+}) {
   if (!payment.submissions.length) return null;
 
   return (
-    <div className="space-y-3 border-t border-border pt-5">
-      <h3 className="font-bold">Submitted receipts</h3>
-      {payment.submissions.map((proof) => (
-        <p key={proof.id} className="break-words text-sm leading-6">
-          <a
-            href={`/api/payment-receipts/${proof.id}`}
-            target="_blank"
-            rel="noreferrer"
-            className="font-bold text-brand underline"
-          >
-            View receipt
-          </a>{" "}
-          · {proof.reported_reference} · {proof.status.toLowerCase().replaceAll("_", " ")}
-        </p>
+    <div className="space-y-4 border-t border-border pt-5">
+      <h3 className="font-display text-xl">Your submitted receipt</h3>
+      {payment.submissions.map((proof, index) => (
+        <figure key={proof.id} className="overflow-hidden rounded-control border border-border">
+          {/* Private owner-authorized route; do not send it through the public image optimizer. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/api/payment-receipts/${proof.id}`}
+            alt={`GCash receipt for ${orderNumber}${index ? `, earlier submission ${index + 1}` : ""}`}
+            className="max-h-[32rem] w-full bg-surface-muted object-contain"
+          />
+          <figcaption className="grid gap-2 border-t border-border bg-surface-muted p-4 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
+            <div className="min-w-0">
+              <p className="font-bold">
+                {index === 0 ? "Latest submission" : `Earlier submission ${index + 1}`}
+              </p>
+              <p className="mt-1 break-all text-muted-foreground">
+                Reference {proof.reported_reference} ·{" "}
+                {proof.status.toLowerCase().replaceAll("_", " ")}
+              </p>
+            </div>
+            <a
+              href={`/api/payment-receipts/${proof.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-11 items-center font-bold text-brand underline underline-offset-4"
+            >
+              Open full size
+            </a>
+          </figcaption>
+        </figure>
       ))}
     </div>
   );
@@ -162,9 +185,8 @@ export default async function ManualPaymentPage({
                 expectedAmount={order.total}
                 orderCreatedAt={order.orderedAt}
               />
-              <PaymentStatusRefresh expiresAt={payment.expiresAt} />
               <div className="mt-6">
-                <ReceiptHistory payment={payment} />
+                <ReceiptHistory payment={payment} orderNumber={order.orderNumber} />
               </div>
             </section>
           </div>
@@ -173,9 +195,10 @@ export default async function ManualPaymentPage({
             state={closedState}
             orderId={orderId}
             orderNumber={order.orderNumber}
-            action={underReview ? <PaymentStatusRefresh showControl /> : null}
           >
-            {underReview || paid ? <ReceiptHistory payment={payment} /> : null}
+            {underReview || paid ? (
+              <ReceiptHistory payment={payment} orderNumber={order.orderNumber} />
+            ) : null}
           </ManualPaymentStatusPanel>
         )}
       </SiteContainer>
