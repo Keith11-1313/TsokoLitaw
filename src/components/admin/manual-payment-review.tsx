@@ -436,11 +436,9 @@ function ManualPaymentReviewDialog({
                         <p className="font-bold">
                           {proof.status === "APPROVED" ? "Payment approved" : "Receipt rejected"}
                         </p>
-                        <p className="mt-1 leading-6">
-                          {proof.status === "APPROVED"
-                            ? "Payment was verified and the order was confirmed."
-                            : proof.rejection_reason}
-                        </p>
+                        {proof.status === "REJECTED" && proof.rejection_reason ? (
+                          <p className="mt-1 leading-6">{proof.rejection_reason}</p>
+                        ) : null}
                       </div>
                     </div>
                   )}

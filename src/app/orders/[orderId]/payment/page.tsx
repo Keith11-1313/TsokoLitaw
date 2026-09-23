@@ -31,34 +31,88 @@ function ReceiptHistory({
 
   return (
     <div className="space-y-4 border-t border-border pt-5">
-      <h3 className="font-display text-xl">Your submitted receipt</h3>
+      <h3 className="font-display text-xl">
+        {payment.submissions.length === 1 ? "Your submitted receipt" : "Your submitted receipts"}
+      </h3>
       {payment.submissions.map((proof, index) => (
-        <figure key={proof.id} className="overflow-hidden rounded-control border border-border">
-          {/* Private owner-authorized route; do not send it through the public image optimizer. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`/api/payment-receipts/${proof.id}`}
-            alt={`GCash receipt for ${orderNumber}${index ? `, earlier submission ${index + 1}` : ""}`}
-            className="max-h-[32rem] w-full bg-surface-muted object-contain"
-          />
-          <figcaption className="grid gap-2 border-t border-border bg-surface-muted p-4 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
-            <div className="min-w-0">
-              <p className="font-bold">
-                {index === 0 ? "Latest submission" : `Earlier submission ${index + 1}`}
-              </p>
-              <p className="mt-1 break-all text-muted-foreground">
-                Reference {proof.reported_reference} ·{" "}
-                {proof.status.toLowerCase().replaceAll("_", " ")}
-              </p>
+        <figure
+          key={proof.id}
+          className="grid overflow-hidden rounded-control border border-border bg-surface-muted md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]"
+        >
+          <div className="flex min-w-0 flex-col border-b border-border md:border-r md:border-b-0">
+            <div className="flex min-h-72 flex-1 items-center justify-center p-3 sm:p-5">
+              {/* Private owner-authorized route; do not send it through the public image optimizer. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/api/payment-receipts/${proof.id}`}
+                alt={`GCash receipt for ${orderNumber}${index ? `, earlier submission ${index + 1}` : ""}`}
+                className="max-h-[32rem] h-auto max-w-full object-contain"
+              />
             </div>
             <a
               href={`/api/payment-receipts/${proof.id}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-11 items-center font-bold text-brand underline underline-offset-4"
+              className="inline-flex min-h-12 items-center justify-center border-t border-border bg-surface px-4 text-sm font-bold text-brand underline underline-offset-4"
             >
               Open full size
             </a>
+          </div>
+          <figcaption className="min-w-0 bg-surface p-5 text-sm sm:p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+              {index === 0 ? "Latest submission" : `Earlier submission ${index + 1}`}
+            </p>
+            <dl className="mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2">
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                  Status
+                </dt>
+                <dd className="mt-1 font-bold text-brand">
+                  {proof.status === "UNDER_REVIEW"
+                    ? "Under review"
+                    : proof.status === "APPROVED"
+                      ? "Approved"
+                      : "Rejected"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                  Amount
+                </dt>
+                <dd className="mt-1 font-bold">{formatPhp(proof.reported_amount)}</dd>
+              </div>
+              <div className="sm:col-span-2 md:col-span-1 lg:col-span-2">
+                <dt className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                  Reference
+                </dt>
+                <dd className="mt-1 break-all font-bold">{proof.reported_reference}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                  Date and time
+                </dt>
+                <dd className="mt-1">
+                  {new Date(proof.reported_paid_at).toLocaleString("en-PH", {
+                    timeZone: "Asia/Manila",
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}{" "}
+                  PHT
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                  Recipient
+                </dt>
+                <dd className="mt-1 break-words">{proof.reported_recipient}</dd>
+              </div>
+            </dl>
+            {proof.rejection_reason ? (
+              <div className="mt-5 rounded-control bg-warning-background p-4 leading-6 text-warning-foreground">
+                <p className="font-bold">Reason for rejection</p>
+                <p className="mt-1">{proof.rejection_reason}</p>
+              </div>
+            ) : null}
           </figcaption>
         </figure>
       ))}
