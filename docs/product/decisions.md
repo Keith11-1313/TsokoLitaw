@@ -115,9 +115,10 @@ Dev and Production remain isolated deployments/data/providers. SQL promotion is 
 Ordinary work follows development → reviewed PR → main; feature branches are reserved for risky/large work.
 See [environments](../getting-started/environments.md) and [deployment](../operations/deployment.md).
 
-Phase 15's approved thin TWA APK is active work but is not implemented or accepted yet. Optional
-Phase 16 public-only analytics remains planned. Their scope and remaining work live only in the
-[roadmap](../roadmap.md).
+Phase 15A's final commerce/payment update is active. Required Phase 15B Admin Dashboard
+decision-support work follows it, then Phase 15C builds and accepts the approved thin TWA APK.
+Optional Phase 16 public-only analytics remains planned. Their scope and remaining work live only
+in the [roadmap](../roadmap.md).
 Completed phase-by-phase implementation checklists remain recoverable through Git rather than
 being repeated as current instructions. Ordinary applied migrations are immutable; the explicitly
 approved pre-v1 baseline replacement follows the separate database migration runbook.

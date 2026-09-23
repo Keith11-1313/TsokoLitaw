@@ -1,12 +1,13 @@
 # Current work and approved next phases
 
-The owner defines v1.0 as the completed and accepted Phase 15 Android APK plus the working web app.
+The owner defines v1.0 as the completed and accepted Phase 15C Android APK plus the working web app.
 Until then the whole application is pre-release, including the Vercel Production environment.
 Disposable test data does not require backward-compatibility layers. Database cleanup/rebaselining
 is approved in principle; each hosted reset still needs its exact project and scope confirmed.
 
-The production/security baseline (Phase 13) and UI stabilization (Phase 14) are complete. Phase 15
-Android APK work is active.
+The production/security baseline (Phase 13) and UI stabilization (Phase 14) are complete. Phase 15A
+is the active final commerce/payment update. Phase 15B completes the required Admin Dashboard
+decision-support improvements before Phase 15C builds and accepts the Android APK.
 Completion of an earlier smoke test does not establish that every future deployment is healthy.
 Use the current [release checks](operations/deployment.md), not old checked-off implementation lists.
 
@@ -19,7 +20,41 @@ Use the current [release checks](operations/deployment.md), not old checked-off 
 - Maintainer handover uses task-oriented docs, generated schema types, shared form contracts, and
   discoverable feature paths; do not add abstract layers merely for junior onboarding.
 
-## Phase 15 — required Android APK (active)
+## Phase 15A — final commerce and payment update (active)
+
+- Add Chocolate Sprinkles to the controlled coating seed with a stable identity, active catalog
+  placement, provisional price and the shared placeholder until its square catalog image is uploaded.
+- Replace deployment-level `PAYMENT_METHOD` selection with `PAYMENT_MODE=automatic|manual`.
+  Automatic mode offers PayMongo only. Manual mode lets the customer choose Manual GCash or Pay at
+  the Counter while still creating and pricing every order through authenticated website checkout.
+- Pin the selected method per order. Preserve the existing Manual GCash proof/review workflow and
+  zero-total loyalty settlement. Add an audited, active-Admin-only counter-payment confirmation.
+- Define and test counter-order reservation, fulfillment, cancellation, no-show and completion rules.
+  Counter orders may not be represented as paid before an Admin records received funds.
+- Update the single pre-v1 baseline, generated types, environment guidance, payment/order/customer/Admin
+  interfaces, notifications and dashboard provider labels. Validate locally before any hosted reset.
+- Activate the completed contract in hosted Dev only after exact-target reset approval. Production
+  remains a later, separately approved coordinated activation.
+
+## Phase 15B — Admin Dashboard decision support (planned, required)
+
+Begin after Phase 15A is implemented and verified in Dev. This phase is required before the APK
+freeze because administrators need reliable business and operational reporting in the v1 web app.
+
+- Replace the paid-sales columns with an accessible line/area trend that exposes both paid sales and
+  paid-order volume, retains exact keyboard-accessible values and handles longer grouped ranges.
+- Surface already available but unused measures: paid-extra sales, sales per purchasing customer,
+  new-versus-returning customers and previous-period fulfillment-time comparison.
+- Clarify the order-outcome cohort and add a cohort-correct created-to-paid-to-completed funnel plus
+  actionable active-order aging. Do not combine mismatched creation and payment cohorts.
+- Replace the misleading aggregate "Inventory coverage" label with honest current stock wording,
+  then add upcoming pickup-date supply-versus-demand and shortage risk from authoritative data.
+- Improve chart scales, legends, category colors, empty states, visible data fallback and mobile
+  presentation without weakening the existing date range or previous-period rules.
+- Extend the dashboard RPC only for metrics that cannot be derived safely from its current output;
+  cover every SQL addition with pgTAP and application tests before the final rebaseline.
+
+## Phase 15C — required Android APK (planned)
 
 Build a PWABuilder/Bubblewrap **Trusted Web Activity** around `https://www.tsokolitaw.com`, not
 Capacitor, an embedded WebView, React Native or native commerce. The existing online website remains
@@ -27,7 +62,7 @@ the single application. No offline ordering or payment.
 
 ### Required v1 database freeze before the APK
 
-Complete this gate before building and accepting the signed v1 APK:
+Complete Phases 15A and 15B, then complete this gate before building and accepting the signed v1 APK:
 
 Current status (September 22, 2026): the expanded review contract and private `review-media`
 bucket are folded into the single baseline and activated in hosted Dev. Dev was reset, its licensed
@@ -67,7 +102,7 @@ second authentication/payment stack inside Android.
 
 ## Phase 16 — optional basic Web Analytics (not implemented)
 
-Begin only after the website and Phase 15 APK are stable.
+Begin only after the website and Phase 15C APK are stable.
 
 - Use `@vercel/analytics` for default aggregate page views only.
 - Strict `beforeSend` allowlist: `/`, `/our-creations`, `/journal`, `/terms`, `/privacy`.

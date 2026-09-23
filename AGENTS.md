@@ -28,8 +28,9 @@ baseline over compatibility solely for disposable pre-release data. A coordinate
 replace migration history after dependency review and local validation; confirm the exact hosted
 project and destructive scope before resetting it. Never infer that provider funds are disposable.
 
-Phase 13 production/security and Phase 14 UI stabilization are complete. Phase 15, the approved
-thin TWA Android APK, is active. Optional Phase 16 is public-page aggregate Web Analytics after APK
+Phase 13 production/security and Phase 14 UI stabilization are complete. Phase 15A final
+commerce/payment work is active; required Phase 15B Admin Dashboard decision support and Phase 15C
+thin TWA Android APK follow. Optional Phase 16 is public-page aggregate Web Analytics after APK
 stability. See [roadmap](docs/roadmap.md); work listed there is not implemented until verified.
 
 Keep one Next.js application with Admin under `/admin`, suited to a campus business of roughly
