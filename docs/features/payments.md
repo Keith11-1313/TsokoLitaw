@@ -2,9 +2,20 @@
 
 ## Choosing the checkout method
 
-Server-only `PAYMENT_METHOD` accepts `paymongo` (default) or `manual_gcash`. New checkout uses
-`create_checkout_order`, the single atomic writer, and pins `orders.payment_method` in that transaction. Retries/resume read the stored method. Changing the environment variable
-does not change existing orders. Zero-total loyalty still settles without an external payment.
+Required server-only `PAYMENT_MODE` accepts `automatic` or `manual`. Automatic offers PayMongo only.
+Manual lets the customer choose Manual GCash or Pay at the Counter. New checkout uses
+`create_checkout_order`, the single atomic writer, and pins `orders.payment_method` in that
+transaction. Retries use the stored method; changing the deployment mode does not change existing
+orders. Zero-total loyalty still settles without an external payment.
+
+## Pay at the Counter
+
+This remains a website order, never an untracked walk-in sale. The atomic checkout reserves the
+chosen inventory/reward, inserts a `pay_at_counter` payment row for the exact server-priced total,
+and starts the order at `CONFIRMED` with payment `PENDING` and no countdown expiry. Admin may move
+the order through `PREPARING` and `READY_FOR_PICKUP` while unpaid, but SQL blocks `COMPLETED` until
+an active Admin uses the audited `record_counter_payment` operation. Staff must receive the exact
+amount before confirming it. The action is idempotent and does not accept a browser-supplied amount.
 
 ## Manual GCash
 
@@ -67,7 +78,8 @@ An uncorrected pending order can then expire/release normally. Do not reject an 
 transfer merely to clear the queue; resolve discrepancies with the customer first. Rejection and
 submission add no new email events; customers check their order status. Paid concerns remain in person.
 
-Local tests: `012_manual_gcash.test.sql`, `gcash-qr.test.ts`, `receipt-details.test.ts`, plus the
+Local tests: `012_manual_gcash.test.sql`, `014_pay_at_counter.test.sql`, `gcash-qr.test.ts`,
+`receipt-details.test.ts`, plus the
 existing payment/loyalty/inventory suite. For future database-dependent payment changes, validate SQL
 and application behavior on Dev before deliberately coordinating the Production migration and deployment.
 

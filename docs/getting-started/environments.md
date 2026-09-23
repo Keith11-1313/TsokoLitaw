@@ -60,15 +60,16 @@ and restore only required assets for the exact target before declaring that envi
 Use `.env.example` as the maintained application-variable template. Do not restore the retired
 `REFUND_DESTINATION_ENCRYPTION_KEY` or add unused email settings from old docs.
 Public variables are built into the client, while server variables are captured by the running deployment.
-Any Vercel variable change, including `PAYMENT_METHOD`, requires a new deployment in the same project
+Any Vercel variable change, including `PAYMENT_MODE`, requires a new deployment in the same project
 and environment scope. Local server-variable changes require restarting the Next.js process.
 
 ## External services
 
-`PAYMENT_METHOD=paymongo` is the backward-compatible default. `manual_gcash` also requires
-server-only `GCASH_BASE_QR_PAYLOAD` (decoded recipient QR). Do not put the actual payload in Git.
-Keep PayMongo configuration/webhooks working for pre-existing PayMongo orders when switching modes.
-Both methods require a compatible pre-v1 baseline. Hosted Dev has the September 22 review revision;
+`PAYMENT_MODE` is required and fails closed when missing or invalid. `automatic` offers PayMongo only;
+`manual` offers Manual GCash and Pay at the Counter. Manual mode requires server-only
+`GCASH_BASE_QR_PAYLOAD` (decoded recipient QR). Do not put the actual payload in Git. Keep PayMongo
+configuration/webhooks working for pre-existing PayMongo orders when switching modes. All methods
+require a compatible pre-v1 baseline. Hosted Dev has the September 22 review revision;
 Production remains on the earlier shared baseline until a separately approved coordinated activation.
 A Git deployment still does not apply SQL; verify the target schema and environment-specific
 configuration independently.

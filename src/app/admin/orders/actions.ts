@@ -5,7 +5,7 @@ import type { OrderStatus } from "@/components/ui/status-badge";
 import { requireAdmin } from "@/lib/auth";
 import { isUuid } from "@/lib/identifiers";
 import { isAllowedFulfillmentTransition } from "@/lib/order-status";
-import { transitionAdminOrderStatus } from "@/lib/server-orders";
+import { recordAdminCounterPayment, transitionAdminOrderStatus } from "@/lib/server-orders";
 import { dispatchReadyForPickup } from "@/lib/server-notifications";
 import { dispatchOrderConfirmation } from "@/lib/server-notifications";
 import { getManualPayment } from "@/lib/server-manual-payment";
@@ -195,6 +195,36 @@ export async function transitionOrderStatusAction(input: {
           : error instanceof Error
             ? error.message
             : "The order status could not be updated.",
+    };
+  }
+}
+
+export async function recordCounterPaymentAction(orderId: string): Promise<AdminOrderActionResult> {
+  const admin = await requireAdmin("/admin/orders");
+  if (!isUuid(orderId)) return { status: "error", message: "That order is invalid." };
+
+  try {
+    await enforceMutationRateLimit({
+      scope: "counter-payment",
+      userId: admin.id,
+      maximumRequests: 30,
+      windowSeconds: 300,
+    });
+    await recordAdminCounterPayment({ adminId: admin.id, orderId });
+    revalidatePath("/admin");
+    revalidatePath("/admin/orders");
+    revalidatePath("/orders");
+    revalidatePath(`/orders/${orderId}`);
+    return { status: "success", message: "Counter payment recorded." };
+  } catch (error) {
+    return {
+      status: "error",
+      message:
+        error instanceof MutationRateLimitError
+          ? `Too many updates. Try again in about ${error.retryAfterSeconds} seconds.`
+          : error instanceof Error
+            ? error.message
+            : "The counter payment could not be recorded.",
     };
   }
 }

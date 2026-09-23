@@ -8,6 +8,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import type { CheckoutCartInput } from "@/types/commerce";
 import { MAX_ADDON_QUANTITY, MAX_CART_LINE_QUANTITY } from "@/lib/commerce";
 import { dispatchOrderConfirmation } from "@/lib/server-notifications";
+import type { CheckoutPaymentMethod } from "@/lib/payment-method";
 
 export interface CheckoutSubmissionInput {
   checkoutKey: string;
@@ -17,6 +18,7 @@ export interface CheckoutSubmissionInput {
   customerNotes: string;
   termsAccepted: boolean;
   loyaltyRewardId: string | null;
+  paymentMethod: CheckoutPaymentMethod;
   items: CheckoutCartInput[];
 }
 
@@ -92,6 +94,12 @@ function getValidationFailure(
   if (input.loyaltyRewardId !== null && !UUID_PATTERN.test(input.loyaltyRewardId)) {
     return { message: "Choose a valid loyalty reward." };
   }
+  if (!(["paymongo", "manual_gcash", "pay_at_counter"] as const).includes(input.paymentMethod)) {
+    return {
+      message: "Choose an available payment method.",
+      fieldErrors: { paymentMethod: "Choose an available payment method." },
+    };
+  }
   if (!Array.isArray(input.items) || input.items.length < 1 || input.items.length > 20) {
     return { message: "Your cart must contain between 1 and 20 configured boxes." };
   }
@@ -164,7 +172,7 @@ export async function submitPendingOrderAction(
   }
 
   try {
-    if (result.total === 0) {
+    if (result.total === 0 || result.paymentMethod === "pay_at_counter") {
       try {
         await dispatchOrderConfirmation(result.orderId);
       } catch (notificationError) {
@@ -175,7 +183,10 @@ export async function submitPendingOrderAction(
       return {
         status: "success",
         ...result,
-        checkoutUrl: `/payment/success?order=${encodeURIComponent(result.orderId)}`,
+        checkoutUrl:
+          result.total === 0
+            ? `/payment/success?order=${encodeURIComponent(result.orderId)}`
+            : `/orders/${encodeURIComponent(result.orderId)}`,
       };
     }
     const checkoutUrl = await getOrderPaymentUrl(result.orderId, profile.id);

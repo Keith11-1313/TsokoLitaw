@@ -15,11 +15,14 @@ import { FormField } from "@/components/ui/form-field";
 import type { AuthProfile } from "@/lib/auth";
 import type { CustomerLoyaltyStatus } from "@/lib/server-loyalty";
 import type { CheckoutAvailability } from "@/types/pickup";
+import type { CheckoutPaymentMethod, PaymentMode } from "@/lib/payment-method";
 
 interface CheckoutContentProps {
   availability: CheckoutAvailability;
   profile: AuthProfile;
   loyalty: CustomerLoyaltyStatus;
+  paymentMode: PaymentMode;
+  paymentOptions: readonly CheckoutPaymentMethod[];
   resumeOrderId: string | null;
 }
 
@@ -27,6 +30,8 @@ export function CheckoutContent({
   availability,
   profile,
   loyalty,
+  paymentMode,
+  paymentOptions,
   resumeOrderId,
 }: CheckoutContentProps) {
   const { selectedItems, selectedSubtotal, removeCheckedOutItems } = useCart();
@@ -36,6 +41,7 @@ export function CheckoutContent({
   const [customerNotes, setCustomerNotes] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [useReward, setUseReward] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>(paymentOptions[0]);
   const [submission, setSubmission] = useState<CheckoutSubmissionResult | null>(null);
   const [dateId, setDateId] = useState(availability.dates[0]?.id ?? "");
   const selectedDate =
@@ -76,6 +82,7 @@ export function CheckoutContent({
           useReward && selectedItems.some((item) => item.pieceCount === 4)
             ? (loyalty.availableRewards[0]?.id ?? null)
             : null,
+        paymentMethod,
         items: selectedItems.map((item) => ({
           variantId: item.variantId,
           coatingCounts: item.coatingCounts,
@@ -299,6 +306,61 @@ export function CheckoutContent({
           )}
         </section>
 
+        <section
+          className="rounded-card border border-border bg-surface p-6 sm:p-8"
+          aria-labelledby="checkout-payment-title"
+        >
+          <h2 id="checkout-payment-title" className="font-display text-2xl">
+            Payment
+          </h2>
+          {paymentMode === "automatic" ? (
+            <div className="mt-5 rounded-control border border-border bg-surface-muted p-4">
+              <p className="font-bold text-foreground">Secure online payment</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                You will continue to PayMongo after the order is reserved.
+              </p>
+            </div>
+          ) : (
+            <fieldset className="mt-5 grid gap-3 sm:grid-cols-2">
+              <legend className="sr-only">Choose a payment method</legend>
+              {paymentOptions.map((option) => {
+                const selected = paymentMethod === option;
+                const label = option === "manual_gcash" ? "Manual GCash" : "Pay at the counter";
+                const description =
+                  option === "manual_gcash"
+                    ? "Send the exact amount, then submit your receipt for verification."
+                    : "Place the order now and pay before receiving it at campus pickup.";
+                return (
+                  <label
+                    key={option}
+                    className={`flex min-h-28 cursor-pointer items-start gap-3 rounded-control border p-4 transition-colors ${selected ? "border-brand bg-brand/5" : "border-border bg-surface-muted"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment-method"
+                      value={option}
+                      checked={selected}
+                      onChange={() => setPaymentMethod(option)}
+                      className="mt-1 size-4 accent-brand"
+                    />
+                    <span>
+                      <strong className="block text-foreground">{label}</strong>
+                      <span className="mt-1 block text-sm leading-5 text-muted-foreground">
+                        {description}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+              {submission?.fieldErrors?.paymentMethod ? (
+                <p className="text-sm font-bold text-danger-foreground sm:col-span-2" role="alert">
+                  {submission.fieldErrors.paymentMethod}
+                </p>
+              ) : null}
+            </fieldset>
+          )}
+        </section>
+
         <label className="flex items-start gap-3 rounded-card border border-border bg-surface p-5 text-sm text-muted-foreground">
           <input
             type="checkbox"
@@ -347,7 +409,11 @@ export function CheckoutContent({
             ? "Pickup unavailable"
             : exceedsPreparedStock
               ? "Reduce cart quantities"
-              : "Continue to payment"}
+              : checkoutTotal === 0
+                ? "Place order"
+                : paymentMethod === "pay_at_counter"
+                  ? "Place order"
+                  : "Continue to payment"}
         </PrimaryButton>
       </form>
 

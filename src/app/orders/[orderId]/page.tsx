@@ -150,7 +150,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
                       ? "Loyalty reward"
                       : order.paymentMethod === "manual_gcash"
                         ? "Manual GCash"
-                        : "PayMongo"}
+                        : order.paymentMethod === "pay_at_counter"
+                          ? "Pay at the counter"
+                          : "PayMongo"}
                   </dd>
                 </div>
               </dl>
@@ -174,6 +176,12 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
               order.paymentStatus === "PENDING" &&
               order.paymentWindowOpen ? (
                 <ResumePaymentButton orderId={order.id} />
+              ) : null}
+              {order.paymentMethod === "pay_at_counter" && order.paymentStatus !== "PAID" ? (
+                <p className="mt-4 rounded-control bg-warning-background p-4 text-sm leading-6 text-warning-foreground">
+                  Pay the exact total at campus pickup. Your order can be prepared now, but it will
+                  not be released as completed until an administrator records the payment.
+                </p>
               ) : null}
               {canOrderAgain ? (
                 <div className="mt-5 border-t border-border pt-5">

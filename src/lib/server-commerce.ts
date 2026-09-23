@@ -18,6 +18,7 @@ const coatingTones: Record<string, Coating["tone"]> = {
   plain: "plain",
   "sesame-seeds": "sesame",
   "cookies-and-cream": "cookies-cream",
+  "chocolate-sprinkles": "sprinkles",
 };
 
 interface CatalogProductRow {

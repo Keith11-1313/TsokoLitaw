@@ -26,7 +26,7 @@ const sections: readonly LegalSection[] = [
   {
     heading: "Payments and transaction status",
     paragraphs: [
-      "Checkout uses the method shown for that order: PayMongo QR Ph or Manual GCash. PayMongo requires verified provider confirmation. Manual GCash requires a completed receipt and Admin verification against the actual incoming transaction before confirming the order. Sandbox transactions have no cash value.",
+      "Checkout uses the method selected for that order: PayMongo QR Ph, Manual GCash, or Pay at the Counter when available. PayMongo requires verified provider confirmation. Manual GCash requires a completed receipt and Admin verification against the actual incoming transaction. Pay-at-counter orders must still be placed through the website and paid before release or completion. Sandbox transactions have no cash value.",
       "For Manual GCash, send the exact order total and upload your receipt before the time shown. Your order stays reserved while we review the receipt and cannot be cancelled online. If we reject a receipt, we will explain why and give you 15 minutes to correct it. The unpaid order may expire if no correction is received. If you sent the payment late or the details do not match, contact TsokoLitaw and do not pay again.",
       "A browser redirect, screenshot, email, or on-screen message alone is not proof of payment. Customers are responsible for reviewing the amount and pickup details before authorizing a live transaction.",
     ],

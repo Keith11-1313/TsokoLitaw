@@ -454,7 +454,7 @@ ALTER FUNCTION "public"."count_admin_customers"("target_admin_id" "uuid", "searc
 -- Name: create_checkout_order("uuid", "uuid", "uuid", "uuid", "text", "text", "jsonb", numeric, numeric, numeric, "text", "uuid", "text", "text"); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE OR REPLACE FUNCTION "public"."create_checkout_order"("target_user_id" "uuid", "checkout_key" "uuid", "selected_pickup_window_id" "uuid", "selected_pickup_location_id" "uuid", "customer_name_value" "text", "customer_notes_value" "text", "priced_lines" "jsonb", "subtotal_value" numeric, "discount_value" numeric, "total_value" numeric, "terms_version_value" "text", "loyalty_reward_id" "uuid", "payment_method_value" "text", "qr_payload_value" "text") RETURNS TABLE("created_order_id" "uuid", "created_order_number" "text", "created_total" numeric, "was_created" boolean)
+CREATE OR REPLACE FUNCTION "public"."create_checkout_order"("target_user_id" "uuid", "checkout_key" "uuid", "selected_pickup_window_id" "uuid", "selected_pickup_location_id" "uuid", "customer_name_value" "text", "customer_notes_value" "text", "priced_lines" "jsonb", "subtotal_value" numeric, "discount_value" numeric, "total_value" numeric, "terms_version_value" "text", "loyalty_reward_id" "uuid", "payment_method_value" "text", "qr_payload_value" "text") RETURNS TABLE("created_order_id" "uuid", "created_order_number" "text", "created_total" numeric, "was_created" boolean, "created_payment_method" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -482,7 +482,7 @@ declare
   selected_reward public.loyalty_rewards%rowtype;
   calculated_reward_discount numeric := 0;
 begin
-  if payment_method_value is null or payment_method_value not in ('paymongo','manual_gcash') then raise exception 'Invalid payment method'; end if;
+  if payment_method_value is null or payment_method_value not in ('paymongo','manual_gcash','pay_at_counter') then raise exception 'Invalid payment method'; end if;
   if payment_method_value = 'manual_gcash' and total_value > 0 and (qr_payload_value is null or length(qr_payload_value) not between 50 and 1024) then raise exception 'Manual QR is unavailable'; end if;
   perform public.expire_pending_orders();
 
@@ -512,7 +512,8 @@ begin
       existing_order.id,
       existing_order.order_number,
       existing_order.total,
-      false;
+      false,
+      existing_order.payment_method;
     return;
   end if;
 
@@ -704,7 +705,10 @@ begin
     total_value,
     terms_version_value,
     now(),
-    now() + make_interval(mins => payment_expiry_minutes)
+    case
+      when payment_method_value = 'pay_at_counter' then null
+      else now() + make_interval(mins => payment_expiry_minutes)
+    end
   );
 
   if selected_reward.id is not null then
@@ -790,14 +794,24 @@ begin
     ) values (
       generated_order_id, 'loyalty', 0, 'PAID', now()
     );
+  elsif payment_method_value = 'pay_at_counter' then
+    update public.orders
+    set status = 'CONFIRMED',
+        payment_status = 'PENDING',
+        payment_expires_at = null,
+        updated_at = now()
+    where id = generated_order_id;
   end if;
 
   update public.orders set payment_method = payment_method_value where id = generated_order_id;
   if payment_method_value = 'manual_gcash' and total_value > 0 then
     insert into public.payments(order_id, provider, amount, manual_qr_payload)
     values (generated_order_id, 'manual_gcash', total_value, qr_payload_value);
+  elsif payment_method_value = 'pay_at_counter' and total_value > 0 then
+    insert into public.payments(order_id, provider, amount)
+    values (generated_order_id, 'pay_at_counter', total_value);
   end if;
-  return query select generated_order_id, generated_order_number, total_value, true;
+  return query select generated_order_id, generated_order_number, total_value, true, payment_method_value;
 end;
 $$;
 
@@ -2739,6 +2753,73 @@ COMMENT ON FUNCTION "public"."sync_completed_order_loyalty"() IS 'Awards one fre
 -- Name: transition_order_status("uuid", "uuid", "public"."order_status", "public"."order_status"); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
+CREATE OR REPLACE FUNCTION "public"."record_counter_payment"("target_admin_id" "uuid", "target_order_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+declare
+  target_order public.orders%rowtype;
+  target_payment public.payments%rowtype;
+begin
+  if not exists (
+    select 1 from public.profiles
+    where id = target_admin_id and role = 'admin' and is_active
+  ) then
+    raise exception 'Active administrator access is required';
+  end if;
+
+  select * into target_order
+  from public.orders
+  where id = target_order_id
+  for update;
+
+  if target_order.id is null or target_order.payment_method <> 'pay_at_counter' then
+    raise exception 'Counter-payment order was not found';
+  end if;
+  if target_order.status in ('CANCELLED', 'EXPIRED') then
+    raise exception 'Cancelled or expired orders cannot be paid';
+  end if;
+  if target_order.payment_status = 'PAID' then
+    return false;
+  end if;
+
+  select * into target_payment
+  from public.payments
+  where order_id = target_order.id and provider = 'pay_at_counter'
+  for update;
+
+  if target_payment.id is null or target_payment.status <> 'PENDING'
+    or target_payment.amount <> target_order.total
+  then
+    raise exception 'Counter payment is not ready to be recorded';
+  end if;
+
+  update public.payments
+  set status = 'PAID', paid_at = now(), updated_at = now()
+  where id = target_payment.id;
+
+  update public.orders
+  set payment_status = 'PAID', updated_at = now()
+  where id = target_order.id;
+
+  insert into public.admin_audit_logs(admin_id, action, entity_type, entity_id, metadata)
+  values (
+    target_admin_id,
+    'payment.counter_recorded',
+    'order',
+    target_order.id::text,
+    jsonb_build_object('order_number', target_order.order_number, 'amount', target_order.total)
+  );
+
+  return true;
+end;
+$$;
+
+ALTER FUNCTION "public"."record_counter_payment"("uuid", "uuid") OWNER TO "postgres";
+
+COMMENT ON FUNCTION "public"."record_counter_payment"("uuid", "uuid") IS 'Service-role-only audited confirmation that a tracked pay-at-counter order was paid in person.';
+
+
 CREATE OR REPLACE FUNCTION "public"."transition_order_status"("target_admin_id" "uuid", "target_order_id" "uuid", "expected_status" "public"."order_status", "next_status" "public"."order_status") RETURNS "public"."order_status"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
@@ -2769,7 +2850,12 @@ begin
     raise exception 'Order status changed before this update';
   end if;
 
-  if target_order.payment_status <> 'PAID' then
+  if target_order.payment_status <> 'PAID'
+    and not (
+      target_order.payment_method = 'pay_at_counter'
+      and next_status in ('PREPARING', 'READY_FOR_PICKUP')
+    )
+  then
     raise exception 'Only paid orders can enter fulfillment';
   end if;
 
@@ -3957,7 +4043,7 @@ CREATE TABLE IF NOT EXISTS "public"."orders" (
     CONSTRAINT "orders_check" CHECK (("discount_total" <= "subtotal")),
     CONSTRAINT "orders_check1" CHECK (("total" = ("subtotal" - "discount_total"))),
     CONSTRAINT "orders_discount_total_check" CHECK (("discount_total" >= (0)::numeric)),
-    CONSTRAINT "orders_payment_method_check" CHECK (("payment_method" = ANY (ARRAY['paymongo'::"text", 'manual_gcash'::"text"]))),
+    CONSTRAINT "orders_payment_method_check" CHECK (("payment_method" = ANY (ARRAY['paymongo'::"text", 'manual_gcash'::"text", 'pay_at_counter'::"text"]))),
     CONSTRAINT "orders_subtotal_check" CHECK (("subtotal" >= (0)::numeric)),
     CONSTRAINT "orders_total_check" CHECK (("total" >= (0)::numeric))
 );
@@ -4000,10 +4086,10 @@ CREATE TABLE IF NOT EXISTS "public"."payments" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "manual_qr_payload" "text",
-    CONSTRAINT "manual_payment_no_provider_checkout" CHECK ((("provider" <> 'manual_gcash'::"text") OR (("provider_checkout_id" IS NULL) AND ("provider_checkout_url" IS NULL)))),
+    CONSTRAINT "manual_payment_no_provider_checkout" CHECK ((("provider" <> ALL (ARRAY['manual_gcash'::"text", 'pay_at_counter'::"text"])) OR (("provider_checkout_id" IS NULL) AND ("provider_checkout_url" IS NULL)))),
     CONSTRAINT "payments_amount_check" CHECK (("amount" >= (0)::numeric)),
     CONSTRAINT "payments_currency_check" CHECK (("currency" = 'PHP'::"text")),
-    CONSTRAINT "payments_provider_check" CHECK (("provider" = ANY (ARRAY['paymongo'::"text", 'manual_gcash'::"text", 'loyalty'::"text"])))
+    CONSTRAINT "payments_provider_check" CHECK (("provider" = ANY (ARRAY['paymongo'::"text", 'manual_gcash'::"text", 'pay_at_counter'::"text", 'loyalty'::"text"])))
 );
 
 
@@ -5776,6 +5862,9 @@ GRANT ALL ON FUNCTION "public"."moderate_order_review"("target_admin_id" "uuid",
 
 REVOKE ALL ON FUNCTION "public"."prepare_order_cancellation"("target_order_id" "uuid", "target_user_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."prepare_order_cancellation"("target_order_id" "uuid", "target_user_id" "uuid") TO "service_role";
+
+REVOKE ALL ON FUNCTION "public"."record_counter_payment"("target_admin_id" "uuid", "target_order_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."record_counter_payment"("target_admin_id" "uuid", "target_order_id" "uuid") TO "service_role";
 
 
 --

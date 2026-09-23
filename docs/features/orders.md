@@ -17,12 +17,14 @@ PENDING_PAYMENT → PAID → CONFIRMED → PREPARING → READY_FOR_PICKUP → CO
 Terminal alternatives: CANCELLED, EXPIRED
 ```
 
-This describes the domain vocabulary; verified payment normally commits payment `PAID` and order
-`CONFIRMED` together. Admin fulfillment uses `transition_order_status` for the paid forward-only
+This describes the domain vocabulary; verified online payment normally commits payment `PAID` and
+order `CONFIRMED` together. Pay-at-counter orders start `CONFIRMED` / `PENDING`, may be prepared and
+made ready while unpaid, and cannot become `COMPLETED` until Admin records payment. Admin fulfillment uses `transition_order_status` for the forward-only
 `CONFIRMED → PREPARING → READY_FOR_PICKUP → COMPLETED` path. The action is under
 `src/app/admin/orders/actions.ts`, with server orchestration in `server-orders.ts` and an SQL audit record.
 
 Payment states are separate: `PENDING`, `UNDER_REVIEW` (Manual GCash only), `PAID`, `FAILED`.
+For pay-at-counter, `PENDING` means payment is due at campus pickup and has no automatic expiry.
 Under review keeps fulfillment at `PENDING_PAYMENT`; the customer label explains payment review.
 See [manual payment verification](payments.md#manual-gcash) for proof, approval and rejection.
 There is no payment `EXPIRED` value: expiration transitions unpaid payment to `FAILED` and order

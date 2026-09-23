@@ -38,8 +38,10 @@ export async function getOrderPaymentUrl(
     .eq("id", orderId)
     .eq("user_id", userId)
     .maybeSingle();
-  if (error || !order || order.status !== "PENDING_PAYMENT")
-    throw new Error("Pending order unavailable.");
+  if (error || !order) throw new Error("Pending order unavailable.");
+  if (order.payment_method === "pay_at_counter" && order.status === "CONFIRMED")
+    return `/orders/${orderId}`;
+  if (order.status !== "PENDING_PAYMENT") throw new Error("Pending order unavailable.");
   if (order.payment_method === "manual_gcash") return `/orders/${orderId}/payment`;
   return getOrCreatePayMongoCheckout(orderId, userId, options.refreshPayMongo);
 }

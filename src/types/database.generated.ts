@@ -1346,6 +1346,7 @@ export type Database = {
         Returns: {
           created_order_id: string
           created_order_number: string
+          created_payment_method: string
           created_total: number
           was_created: boolean
         }[]
@@ -1500,6 +1501,10 @@ export type Database = {
         Returns: string
       }
       prune_mutation_rate_limit_buckets: { Args: never; Returns: number }
+      record_counter_payment: {
+        Args: { target_admin_id: string; target_order_id: string }
+        Returns: boolean
+      }
       record_inventory_consumption: {
         Args: {
           notes_value: string

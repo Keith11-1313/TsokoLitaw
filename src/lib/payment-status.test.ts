@@ -6,6 +6,7 @@ describe("getPaymentStatusLabel", () => {
     expect(getPaymentStatusLabel("PENDING", "manual_gcash")).toBe("Awaiting receipt");
     expect(getPaymentStatusLabel("PENDING", "paymongo")).toBe("Pending");
     expect(getPaymentStatusLabel("PENDING", "paymongo", false)).toBe("Time ended");
+    expect(getPaymentStatusLabel("PENDING", "pay_at_counter")).toBe("Pay at pickup");
   });
 
   it("uses clear labels for review and terminal payment states", () => {

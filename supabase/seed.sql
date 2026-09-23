@@ -62,7 +62,8 @@ values
   ('12000000-0000-4000-8000-000000000004', 'Crushed Nuts', 'crushed-nuts', 'A crunchy crushed-nut coating for added texture.', null, 5.00, true, false, 4),
   ('12000000-0000-4000-8000-000000000005', 'Plain', 'plain', 'The soft Litaw exterior with no additional coating.', null, 0.00, true, true, 5),
   ('12000000-0000-4000-8000-000000000006', 'Sesame Seeds', 'sesame-seeds', 'A toasted sesame seed coating with a nutty aroma.', null, 5.00, true, false, 6),
-  ('12000000-0000-4000-8000-000000000007', 'Cookies and Cream', 'cookies-and-cream', 'Crushed chocolate cookies blended with a creamy coating.', null, 5.00, true, false, 7)
+  ('12000000-0000-4000-8000-000000000007', 'Cookies and Cream', 'cookies-and-cream', 'Crushed chocolate cookies blended with a creamy coating.', null, 5.00, true, false, 7),
+  ('12000000-0000-4000-8000-000000000008', 'Chocolate Sprinkles', 'chocolate-sprinkles', 'Chocolate sprinkles for added crunch and a richer chocolate finish.', null, 5.00, true, false, 8)
 on conflict (id) do update set
   name = excluded.name,
   slug = excluded.slug,
@@ -126,7 +127,7 @@ TsokoLitaw is an academic e-commerce project for demonstration, testing, and eva
 
 Product descriptions, coatings, prices, availability, and pickup schedules may change. The server confirms the final payable amount and availability during checkout. Customers must provide accurate account, contact, order, and pickup information.
 
-Checkout offers the payment method shown for that order: PayMongo QR Ph or Manual GCash. PayMongo payments require verified provider confirmation. Manual GCash requires a completed receipt and Admin verification against the actual incoming transaction before the order is confirmed. A redirect, screenshot, extracted text, email, or browser message alone is not proof of payment. Sandbox transactions have no cash value.
+Checkout offers the payment method selected for that order: PayMongo QR Ph, Manual GCash, or Pay at the Counter when available. PayMongo payments require verified provider confirmation. Manual GCash requires a completed receipt and Admin verification against the actual incoming transaction before the order is confirmed. Pay-at-counter orders must still be placed through the website and paid before release or completion. A redirect, screenshot, extracted text, email, or browser message alone is not proof of payment. Sandbox transactions have no cash value.
 
 For Manual GCash, send the exact order total and submit the receipt before the displayed deadline. Your bank or e-wallet may charge a separate fee. Under-review orders retain their reservation and cannot be cancelled online. Rejected receipts include a reason and a 15-minute correction window, after which an uncorrected unpaid order may expire. If money was sent late or details do not match, contact TsokoLitaw; do not pay again. Payment receipts and submitted details are stored privately for verification and dispute handling. Optional receipt extraction runs on your device.
 

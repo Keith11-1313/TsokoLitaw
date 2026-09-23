@@ -3,7 +3,8 @@
 Start at `src/app/checkout/page.tsx`: require the customer, load pickup availability and loyalty,
 then render `src/components/checkout/checkout-content.tsx`.
 
-1. **Browser:** selected cart lines, customer details, date/window/location, optional reward, Terms
+1. **Browser:** selected cart lines, customer details, date/window/location, optional reward, the
+   server-allowed payment choice, Terms
    acceptance. A checkout UUID is retained for retry; browser totals and remaining-stock labels are guidance.
 2. **Action:** `src/app/checkout/actions.ts` authenticates, validates bounded IDs/counts/text, and
    applies the distributed user/IP rate limit. The user ID comes from the verified profile, not input.
@@ -13,7 +14,9 @@ then render `src/components/checkout/checkout-content.tsx`.
 4. **Transaction:** `create_checkout_order` in the pre-v1 baseline locks/rechecks the account,
    pickup, inventory and reward. It inserts snapshots and pins the payment method in one transaction,
    or returns the existing order for the same owner/idempotency key. Contact is email-only.
-5. **Payment:** Manual GCash stores the server-total QR and routes to the owned receipt page.
+5. **Payment:** Automatic mode offers PayMongo only. Manual mode offers Manual GCash and Pay at the
+   Counter. Manual GCash stores the server-total QR and routes to the owned receipt page. Counter
+   payment creates a tracked confirmed order with payment pending and routes to order detail.
    PayMongo creates its hosted checkout. An explicit resume expires the previous provider session and
    atomically attaches a fresh one, so an expired QR is not reopened.
    Zero-total loyalty settles without external payment. See [payments](payments.md).

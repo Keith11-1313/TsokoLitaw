@@ -37,7 +37,7 @@ actions and keeps private activity separate from public discovery.
 
 - Currency PHP; configurable boxes TsokoMini (4), TsokoMore (6), TsokoMuch (8 pieces).
 - The exterior choices are **coatings**, not flavors/toppings: Cocoa, Milk, Palitaw, Crushed Nuts,
-  Plain, Sesame Seeds, Cookies and Cream. Palitaw means sugar, niyog, sesame seeds.
+  Plain, Sesame Seeds, Cookies and Cream, Chocolate Sprinkles. Palitaw means sugar, niyog, sesame seeds.
 - Base unit price is piece count × the current Admin-managed product price per piece.
   Each coated piece adds its coating's Admin-managed per-piece charge. Mixed allocations total
   the whole box; a single-coating box allocates every piece to that choice.
@@ -46,8 +46,9 @@ actions and keeps private activity separate from public discovery.
   per box. Different configurations are separate cart lines.
 - Customer screens call add-ons “Extras.” Code and database names retain the standard `addon`
   term so the technical contract stays consistent.
-- Seed prices (base ₱10/piece, coating ₱5/piece, initial cream add-on ₱18) are provisional data,
-  not permanent application constants. The old distinct-extra-coating pricing rule is superseded.
+- Seed prices are TsokoMini ₱40, TsokoMore ₱55 and TsokoMuch ₱75. Plain is the default ₱0
+  coating; the other seeded coatings add ₱5 per piece. Sea salt cream is the default extra at ₱15.
+  These remain Admin-managed data, not permanent application constants.
 - Customer allergen communication is one general notice, not per-coating Admin allergen controls.
   Notice covers nuts, dairy, coconut, sesame, chocolate/cookie ingredients and cross-contact.
 - Coating images persist in Supabase Storage and are square JPG/PNG/WebP, at most 3 MiB.
@@ -58,7 +59,8 @@ Normal Admin catalog changes never reprice existing orders.
 
 ## Pickup and stock
 
-All sales use website checkout and online payment. Campus pickup only; no cash/walk-in or delivery flow.
+All sales use authenticated website checkout. Collection may be online or the tracked Pay at the
+Counter method; there is no untracked cash/walk-in order or delivery flow. Campus pickup only.
 Launch locations are UCC Congress — 3rd Floor and Covered Court. Monday–Saturday, 7 AM–7 PM is
 the operating window, not automatic availability. Admin publishes every actual date/window/location.
 Provisional rules are one-day lead time, 5 PM cutoff, hourly slots, and 15-minute grace period.
@@ -75,9 +77,11 @@ No separate Inventory “available online” switch or window-box capacity is re
 
 ## Payments and order state
 
-Server-selected PayMongo Hosted Checkout or Manual GCash QR with Admin verification. The method
-and manual QR are pinned per order; environment changes affect new orders only. Browser success,
-receipt images and OCR are not payment proof. See [manual workflow](../features/payments.md#manual-gcash).
+Required `PAYMENT_MODE` is server-selected: `automatic` offers PayMongo only, while `manual` lets
+customers choose Manual GCash or Pay at the Counter. The selected method and manual QR are pinned
+per order; environment changes affect new orders only. Browser success, receipt images and OCR are
+not payment proof. Counter orders remain tracked website orders and require audited Admin payment
+confirmation before completion. See [payment workflows](../features/payments.md).
 For PayMongo:
 Signed verified events and exact SQL reference/amount matching determine paid state. Default payment
 expiry is 15 minutes, configurable. Provider checkout must close before reserved stock is released.

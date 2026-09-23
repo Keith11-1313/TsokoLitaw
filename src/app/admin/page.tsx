@@ -274,6 +274,7 @@ export default async function AdminDashboardPage({
   const paymentLabels: Record<string, string> = {
     paymongo: "PayMongo",
     manual_gcash: "Manual GCash",
+    pay_at_counter: "Pay at the counter",
     loyalty: "Loyalty reward",
   };
   const today = new Intl.DateTimeFormat("en-CA", {

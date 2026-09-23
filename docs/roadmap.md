@@ -20,7 +20,7 @@ Use the current [release checks](operations/deployment.md), not old checked-off 
 - Maintainer handover uses task-oriented docs, generated schema types, shared form contracts, and
   discoverable feature paths; do not add abstract layers merely for junior onboarding.
 
-## Phase 15A — final commerce and payment update (active)
+## Phase 15A — final commerce and payment update (local implementation complete; Dev activation pending)
 
 - Add Chocolate Sprinkles to the controlled coating seed with a stable identity, active catalog
   placement, provisional price and the shared placeholder until its square catalog image is uploaded.
@@ -29,8 +29,9 @@ Use the current [release checks](operations/deployment.md), not old checked-off 
   the Counter while still creating and pricing every order through authenticated website checkout.
 - Pin the selected method per order. Preserve the existing Manual GCash proof/review workflow and
   zero-total loyalty settlement. Add an audited, active-Admin-only counter-payment confirmation.
-- Define and test counter-order reservation, fulfillment, cancellation, no-show and completion rules.
-  Counter orders may not be represented as paid before an Admin records received funds.
+- Counter orders reserve normally, have no payment countdown, and may be prepared/made ready while
+  unpaid. Existing confirmed-order cancellation rules remain unchanged; no automatic no-show state
+  is added. SQL blocks completion until an Admin records received funds.
 - Update the single pre-v1 baseline, generated types, environment guidance, payment/order/customer/Admin
   interfaces, notifications and dashboard provider labels. Validate locally before any hosted reset.
 - Activate the completed contract in hosted Dev only after exact-target reset approval. Production

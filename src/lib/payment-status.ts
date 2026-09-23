@@ -1,7 +1,7 @@
 import type { OrderStatus } from "@/components/ui/status-badge";
 
 export type PaymentStatus = "PENDING" | "UNDER_REVIEW" | "PAID" | "FAILED";
-export type PaymentMethod = "paymongo" | "manual_gcash";
+export type PaymentMethod = "paymongo" | "manual_gcash" | "pay_at_counter";
 
 export function getPaymentStatusLabel(
   status: PaymentStatus,
@@ -12,7 +12,9 @@ export function getPaymentStatusLabel(
   if (status === "PAID") return "Paid";
   if (status === "FAILED") return "Not paid";
   if (!paymentWindowOpen) return "Time ended";
-  return method === "manual_gcash" ? "Awaiting receipt" : "Pending";
+  if (method === "manual_gcash") return "Awaiting receipt";
+  if (method === "pay_at_counter") return "Pay at pickup";
+  return "Pending";
 }
 
 export function getOrderStatusLabelOverride({

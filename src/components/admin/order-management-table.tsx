@@ -2,7 +2,10 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { ArrowRight, Search } from "lucide-react";
-import { transitionOrderStatusAction } from "@/app/admin/orders/actions";
+import {
+  recordCounterPaymentAction,
+  transitionOrderStatusAction,
+} from "@/app/admin/orders/actions";
 import type { OrderStatus } from "@/components/ui/status-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -95,6 +98,83 @@ function OrderContents({ order }: { order: AdminOrderSummary }) {
   );
 }
 
+function CounterPaymentAction({ order }: { order: AdminOrderSummary }) {
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  if (order.paymentMethod !== "pay_at_counter" || order.paymentStatus === "PAID") return null;
+
+  function submit() {
+    setError(null);
+    startTransition(async () => {
+      const result = await recordCounterPaymentAction(order.id);
+      if (result.status === "success") setOpen(false);
+      else setError(result.message);
+    });
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex min-h-11 items-center justify-center rounded-control border border-brand px-4 text-xs font-bold text-brand"
+      >
+        Record payment
+      </button>
+      {open ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-foreground/40 p-4"
+          onPointerDown={() => !pending && setOpen(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`counter-payment-${order.id}`}
+            onPointerDown={(event) => event.stopPropagation()}
+            className="w-full max-w-md rounded-card border border-border bg-surface p-6 shadow-2xl"
+          >
+            <h2 id={`counter-payment-${order.id}`} className="font-display text-2xl">
+              Confirm payment for {order.orderNumber}?
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Only confirm after receiving the exact {formatPhp(order.total)} at the counter. This
+              action is recorded in the audit log.
+            </p>
+            {error ? (
+              <p
+                role="alert"
+                className="mt-4 rounded-control bg-danger-background p-4 text-sm text-danger-foreground"
+              >
+                {error}
+              </p>
+            ) : null}
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                disabled={pending}
+                className="min-h-12 rounded-full border border-brand px-5 font-bold text-brand"
+              >
+                Not yet
+              </button>
+              <button
+                type="button"
+                onClick={submit}
+                disabled={pending}
+                className="min-h-12 rounded-full bg-brand px-5 font-bold text-surface disabled:opacity-60"
+              >
+                {pending ? "Recording…" : "Confirm received"}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
   return (
     <article className="rounded-card border border-border bg-surface p-5">
@@ -123,6 +203,11 @@ function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
           total={order.total}
           className="mt-4"
         />
+      ) : null}
+      {order.paymentMethod === "pay_at_counter" ? (
+        <div className="mt-4">
+          <CounterPaymentAction order={order} />
+        </div>
       ) : null}
       <dl className="mt-5 space-y-4 text-sm">
         <div>
@@ -385,6 +470,7 @@ export function OrderManagementTable({
                             className="min-w-32 px-3 text-xs"
                           />
                         ) : null}
+                        <CounterPaymentAction order={order} />
                       </div>
                     </td>
                     <td className="px-4 py-5">
