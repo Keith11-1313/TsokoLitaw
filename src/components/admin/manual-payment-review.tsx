@@ -421,14 +421,14 @@ function ManualPaymentReviewDialog({
                   ) : (
                     <div
                       className={cn(
-                        "flex items-start gap-3 rounded-control border p-4",
+                        "flex gap-3 rounded-control border p-4",
                         proof.status === "APPROVED"
-                          ? "border-border bg-surface-muted text-brand"
-                          : "border-danger-foreground/30 bg-danger/5 text-danger-foreground",
+                          ? "items-center border-border bg-surface-muted text-brand"
+                          : "items-start border-danger-foreground/30 bg-danger/5 text-danger-foreground",
                       )}
                     >
                       {proof.status === "APPROVED" ? (
-                        <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={20} />
+                        <CheckCircle2 aria-hidden="true" className="shrink-0" size={20} />
                       ) : (
                         <CircleX aria-hidden="true" className="mt-0.5 shrink-0" size={20} />
                       )}
