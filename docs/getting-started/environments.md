@@ -69,8 +69,10 @@ and environment scope. Local server-variable changes require restarting the Next
 `manual` offers Manual GCash and Pay at the Counter. Manual mode requires server-only
 `GCASH_BASE_QR_PAYLOAD` (decoded recipient QR). Do not put the actual payload in Git. Keep PayMongo
 configuration/webhooks working for pre-existing PayMongo orders when switching modes. All methods
-require a compatible pre-v1 baseline. Hosted Dev has the September 22 review revision;
-Production remains on the earlier shared baseline until a separately approved coordinated activation.
+require a compatible pre-v1 baseline. Hosted Dev has the accepted September 24 Phase 15A contract and
+the Phase 15B dashboard migration; its matching Phase 15B application deployment must be verified
+separately. Production remains on the earlier shared baseline until a separately approved coordinated
+activation.
 A Git deployment still does not apply SQL; verify the target schema and environment-specific
 configuration independently.
 

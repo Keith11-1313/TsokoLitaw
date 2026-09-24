@@ -342,12 +342,14 @@ function FulfillmentAction({ order }: { order: AdminOrderSummary }) {
 export function OrderManagementTable({
   orders,
   initialQuery = "",
+  initialStatus = "ALL",
 }: {
   orders: AdminOrderSummary[];
   initialQuery?: string;
+  initialStatus?: "ALL" | OrderStatus;
 }) {
   const [query, setQuery] = useState(initialQuery);
-  const [status, setStatus] = useState<"ALL" | OrderStatus>("ALL");
+  const [status, setStatus] = useState<"ALL" | OrderStatus>(initialStatus);
 
   const visibleOrders = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();

@@ -78,8 +78,9 @@ Contract tests: `src/hooks/editor-contracts.test.tsx`, form and image validation
 ## Loading and generated Boneyard files
 
 The root layout has a shared Suspense boundary using `AppLoadingSkeleton` for the initial load.
-There is no route `loading.tsx`: client navigation keeps the current page visible until the
-destination is ready. Customer header links (including Account and Cart) use Next.js `useLinkStatus`
+Admin has a route loading skeleton and error boundary because its authorized operational aggregates
+may take longer or reject an incomplete database contract. Customer navigation keeps the current
+page visible until the destination is ready. Customer header links (including Account and Cart) use Next.js `useLinkStatus`
 to give the clicked link a pressed, gray appearance and disable repeat activation while pending.
 Its label and dimensions stay unchanged; there is no underline, spinner, or loading text.
 The root layout still imports the generated bones registry for the initial fallback.

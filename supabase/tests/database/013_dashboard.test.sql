@@ -19,7 +19,7 @@ select set_config(
   true
 );
 
-select plan(25);
+select plan(33);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -154,8 +154,16 @@ select public.get_admin_dashboard_decisions(
   '2099-05-25 00:00+08', '2099-06-01 00:00+08'
 ) as summary;
 
-select is((summary->'currentDecisionMetrics'->>'completionRate')::numeric, 50::numeric, 'completion rate uses paid orders in the period') from dashboard_decisions;
+select is((summary->'currentDecisionMetrics'->>'completionRate')::numeric, 0::numeric, 'future-pickup orders do not lower matured completion rate') from dashboard_decisions;
 select is((summary->'currentDecisionMetrics'->>'averageFulfillmentHours')::numeric, 2::numeric, 'fulfillment time runs from payment to completion') from dashboard_decisions;
+select is((summary->'currentDecisionMetrics'->>'eligibleOrders')::integer, 0, 'only pickup dates before today enter the matured completion cohort') from dashboard_decisions;
+select is((summary->'currentDecisionMetrics'->>'durationSampleSize')::integer, 1, 'payment-to-completion duration exposes its sample size') from dashboard_decisions;
+select is((summary->'funnel'->>'created')::integer, 2, 'funnel starts from one creation cohort') from dashboard_decisions;
+select is((summary->'funnel'->>'paid')::integer, 2, 'funnel paid stage follows the same creation cohort') from dashboard_decisions;
+select is((summary->'funnel'->>'completed')::integer, 1, 'funnel completed stage follows the same creation cohort') from dashboard_decisions;
+select is(jsonb_typeof(summary->'inventoryByDate'), 'array', 'dashboard returns date-specific inventory projections') from dashboard_decisions;
+select is(jsonb_typeof(summary->'recentOrders'), 'array', 'dashboard returns a bounded recent-order projection') from dashboard_decisions;
+select ok((summary->>'generatedAt') is not null, 'dashboard includes a freshness timestamp') from dashboard_decisions;
 select is((select sum((point->>'pieces')::integer) from dashboard_decisions, jsonb_array_elements(summary->'coatingMix') point), 16::bigint, 'coating mix counts paid pieces') from dashboard_decisions;
 select is((summary->'reviews'->>'count')::integer, 1, 'review metrics follow the reporting period') from dashboard_decisions;
 select is((summary->'reviews'->>'averageRating')::numeric, 5::numeric, 'review metrics include average rating') from dashboard_decisions;

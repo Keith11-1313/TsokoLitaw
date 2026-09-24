@@ -2,8 +2,22 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatPhp } from "@/lib/commerce";
-import type { AdminOrderSummary } from "@/lib/server-orders";
 import { getOrderStatusLabelOverride } from "@/lib/payment-status";
+import type { PaymentMethod, PaymentStatus } from "@/lib/payment-status";
+import type { OrderStatus } from "@/components/ui/status-badge";
+
+interface DashboardRecentOrder {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  total: number;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  createdAt: string;
+  pickupDate: string;
+  itemSummary: string;
+}
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-PH", {
@@ -14,7 +28,7 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export function RecentOrdersTable({ orders }: { orders: AdminOrderSummary[] }) {
+export function RecentOrdersTable({ orders }: { orders: DashboardRecentOrder[] }) {
   return (
     <section
       className="rounded-card border border-border bg-surface p-6 pb-[1.375rem]"
@@ -46,7 +60,7 @@ export function RecentOrdersTable({ orders }: { orders: AdminOrderSummary[] }) {
                   <div>
                     <p className="font-display text-xl text-foreground">{order.orderNumber}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {formatDate(order.orderedAt)}
+                      {formatDate(order.createdAt)}
                     </p>
                   </div>
                   <p className="shrink-0 font-bold tabular-nums text-foreground">
@@ -59,7 +73,7 @@ export function RecentOrdersTable({ orders }: { orders: AdminOrderSummary[] }) {
                     label={getOrderStatusLabelOverride({
                       status: order.status,
                       paymentStatus: order.paymentStatus,
-                      paymentWindowOpen: order.paymentWindowOpen,
+                      paymentWindowOpen: true,
                     })}
                   />
                 </div>
@@ -102,11 +116,11 @@ export function RecentOrdersTable({ orders }: { orders: AdminOrderSummary[] }) {
                         label={getOrderStatusLabelOverride({
                           status: order.status,
                           paymentStatus: order.paymentStatus,
-                          paymentWindowOpen: order.paymentWindowOpen,
+                          paymentWindowOpen: true,
                         })}
                       />
                     </td>
-                    <td className="px-4 text-muted-foreground">{formatDate(order.orderedAt)}</td>
+                    <td className="px-4 text-muted-foreground">{formatDate(order.createdAt)}</td>
                     <td className="px-4 text-right">
                       <Link
                         href={`/admin/orders?query=${encodeURIComponent(order.orderNumber)}`}

@@ -22,7 +22,7 @@ export function AdminStatCard({
   accentClassName,
   compact = false,
   href,
-  trend = "neutral",
+  trend,
 }: AdminStatCardProps) {
   const TrendIcon =
     trend === "positive" ? ArrowUpRight : trend === "negative" ? ArrowDownRight : Minus;
@@ -67,7 +67,7 @@ export function AdminStatCard({
             trend === "negative" && "text-danger-foreground",
           )}
         >
-          <TrendIcon aria-hidden="true" size={14} />
+          {trend ? <TrendIcon aria-hidden="true" size={14} /> : null}
           {supportingText}
         </p>
       ) : null}

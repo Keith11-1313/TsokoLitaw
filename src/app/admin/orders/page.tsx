@@ -5,6 +5,18 @@ import { OrderManagementTable } from "@/components/admin/order-management-table"
 import { AdminContent } from "@/components/layout/admin-content";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminOrders } from "@/lib/server-orders";
+import type { OrderStatus } from "@/components/ui/status-badge";
+
+const orderStatuses = new Set<OrderStatus>([
+  "PENDING_PAYMENT",
+  "PAID",
+  "CONFIRMED",
+  "PREPARING",
+  "READY_FOR_PICKUP",
+  "COMPLETED",
+  "CANCELLED",
+  "EXPIRED",
+]);
 
 export const metadata: Metadata = {
   title: "Orders | TsokoLitaw Admin",
@@ -14,11 +26,15 @@ export const metadata: Metadata = {
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ query?: string | string[] }>;
+  searchParams: Promise<{ query?: string | string[]; status?: string | string[] }>;
 }) {
   await requireAdmin("/admin/orders");
   const params = await searchParams;
   const initialQuery = typeof params.query === "string" ? params.query.slice(0, 80) : "";
+  const requestedStatus = typeof params.status === "string" ? params.status : "";
+  const initialStatus = orderStatuses.has(requestedStatus as OrderStatus)
+    ? (requestedStatus as OrderStatus)
+    : "ALL";
   const orders = await getAdminOrders();
   const orderStats = [
     { label: "Loaded Orders", value: String(orders.length) },
@@ -60,7 +76,11 @@ export default async function AdminOrdersPage({
         </section>
 
         <div className="mt-8">
-          <OrderManagementTable orders={orders} initialQuery={initialQuery} />
+          <OrderManagementTable
+            orders={orders}
+            initialQuery={initialQuery}
+            initialStatus={initialStatus}
+          />
         </div>
       </AdminContent>
     </AdminShell>

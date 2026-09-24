@@ -91,9 +91,9 @@ is **pending unpaid only**, not “until preparation.” Paid settlement concern
 No new online refunds or destination collection. Prepared/no-show orders are non-refundable subject
 to non-waivable rights. The retired refund rows, states and reconciliation code are removed in the
 pre-v1 baseline. Hosted Dev and Production received the earlier shared baseline through separate,
-explicitly approved disposable-data resets before Phase 15 began. Dev later received the expanded
-review baseline on September 22; Production still requires separate exact-target approval before that
-revision is activated there.
+explicitly approved disposable-data resets before Phase 15 began. Dev later received the complete
+Phase 15A contract through the approved September 24 reset; Production still requires separate
+exact-target approval before the final pre-APK contract is activated there.
 
 ## Loyalty, Journal and communication
 
@@ -119,8 +119,8 @@ Dev and Production remain isolated deployments/data/providers. SQL promotion is 
 Ordinary work follows development → reviewed PR → main; feature branches are reserved for risky/large work.
 See [environments](../getting-started/environments.md) and [deployment](../operations/deployment.md).
 
-Phase 15A's final commerce/payment update is active. Required Phase 15B Admin Dashboard
-decision-support work follows it, then Phase 15C builds and accepts the approved thin TWA APK.
+Phase 15A's final commerce/payment update is complete. Required Phase 15B Admin Dashboard
+decision-support work is active, then Phase 15C builds and accepts the approved thin TWA APK.
 Optional Phase 16 public-only analytics remains planned. Their scope and remaining work live only
 in the [roadmap](../roadmap.md).
 Completed phase-by-phase implementation checklists remain recoverable through Git rather than

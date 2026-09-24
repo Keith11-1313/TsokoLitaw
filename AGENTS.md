@@ -28,10 +28,10 @@ baseline over compatibility solely for disposable pre-release data. A coordinate
 replace migration history after dependency review and local validation; confirm the exact hosted
 project and destructive scope before resetting it. Never infer that provider funds are disposable.
 
-Phase 13 production/security and Phase 14 UI stabilization are complete. Phase 15A final
-commerce/payment work is active; required Phase 15B Admin Dashboard decision support and Phase 15C
-thin TWA Android APK follow. Optional Phase 16 is public-page aggregate Web Analytics after APK
-stability. See [roadmap](docs/roadmap.md); work listed there is not implemented until verified.
+Phase 13 production/security, Phase 14 UI stabilization, and Phase 15A final commerce/payment work
+are complete. Required Phase 15B Admin Dashboard decision support is active; Phase 15C, the thin TWA
+Android APK, follows. Optional Phase 16 is public-page aggregate Web Analytics after APK stability.
+See [roadmap](docs/roadmap.md); work listed there is not implemented until verified.
 
 Keep one Next.js application with Admin under `/admin`, suited to a campus business of roughly
 1,000 customers. Avoid unnecessary dependencies, services, repositories/factories, generic layers,
@@ -97,7 +97,7 @@ moderation for public visibility. Admin has one equal-permission role with at mo
 - Preserve `useFormGate` and `useEditorDialog` contracts, dirty-close handling and focus restoration.
 - Validate JPG/PNG/WebP uploads on client and server, ≤3 MiB; coating media exactly square.
   Catalog publication remains audited, with cleanup only of newly uploaded objects on failed saves.
-- Assets: logo `public/brand/logo.png`; Home media under `public/images/home/` and
+- Assets: logo `public/brand/logo.webp`; Home media under `public/images/home/` and
   `public/videos/home/`; coating photos in Supabase `catalog-media`. Use Lucide for missing icons.
   Do not embed reference PNGs as pages or add random remote/paid assets.
 - Generated schema types and Boneyard bones are not hand-edited. Use documented generators.

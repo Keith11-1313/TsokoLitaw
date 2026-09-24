@@ -49,15 +49,16 @@ New capabilities require an operational purpose and approval, not just a new tab
 ## Dashboard reporting
 
 The Dashboard defaults to the last seven Manila calendar days through the current time and also
-supports 30 days, this month to date, and the complete previous month. Paid sales and paid-order trends use the confirmed
-payment timestamp rather than order creation time. Comparisons use the immediately preceding range
-of equal length. A zero previous value is presented as new or unchanged instead of a fabricated
-percentage.
+supports 30 days, this month to date, and the complete previous month. Paid sales and paid-order
+trends use the confirmed payment timestamp rather than order creation time. Fixed-day presets compare
+equivalent Manila calendar windows, month-to-date compares the same elapsed portion of the preceding
+month, and custom ranges use the immediately preceding equal-length range. A zero previous value is
+presented as new or unchanged instead of a fabricated percentage.
 
-Admins can also choose an inclusive custom Manila date range of up to 366 days. The sales chart
-keeps daily points for short ranges and groups longer ranges into seven-day periods so labels and
-values remain readable. Bars expose the exact paid value and order count on pointer hover and
-keyboard focus.
+Admins can also choose an inclusive custom Manila date range of up to 366 days. The sales trend keeps
+daily points for short ranges, groups medium ranges into dated seven-day periods, and groups long
+ranges by month. Revenue and paid-order volume have separate plots rather than an ambiguous dual
+axis. A visible expandable table provides every exact value without hover or color dependence.
 
 Headline KPIs cover paid sales, paid orders, average order value for revenue-bearing orders, and
 repeat-buyer share. Zero-total loyalty orders remain paid orders but do not lower average order
@@ -65,24 +66,29 @@ value. A returning buyer is an identified customer who paid during the selected 
 paid order before that period. These aggregates cover the full selected range and are independent
 of the bounded Orders review/recent list.
 
-The supporting sales row uses immutable paid-order item snapshots for boxes and pieces sold,
-reports paid add-on value separately from the complimentary per-box extra, and shows sales per
-purchasing customer. Product mix groups paid boxes by their saved variant name; payment mix groups
-confirmed order value and count by provider. These figures follow the same selected period and
-previous-period comparison as the headline KPIs.
+The supporting row surfaces paid-extra sales, sales per purchasing customer, new-customer count,
+matured fulfillment completion, and cancelled-or-expired share. Product volume still reports boxes
+and pieces from immutable snapshots. Product mix groups paid boxes by saved variant name; payment
+mix groups confirmed order value and count by provider.
 
-Completion rate uses paid orders from the selected payment period and reports how many are now
-completed. Cancelled or expired rate uses orders created in the selected period. Average fulfillment
-time runs from confirmed payment to completion, and appears only when a completed sample exists.
+Completion rate uses paid orders from the selected payment period whose pickup date has passed and
+reports how many are now completed; future-pickup orders do not count as failures. Cancelled or
+expired rate uses orders created in the selected period. Payment-to-completion duration is labelled
+literally and includes its sample size; it is not presented as preparation speed.
 Coating mix counts immutable paid-order piece allocations; extra mix excludes the complimentary
 per-box extra. Review count and average rating follow the selected period. These sections remain
 separate from current operational workload such as receipt-review age and upcoming inventory.
 
-The paid-sales chart groups by `payments.paid_at`. The order-outcomes chart is a creation cohort:
-it groups orders created during the selected period by their current fulfillment status. Current
-active fulfillment, receipts awaiting review, and upcoming available stock are operational counts
-and do not inherit the historical reporting filter. Paid sales are order values after discounts,
-not profit, provider settlement, or net revenue after fees.
+The paid-sales chart groups by `payments.paid_at`. The conversion funnel follows one creation cohort
+from created to paid to completed and separately reports cancelled/expired orders. Current active
+fulfillment, overdue/due/ready orders, receipt review, counter-payment and review-moderation queues do
+not inherit the historical reporting filter. Upcoming prepared stock is shown per open pickup date
+and labels made-to-order dates separately. Paid sales are order values after discounts, not profit,
+provider settlement, or net revenue after fees.
+
+The dashboard receives lightweight recent orders and configuration counts from its authorized RPC;
+it does not load full nested Orders, Catalog, Pickup and Journal datasets. Required RPC fields are
+validated and an incomplete deployment contract fails visibly instead of silently becoming zero.
 
 Tests: `editor-contracts.test.tsx`, form/image validation tests, and matching local pgTAP suites,
 including `013_dashboard`. Check mobile cards/drawer, tablet editors, desktop

@@ -71,9 +71,27 @@ including the new pay-at-counter authorization and paid-before-completion contra
 removed `pg_cron`, exactly the three approved jobs were recreated from surviving Vault values; their
 names, schedules and endpoint paths passed seven direct SQL assertions, and one authorized request to
 each endpoint returned HTTP 200. The temporary Cron activation migration/history marker and verification
-files were removed, leaving the two intended application migration markers.
+files were removed, leaving the two intended application migration markers. The owner subsequently
+accepted the matching Dev application work and marked Phase 15A complete; that acceptance does not
+authorize or imply the still-separate Production reset.
 
 ## Hosted activation and ongoing checks
+
+Phase 15B adds `20260924020000_phase_15b_dashboard.sql`, which replaces only the service-role Admin
+dashboard projection and adds targeted partial reporting indexes. On September 24, 2026, the owner
+approved a Dev-only coordinated reset and the migration was activated on confirmed project
+`mgkzphpznamjlgrpumjd`; Production was not changed. The discarded disposable Dev state contained
+1 Auth user, 3 orders, 1 review, 2 paid Manual GCash records and 1 paid counter record, with no
+provider-bound pending checkout or receipt under review. No backup was retained.
+
+The reset reapplied the baseline, service-role grant migration, Phase 15B migration and controlled
+seed. All three licensed font objects were restored and returned HTTP 200. Linked schema lint and all
+393 application PostgreSQL assertions passed; seven additional assertions verified exactly the three
+approved Cron definitions, schedules and paths. The jobs were recreated from the surviving Dev Vault
+values, and one authorized request to each documented Dev endpoint returned HTTP 200 with zero work and
+zero failures. Responsive browser acceptance remains part of the matching Dev application deployment.
+The application deployment and this migration must move together because the strict response parser
+rejects the older dashboard contract rather than showing false zeroes.
 
 During post-reset review-image testing on September 22, 2026, the application-equivalent
 `service_role` request exposed incomplete table ACLs inherited from the dumped baseline: the

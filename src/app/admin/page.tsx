@@ -4,9 +4,7 @@ import {
   Banknote,
   Boxes,
   CalendarDays,
-  Cookie,
   Gauge,
-  Newspaper,
   Package,
   PackageCheck,
   ShoppingBag,
@@ -19,10 +17,10 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import {
-  DashboardCharts,
   DashboardMixCharts,
+  FunnelChart,
+  SalesTrendChart,
   type DailyRevenuePoint,
-  type OrderStatusPoint,
 } from "@/components/admin/dashboard-charts";
 import { DashboardRangeFilter } from "@/components/admin/dashboard-range-filter";
 import { QuickOperations } from "@/components/admin/quick-operations";
@@ -30,11 +28,7 @@ import { RecentOrdersTable } from "@/components/admin/recent-orders-table";
 import { AdminContent } from "@/components/layout/admin-content";
 import { requireAdmin } from "@/lib/auth";
 import { formatPhp } from "@/lib/commerce";
-import { getAdminCatalog } from "@/lib/server-catalog";
 import { getAdminDashboardSummary, resolveDashboardDateRange } from "@/lib/server-dashboard";
-import { getAdminJournalPosts } from "@/lib/server-journal";
-import { getAdminOrders } from "@/lib/server-orders";
-import { getAdminPickup } from "@/lib/server-pickup";
 import { expireDueDirectPayments } from "@/lib/server-payment";
 
 export const metadata: Metadata = {
@@ -60,6 +54,28 @@ function comparisonTrend(current: number, previous: number, increaseIsGood = tru
 
 function groupRevenue(points: DailyRevenuePoint[]) {
   if (points.length <= 14) return points;
+  if (points.length > 90) {
+    const months = new Map<string, DailyRevenuePoint>();
+    for (const point of points) {
+      const date = new Date(`${point.rawDate}T12:00:00+08:00`);
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      const label = new Intl.DateTimeFormat("en-PH", {
+        month: "short",
+        year: "numeric",
+        timeZone: "Asia/Manila",
+      }).format(date);
+      const existing = months.get(key);
+      months.set(key, {
+        dateLabel: label,
+        dayLabel: point.dayLabel,
+        rawDate: point.rawDate,
+        value: (existing?.value ?? 0) + point.value,
+        orderCount: (existing?.orderCount ?? 0) + point.orderCount,
+        partial: existing?.partial ?? false,
+      });
+    }
+    return [...months.values()];
+  }
   const grouped: DailyRevenuePoint[] = [];
   for (let index = 0; index < points.length; index += 7) {
     const group = points.slice(index, index + 7);
@@ -72,8 +88,10 @@ function groupRevenue(points: DailyRevenuePoint[]) {
           ? first.dateLabel
           : `${first.dateLabel}–${last.dateLabel}`,
       dayLabel: `Week ${grouped.length + 1}`,
+      rawDate: first.rawDate,
       value: group.reduce((sum, point) => sum + point.value, 0),
       orderCount: group.reduce((sum, point) => sum + point.orderCount, 0),
+      partial: group.length < 7,
     });
   }
   return grouped;
@@ -109,49 +127,7 @@ export default async function AdminDashboardPage({
   const range = resolveDashboardDateRange(rangeValue, fromValue, toValue);
   // Expire due direct payments before loading the dashboard's read-only summaries.
   await expireDueDirectPayments();
-  const [dashboard, orders, catalog, pickup, posts] = await Promise.all([
-    getAdminDashboardSummary(admin.id, range),
-    getAdminOrders({ expirePayments: false }),
-    getAdminCatalog(),
-    getAdminPickup(),
-    getAdminJournalPosts(),
-  ]);
-  const openPickupDates = pickup.dates.filter((date) => date.isOpen);
-  const publishedPosts = posts.filter((post) => post.status === "published").length;
-  const draftPosts = posts.length - publishedPosts;
-  const statusDefinitions = [
-    {
-      statuses: ["PENDING_PAYMENT"],
-      label: "Open payments",
-      colorClassName: "bg-warning-foreground",
-    },
-    { statuses: ["PAID"], label: "Paid", colorClassName: "bg-info-foreground" },
-    { statuses: ["CONFIRMED"], label: "Received", colorClassName: "bg-info-foreground" },
-    { statuses: ["PREPARING"], label: "Preparing", colorClassName: "bg-brand" },
-    {
-      statuses: ["READY_FOR_PICKUP"],
-      label: "Ready for pickup",
-      colorClassName: "bg-info-foreground",
-    },
-    { statuses: ["COMPLETED"], label: "Completed", colorClassName: "bg-success-foreground" },
-    {
-      statuses: ["CANCELLED"],
-      label: "Cancelled",
-      colorClassName: "bg-muted-foreground",
-    },
-    {
-      statuses: ["EXPIRED"],
-      label: "Expired",
-      colorClassName: "bg-muted-foreground",
-    },
-  ] as const;
-  const statusPoints: OrderStatusPoint[] = statusDefinitions.map((definition) => ({
-    label: definition.label,
-    value: dashboard.orderOutcomes
-      .filter((outcome) => (definition.statuses as readonly string[]).includes(outcome.status))
-      .reduce((total, outcome) => total + outcome.count, 0),
-    colorClassName: definition.colorClassName,
-  }));
+  const dashboard = await getAdminDashboardSummary(admin.id, range);
   const dailyRevenuePoints: DailyRevenuePoint[] = dashboard.dailySales.map((point) => {
     const date = new Date(`${point.date}T12:00:00+08:00`);
     return {
@@ -164,6 +140,7 @@ export default async function AdminDashboardPage({
         timeZone: "Asia/Manila",
         weekday: "short",
       }).format(date),
+      rawDate: point.date,
       value: point.paidSales,
       orderCount: point.paidOrders,
     };
@@ -212,7 +189,12 @@ export default async function AdminDashboardPage({
     {
       label: "Repeat buyer share",
       value: `${dashboard.current.repeatCustomerRate.toFixed(1)}%`,
-      supportingText: `${dashboard.current.repeatCustomers} of ${dashboard.current.purchasingCustomers} purchasing customers returned`,
+      supportingText: `${comparisonText(
+        dashboard.current.repeatCustomerRate,
+        dashboard.previous.repeatCustomerRate,
+        range.comparisonLabel,
+        true,
+      )} · ${dashboard.current.repeatCustomers} of ${dashboard.current.purchasingCustomers}`,
       icon: Users,
       href: "/admin/customers",
       trend: comparisonTrend(
@@ -223,28 +205,50 @@ export default async function AdminDashboardPage({
   ] as const;
   const salesDetails = [
     {
-      label: "Boxes sold",
-      value: String(dashboard.current.boxesSold),
+      label: "Paid-extra sales",
+      value: formatPhp(dashboard.current.extraSales),
       supportingText: comparisonText(
-        dashboard.current.boxesSold,
-        dashboard.previous.boxesSold,
+        dashboard.current.extraSales,
+        dashboard.previous.extraSales,
         range.comparisonLabel,
       ),
       icon: Boxes,
       href: "/admin/products",
-      trend: comparisonTrend(dashboard.current.boxesSold, dashboard.previous.boxesSold),
+      trend: comparisonTrend(dashboard.current.extraSales, dashboard.previous.extraSales),
     },
     {
-      label: "Pieces sold",
-      value: String(dashboard.current.piecesSold),
+      label: "Sales per customer",
+      value: formatPhp(
+        dashboard.current.purchasingCustomers > 0
+          ? dashboard.current.paidSales / dashboard.current.purchasingCustomers
+          : 0,
+      ),
       supportingText: comparisonText(
-        dashboard.current.piecesSold,
-        dashboard.previous.piecesSold,
+        dashboard.current.purchasingCustomers > 0
+          ? dashboard.current.paidSales / dashboard.current.purchasingCustomers
+          : 0,
+        dashboard.previous.purchasingCustomers > 0
+          ? dashboard.previous.paidSales / dashboard.previous.purchasingCustomers
+          : 0,
         range.comparisonLabel,
       ),
       icon: PackageCheck,
-      href: "/admin/products",
-      trend: comparisonTrend(dashboard.current.piecesSold, dashboard.previous.piecesSold),
+      href: "/admin/customers",
+      trend: comparisonTrend(
+        dashboard.current.purchasingCustomers > 0
+          ? dashboard.current.paidSales / dashboard.current.purchasingCustomers
+          : 0,
+        dashboard.previous.purchasingCustomers > 0
+          ? dashboard.previous.paidSales / dashboard.previous.purchasingCustomers
+          : 0,
+      ),
+    },
+    {
+      label: "New customers",
+      value: String(dashboard.current.purchasingCustomers - dashboard.current.repeatCustomers),
+      supportingText: `${dashboard.current.repeatCustomers} returning · ${dashboard.current.purchasingCustomers} total`,
+      icon: Users,
+      href: "/admin/customers",
     },
     {
       label: "Completion rate",
@@ -305,7 +309,7 @@ export default async function AdminDashboardPage({
         </header>
 
         <section
-          className="mt-7 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
+          className="mt-7 grid gap-3 min-[390px]:grid-cols-2 sm:gap-4 xl:grid-cols-4"
           aria-label="Dashboard summary"
         >
           {dashboardStats.map((stat) => (
@@ -314,7 +318,7 @@ export default async function AdminDashboardPage({
         </section>
 
         <section
-          className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
+          className="mt-4 grid gap-3 min-[390px]:grid-cols-2 sm:gap-4 xl:grid-cols-5"
           aria-label="Sales details"
         >
           {salesDetails.map((stat) => (
@@ -322,15 +326,13 @@ export default async function AdminDashboardPage({
           ))}
         </section>
 
-        <div className="mt-8">
-          <DashboardCharts
-            periodLabel={range.label}
-            comparisonLabel={range.comparisonLabel}
-            previousRevenue={dashboard.previous.paidSales}
-            revenue={revenuePoints}
-            statuses={statusPoints}
-          />
-        </div>
+        <section
+          className="mt-8 grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,1fr)]"
+          aria-label="Business trends"
+        >
+          <SalesTrendChart periodLabel={range.label} revenue={revenuePoints} />
+          <FunnelChart periodLabel={range.label} {...dashboard.funnel} />
+        </section>
 
         <section className="mt-5 grid min-w-0 gap-5 lg:grid-cols-2" aria-label="Sales mix">
           <article className="min-w-0 rounded-card border border-border bg-surface p-5 sm:p-6">
@@ -424,28 +426,44 @@ export default async function AdminDashboardPage({
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <AdminStatCard
               compact
-              label="Average fulfillment time"
+              label="Payment-to-completion"
               value={formatHours(dashboard.currentDecisionMetrics.averageFulfillmentHours)}
-              supportingText="From confirmed payment to completion"
+              supportingText={
+                dashboard.currentDecisionMetrics.durationSampleSize > 0
+                  ? `${dashboard.currentDecisionMetrics.durationSampleSize} completed samples · ${comparisonText(
+                      dashboard.currentDecisionMetrics.averageFulfillmentHours,
+                      dashboard.previousDecisionMetrics.averageFulfillmentHours,
+                      range.comparisonLabel,
+                    )}`
+                  : "No completed sample in this period"
+              }
               icon={Timer}
               href="/admin/orders"
+              trend={comparisonTrend(
+                dashboard.currentDecisionMetrics.averageFulfillmentHours,
+                dashboard.previousDecisionMetrics.averageFulfillmentHours,
+                false,
+              )}
             />
             <AdminStatCard
               compact
               label="Customer reviews"
-              value={`${dashboard.reviews.averageRating.toFixed(1)} / 5`}
-              supportingText={`${dashboard.reviews.count} submitted · ${dashboard.reviews.visible} visible`}
+              value={
+                dashboard.reviews.count > 0
+                  ? `${dashboard.reviews.averageRating.toFixed(1)} / 5`
+                  : "No reviews yet"
+              }
+              supportingText={`${dashboard.reviews.count} submitted · ${dashboard.reviewOperations.unpublished} unpublished`}
               icon={Star}
               href="/admin/reviews"
             />
             <AdminStatCard
               compact
-              label="Inventory coverage"
-              value={`${dashboard.operations.availablePieces} available`}
-              supportingText={`${dashboard.operations.committedPieces} committed · ${dashboard.operations.availablePieces === 0 ? "Out of stock" : dashboard.operations.availablePieces < 16 ? "Low stock" : "Stock available"}`}
+              label="Product volume"
+              value={`${dashboard.current.boxesSold} boxes`}
+              supportingText={`${dashboard.current.piecesSold} pieces sold · ${range.label.toLowerCase()}`}
               icon={Package}
-              href="/admin/inventory"
-              trend={dashboard.operations.availablePieces === 0 ? "negative" : "neutral"}
+              href="/admin/products"
             />
           </div>
         </section>
@@ -454,8 +472,11 @@ export default async function AdminDashboardPage({
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 id="operations-overview-heading" className="font-display text-2xl">
-                Operations overview
+                Needs attention
               </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Current workload, independent of the reporting period
+              </p>
             </div>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -463,47 +484,44 @@ export default async function AdminDashboardPage({
               {
                 href: "/admin/orders",
                 title: "Orders",
-                value: `${dashboard.operations.activeFulfillment} active orders`,
-                detail:
-                  dashboard.operations.receiptsAwaitingReview > 0
-                    ? `${dashboard.operations.receiptsAwaitingReview} awaiting review · ${receiptWaitText(dashboard.operations.oldestReceiptSubmittedAt)}`
-                    : "No payment receipts awaiting review",
+                value: `${dashboard.operations.overdue} overdue`,
+                detail: `${dashboard.operations.activeFulfillment} active fulfillment orders`,
                 icon: ShoppingBag,
               },
               {
-                href: "/admin/products",
-                title: "Catalog",
-                value: `${catalog.coatings.filter((coating) => coating.isActive).length} active coatings`,
-                detail: `${catalog.product.variants.filter((variant) => variant.isActive).length} box sizes · ${catalog.addons.filter((addon) => addon.isActive).length} extras`,
-                icon: Cookie,
-              },
-              {
-                href: "/admin/pickup",
-                title: "Pickup",
-                value: `${openPickupDates.length} open ${openPickupDates.length === 1 ? "date" : "dates"}`,
-                detail: `${openPickupDates.reduce((total, date) => total + date.windows.length, 0)} published time windows`,
+                href: "/admin/orders",
+                title: "Due today",
+                value: `${dashboard.operations.dueToday} orders`,
+                detail: `${dashboard.operations.dueTomorrow} due tomorrow`,
                 icon: CalendarDays,
               },
               {
-                href: "/admin/inventory",
-                title: "Inventory",
-                value: `${dashboard.operations.availablePieces} pieces available`,
-                detail: "Across open upcoming stock dates",
-                icon: Package,
+                href: "/admin/orders?status=READY_FOR_PICKUP",
+                title: "Ready for pickup",
+                value: `${dashboard.operations.readyForPickup} orders`,
+                detail: "Customer collection queue",
+                icon: PackageCheck,
               },
               {
-                href: "/admin/customers",
-                title: "Customers",
-                value: `${dashboard.current.purchasingCustomers} purchasing customers`,
-                detail: `${dashboard.current.repeatCustomers} returning during ${range.label.toLowerCase()}`,
-                icon: Users,
+                href: "/admin/orders?status=PENDING_PAYMENT",
+                title: "Receipt review",
+                value: `${dashboard.operations.receiptsAwaitingReview} waiting`,
+                detail: receiptWaitText(dashboard.operations.oldestReceiptSubmittedAt),
+                icon: Banknote,
               },
               {
-                href: "/admin/journal",
-                title: "Journal",
-                value: `${publishedPosts} published · ${dashboard.reviewOperations.visible} reviews`,
-                detail: `${draftPosts} drafts · ${dashboard.reviewOperations.featured} featured reviews`,
-                icon: Newspaper,
+                href: "/admin/orders",
+                title: "Counter payments",
+                value: `${dashboard.operations.counterAwaitingPayment} unpaid`,
+                detail: "Website orders awaiting in-person payment",
+                icon: ShoppingCart,
+              },
+              {
+                href: "/admin/reviews",
+                title: "Review moderation",
+                value: `${dashboard.reviewOperations.unpublished} unpublished`,
+                detail: `${dashboard.reviewOperations.visible} public · ${dashboard.reviewOperations.featured} featured`,
+                icon: Star,
               },
             ].map((area) => {
               const Icon = area.icon;
@@ -534,13 +552,147 @@ export default async function AdminDashboardPage({
           </div>
         </section>
 
+        <section className="mt-8" aria-labelledby="pickup-stock-heading">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 id="pickup-stock-heading" className="font-display text-2xl">
+                Upcoming pickup stock
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Prepared inventory is date-specific; made-to-order dates do not require prepared
+                stock.
+              </p>
+            </div>
+            <Link
+              href="/admin/inventory"
+              className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            >
+              Manage inventory <ArrowRight aria-hidden="true" size={16} />
+            </Link>
+          </div>
+          {dashboard.inventoryByDate.length === 0 ? (
+            <p className="mt-4 rounded-card border border-border bg-surface px-5 py-10 text-center text-sm text-muted-foreground">
+              No open upcoming pickup dates.
+            </p>
+          ) : (
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {dashboard.inventoryByDate.map((item) => {
+                const modeLabel =
+                  item.mode === "MADE_TO_ORDER"
+                    ? "Made to order"
+                    : item.mode === "READY_STOCK"
+                      ? "Ready stock"
+                      : "Hybrid";
+                const needsPreparedStock = item.mode !== "MADE_TO_ORDER";
+                return (
+                  <article
+                    key={item.date}
+                    className="rounded-card border border-border bg-surface p-5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-display text-xl text-foreground">
+                          {new Intl.DateTimeFormat("en-PH", {
+                            timeZone: "Asia/Manila",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          }).format(new Date(`${item.date}T12:00:00+08:00`))}
+                        </p>
+                        <p className="mt-1 text-xs font-bold uppercase text-muted-foreground">
+                          {modeLabel}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-bold text-foreground">
+                        {needsPreparedStock ? `${item.available} remaining` : "Produce to order"}
+                      </span>
+                    </div>
+                    {needsPreparedStock ? (
+                      <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Prepared</dt>
+                          <dd className="font-bold text-foreground">{item.prepared}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Committed</dt>
+                          <dd className="font-bold text-foreground">{item.committed}</dd>
+                        </div>
+                      </dl>
+                    ) : (
+                      <p className="mt-4 text-sm text-muted-foreground">
+                        Demand is fulfilled from confirmed website orders rather than a
+                        prepared-stock pool.
+                      </p>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="mt-8" aria-labelledby="configuration-heading">
+          <h2 id="configuration-heading" className="font-display text-2xl">
+            Configuration overview
+          </h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <Link
+              href="/admin/products"
+              className="rounded-card border border-border bg-surface p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            >
+              <p className="text-xs font-bold uppercase text-muted-foreground">Catalog</p>
+              <p className="mt-1 font-display text-xl text-foreground">
+                {dashboard.catalogCounts.coatings} coatings
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {dashboard.catalogCounts.variants} box sizes · {dashboard.catalogCounts.addons}{" "}
+                extras
+              </p>
+            </Link>
+            <Link
+              href="/admin/pickup"
+              className="rounded-card border border-border bg-surface p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            >
+              <p className="text-xs font-bold uppercase text-muted-foreground">Pickup</p>
+              <p className="mt-1 font-display text-xl text-foreground">
+                {dashboard.pickupCounts.dates} open dates
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {dashboard.pickupCounts.windows} published windows
+              </p>
+            </Link>
+            <Link
+              href="/admin/journal"
+              className="rounded-card border border-border bg-surface p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            >
+              <p className="text-xs font-bold uppercase text-muted-foreground">Journal</p>
+              <p className="mt-1 font-display text-xl text-foreground">
+                {dashboard.journalCounts.published} published
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {dashboard.journalCounts.drafts} drafts
+              </p>
+            </Link>
+          </div>
+        </section>
+
         <div className="mt-8">
-          <RecentOrdersTable orders={orders} />
+          <RecentOrdersTable orders={dashboard.recentOrders} />
         </div>
 
         <div className="mt-8">
           <QuickOperations />
         </div>
+
+        <p className="mt-8 text-center text-xs text-muted-foreground">
+          Updated{" "}
+          {new Intl.DateTimeFormat("en-PH", {
+            timeZone: "Asia/Manila",
+            dateStyle: "medium",
+            timeStyle: "short",
+          }).format(new Date(dashboard.generatedAt))}{" "}
+          Manila time
+        </p>
       </AdminContent>
     </AdminShell>
   );

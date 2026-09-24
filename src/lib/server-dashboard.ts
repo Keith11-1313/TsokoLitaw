@@ -1,6 +1,8 @@
 import "server-only";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import type { PaymentMethod, PaymentStatus } from "@/lib/payment-status";
+import type { OrderStatus } from "@/components/ui/status-badge";
 
 export type DashboardRangePreset = "7d" | "30d" | "this_month" | "last_month" | "custom";
 
@@ -17,6 +19,7 @@ export interface DashboardMetricSet {
 }
 
 export interface AdminDashboardSummary {
+  generatedAt: string;
   current: DashboardMetricSet;
   previous: DashboardMetricSet;
   dailySales: Array<{ date: string; paidSales: number; paidOrders: number }>;
@@ -28,13 +31,40 @@ export interface AdminDashboardSummary {
   coatingMix: Array<{ label: string; pieces: number }>;
   extraMix: Array<{ label: string; quantity: number; sales: number }>;
   reviews: { count: number; averageRating: number; visible: number; featured: number };
-  reviewOperations: { visible: number; featured: number };
+  reviewOperations: { visible: number; featured: number; unpublished: number };
+  funnel: { created: number; paid: number; completed: number; lost: number };
+  inventoryByDate: Array<{
+    date: string;
+    mode: "MADE_TO_ORDER" | "READY_STOCK" | "HYBRID";
+    prepared: number;
+    committed: number;
+    available: number;
+  }>;
+  catalogCounts: { coatings: number; variants: number; addons: number };
+  pickupCounts: { dates: number; windows: number };
+  journalCounts: { published: number; drafts: number };
+  recentOrders: Array<{
+    id: string;
+    orderNumber: string;
+    customerName: string;
+    total: number;
+    status: OrderStatus;
+    paymentStatus: PaymentStatus;
+    paymentMethod: PaymentMethod;
+    createdAt: string;
+    pickupDate: string;
+    itemSummary: string;
+  }>;
   operations: {
     activeFulfillment: number;
     receiptsAwaitingReview: number;
     oldestReceiptSubmittedAt: string | null;
-    availablePieces: number;
     committedPieces: number;
+    dueToday: number;
+    dueTomorrow: number;
+    overdue: number;
+    readyForPickup: number;
+    counterAwaitingPayment: number;
   };
 }
 
@@ -46,6 +76,7 @@ export interface DashboardDecisionMetrics {
   lostOrders: number;
   createdOrders: number;
   averageFulfillmentHours: number;
+  durationSampleSize: number;
 }
 
 export interface DashboardDateRange {
@@ -85,6 +116,31 @@ function monthStart(key: string, offset: number) {
   const [year, month] = key.split("-").map(Number);
   const shifted = new Date(Date.UTC(year, month - 1 + offset, 1));
   return dateKey(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, 1);
+}
+
+function daysInMonth(key: string, offset = 0) {
+  const [year, month] = key.split("-").map(Number);
+  return new Date(Date.UTC(year, month + offset, 0)).getUTCDate();
+}
+
+function manilaTime(value: Date) {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Manila",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).format(value);
+}
+
+function previousMonthMatchingEnd(today: string, currentEnd: Date) {
+  const [year, month, day] = today.split("-").map(Number);
+  const previousMonthDate = new Date(Date.UTC(year, month - 2, 1));
+  const previousYear = previousMonthDate.getUTCFullYear();
+  const previousMonth = previousMonthDate.getUTCMonth() + 1;
+  const matchingDay = Math.min(day, daysInMonth(today, -1));
+  const time = manilaTime(currentEnd);
+  return `${dateKey(previousYear, previousMonth, matchingDay)}T${time}${MANILA_OFFSET}`;
 }
 
 function boundary(key: string) {
@@ -146,13 +202,22 @@ export function resolveDashboardDateRange(
 
   const startTimestamp = boundary(start);
   const endTimestamp = end.includes("T") ? end : boundary(end);
-  const previousEnd = startTimestamp;
-  const previousStart = new Date(
+  const resolvedPreset: DashboardRangePreset = value === "7d" ? "7d" : preset;
+  let previousEnd = startTimestamp;
+  let previousStart = new Date(
     new Date(previousEnd).getTime() -
       (new Date(endTimestamp).getTime() - new Date(startTimestamp).getTime()),
   ).toISOString();
+  if (resolvedPreset === "7d" || resolvedPreset === "30d") {
+    const days = resolvedPreset === "7d" ? 7 : 30;
+    previousStart = boundary(shiftDate(start, -days));
+    previousEnd = `${shiftDate(today, -days)}T${manilaTime(new Date(endTimestamp))}${MANILA_OFFSET}`;
+  } else if (resolvedPreset === "this_month") {
+    previousStart = boundary(monthStart(today, -1));
+    previousEnd = previousMonthMatchingEnd(today, new Date(endTimestamp));
+  }
   return {
-    preset: value === "7d" ? "7d" : preset,
+    preset: resolvedPreset,
     label,
     comparisonLabel,
     start: startTimestamp,
@@ -167,23 +232,45 @@ function toNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function requiredRecord(value: unknown, label: string) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`Admin dashboard response is missing ${label}.`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function requiredNumber(row: Record<string, unknown>, key: string, label: string) {
+  if (!(key in row)) throw new Error(`Admin dashboard response is missing ${label}.${key}.`);
+  const parsed = Number(row[key]);
+  if (!Number.isFinite(parsed))
+    throw new Error(`Admin dashboard response has invalid ${label}.${key}.`);
+  return parsed;
+}
+
+function requiredString(row: Record<string, unknown>, key: string, label: string) {
+  if (typeof row[key] !== "string" || !row[key]) {
+    throw new Error(`Admin dashboard response has invalid ${label}.${key}.`);
+  }
+  return row[key] as string;
+}
+
 function parseMetricSet(value: unknown): DashboardMetricSet {
-  const row = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const row = requiredRecord(value, "metric set");
   return {
-    paidSales: toNumber(row.paidSales),
-    paidOrders: toNumber(row.paidOrders),
-    averageOrderValue: toNumber(row.averageOrderValue),
-    purchasingCustomers: toNumber(row.purchasingCustomers),
-    repeatCustomers: toNumber(row.repeatCustomers),
-    repeatCustomerRate: toNumber(row.repeatCustomerRate),
-    boxesSold: toNumber(row.boxesSold),
-    piecesSold: toNumber(row.piecesSold),
-    extraSales: toNumber(row.extraSales),
+    paidSales: requiredNumber(row, "paidSales", "metric set"),
+    paidOrders: requiredNumber(row, "paidOrders", "metric set"),
+    averageOrderValue: requiredNumber(row, "averageOrderValue", "metric set"),
+    purchasingCustomers: requiredNumber(row, "purchasingCustomers", "metric set"),
+    repeatCustomers: requiredNumber(row, "repeatCustomers", "metric set"),
+    repeatCustomerRate: requiredNumber(row, "repeatCustomerRate", "metric set"),
+    boxesSold: requiredNumber(row, "boxesSold", "metric set"),
+    piecesSold: requiredNumber(row, "piecesSold", "metric set"),
+    extraSales: requiredNumber(row, "extraSales", "metric set"),
   };
 }
 
 function parseDecisionMetrics(value: unknown): DashboardDecisionMetrics {
-  const row = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const row = requiredRecord(value, "decision metrics");
   return {
     completionRate: toNumber(row.completionRate),
     completedOrders: toNumber(row.completedOrders),
@@ -192,6 +279,7 @@ function parseDecisionMetrics(value: unknown): DashboardDecisionMetrics {
     lostOrders: toNumber(row.lostOrders),
     createdOrders: toNumber(row.createdOrders),
     averageFulfillmentHours: toNumber(row.averageFulfillmentHours),
+    durationSampleSize: requiredNumber(row, "durationSampleSize", "decision metrics"),
   };
 }
 
@@ -207,12 +295,14 @@ export async function getAdminDashboardSummary(
     previous_end: range.previousEnd,
   });
   if (error) throw new Error(`Unable to load Admin dashboard KPIs: ${error.message}`);
-  const result = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
-  const operations =
-    result.operations && typeof result.operations === "object"
-      ? (result.operations as Record<string, unknown>)
-      : {};
+  const result = requiredRecord(data, "root payload");
+  const operations = requiredRecord(result.operations, "operations");
+  const funnel = requiredRecord(result.funnel, "funnel");
+  const catalogCounts = requiredRecord(result.catalogCounts, "catalogCounts");
+  const pickupCounts = requiredRecord(result.pickupCounts, "pickupCounts");
+  const journalCounts = requiredRecord(result.journalCounts, "journalCounts");
   return {
+    generatedAt: requiredString(result, "generatedAt", "root payload"),
     current: parseMetricSet(result.current),
     previous: parseMetricSet(result.previous),
     dailySales: Array.isArray(result.dailySales)
@@ -289,17 +379,86 @@ export async function getAdminDashboardSummary(
       return {
         visible: toNumber(row.visible),
         featured: toNumber(row.featured),
+        unpublished: requiredNumber(row, "unpublished", "reviewOperations"),
       };
     })(),
+    funnel: {
+      created: requiredNumber(funnel, "created", "funnel"),
+      paid: requiredNumber(funnel, "paid", "funnel"),
+      completed: requiredNumber(funnel, "completed", "funnel"),
+      lost: requiredNumber(funnel, "lost", "funnel"),
+    },
+    inventoryByDate: Array.isArray(result.inventoryByDate)
+      ? result.inventoryByDate.map((value) => {
+          const row = requiredRecord(value, "inventoryByDate item");
+          const mode = requiredString(row, "mode", "inventoryByDate item");
+          if (!(["MADE_TO_ORDER", "READY_STOCK", "HYBRID"] as const).includes(mode as never)) {
+            throw new Error("Admin dashboard response has invalid inventory mode.");
+          }
+          return {
+            date: requiredString(row, "date", "inventoryByDate item"),
+            mode: mode as "MADE_TO_ORDER" | "READY_STOCK" | "HYBRID",
+            prepared: requiredNumber(row, "prepared", "inventoryByDate item"),
+            committed: requiredNumber(row, "committed", "inventoryByDate item"),
+            available: requiredNumber(row, "available", "inventoryByDate item"),
+          };
+        })
+      : (() => {
+          throw new Error("Admin dashboard response is missing inventoryByDate.");
+        })(),
+    catalogCounts: {
+      coatings: requiredNumber(catalogCounts, "coatings", "catalogCounts"),
+      variants: requiredNumber(catalogCounts, "variants", "catalogCounts"),
+      addons: requiredNumber(catalogCounts, "addons", "catalogCounts"),
+    },
+    pickupCounts: {
+      dates: requiredNumber(pickupCounts, "dates", "pickupCounts"),
+      windows: requiredNumber(pickupCounts, "windows", "pickupCounts"),
+    },
+    journalCounts: {
+      published: requiredNumber(journalCounts, "published", "journalCounts"),
+      drafts: requiredNumber(journalCounts, "drafts", "journalCounts"),
+    },
+    recentOrders: Array.isArray(result.recentOrders)
+      ? result.recentOrders.map((value) => {
+          const row = requiredRecord(value, "recentOrders item");
+          return {
+            id: requiredString(row, "id", "recentOrders item"),
+            orderNumber: requiredString(row, "order_number", "recentOrders item"),
+            customerName: requiredString(row, "customer_name", "recentOrders item"),
+            total: requiredNumber(row, "total", "recentOrders item"),
+            status: requiredString(row, "status", "recentOrders item") as OrderStatus,
+            paymentStatus: requiredString(
+              row,
+              "payment_status",
+              "recentOrders item",
+            ) as PaymentStatus,
+            paymentMethod: requiredString(
+              row,
+              "payment_method",
+              "recentOrders item",
+            ) as PaymentMethod,
+            createdAt: requiredString(row, "created_at", "recentOrders item"),
+            pickupDate: requiredString(row, "pickup_date", "recentOrders item"),
+            itemSummary: typeof row.item_summary === "string" ? row.item_summary : "",
+          };
+        })
+      : (() => {
+          throw new Error("Admin dashboard response is missing recentOrders.");
+        })(),
     operations: {
-      activeFulfillment: toNumber(operations.activeFulfillment),
-      receiptsAwaitingReview: toNumber(operations.receiptsAwaitingReview),
+      activeFulfillment: requiredNumber(operations, "activeFulfillment", "operations"),
+      receiptsAwaitingReview: requiredNumber(operations, "receiptsAwaitingReview", "operations"),
       oldestReceiptSubmittedAt:
         typeof operations.oldestReceiptSubmittedAt === "string"
           ? operations.oldestReceiptSubmittedAt
           : null,
-      availablePieces: toNumber(operations.availablePieces),
-      committedPieces: toNumber(result.committedPieces),
+      committedPieces: requiredNumber(operations, "committedPieces", "operations"),
+      dueToday: requiredNumber(operations, "dueToday", "operations"),
+      dueTomorrow: requiredNumber(operations, "dueTomorrow", "operations"),
+      overdue: requiredNumber(operations, "overdue", "operations"),
+      readyForPickup: requiredNumber(operations, "readyForPickup", "operations"),
+      counterAwaitingPayment: requiredNumber(operations, "counterAwaitingPayment", "operations"),
     },
   };
 }

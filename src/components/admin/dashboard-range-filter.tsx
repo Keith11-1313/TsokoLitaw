@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import { CustomSelect } from "@/components/ui/custom-select";
 import type { DashboardRangePreset } from "@/lib/server-dashboard";
 
@@ -11,6 +12,19 @@ const options = [
   { value: "last_month", label: "Last month" },
   { value: "custom", label: "Custom dates" },
 ] as const;
+
+function ApplyButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex h-12 self-end items-center justify-center rounded-full bg-brand px-5 text-sm font-bold text-surface transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-wait disabled:opacity-60"
+    >
+      {pending ? "Applying…" : "Apply"}
+    </button>
+  );
+}
 
 export function DashboardRangeFilter({
   preset,
@@ -57,12 +71,7 @@ export function DashboardRangeFilter({
           </label>
         </>
       ) : null}
-      <button
-        type="submit"
-        className="inline-flex h-12 self-end items-center justify-center rounded-full bg-brand px-5 text-sm font-bold text-surface transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-      >
-        Apply
-      </button>
+      <ApplyButton />
     </form>
   );
 }
