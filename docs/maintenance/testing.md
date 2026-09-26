@@ -47,6 +47,13 @@ run tests on hosted data. Prefer local tests; review any hosted test's fixtures 
 No SQL/server behavior changed in a documentation or pure presentation extraction? The full local
 database suite is not a prerequisite; state that it was not run rather than imply SQL was tested.
 
+For the dashboard simulation fixture, use its `app.dashboard_fixture_commit = 'false'` mode against
+local Supabase first. A successful validation prints the generated summary, raises the documented dry-run
+exception and leaves zero fixture-tagged users/orders after rollback. Test `manual` and `automatic`
+payment modes when changing their branching logic. A committed fixture makes the database populated;
+do not run the clean-data pgTAP suite afterward without first returning to a disposable clean local state.
+Never use fixture results as evidence that hosted deployment, provider or Cron integration works.
+
 ## Manual UI and release checks
 
 Use approximately 390 px mobile, 768 px tablet, and 1440 px desktop. Check overflow, readable

@@ -47,6 +47,9 @@ Do not reset a hosted database for onboarding.
 
 Database tests/reset commands and their safety conditions belong in the
 [testing guide](docs/maintenance/testing.md), not an unconditional quick start.
+The guarded [dashboard simulation fixture](docs/features/admin.md#dashboard-simulation-fixture) is
+optional test data for local or explicitly disposable Dev only. It is not a migration, normal seed,
+backup, Production procedure, or proof that the dashboard deployment is accepted.
 
 ## Dev is not Production
 

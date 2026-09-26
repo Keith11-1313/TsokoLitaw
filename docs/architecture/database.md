@@ -23,6 +23,12 @@ SQL is still required to understand grants, RLS, triggers, locks, and business i
 `auth.users`, Storage, Vault, and Cron are separate Supabase schemas/services. A public data-only
 dump is not a complete backup of those services or their files.
 
+The guarded `supabase/fixtures/dashboard-simulation.sql` file is optional synthetic reporting data.
+It inserts a connected Auth/public order graph directly for dashboard observation, deliberately avoids
+real recipients and removes notification work before commit. It is not an example of the application
+write path: production orders must still use the atomic checkout/payment/fulfillment functions below.
+The fixture is not schema history, controlled catalog seed data, or a backup.
+
 ## Important function definitions and callers
 
 The baseline defines the core functions below; later definitions are identified in the table.

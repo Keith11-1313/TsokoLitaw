@@ -13,6 +13,7 @@ Start with [onboarding](getting-started/onboarding.md). Read only the guides rel
 | What belongs in the browser, server, or SQL? | [Boundaries](architecture/client-server-boundaries.md), [database](architecture/database.md) |
 | Where do I change a feature?                 | [Common changes](maintenance/common-changes.md)                                              |
 | What could this break?                       | [Change safety](maintenance/change-safety.md), [testing](maintenance/testing.md)             |
+| How do I populate realistic dashboard data?  | [Admin dashboard simulation fixture](features/admin.md#dashboard-simulation-fixture)         |
 | How does it reach Production?                | [Deployment](operations/deployment.md), [migrations](operations/database-migrations.md)      |
 | Why is a background job or callback failing? | [Webhooks](operations/webhooks.md), [troubleshooting](operations/troubleshooting.md)         |
 
@@ -27,7 +28,7 @@ Start with [onboarding](getting-started/onboarding.md). Read only the guides rel
 
 - [Current product rules and decision rationale](product/decisions.md)
 - [Design and shared form contracts](ui/design.md)
-- [Roadmap: completed UI stabilization, active APK work, optional analytics](roadmap.md)
+- [Roadmap: completed UI stabilization, active dashboard work, planned APK, optional analytics](roadmap.md)
 
 These guides replace the former root specifications, onboarding document, and completed phase checklists.
 Historical versions remain in Git; they are not instructions to replay old migrations or reset hosted data.

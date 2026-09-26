@@ -103,3 +103,13 @@ npx supabase db push --dry-run
 The CLI link is separate from the app's variables and separate from local Docker.
 A Git merge never applies SQL. Follow [migration promotion](../operations/database-migrations.md).
 Never run `db reset --linked`, seed Production, blindly use `--include-all`, or assume a preview uses safe keys.
+
+## Simulation data boundary
+
+`supabase/fixtures/dashboard-simulation.sql` is separate from migrations and `supabase/seed.sql`.
+Its `local` and `disposable-dev` guards are required but do not identify the connected project for you.
+Before selecting `disposable-dev`, verify the SQL Editor header or connection target is Dev project
+`mgkzphpznamjlgrpumjd`. The fixture must never run on Production project
+`zkmlzktvjkjrbznvrsxb`. Use `manual` simulation mode for Manual GCash plus pay at the counter, or
+`automatic` for PayMongo-only history; do not mix the environment modes. Synthetic data does not
+prove a Vercel deployment, Cron job, provider integration, or dashboard acceptance is healthy.

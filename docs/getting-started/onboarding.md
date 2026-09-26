@@ -15,6 +15,11 @@ and manages fulfillment. The application is pre-release until the Android APK is
 6. Review the diff and the Dev deployment before the user promotes it through one PR to `main`.
    SQL promotion is separate from Git and Vercel.
 
+For dashboard-only visual or reporting checks, the optional
+[simulation fixture](../features/admin.md#dashboard-simulation-fixture) can populate realistic synthetic
+history after the normal schema and controlled catalog seed exist. Start with its rollback-only dry run.
+It is not part of onboarding, does not create an Admin, and must never be run against Production.
+
 ## Trace one order
 
 Read [checkout](../features/checkout.md) once. The key boundary is:

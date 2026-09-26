@@ -45,6 +45,10 @@ Phase 15A is complete. The Phase 15B application, SQL and test changes are imple
 approved migration is active in hosted Dev. Matching Dev application deployment and responsive browser
 acceptance remain required before marking the phase complete; Production remains unchanged.
 
+The opt-in dashboard simulation fixture provides deterministic campus-shaped data for responsive and
+reporting review. It is a testing aid only: loading it into disposable Dev does not complete Phase 15B,
+replace browser acceptance, validate provider/Cron behavior, or authorize any Production data change.
+
 - Replace the paid-sales columns with an accessible line/area trend that exposes both paid sales and
   paid-order volume, retains exact keyboard-accessible values and handles longer grouped ranges.
 - Correct comparison windows before presenting deltas: fixed-day presets compare equivalent Manila

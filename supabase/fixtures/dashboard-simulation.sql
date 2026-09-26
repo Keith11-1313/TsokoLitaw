@@ -298,7 +298,11 @@ with calendar as (
       else 3
     end as box_quantity,
     (order_number * 47) % 100 as outcome_number,
-    (order_number * 53) % 100 as payment_mix_number
+    (order_number * 53) % 100 as payment_mix_number,
+    coalesce(
+      nullif(current_setting('app.dashboard_fixture_payment_mode', true), ''),
+      'manual'
+    ) as fixture_payment_mode
   from sequenced
 ), classified as (
   select
@@ -322,19 +326,19 @@ with calendar as (
       else 'COMPLETED'::public.order_status
     end as order_status,
     case
+      when days_ago = 0 and daily_position = 1 and fixture_payment_mode = 'automatic'
+        then 'PENDING'::public.payment_status
       when days_ago = 0 and daily_position = 1 then 'UNDER_REVIEW'::public.payment_status
-      when days_ago = 0 and daily_position = 2 then 'PENDING'::public.payment_status
+      when days_ago = 0 and daily_position = 2 and fixture_payment_mode = 'manual'
+        then 'PENDING'::public.payment_status
       when outcome_number < 2 and days_ago > 1 then 'FAILED'::public.payment_status
       when outcome_number < 5 and days_ago > 1 then 'PENDING'::public.payment_status
       else 'PAID'::public.payment_status
     end as payment_status,
     case
+      when fixture_payment_mode = 'automatic' then 'paymongo'
       when days_ago = 0 and daily_position = 1 then 'manual_gcash'
       when days_ago = 0 and daily_position = 2 then 'pay_at_counter'
-      when coalesce(
-        nullif(current_setting('app.dashboard_fixture_payment_mode', true), ''),
-        'manual'
-      ) = 'automatic' then 'paymongo'
       when payment_mix_number < 65 then 'manual_gcash'
       else 'pay_at_counter'
     end as payment_method

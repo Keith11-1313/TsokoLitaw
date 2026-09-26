@@ -159,6 +159,13 @@ npm run build
 Local reset deletes local data. The clean-data suite must not run against populated hosted databases.
 Generated types are produced by the generator, not edited by hand.
 
+Optional files under `supabase/fixtures/` are not migrations and are not loaded by the controlled
+`supabase/seed.sql`. The dashboard simulation fixture requires explicit scope, commit and payment-mode
+settings in the same SQL session. Validate it first with commit set to `false`; its final exception is
+the expected rollback signal. Running the fixture against disposable Dev is a deliberate data operation,
+not migration promotion, and never authorizes a reset or any Production use. See the
+[Admin guide](../features/admin.md#dashboard-simulation-fixture).
+
 Before reconciling hosted Dev during the approved pre-v1 rebaseline:
 
 ```powershell
