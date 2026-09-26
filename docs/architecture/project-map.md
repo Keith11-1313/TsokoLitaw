@@ -15,6 +15,7 @@ Paths below are relative to the repository root. Use `@/` for imports from `src/
 | `src/lib/paymongo*.ts`, `resend-webhook.ts`           | Provider contracts, mode checks and signature handling             |
 | `src/types/`                                          | Hand-maintained UI/domain types plus generated schema boundary     |
 | `supabase/migrations/`                                | Applied schema and subsequent transactional SQL definitions        |
+| `supabase/fixtures/`                                  | Explicitly guarded, opt-in simulation data; never normal seed data |
 | `supabase/tests/database/`                            | Local pgTAP invariants and permission checks                       |
 | `scripts/`                                            | Controlled Admin bootstrap and database type generator             |
 | `tests/performance/`                                  | Staged k6 workloads and their runbook                              |

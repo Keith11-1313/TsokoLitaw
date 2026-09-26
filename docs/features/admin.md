@@ -93,3 +93,40 @@ validated and an incomplete deployment contract fails visibly instead of silentl
 Tests: `editor-contracts.test.tsx`, form/image validation tests, and matching local pgTAP suites,
 including `013_dashboard`. Check mobile cards/drawer, tablet editors, desktop
 tables, keyboard focus, save/discard/stay, and unsuccessful server mutations.
+
+### Dashboard simulation fixture
+
+`supabase/fixtures/dashboard-simulation.sql` is an opt-in, repeatable local/disposable-Dev fixture,
+not a migration and not part of `supabase/seed.sql`. It refreshes only its own tagged records and
+creates 60 synthetic customers plus 360 orders over about 120 days. The distribution exercises paid
+sales, returning customers, box/coating/payment mix, completion and cancellation, current fulfillment,
+Manual GCash review, counter payment, review moderation, and upcoming inventory. Synthetic recipients
+use the reserved `.invalid` domain, and the fixture removes their notification deliveries before commit.
+It does not create or promote an Admin identity; use the normal controlled Admin bootstrap separately.
+
+The SQL refuses to run unless the same session explicitly sets both guards:
+
+```sql
+set app.dashboard_fixture_scope = 'local'; -- or 'disposable-dev'
+set app.dashboard_fixture_commit = 'true';
+\i supabase/fixtures/dashboard-simulation.sql
+```
+
+Run it through `psql` from the repository root so `\i` resolves correctly. Confirm the exact database
+before using `disposable-dev`; never enable or run this fixture against Production. Rerunning the file
+replaces the previous simulation set while preserving unrelated records. The simulated Manual GCash
+receipt paths deliberately have no Storage objects, so the dashboard queue is populated without
+uploading fake files or suggesting that a receipt has been verified. Set
+`app.dashboard_fixture_commit` to `false` for a full constraint-validating dry run; its final deliberate
+exception aborts and rolls back every simulated record.
+
+When local Supabase is running and host `psql` is unavailable, confirm the database container returned
+by `docker ps` before using the current local project command:
+
+```powershell
+Get-Content supabase/fixtures/dashboard-simulation.sql -Raw |
+  docker exec -i supabase_db_tsokolitaw psql -v ON_ERROR_STOP=1 -U postgres -d postgres `
+    -c "set app.dashboard_fixture_scope = 'local'; set app.dashboard_fixture_commit = 'true';" -f -
+```
+
+This command is for the local Docker database only. It is not the hosted-Dev procedure.
