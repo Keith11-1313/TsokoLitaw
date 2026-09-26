@@ -1,6 +1,7 @@
 "use client";
 
 import { RotateCcw, Trash2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   cancelAccountDeletionAction,
@@ -17,14 +18,32 @@ export function AccountDangerZone({
 }: {
   deletionScheduledFor: string | null;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
+  const [deletionIsScheduled, setDeletionIsScheduled] = useState(Boolean(deletionScheduledFor));
   const [requestState, requestAction, isRequestPending] = useActionState(
-    requestAccountDeletionAction,
+    async (previousState: AccountDeletionState, formData: FormData) => {
+      const nextState = await requestAccountDeletionAction(previousState, formData);
+      if (nextState.status === "success") {
+        setDeletionIsScheduled(true);
+        setConfirmation("");
+        setOpen(false);
+        router.refresh();
+      }
+      return nextState;
+    },
     initialState,
   );
   const [cancelState, cancelAction, isCancelPending] = useActionState(
-    cancelAccountDeletionAction,
+    async (previousState: AccountDeletionState) => {
+      const nextState = await cancelAccountDeletionAction(previousState);
+      if (nextState.status === "success") {
+        setDeletionIsScheduled(false);
+        router.refresh();
+      }
+      return nextState;
+    },
     initialState,
   );
   const dialogRef = useRef<HTMLElement>(null);
@@ -83,13 +102,15 @@ export function AccountDangerZone({
             Danger zone
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {formattedDeletionDate
-              ? `Deletion is scheduled for ${formattedDeletionDate}.`
+            {deletionIsScheduled
+              ? formattedDeletionDate
+                ? `Deletion is scheduled for ${formattedDeletionDate}.`
+                : requestState.message
               : "Schedule permanent account deletion with a 90-day grace period."}
           </p>
         </div>
 
-        {formattedDeletionDate ? (
+        {deletionIsScheduled ? (
           <form action={cancelAction} className="mt-5">
             <SecondaryButton className="w-full" type="submit" disabled={isCancelPending}>
               <RotateCcw aria-hidden="true" size={17} />
