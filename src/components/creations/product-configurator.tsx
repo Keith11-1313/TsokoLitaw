@@ -334,7 +334,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
               <div className="space-y-4">
                 <div className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   <CustomSelect
-                    label="Additional extra"
+                    label="Add-on"
                     value={addonId}
                     onChange={changeAddon}
                     options={[
@@ -346,7 +346,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
                     ]}
                   />
                   <QuantityInput
-                    label="Additional quantity per box"
+                    label="Qty. per box"
                     value={addonQuantity}
                     onChange={setAddonQuantity}
                     min={selectedAddon ? 1 : 0}
