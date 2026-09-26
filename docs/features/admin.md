@@ -98,17 +98,25 @@ tables, keyboard focus, save/discard/stay, and unsuccessful server mutations.
 
 `supabase/fixtures/dashboard-simulation.sql` is an opt-in, repeatable local/disposable-Dev fixture,
 not a migration and not part of `supabase/seed.sql`. It refreshes only its own tagged records and
-creates 60 synthetic customers plus 360 orders over about 120 days. The distribution exercises paid
-sales, returning customers, box/coating/payment mix, completion and cancellation, current fulfillment,
-Manual GCash review, counter payment, review moderation, and upcoming inventory. Synthetic recipients
-use the reserved `.invalid` domain, and the fixture removes their notification deliveries before commit.
+creates 96 synthetic customers plus a deterministic order history over about 180 days. Demand follows
+a campus-oriented week: Sunday is normally quiet, Friday peaks, twice-monthly sharing/promo days rise,
+and the latest 60 days show modest word-of-mouth growth. The customer mix deliberately combines a
+smaller repeat-buyer core with occasional buyers. Box size, coating, quantity, extra, payment method,
+review rating, cancellation and fulfillment outcomes use weighted distributions instead of equal test
+cycles. This exercises paid sales, returning customers, product/payment mix, completion, current
+fulfillment, Manual GCash review, counter payment, review moderation, and upcoming inventory. Synthetic
+recipients use the reserved `.invalid` domain, and the fixture removes their notification deliveries before commit.
 It does not create or promote an Admin identity; use the normal controlled Admin bootstrap separately.
+The payment-mode setting defaults to the current manual business flow, weighted between Manual GCash
+and pay at the counter. Set it to `automatic` only when the simulation should represent PayMongo-only
+checkout; the fixture does not mix mutually exclusive environment modes.
 
 The SQL refuses to run unless the same session explicitly sets both guards:
 
 ```sql
 set app.dashboard_fixture_scope = 'local'; -- or 'disposable-dev'
 set app.dashboard_fixture_commit = 'true';
+set app.dashboard_fixture_payment_mode = 'manual'; -- or 'automatic'
 \i supabase/fixtures/dashboard-simulation.sql
 ```
 
@@ -126,7 +134,7 @@ by `docker ps` before using the current local project command:
 ```powershell
 Get-Content supabase/fixtures/dashboard-simulation.sql -Raw |
   docker exec -i supabase_db_tsokolitaw psql -v ON_ERROR_STOP=1 -U postgres -d postgres `
-    -c "set app.dashboard_fixture_scope = 'local'; set app.dashboard_fixture_commit = 'true';" -f -
+    -c "set app.dashboard_fixture_scope = 'local'; set app.dashboard_fixture_commit = 'true'; set app.dashboard_fixture_payment_mode = 'manual';" -f -
 ```
 
 This command is for the local Docker database only. It is not the hosted-Dev procedure.

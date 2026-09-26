@@ -1,13 +1,15 @@
 -- Dashboard simulation fixture for local or explicitly disposable Dev data only.
 --
 -- This is intentionally NOT a migration and is not loaded by supabase/seed.sql.
--- It creates 60 synthetic customers and 360 tagged orders over about 120 days.
+-- It creates 96 synthetic customers and a deterministic, demand-shaped order
+-- history over about 180 days.
 -- Every synthetic email ends in @dashboard-fixture.invalid and no notification
 -- delivery survives the transaction.
 --
 -- Required session opt-in before running this file:
 --   set app.dashboard_fixture_scope = 'local';          -- or 'disposable-dev'
 --   set app.dashboard_fixture_commit = 'true';
+--   set app.dashboard_fixture_payment_mode = 'manual';  -- or 'automatic'
 -- Use 'false' instead of 'true' for a constraint-validating dry run that rolls back.
 --
 -- Never set the scope to production. See docs/features/admin.md.
@@ -18,6 +20,10 @@ do $$
 declare
   fixture_scope text := current_setting('app.dashboard_fixture_scope', true);
   fixture_commit text := current_setting('app.dashboard_fixture_commit', true);
+  fixture_payment_mode text := coalesce(
+    nullif(current_setting('app.dashboard_fixture_payment_mode', true), ''),
+    'manual'
+  );
 begin
   if fixture_scope not in ('local', 'disposable-dev') then
     raise exception
@@ -27,6 +33,11 @@ begin
   if fixture_commit not in ('true', 'false') then
     raise exception
       'Dashboard fixture refused: set app.dashboard_fixture_commit to true or false';
+  end if;
+
+  if fixture_payment_mode not in ('manual', 'automatic') then
+    raise exception
+      'Dashboard fixture refused: set app.dashboard_fixture_payment_mode to manual or automatic';
   end if;
 end;
 $$;
@@ -118,20 +129,33 @@ select
   format('dashboard.customer.%s@dashboard-fixture.invalid', customer_number),
   '{"provider":"google","providers":["google"]}'::jsonb,
   jsonb_build_object('name', format('Dashboard Customer %s', customer_number)),
-  now() - ((150 - customer_number) * interval '1 day'),
-  now() - ((150 - customer_number) * interval '1 day')
-from generate_series(1, 60) as customers(customer_number);
+  case
+    when customer_number <= 40
+      then now() - ((200 - (customer_number % 20)) * interval '1 day')
+    else now() - ((179 - ((customer_number - 41) * 3)) * interval '1 day')
+  end,
+  case
+    when customer_number <= 40
+      then now() - ((200 - (customer_number % 20)) * interval '1 day')
+    else now() - ((179 - ((customer_number - 41) * 3)) * interval '1 day')
+  end
+from generate_series(1, 96) as customers(customer_number);
 
 update public.profiles profile
 set
   full_name = format('Dashboard Customer %s', fixture.customer_number),
   email = format('dashboard.customer.%s@dashboard-fixture.invalid', fixture.customer_number),
+  created_at = case
+    when fixture.customer_number <= 40
+      then now() - ((200 - (fixture.customer_number % 20)) * interval '1 day')
+    else now() - ((179 - ((fixture.customer_number - 41) * 3)) * interval '1 day')
+  end,
   updated_at = now()
 from (
   select
     customer_number,
     md5('dashboard-fixture-user-' || customer_number::text)::uuid as id
-  from generate_series(1, 60) as customers(customer_number)
+  from generate_series(1, 96) as customers(customer_number)
 ) fixture
 where profile.id = fixture.id;
 
@@ -156,7 +180,7 @@ select
   true,
   '[dashboard-fixture:v1]'
 from generate_series(
-  timezone('Asia/Manila', now())::date - 125,
+  timezone('Asia/Manila', now())::date - 185,
   timezone('Asia/Manila', now())::date + 14,
   interval '1 day'
 ) as days(day_value)
@@ -178,7 +202,7 @@ select
   true,
   90
 from public.pickup_dates date_row
-where date_row.pickup_date between timezone('Asia/Manila', now())::date - 125
+where date_row.pickup_date between timezone('Asia/Manila', now())::date - 185
   and timezone('Asia/Manila', now())::date + 14
 on conflict (id) do nothing;
 
@@ -197,16 +221,85 @@ on conflict (pickup_window_id, pickup_location_id) do update
 set is_open = excluded.is_open;
 
 create temporary table _dashboard_fixture_orders on commit drop as
-with generated as (
+with calendar as (
   select
-    order_number,
-    1 + ((order_number - 1) % 60) as customer_number,
-    timezone('Asia/Manila', now())::date - ((360 - order_number) / 3)::integer as created_day,
-    1 + ((order_number - 1) % 3) as variant_number,
-    1 + ((order_number - 1) % 8) as coating_number,
-    case when order_number % 11 = 0 then 2 else 1 end as box_quantity,
-    order_number % 20 as outcome_number
-  from generate_series(1, 360) as source(order_number)
+    day_value::date as created_day,
+    extract(isodow from day_value)::integer as weekday_number
+  from generate_series(
+    timezone('Asia/Manila', now())::date - 179,
+    timezone('Asia/Manila', now())::date,
+    interval '1 day'
+  ) as days(day_value)
+), demand as (
+  select
+    calendar.*,
+    (
+      case weekday_number
+        when 1 then 1 -- Monday recovery after the weekend
+        when 2 then 2
+        when 3 then 2
+        when 4 then 3
+        when 5 then 4 -- Friday campus peak
+        when 6 then 2
+        else 0        -- campus business is normally quiet on Sunday
+      end
+      + case
+          when created_day >= timezone('Asia/Manila', now())::date - 59
+            and weekday_number between 2 and 6
+            then 1 -- recent word-of-mouth growth
+          else 0
+        end
+      + case
+          when extract(day from created_day)::integer in (14, 28)
+            and weekday_number <> 7
+            then 2 -- twice-monthly sharing/promo bump
+          else 0
+        end
+    )::integer as order_count
+  from calendar
+), sequenced as (
+  select
+    row_number() over (order by demand.created_day, daily_order.position)::integer as order_number,
+    demand.created_day,
+    daily_order.position::integer as daily_position,
+    demand.order_count,
+    timezone('Asia/Manila', now())::date - demand.created_day as days_ago
+  from demand
+  cross join lateral generate_series(1, demand.order_count) as daily_order(position)
+), generated as (
+  select
+    sequenced.*,
+    case
+      when order_number % 10 < 7
+        then 1 + ((order_number * 17 + days_ago * 11) % 40)
+      else 41 + (
+        (order_number * 29 + days_ago * 7)
+        % greatest(1, least(56, ((179 - days_ago) / 3) + 1))
+      )
+    end as customer_number,
+    case
+      when (order_number * 37) % 100 < 52 then 1
+      when (order_number * 37) % 100 < 82 then 2
+      else 3
+    end as variant_number,
+    case
+      when (order_number * 43) % 100 < 22 then 1
+      when (order_number * 43) % 100 < 40 then 2
+      when (order_number * 43) % 100 < 55 then 3
+      when (order_number * 43) % 100 < 65 then 4
+      when (order_number * 43) % 100 < 75 then 5
+      when (order_number * 43) % 100 < 85 then 6
+      when (order_number * 43) % 100 < 95 then 7
+      else 8
+    end as coating_number,
+    case
+      when (order_number * 31) % 100 < 90 then 1
+      when (order_number * 31) % 100 < 99 then 2
+      else 3
+    end as box_quantity,
+    (order_number * 47) % 100 as outcome_number,
+    (order_number * 53) % 100 as payment_mix_number
+  from sequenced
 ), classified as (
   select
     generated.*,
@@ -218,27 +311,32 @@ with generated as (
     case variant_number when 1 then 4 when 2 then 6 else 8 end as piece_count,
     case variant_number when 1 then 40::numeric when 2 then 55::numeric else 75::numeric end as base_price,
     case
-      when outcome_number = 0 then 'EXPIRED'::public.order_status
-      when outcome_number = 1 then 'CANCELLED'::public.order_status
-      when outcome_number = 2 then 'PENDING_PAYMENT'::public.order_status
-      when outcome_number in (3, 5) then 'CONFIRMED'::public.order_status
-      when outcome_number = 4 then 'PAID'::public.order_status
-      when outcome_number = 6 then 'PREPARING'::public.order_status
-      when outcome_number = 7 then 'READY_FOR_PICKUP'::public.order_status
+      when days_ago = 0 and daily_position = 1 then 'PENDING_PAYMENT'::public.order_status
+      when days_ago = 0 and daily_position = 2 then 'CONFIRMED'::public.order_status
+      when days_ago = 0 then 'PREPARING'::public.order_status
+      when days_ago = 1 and daily_position = 1 then 'READY_FOR_PICKUP'::public.order_status
+      when days_ago = 1 and daily_position = 2 then 'PREPARING'::public.order_status
+      when days_ago = 1 then 'CONFIRMED'::public.order_status
+      when outcome_number < 2 then 'EXPIRED'::public.order_status
+      when outcome_number < 5 then 'CANCELLED'::public.order_status
       else 'COMPLETED'::public.order_status
     end as order_status,
     case
-      when outcome_number = 0 then 'FAILED'::public.payment_status
-      when outcome_number in (1, 3) then 'PENDING'::public.payment_status
-      when outcome_number = 2 then 'UNDER_REVIEW'::public.payment_status
+      when days_ago = 0 and daily_position = 1 then 'UNDER_REVIEW'::public.payment_status
+      when days_ago = 0 and daily_position = 2 then 'PENDING'::public.payment_status
+      when outcome_number < 2 and days_ago > 1 then 'FAILED'::public.payment_status
+      when outcome_number < 5 and days_ago > 1 then 'PENDING'::public.payment_status
       else 'PAID'::public.payment_status
     end as payment_status,
     case
-      when outcome_number = 2 then 'manual_gcash'
-      when outcome_number = 3 then 'pay_at_counter'
-      when order_number % 3 = 0 then 'pay_at_counter'
-      when order_number % 3 = 1 then 'paymongo'
-      else 'manual_gcash'
+      when days_ago = 0 and daily_position = 1 then 'manual_gcash'
+      when days_ago = 0 and daily_position = 2 then 'pay_at_counter'
+      when coalesce(
+        nullif(current_setting('app.dashboard_fixture_payment_mode', true), ''),
+        'manual'
+      ) = 'automatic' then 'paymongo'
+      when payment_mix_number < 65 then 'manual_gcash'
+      else 'pay_at_counter'
     end as payment_method
   from generated
 ), priced as (
@@ -488,7 +586,11 @@ select
   fixture.user_id,
   fixture.id,
   format('Dashboard Customer %s', fixture.customer_number),
-  3 + (fixture.order_number % 3),
+  case
+    when fixture.order_number % 20 < 13 then 5
+    when fixture.order_number % 20 < 19 then 4
+    else 3
+  end,
   format('Synthetic dashboard review for simulated order %s.', fixture.order_number),
   case fixture.order_number % 4
     when 0 then array['Soft and chewy', 'Would order again']::text[]
@@ -496,8 +598,8 @@ select
     when 2 then array['Fresh at pickup', 'Neatly packed']::text[]
     else array[]::text[]
   end,
-  fixture.order_number % 3 <> 0 or fixture.order_number % 12 = 0,
-  fixture.order_number % 12 = 0,
+  fixture.order_number % 10 < 7 or fixture.order_number % 20 = 0,
+  fixture.order_number % 20 = 0,
   fixture.completed_at + interval '1 day',
   fixture.completed_at + interval '1 day'
 from (
@@ -506,7 +608,7 @@ from (
     ((source.pickup_day::timestamp + time '12:00') at time zone 'Asia/Manila') as completed_at
   from _dashboard_fixture_orders source
   where source.order_status = 'COMPLETED'
-    and source.order_number % 3 = 0
+    and source.order_number % 100 < 24
 ) fixture;
 
 -- Future inventory gives the operational dashboard a mix of prepared,
@@ -548,6 +650,50 @@ select
     where fixture_order.customer_notes = '[dashboard-fixture:v1]'
       and payment.status = 'PAID'
   ) as paid_orders,
+  (
+    select coalesce(sum(fixture_order.total), 0)::numeric(12,2)
+    from public.payments payment
+    join public.orders fixture_order on fixture_order.id = payment.order_id
+    where fixture_order.customer_notes = '[dashboard-fixture:v1]'
+      and payment.status = 'PAID'
+  ) as paid_sales,
+  (
+    select coalesce(round(avg(fixture_order.total), 2), 0)::numeric(10,2)
+    from public.payments payment
+    join public.orders fixture_order on fixture_order.id = payment.order_id
+    where fixture_order.customer_notes = '[dashboard-fixture:v1]'
+      and payment.status = 'PAID'
+      and fixture_order.total > 0
+  ) as average_paid_order,
+  (
+    select count(*)
+    from (
+      select fixture_order.user_id
+      from public.payments payment
+      join public.orders fixture_order on fixture_order.id = payment.order_id
+      where fixture_order.customer_notes = '[dashboard-fixture:v1]'
+        and payment.status = 'PAID'
+      group by fixture_order.user_id
+      having count(*) > 1
+    ) repeat_customer
+  ) as repeat_customers,
+  (
+    select count(*)
+    from public.profiles profile
+    where profile.email like '%@dashboard-fixture.invalid'
+      and profile.created_at >= now() - interval '30 days'
+  ) as new_customers_last_30_days,
+  (
+    select jsonb_object_agg(provider_counts.provider, provider_counts.payment_count)
+    from (
+      select payment.provider, count(*) as payment_count
+      from public.payments payment
+      join public.orders fixture_order on fixture_order.id = payment.order_id
+      where fixture_order.customer_notes = '[dashboard-fixture:v1]'
+      group by payment.provider
+      order by payment.provider
+    ) provider_counts
+  ) as payment_mix,
   (
     select count(*)
     from public.reviews review
