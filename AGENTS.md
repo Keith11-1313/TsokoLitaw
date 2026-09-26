@@ -74,8 +74,9 @@ All active Admin-managed add-ons feed the builder; server reloads current values
 
 Campus pickup only. Every sellable date/window/location is explicitly published in Admin Pickup.
 Made to order follows lead/cutoff rules; Ready stock needs date-specific prepared pieces; Hybrid
-uses prepared stock for same-day orders. Every mode uses website checkout and online payment.
-No cash/untracked walk-in flow or redundant Inventory availability switch.
+uses prepared stock for same-day orders. Every mode uses website checkout. Payment is PayMongo,
+Manual GCash, or tracked Pay at the Counter according to the configured mode; there is no
+cash/untracked walk-in flow or redundant Inventory availability switch.
 
 Inventory assigns prepared pieces to existing eligible dates, shared by every box size.
 It does not create schedules; a prepared total cannot fall below committed/consumed pieces.

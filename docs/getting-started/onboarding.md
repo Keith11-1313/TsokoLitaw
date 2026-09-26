@@ -1,8 +1,10 @@
 # Your first maintenance task
 
 TsokoLitaw sells configurable dessert boxes for campus pickup. Customers sign in with Google,
-choose boxes, pay through QR Ph, and track their orders. Admin publishes catalog/pickup options
-and manages fulfillment. The application is pre-release until the Android APK is accepted as v1.0. Hosted Production is an environment name, not a release milestone.
+choose boxes, complete website checkout, and track their orders. Depending on the configured mode,
+payment uses PayMongo QR Ph, Manual GCash, or a tracked Pay at the Counter order. Admin publishes
+catalog/pickup options and manages fulfillment. The application is pre-release until the Android APK
+is accepted as v1.0. Hosted Production is an environment name, not a release milestone.
 
 1. Read [environment isolation](environments.md) before obtaining credentials.
 2. Follow [local setup](local-setup.md); use hosted Dev for ordinary UI work, disposable local Supabase for SQL tests.

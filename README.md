@@ -1,7 +1,9 @@
 # TsokoLitaw
 
 Mobile-first storefront and Admin interface for a student-operated chocolate-filled Litaw business.
-Customers configure 4-, 6-, or 8-piece boxes, pay online with QR Ph, and collect at published campus pickups.
+Customers configure 4-, 6-, or 8-piece boxes, complete website checkout, and collect at published
+campus pickups. Depending on the configured mode, payment uses PayMongo QR Ph, Manual GCash, or a
+tracked Pay at the Counter order.
 
 **New maintainer:** start with [onboarding](docs/getting-started/onboarding.md).
 The [documentation index](docs/index.md) points to feature paths, SQL rules, testing and deployment.
