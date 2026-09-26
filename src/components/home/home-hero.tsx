@@ -42,7 +42,7 @@ export function HomeHero({ heading, tagline, description }: HomeHeroProps) {
           <div className="relative aspect-square w-full lg:mr-8 lg:max-w-[32.5rem] lg:justify-self-end">
             <Image
               src="/images/home/hero.webp"
-              alt="TsokoLitaw Mode switched on beside a chocolate-filled Palitaw dessert"
+              alt="Chocolate, cream, and assorted chocolate-coated TsokoLitaw"
               fill
               preload
               fetchPriority="high"
