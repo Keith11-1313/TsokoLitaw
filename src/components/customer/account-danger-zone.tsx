@@ -193,7 +193,7 @@ export function AccountDangerZone({
                   Type DELETE exactly as shown.
                 </p>
               ) : null}
-              {requestState.message ? <ActionMessage state={requestState} /> : null}
+              {requestState.status === "error" ? <ActionMessage state={requestState} /> : null}
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <SecondaryButton className="w-full" type="button" onClick={() => setOpen(false)}>
                   Keep my account

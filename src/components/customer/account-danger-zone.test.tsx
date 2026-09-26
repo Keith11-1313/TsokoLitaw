@@ -38,6 +38,7 @@ describe("AccountDangerZone", () => {
     fireEvent.click(screen.getByRole("button", { name: "Schedule deletion" }));
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(screen.queryByRole("status")).toBeNull();
     expect(screen.queryByRole("button", { name: "Schedule account deletion" })).toBeNull();
     expect(screen.getByRole("button", { name: "Cancel deletion" })).toBeTruthy();
     expect(mocks.requestDeletion).toHaveBeenCalledOnce();
