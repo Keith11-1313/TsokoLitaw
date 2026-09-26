@@ -23,6 +23,11 @@ Inspect the relevant page and assets before editing UI.
   continues through the customer header so the canvas has no flat-color seam. Admin uses a denser
   flat operational background, not a separate brand system.
 - Logo: `public/brand/logo.webp`; local Home media: `public/images/home/`, `public/videos/home/`.
+  Home uses `hero.webp` for the opening collage, `hero-c.webp` for the product-story section, and
+  `hero-ss.webp` for the sea-salt pairing. Import the opening hero statically through `next/image`
+  so replacing the file produces a hashed optimized asset. Do not append an unconfigured query string
+  to a local Image source solely to bypass cache. Keep `hero-c.webp` eager because it can become the
+  measured LCP at supported viewport and retained-scroll states; later story media remains lazy.
   The shared missing-media fallback is `public/images/placeholder.webp`; do not add page-specific
   placeholder variants. Coating images: persisted Supabase `catalog-media` URLs. Journal covers:
   `journal-media`.
@@ -42,9 +47,14 @@ mobile return-to-builder shortcut scrolls to that same stateful form rather than
 Checkout puts its summary before the form on mobile and in a sticky right column on desktop.
 Order history/detail share receipt-style box counts, per-box contents, line totals and optional breakdowns.
 
-Home uses supplied media; the video starts muted/inline with sound controls and advances to the
-promotional image. Keep stable media sizing and reachable keyboard/touch controls. Not Found is
-a clear global fallback, also used for non-Admin requests to Admin routes.
+Home follows a mobile-first product story after the hero: the reason for TsokoLitaw, the live active
+coating selection, the three-step website-to-campus pickup journey, the signature sea-salt cream
+pairing, featured media, and one final build-your-box action. The video starts muted/inline with sound
+controls and advances to the promotional image. Keep stable media sizing and reachable keyboard/touch
+controls. After the cream hero, story sections alternate white and cream surfaces, beginning with the
+white "Why we created TsokoLitaw" section. At about 390 px the coating cards use two columns and the
+pickup steps stack; at about 768 px and 1440 px they use four and three columns respectively. Not Found
+is a clear global fallback, also used for non-Admin requests to Admin routes.
 
 ## Forms and editors
 
@@ -78,6 +88,9 @@ Contract tests: `src/hooks/editor-contracts.test.tsx`, form and image validation
 ## Loading and generated Boneyard files
 
 The root layout has a shared Suspense boundary using `AppLoadingSkeleton` for the initial load.
+Its environment-hosted `@font-face` rules are deterministic. Hydration suppression is scoped to the
+document head and that font style because extensions may inject their own head style before React
+hydrates; do not extend suppression into the application body to conceal an actual render mismatch.
 Admin has a route loading skeleton and error boundary because its authorized operational aggregates
 may take longer or reject an incomplete database contract. Customer navigation keeps the current
 page visible until the destination is ready. Customer header links (including Account and Cart) use Next.js `useLinkStatus`

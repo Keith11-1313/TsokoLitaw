@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import heroImage from "../../../public/images/home/hero.webp";
 import { SiteContainer } from "@/components/layout/site-container";
 import { primaryButtonClassName } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -41,7 +42,7 @@ export function HomeHero({ heading, tagline, description }: HomeHeroProps) {
 
           <div className="relative aspect-square w-full lg:mr-8 lg:max-w-[32.5rem] lg:justify-self-end">
             <Image
-              src="/images/home/hero.webp"
+              src={heroImage}
               alt="Chocolate, cream, and assorted chocolate-coated TsokoLitaw"
               fill
               preload

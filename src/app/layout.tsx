@@ -60,9 +60,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
+      <head suppressHydrationWarning>
         <link rel="preconnect" href={getSupabasePublicEnvironment().url} crossOrigin="anonymous" />
-        <style>{brandFontFaces}</style>
+        <style suppressHydrationWarning>{brandFontFaces}</style>
       </head>
       <body className="antialiased">
         <a

@@ -1,8 +1,17 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { CustomerFooter } from "@/components/customer/customer-footer";
 import { CustomerHeader } from "@/components/customer/customer-header";
 import { FeaturedVideoSection } from "@/components/home/featured-video-section";
 import { HomeHero } from "@/components/home/home-hero";
+import {
+  CoatingShowcaseFallback,
+  HomeCallToAction,
+  HomeCoatingShowcase,
+  HowToOrderSection,
+  SeaSaltSection,
+  WhyTsokoLitawSection,
+} from "@/components/home/home-story-sections";
 
 export const metadata: Metadata = {
   title: "TsokoLitaw | The Filipino Chocolate Xiao Long Bao",
@@ -53,7 +62,14 @@ export default function Home() {
       <CustomerHeader activePath="/" />
       <main id="main-content" className="customer-paper-surface" tabIndex={-1}>
         <HomeHero {...homeContent.hero} />
+        <WhyTsokoLitawSection />
+        <Suspense fallback={<CoatingShowcaseFallback />}>
+          <HomeCoatingShowcase />
+        </Suspense>
+        <HowToOrderSection />
+        <SeaSaltSection />
         <FeaturedVideoSection {...homeContent.featuredVideo} />
+        <HomeCallToAction />
       </main>
       <CustomerFooter
         address="University of Caloocan City - Congressional Campus"

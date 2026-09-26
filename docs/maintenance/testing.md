@@ -51,6 +51,9 @@ database suite is not a prerequisite; state that it was not run rather than impl
 
 Use approximately 390 px mobile, 768 px tablet, and 1440 px desktop. Check overflow, readable
 prices/quantities, touch targets, keyboard operation, loading/empty/error states, and focus.
+For Home changes, also confirm the two/four/four-column coating grid, the one/three/three-column pickup
+steps, the cream/white section alternation, the current statically imported hero, and a fresh console
+without hydration failures at those widths.
 Use Dev and an authorized account for protected pages. Do not bypass production authorization to take screenshots.
 For critical behavior changes, test negative and duplicate/racing cases in addition to a happy path.
 
