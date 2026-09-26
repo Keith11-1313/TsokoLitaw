@@ -14,6 +14,7 @@ import { formatPhp } from "@/lib/commerce";
 import { fulfillmentActionLabels, getNextFulfillmentStatus } from "@/lib/order-status";
 import type { AdminOrderSummary } from "@/lib/server-orders";
 import { ManualPaymentReview } from "@/components/admin/manual-payment-review";
+import { SecondaryButton } from "@/components/ui/button";
 import { getPaymentStatusLabel } from "@/lib/payment-status";
 
 const statusOptions: Array<{ value: "ALL" | OrderStatus; label: string }> = [
@@ -116,13 +117,12 @@ function CounterPaymentAction({ order }: { order: AdminOrderSummary }) {
 
   return (
     <>
-      <button
-        type="button"
+      <SecondaryButton
+        className="w-full whitespace-nowrap px-4 text-sm"
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-11 items-center justify-center rounded-control border border-brand px-4 text-xs font-bold text-brand"
       >
         Record payment
-      </button>
+      </SecondaryButton>
       {open ? (
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center bg-foreground/40 p-4"
@@ -469,7 +469,7 @@ export function OrderManagementTable({
                             orderNumber={order.orderNumber}
                             paymentStatus={order.paymentStatus}
                             total={order.total}
-                            className="min-w-32 px-3 text-xs"
+                            className="text-sm"
                           />
                         ) : null}
                         <CounterPaymentAction order={order} />

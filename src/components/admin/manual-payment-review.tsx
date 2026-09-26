@@ -124,7 +124,7 @@ export function ManualPaymentReview({
       ) : null}
       <SecondaryButton
         aria-label={`${label} for ${orderNumber}`}
-        className={cn("w-full px-4", className)}
+        className={cn("w-full whitespace-nowrap px-4 text-sm", className)}
         onClick={openReview}
       >
         {label}

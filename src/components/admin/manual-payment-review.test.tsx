@@ -51,7 +51,9 @@ describe("ManualPaymentReview", () => {
         total={85.5}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Review payment for TL-0018" }));
+    const trigger = screen.getByRole("button", { name: "Review payment for TL-0018" });
+    expect(trigger.className).toContain("whitespace-nowrap");
+    fireEvent.click(trigger);
 
     expect(await screen.findByRole("dialog")).toBeTruthy();
 
