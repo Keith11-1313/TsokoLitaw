@@ -119,35 +119,35 @@ where is_current;
 
 insert into public.terms_versions (version, content, effective_at, is_current)
 values (
-  '2026-09-10',
+  '2026-09-29',
   $terms$
-TsokoLitaw Terms & Conditions — educational project terms
+TsokoLitaw Terms & Conditions - campus-pickup ordering
 
-TsokoLitaw is an academic e-commerce project for demonstration, testing, and evaluation within the UCC Congressional Campus community. Features marked as previews, mock data, test transactions, or unavailable do not create a binding order. An explicitly accepted live checkout concerns real edible products for campus pickup only.
+TsokoLitaw is a student-operated academic e-commerce project serving the UCC Congressional Campus community. The website accepts authenticated orders for real edible products and campus pickup only. A preview, simulation, sandbox transaction, test record, or unavailable feature does not create a real order or payment obligation.
 
-Product descriptions, coatings, prices, availability, and pickup schedules may change. The server confirms the final payable amount and availability during checkout. Customers must provide accurate account, contact, order, and pickup information.
+Customers must use their own account, provide accurate information, and review the product, quantity, price, allergen notice, payment method, pickup schedule, and policy version before checkout. The server reloads the current catalog, price, reward eligibility, stock, and schedule before creating an order. The order's saved item, price, payment-method, and pickup snapshots then govern that order unless a correction or non-waivable right requires otherwise.
 
-Checkout offers the payment method selected for that order: PayMongo QR Ph, Manual GCash, or Pay at the Counter when available. PayMongo payments require verified provider confirmation. Manual GCash requires a completed receipt and Admin verification against the actual incoming transaction before the order is confirmed. Pay-at-counter orders must still be placed through the website and paid before release or completion. A redirect, screenshot, extracted text, email, or browser message alone is not proof of payment. Sandbox transactions have no cash value.
+The available payment method may be PayMongo QR Ph, Manual GCash, or tracked Pay at the Counter. PayMongo requires verified provider confirmation matching the stored order and exact amount. Manual GCash requires the exact total, a submitted receipt, and Admin verification against the actual incoming transaction. Pay-at-counter orders must still be created through the website and recorded as paid by an Admin before release or completion. A redirect, screenshot, receipt image, extracted text, email, or browser message alone is not proof of payment. Do not pay twice.
 
-For Manual GCash, send the exact order total and submit the receipt before the displayed deadline. Your bank or e-wallet may charge a separate fee. Under-review orders retain their reservation and cannot be cancelled online. Rejected receipts include a reason and a 15-minute correction window, after which an uncorrected unpaid order may expire. If money was sent late or details do not match, contact TsokoLitaw; do not pay again. Payment receipts and submitted details are stored privately for verification and dispute handling. Optional receipt extraction runs on your device.
+Provider checkouts and unpaid reservations may expire at the displayed time. A timely Manual GCash receipt retains the reservation while under review and prevents website cancellation. A rejected receipt includes a reason and currently allows 15 minutes for correction before the unpaid order may expire. Late, duplicate, incorrect-recipient, or mismatched payments must be reported to tsokolitaw@gmail.com with the order number and transaction reference.
 
-Orders are prepared only for the selected available UCC Congressional Campus pickup location and window. Customers must follow campus access requirements and arrive during the communicated window. Products are perishable and fulfilled when released to the customer or authorized recipient.
+Orders must be collected at the selected campus location, date, and window. Customers must follow campus access rules and arrive within the communicated window and grace period. Products are fulfilled when released to the customer or an authorized recipient. Customers should promptly report a missing, incorrect, damaged, or unsafe item.
 
-A customer may cancel through the website only while an order is still awaiting payment. An unpaid cancellation releases the reservation. Once an order is paid through QR Ph, cancellation or settlement concerns must be coordinated directly with TsokoLitaw in person; the website does not initiate or process refunds. Prepared, ready-for-pickup, completed, and missed-pickup orders are non-refundable, subject to customer rights that cannot legally be waived. Any approved paid-order settlement is handled directly by TsokoLitaw outside the website.
+Website cancellation is available only while an order is pending and unpaid. Paid-order cancellation, correction, or settlement concerns must be coordinated directly with TsokoLitaw; the website does not initiate refunds or collect a refund destination. Prepared, ready-for-pickup, completed, and missed-pickup orders are ordinarily non-refundable because ingredients and labor are committed. This does not remove remedies for defective, unsafe, materially incorrect, or otherwise non-conforming products, or rights that cannot legally be waived.
 
-Products may contain or contact milk, cocoa or chocolate ingredients, sesame, peanuts or other nuts, coconut, and cookie ingredients. Handmade products may reasonably differ in appearance, coating distribution, size, and presentation.
+Products may contain or contact milk, cocoa or chocolate ingredients, sesame, peanuts or other nuts, coconut, cookie ingredients, and other allergens handled during preparation. Cross-contact cannot be ruled out. Products are handmade, perishable, and may reasonably differ in appearance, size, coating distribution, and presentation.
 
-Users must not test live payments without authorization, interfere with the platform, impersonate another person, or submit fraudulent information. Applicable non-waivable customer rights remain in effect.
+The loyalty reward applies only to the eligible free 4-piece base box after seven completed orders; coating and extra charges remain payable. Only the owner of a completed order may submit one moderated review. Submitted review text and images may be stored, moderated, and publicly displayed when approved.
 
-Preview and educational features are provided as available to the extent permitted by law. TsokoLitaw does not guarantee outcomes based on mock content or unavailable features, and does not exclude responsibilities that cannot lawfully be excluded.
+Users must not impersonate another person, submit fraudulent orders or payment evidence, interfere with authentication, inventory or payment systems, upload malicious or unlawful content, or test live payments without authorization. TsokoLitaw may restrict access or preserve evidence when reasonably necessary for security, payment integrity, or legal compliance.
 
-The TsokoLitaw name, original content, product presentation, software, and project materials may not be commercially reused without permission. Third-party materials remain the property of their owners.
+The service may pause for maintenance, security, provider outages, campus closures, stock limits, or operational constraints. TsokoLitaw does not exclude responsibilities or customer rights that cannot lawfully be excluded. The TsokoLitaw name, original content, product presentation, software, and project materials may not be commercially reused without permission; third-party materials remain their owners' property.
 
-Order or payment concerns should first be sent to tsokolitaw@gmail.com. These terms are governed by applicable Philippine law. If one provision is invalid, the remainder continues to apply. The version accepted at checkout governs that order unless applicable law requires otherwise.
+Questions and order, payment, or pickup concerns should be sent to tsokolitaw@gmail.com with enough information to investigate. These terms are governed by applicable Philippine law. If one provision is invalid, the remainder continues to apply. The version accepted at checkout is recorded with the order unless applicable law requires a different result.
 
-Selecting the Terms & Conditions checkbox and continuing records electronic acceptance of these terms, the Privacy Policy, allergen notice, pickup window, and no-show policy.
+Selecting the Terms & Conditions checkbox and continuing records electronic acceptance of these Terms, the Privacy Policy, allergen notice, selected pickup details, and missed-pickup policy.
   $terms$,
-  '2026-09-10 00:00:00+08'::timestamptz,
+  '2026-09-29 00:00:00+08'::timestamptz,
   true
 )
 on conflict (version) do update set

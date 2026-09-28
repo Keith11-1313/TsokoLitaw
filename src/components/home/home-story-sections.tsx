@@ -45,7 +45,7 @@ export function WhyTsokoLitawSection() {
 
           <div className="max-w-xl lg:order-1">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-subtle-foreground">
-              A familiar favorite, reimagined
+              About us
             </p>
             <h2
               id="why-tsokolitaw-heading"

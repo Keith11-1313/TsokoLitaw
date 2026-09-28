@@ -55,8 +55,8 @@ with a link to the full Journal. Journal posts use optional uploaded cover image
 galleries expose Previous/Next
 controls and an image counter without auto-advancing; a single image has no carousel controls. Keep
 stable media sizing and reachable keyboard/touch controls. After the cream hero, story sections
-alternate white and cream surfaces, beginning with the white "Why we created TsokoLitaw" section. At
-about 390 px the coating cards use two columns and the pickup steps stack; at about 768 px and 1440 px
+alternate white and cream surfaces, beginning with the white About Us section headed "Why we created
+TsokoLitaw." At about 390 px the coating cards use two columns and the pickup steps stack; at about 768 px and 1440 px
 they use four and three columns respectively. Not Found is a clear global fallback, also used for
 non-Admin requests to Admin routes.
 

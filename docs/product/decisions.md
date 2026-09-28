@@ -22,6 +22,12 @@ My Orders belongs inside Account, not the main navigation. Terms and Privacy bel
 and Checkout. Legacy Vlog/Feedback URLs redirect to Journal. This avoids duplicate shopping
 actions and keeps private activity separate from public discovery.
 
+The Privacy Policy and Terms effective September 29, 2026 are the current customer-facing policy
+copy. They explain actual account, payment, pickup, review, retention, and dispute operations in plain
+language without changing the underlying product state machine. Checkout records Terms version
+`2026-09-29`; later material policy changes require a new persisted version rather than silently
+rewriting the version previously accepted with an order.
+
 ## Identity and contact
 
 - Google OAuth through Supabase; no guest checkout. Same sign-in flow for new/returning users.

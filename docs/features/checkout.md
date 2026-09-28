@@ -11,6 +11,9 @@ then render `src/components/checkout/checkout-content.tsx`.
 3. **Server:** `server-checkout.ts` reloads the live catalog through `server-commerce.ts`, runs
    `commerce.ts:priceCheckoutCart`, adds the current complimentary extra once per box, reads current
    Terms, and constructs trusted priced snapshots. Browser cart data cannot choose the free extra.
+   Policy copy effective September 29, 2026 clarifies account use, authoritative order snapshots,
+   payment evidence, pickup, defects, missed pickup, review publication, and privacy handling. The
+   controlled seed marks version `2026-09-29` current so each new order records the accepted version.
 4. **Transaction:** `create_checkout_order` in the pre-v1 baseline locks/rechecks the account,
    pickup, inventory and reward. It inserts snapshots and pins the payment method in one transaction,
    or returns the existing order for the same owner/idempotency key. Contact is email-only.
