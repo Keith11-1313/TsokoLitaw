@@ -35,6 +35,17 @@ afterEach(() => {
 });
 
 describe("JournalManager", () => {
+  it("closes a new untouched editor without validation or discard confirmation", async () => {
+    render(<JournalManager posts={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: "New post" }));
+
+    expect(screen.queryByText("Please fill out this field.")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Close Journal editor" }));
+
+    expect(screen.queryByRole("dialog", { name: "Create post" })).toBeNull();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
   it("previews and retains a newly selected cover before saving", async () => {
     const { unmount } = render(<JournalManager posts={[]} />);
     fireEvent.click(screen.getByRole("button", { name: "New post" }));
@@ -52,5 +63,17 @@ describe("JournalManager", () => {
 
     unmount();
     expect(revokeObjectUrl).toHaveBeenCalledWith("blob:journal-cover-preview");
+  });
+
+  it("defaults new covers to landscape and offers all supported formats", () => {
+    render(<JournalManager posts={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: "New post" }));
+
+    const formatSelect = screen.getByRole("combobox", { name: "Cover format" });
+    expect(formatSelect.textContent).toContain("Landscape (16:9)");
+
+    fireEvent.click(formatSelect);
+    expect(screen.getByRole("option", { name: "Square (1:1)" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Portrait (4:5)" })).toBeTruthy();
   });
 });

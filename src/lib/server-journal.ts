@@ -1,6 +1,11 @@
 import "server-only";
 
-import type { JournalContentType, JournalStatus } from "@/lib/journal";
+import {
+  JOURNAL_CONTENT_TYPES,
+  type JournalContentType,
+  type JournalCoverFormat,
+  type JournalStatus,
+} from "@/lib/journal";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { validateUploadedImage } from "@/lib/server-image-validation";
@@ -14,7 +19,7 @@ export interface JournalPostSummary {
   contentType: JournalContentType;
   displayDate: string;
   coverImageUrl: string | null;
-  videoUrl: string | null;
+  coverFormat: JournalCoverFormat;
   status: JournalStatus;
   publishedAt: string | null;
 }
@@ -28,7 +33,7 @@ interface JournalPostRow {
   content_type: JournalContentType;
   display_date: string;
   cover_image_url: string | null;
-  video_url: string | null;
+  cover_format: JournalCoverFormat;
   status: JournalStatus;
   published_at: string | null;
 }
@@ -42,7 +47,7 @@ const journalPostColumns = `
   content_type,
   display_date,
   cover_image_url,
-  video_url,
+  cover_format,
   status,
   published_at
 `;
@@ -57,7 +62,7 @@ function toJournalPost(row: JournalPostRow): JournalPostSummary {
     contentType: row.content_type,
     displayDate: row.display_date,
     coverImageUrl: row.cover_image_url,
-    videoUrl: row.video_url,
+    coverFormat: row.cover_format,
     status: row.status,
     publishedAt: row.published_at,
   };
@@ -69,11 +74,27 @@ export async function getPublishedJournalPosts(): Promise<JournalPostSummary[]> 
     .from("journal_posts")
     .select(journalPostColumns)
     .eq("status", "published")
+    .in("content_type", [...JOURNAL_CONTENT_TYPES])
     .order("display_date", { ascending: false })
     .order("published_at", { ascending: false })
     .limit(30);
 
   if (error) throw new Error("Published Journal posts could not be loaded.", { cause: error });
+  return ((data ?? []) as JournalPostRow[]).map(toJournalPost);
+}
+
+export async function getFeaturedJournalPosts(): Promise<JournalPostSummary[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("journal_posts")
+    .select(journalPostColumns)
+    .eq("status", "published")
+    .in("content_type", [...JOURNAL_CONTENT_TYPES])
+    .order("display_date", { ascending: false })
+    .order("published_at", { ascending: false })
+    .limit(3);
+
+  if (error) throw new Error("Featured Journal posts could not be loaded.", { cause: error });
   return ((data ?? []) as JournalPostRow[]).map(toJournalPost);
 }
 
@@ -86,6 +107,7 @@ export async function getPublishedJournalPostBySlug(
     .select(journalPostColumns)
     .eq("slug", slug)
     .eq("status", "published")
+    .in("content_type", [...JOURNAL_CONTENT_TYPES])
     .maybeSingle();
 
   if (error) throw new Error("The Journal post could not be loaded.", { cause: error });
@@ -97,6 +119,7 @@ export async function getAdminJournalPosts(): Promise<JournalPostSummary[]> {
   const { data, error } = await supabase
     .from("journal_posts")
     .select(journalPostColumns)
+    .in("content_type", [...JOURNAL_CONTENT_TYPES])
     .order("display_date", { ascending: false })
     .order("updated_at", { ascending: false })
     .limit(100);
@@ -114,7 +137,7 @@ export async function saveAdminJournalPost(input: {
   contentType: JournalContentType;
   displayDate: string;
   coverImageUrl: string;
-  videoUrl: string;
+  coverFormat: JournalCoverFormat;
   status: JournalStatus;
 }) {
   const admin = createAdminSupabaseClient();
@@ -127,7 +150,7 @@ export async function saveAdminJournalPost(input: {
     content_type_value: input.contentType,
     display_date_value: input.displayDate,
     cover_image_url_value: input.coverImageUrl,
-    video_url_value: input.videoUrl,
+    cover_format_value: input.coverFormat,
     status_value: input.status,
   });
 

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, FileText, PlayCircle, Sparkles, Star } from "lucide-react";
+import { ArrowRight, FileText, Sparkles, Star } from "lucide-react";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
 import { ReviewImageGallery } from "@/components/feedback/review-image-gallery";
-import { DessertPlaceholder } from "@/components/home/dessert-placeholder";
+import { JournalPostMedia } from "@/components/journal/journal-post-media";
 import { SiteContainer } from "@/components/layout/site-container";
-import { primaryButtonClassName, secondaryButtonClassName } from "@/components/ui/button";
+import { primaryButtonClassName } from "@/components/ui/button";
 import { getJournalCardSummary, journalContentTypeLabels } from "@/lib/journal";
 import { getPublishedJournalPosts, type JournalPostSummary } from "@/lib/server-journal";
 import { getPublicFeaturedReviews } from "@/lib/server-reviews";
@@ -24,27 +24,10 @@ function formatDisplayDate(value: string) {
   }).format(new Date(`${value}T00:00:00+08:00`));
 }
 
-function PostMedia({ post }: { post: JournalPostSummary }) {
-  if (post.coverImageUrl) {
-    return (
-      <div
-        role="img"
-        aria-label={`Cover image for ${post.title}`}
-        className="aspect-[16/9] rounded-control bg-surface-muted bg-cover bg-center"
-        style={{ backgroundImage: `url(${JSON.stringify(post.coverImageUrl).slice(1, -1)})` }}
-      />
-    );
-  }
-
-  return (
-    <DessertPlaceholder variant={post.contentType === "product_feature" ? "hero" : "featured"} />
-  );
-}
-
 function JournalPostCard({ post }: { post: JournalPostSummary }) {
   return (
     <article className="rounded-card border border-border bg-surface p-5">
-      <PostMedia post={post} />
+      <JournalPostMedia post={post} />
       <div className="mt-5">
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
           {journalContentTypeLabels[post.contentType]}
@@ -143,6 +126,7 @@ export default async function JournalPage() {
   ]);
   const latestAnnouncement = posts.find((post) => post.contentType === "announcement") ?? null;
   const remainingPosts = posts.filter((post) => post.id !== latestAnnouncement?.id);
+  const latestAnnouncementHasMedia = Boolean(latestAnnouncement?.coverImageUrl);
 
   return (
     <CustomerPageShell activePath="/journal">
@@ -161,12 +145,10 @@ export default async function JournalPage() {
             className="mt-10 overflow-hidden rounded-card border border-border bg-surface"
             aria-labelledby="announcement-heading"
           >
-            <div
-              className={latestAnnouncement.coverImageUrl ? "grid md:grid-cols-[1fr_22rem]" : ""}
-            >
+            <div className={latestAnnouncementHasMedia ? "grid md:grid-cols-[1fr_22rem]" : ""}>
               <div
                 className={
-                  latestAnnouncement.coverImageUrl
+                  latestAnnouncementHasMedia
                     ? "p-6 sm:p-8"
                     : "grid gap-5 p-6 sm:p-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-8"
                 }
@@ -184,7 +166,7 @@ export default async function JournalPage() {
                 </div>
                 <div
                   className={
-                    latestAnnouncement.coverImageUrl
+                    latestAnnouncementHasMedia
                       ? "mt-5 flex flex-wrap gap-3"
                       : "flex flex-wrap gap-3 md:justify-end"
                   }
@@ -196,28 +178,12 @@ export default async function JournalPage() {
                     Read announcement
                     <ArrowRight aria-hidden="true" size={17} />
                   </Link>
-                  {latestAnnouncement.videoUrl ? (
-                    <a
-                      href={latestAnnouncement.videoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={secondaryButtonClassName}
-                    >
-                      <PlayCircle aria-hidden="true" size={18} />
-                      Watch video
-                    </a>
-                  ) : null}
                 </div>
               </div>
-              {latestAnnouncement.coverImageUrl ? (
-                <div
-                  role="img"
-                  aria-label={`Cover image for ${latestAnnouncement.title}`}
-                  className="min-h-64 bg-surface-muted bg-cover bg-center md:min-h-full"
-                  style={{
-                    backgroundImage: `url(${JSON.stringify(latestAnnouncement.coverImageUrl).slice(1, -1)})`,
-                  }}
-                />
+              {latestAnnouncementHasMedia ? (
+                <div className="p-5 md:p-6">
+                  <JournalPostMedia post={latestAnnouncement} />
+                </div>
               ) : null}
             </div>
           </section>

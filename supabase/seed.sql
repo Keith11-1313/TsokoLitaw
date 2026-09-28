@@ -63,7 +63,7 @@ values
   ('12000000-0000-4000-8000-000000000005', 'Plain', 'plain', 'The soft Litaw exterior with no additional coating.', null, 0.00, true, true, 5),
   ('12000000-0000-4000-8000-000000000006', 'Sesame Seeds', 'sesame-seeds', 'A toasted sesame seed coating with a nutty aroma.', null, 5.00, true, false, 6),
   ('12000000-0000-4000-8000-000000000007', 'Cookies and Cream', 'cookies-and-cream', 'Crushed chocolate cookies blended with a creamy coating.', null, 5.00, true, false, 7),
-  ('12000000-0000-4000-8000-000000000008', 'Chocolate Sprinkles', 'chocolate-sprinkles', 'Chocolate sprinkles for added crunch and a richer chocolate finish.', null, 5.00, true, false, 8)
+  ('12000000-0000-4000-8000-000000000008', 'Chocolate Sprinkles', 'chocolate-sprinkles', 'Chocolate sprinkles with a crisp finish.', null, 5.00, true, false, 8)
 on conflict (id) do update set
   name = excluded.name,
   slug = excluded.slug,

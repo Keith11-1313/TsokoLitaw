@@ -254,6 +254,7 @@ export type Database = {
           author_id: string
           content: string
           content_type: string
+          cover_format: string
           cover_image_url: string | null
           created_at: string
           display_date: string
@@ -264,12 +265,12 @@ export type Database = {
           status: Database["public"]["Enums"]["journal_status"]
           title: string
           updated_at: string
-          video_url: string | null
         }
         Insert: {
           author_id: string
           content: string
           content_type: string
+          cover_format?: string
           cover_image_url?: string | null
           created_at?: string
           display_date?: string
@@ -280,12 +281,12 @@ export type Database = {
           status?: Database["public"]["Enums"]["journal_status"]
           title: string
           updated_at?: string
-          video_url?: string | null
         }
         Update: {
           author_id?: string
           content?: string
           content_type?: string
+          cover_format?: string
           cover_image_url?: string | null
           created_at?: string
           display_date?: string
@@ -296,7 +297,6 @@ export type Database = {
           status?: Database["public"]["Enums"]["journal_status"]
           title?: string
           updated_at?: string
-          video_url?: string | null
         }
         Relationships: [
           {
@@ -1643,6 +1643,7 @@ export type Database = {
         Args: {
           content_type_value: string
           content_value: string
+          cover_format_value: string
           cover_image_url_value: string
           display_date_value: string
           excerpt_value: string
@@ -1650,7 +1651,6 @@ export type Database = {
           target_admin_id: string
           target_post_id: string
           title_value: string
-          video_url_value: string
         }
         Returns: string
       }

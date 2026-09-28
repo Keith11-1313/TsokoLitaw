@@ -15,9 +15,10 @@ import { useEditorDialog } from "@/hooks/use-editor-dialog";
 import { browserImageError } from "@/lib/form-validation";
 import {
   JOURNAL_CONTENT_TYPES,
+  JOURNAL_COVER_FORMATS,
   JOURNAL_STATUSES,
   journalContentTypeLabels,
-  type JournalContentType,
+  journalCoverFormatLabels,
 } from "@/lib/journal";
 import type { JournalPostSummary } from "@/lib/server-journal";
 
@@ -43,9 +44,6 @@ function JournalEditor({
   const [imageChecking, setImageChecking] = useState(false);
   const [coverName, setCoverName] = useState("");
   const [coverPreviewUrl, setCoverPreviewUrl] = useState("");
-  const [contentType, setContentType] = useState<JournalContentType>(
-    post?.contentType ?? "announcement",
-  );
   const { formRef, formProps, canSubmit, statusMessage, refresh, isDirty } = useFormGate({
     requireDirty: Boolean(post),
     extraValid: !imageError && !imageChecking,
@@ -138,7 +136,6 @@ function JournalEditor({
               defaultValue: post?.title,
               minLength: 3,
               maxLength: 120,
-              autoFocus: true,
             }}
           />
           <CustomSelect
@@ -146,7 +143,6 @@ function JournalEditor({
             name="contentType"
             required
             defaultValue={post?.contentType ?? "announcement"}
-            onChange={(value) => setContentType(value as JournalContentType)}
             options={JOURNAL_CONTENT_TYPES.map((type) => ({
               value: type,
               label: journalContentTypeLabels[type],
@@ -170,6 +166,16 @@ function JournalEditor({
             options={JOURNAL_STATUSES.map((status) => ({
               value: status,
               label: status === "published" ? "Published" : "Draft",
+            }))}
+          />
+          <CustomSelect
+            label="Cover format"
+            name="coverFormat"
+            required
+            defaultValue={post?.coverFormat ?? "landscape"}
+            options={JOURNAL_COVER_FORMATS.map((format) => ({
+              value: format,
+              label: journalCoverFormatLabels[format],
             }))}
           />
           <FormField
@@ -198,25 +204,13 @@ function JournalEditor({
             id="journal-cover"
             name="coverImage"
             label="Cover image (optional)"
+            className="sm:col-span-2"
             error={imageError || state.fieldErrors?.coverImage}
             disabled={pending}
             busy={imageChecking}
             fileName={coverName}
             previewUrl={coverPreviewUrl || post?.coverImageUrl || ""}
             onChange={validateCover}
-          />
-          <FormField
-            id="journal-video"
-            label={contentType === "video" ? "Video link" : "Video link (optional)"}
-            required={contentType === "video"}
-            error={state.fieldErrors?.videoUrl}
-            inputProps={{
-              name: "videoUrl",
-              type: "url",
-              pattern: "https://.*",
-              defaultValue: post?.videoUrl ?? "",
-              placeholder: "https://…",
-            }}
           />
           {post?.coverImageUrl ? (
             <label className="flex min-h-11 items-center gap-3 text-sm sm:col-span-2">

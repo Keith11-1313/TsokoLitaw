@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, PlayCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
+import { JournalPostMedia } from "@/components/journal/journal-post-media";
 import { SiteContainer } from "@/components/layout/site-container";
-import { secondaryButtonClassName } from "@/components/ui/button";
 import { journalContentTypeLabels } from "@/lib/journal";
 import { getPublishedJournalPostBySlug } from "@/lib/server-journal";
 
@@ -49,16 +49,9 @@ export default async function JournalPostPage({ params }: JournalPostPageProps) 
         </Link>
 
         <article className="mx-auto mt-6 max-w-4xl overflow-hidden rounded-card border border-border bg-surface">
-          {post.coverImageUrl ? (
-            <div
-              role="img"
-              aria-label={`Cover image for ${post.title}`}
-              className="aspect-video bg-surface-muted bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${JSON.stringify(post.coverImageUrl).slice(1, -1)})`,
-              }}
-            />
-          ) : null}
+          <div className="p-5 pb-0 sm:p-8 sm:pb-0">
+            <JournalPostMedia post={post} presentation="detail" />
+          </div>
           <div className="p-6 sm:p-10">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">
               {journalContentTypeLabels[post.contentType]} · {formatDisplayDate(post.displayDate)}
@@ -70,17 +63,6 @@ export default async function JournalPostPage({ params }: JournalPostPageProps) 
             <div className="mt-7 whitespace-pre-line text-base leading-8 text-muted-foreground">
               {post.content}
             </div>
-            {post.videoUrl ? (
-              <a
-                href={post.videoUrl}
-                target="_blank"
-                rel="noreferrer"
-                className={`${secondaryButtonClassName} mt-8`}
-              >
-                <PlayCircle aria-hidden="true" size={18} />
-                Watch video
-              </a>
-            ) : null}
           </div>
         </article>
       </SiteContainer>

@@ -39,10 +39,27 @@ begin
     raise exception
       'Dashboard fixture refused: set app.dashboard_fixture_payment_mode to manual or automatic';
   end if;
+
+  if not exists (
+    select 1
+    from public.profiles
+    where role = 'admin'
+      and is_active
+  ) then
+    raise exception
+      'Dashboard fixture refused: bootstrap an active Admin before inserting simulated Journal posts';
+  end if;
 end;
 $$;
 
 -- A rerun refreshes only records owned by this fixture.
+delete from public.journal_posts
+where id in (
+  'd15a0000-0000-4000-8000-000000000002',
+  'd15a0000-0000-4000-8000-000000000003',
+  'd15a0000-0000-4000-8000-000000000004'
+);
+
 create temporary table _dashboard_fixture_order_ids on commit drop as
 select id
 from public.orders
@@ -116,6 +133,11 @@ insert into auth.users (
   aud,
   role,
   email,
+  email_confirmed_at,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change,
   raw_app_meta_data,
   raw_user_meta_data,
   created_at,
@@ -127,6 +149,11 @@ select
   'authenticated',
   'authenticated',
   format('dashboard.customer.%s@dashboard-fixture.invalid', customer_number),
+  now(),
+  '',
+  '',
+  '',
+  '',
   '{"provider":"google","providers":["google"]}'::jsonb,
   jsonb_build_object('name', format('Dashboard Customer %s', customer_number)),
   case
@@ -139,6 +166,30 @@ select
       then now() - ((200 - (customer_number % 20)) * interval '1 day')
     else now() - ((179 - ((customer_number - 41) * 3)) * interval '1 day')
   end
+from generate_series(1, 96) as customers(customer_number);
+
+insert into auth.identities (
+  provider_id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+select
+  md5('dashboard-fixture-user-' || customer_number::text)::uuid::text,
+  md5('dashboard-fixture-user-' || customer_number::text)::uuid,
+  jsonb_build_object(
+    'sub', md5('dashboard-fixture-user-' || customer_number::text)::uuid::text,
+    'email', format('dashboard.customer.%s@dashboard-fixture.invalid', customer_number),
+    'email_verified', true,
+    'phone_verified', false
+  ),
+  'google',
+  now(),
+  now(),
+  now()
 from generate_series(1, 96) as customers(customer_number);
 
 update public.profiles profile
@@ -615,6 +666,112 @@ from (
     and source.order_number % 100 < 24
 ) fixture;
 
+-- Published Journal content exercises the Home featured-post query and public
+-- Journal images. Local runs use versioned application assets. Disposable Dev
+-- uses the matching objects uploaded to Dev Supabase Storage; SQL itself does
+-- not upload binary files.
+insert into public.journal_posts (
+  id,
+  title,
+  slug,
+  excerpt,
+  content,
+  content_type,
+  display_date,
+  cover_image_url,
+  cover_format,
+  status,
+  published_at,
+  author_id,
+  created_at,
+  updated_at
+)
+select
+  fixture.id,
+  fixture.title,
+  fixture.slug,
+  fixture.excerpt,
+  fixture.content,
+  fixture.content_type,
+  fixture.display_date,
+  fixture.cover_image_url,
+  fixture.cover_format,
+  'published'::public.journal_status,
+  fixture.published_at,
+  fixture_admin.id,
+  fixture.published_at,
+  fixture.published_at
+from (
+  values
+    (
+      'd15a0000-0000-4000-8000-000000000002'::uuid,
+      'A Free Box for Loyal TsokoLitaw Customers',
+      'dashboard-loyalty-reward',
+      'Every seventh completed purchase earns a complimentary four-piece box.',
+      'Our loyalty card rewards returning customers with a free four-piece box after six completed purchases. Eligible rewards appear automatically during website checkout.',
+      'announcement',
+      timezone('Asia/Manila', now())::date - 2,
+      case
+        when current_setting('app.dashboard_fixture_scope', true) = 'disposable-dev'
+          then 'https://mgkzphpznamjlgrpumjd.supabase.co/storage/v1/object/public/journal-media/simulation/loyalty.webp'
+        else '/images/journal/loyalty.webp'
+      end,
+      'square',
+      now() - interval '2 days'
+    ),
+    (
+      'd15a0000-0000-4000-8000-000000000003'::uuid,
+      'Meet the TsokoLitaw Selection',
+      'dashboard-tsokolitaw-selection',
+      'Eight coatings give every box its own mix of familiar and chocolatey finishes.',
+      'Build a box with Plain, Palitaw, Sesame Seeds, Crushed Nuts, Cookies and Cream, Chocolate Sprinkles, Cocoa, or Milk. Choose one coating or mix several across the box.',
+      'product_feature',
+      timezone('Asia/Manila', now())::date - 5,
+      case
+        when current_setting('app.dashboard_fixture_scope', true) = 'disposable-dev'
+          then 'https://mgkzphpznamjlgrpumjd.supabase.co/storage/v1/object/public/journal-media/simulation/selection.webp'
+        else '/images/journal/selection.webp'
+      end,
+      'portrait',
+      now() - interval '5 days'
+    ),
+    (
+      'd15a0000-0000-4000-8000-000000000004'::uuid,
+      'How to Bring Back the Soft, Chewy Texture',
+      'dashboard-reheating-guide',
+      'Steam or briefly heat TsokoLitaw when you want to enjoy it warm again.',
+      'For the best texture, steam TsokoLitaw for two to three minutes. For a quicker option, microwave it for 15 to 20 seconds and check the center before serving.',
+      'story',
+      timezone('Asia/Manila', now())::date - 8,
+      case
+        when current_setting('app.dashboard_fixture_scope', true) = 'disposable-dev'
+          then 'https://mgkzphpznamjlgrpumjd.supabase.co/storage/v1/object/public/journal-media/simulation/journal.webp'
+        else '/images/journal/journal.webp'
+      end,
+      'landscape',
+      now() - interval '8 days'
+    )
+) as fixture(
+  id,
+  title,
+  slug,
+  excerpt,
+  content,
+  content_type,
+  display_date,
+  cover_image_url,
+  cover_format,
+  published_at
+)
+cross join lateral (
+  select id
+  from public.profiles
+  where role = 'admin'
+    and is_active
+  order by created_at, id
+  limit 1
+) fixture_admin;
+
 -- Future inventory gives the operational dashboard a mix of prepared,
 -- reserved, sold, and made-to-order dates.
 insert into public.daily_inventory (
@@ -709,7 +866,16 @@ select
     from public.manual_payment_submissions submission
     join public.orders fixture_order on fixture_order.id = submission.order_id
     where fixture_order.customer_notes = '[dashboard-fixture:v1]'
-  ) as receipt_reviews;
+  ) as receipt_reviews,
+  (
+    select count(*)
+    from public.journal_posts
+    where id in (
+      'd15a0000-0000-4000-8000-000000000002',
+      'd15a0000-0000-4000-8000-000000000003',
+      'd15a0000-0000-4000-8000-000000000004'
+    )
+  ) as journal_posts;
 
 do $$
 begin

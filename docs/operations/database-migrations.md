@@ -77,8 +77,8 @@ authorize or imply the still-separate Production reset.
 
 ## Hosted activation and ongoing checks
 
-Phase 15B adds `20260924020000_phase_15b_dashboard.sql`, which replaces only the service-role Admin
-dashboard projection and adds targeted partial reporting indexes. On September 24, 2026, the owner
+Phase 15B originally used temporary migration `20260924020000_phase_15b_dashboard.sql` to replace the
+service-role Admin dashboard projection and add targeted partial reporting indexes. On September 24, 2026, the owner
 approved a Dev-only coordinated reset and the migration was activated on confirmed project
 `mgkzphpznamjlgrpumjd`; Production was not changed. The discarded disposable Dev state contained
 1 Auth user, 3 orders, 1 review, 2 paid Manual GCash records and 1 paid counter record, with no
@@ -93,19 +93,48 @@ zero failures. Responsive browser acceptance remains part of the matching Dev ap
 The application deployment and this migration must move together because the strict response parser
 rejects the older dashboard contract rather than showing false zeroes.
 
+On September 28, 2026, the owner approved the final Dev-only pre-v1 rebase after confirming that
+all 413 existing orders, Auth users, reviews, receipt/review/catalog files and Journal records were
+disposable and required no backup. The confirmed target was `mgkzphpznamjlgrpumjd`; Production was
+not contacted. The service-role grant correction and Phase 15B dashboard migration were folded into
+`20260911010000_pre_v1_baseline.sql`, and their two forward migration files were removed. The corrective
+reset then applied only that single baseline and controlled seed. The optional dashboard fixture was
+not loaded. Final Dev state contains one approved Admin, zero orders, zero reviews, zero Journal posts,
+zero Journal media objects and the three licensed font objects.
+
+This reset cleared Dev Vault as well as `pg_cron`, so both Cron Vault values were explicitly restored
+before recreating exactly the three approved jobs. The payment-expiration and notification jobs run
+every five minutes; account deletion runs at `0 19 * * *` UTC. All use `net.http_get`, matching the
+GET-only application routes. The final verification found one Auth user, zero simulated commerce or
+Journal records, three Cron routes, two Vault values and three restored font objects. One authorized request to every Cron
+endpoint returned HTTP 200 with zero work and zero failures. Temporary activation functions, files
+and migration-history markers were removed; linked migration history and dry-run push matched only
+the single rebased migration.
+
+Later on September 28, 2026, the owner approved another Dev-only coordinated reset to activate the
+persisted Journal cover-format contract. The confirmed target was `mgkzphpznamjlgrpumjd`; Production
+was not contacted. The discarded state contained one Auth/Admin identity, one Journal post, zero
+orders, zero payments and no provider-fund obligation. The reset applied the single baseline and
+controlled seed; the optional dashboard simulation fixture was not loaded. Final verification found
+zero Auth users, orders and Journal posts, one `journal_posts.cover_format` column, the single matching
+migration marker, two restored Vault values, exactly three active app Cron jobs, and the three restored
+brand-font objects. Linked lint and migration dry-run parity passed. One authenticated request to each
+Cron endpoint returned HTTP 200 with zero work and zero failures. The owner must sign in again before
+the approved email can be promoted back to Admin.
+
 During post-reset review-image testing on September 22, 2026, the application-equivalent
 `service_role` request exposed incomplete table ACLs inherited from the dumped baseline: the
 private review-image route could not read `public.reviews` and converted that authorization error
 to its generic unavailable-image response. Temporary forward migration
 `20260922050000_restore_service_role_table_grants.sql` restores server-only CRUD privileges on
 current public tables and usage on public sequences without expanding `anon` or `authenticated`
-access. Keep it applied during active Dev testing, then fold it into the single baseline during the
-next separately approved pre-v1 rebaseline.
+access. This correction and the Phase 15B dashboard migration were folded into the single baseline on
+September 28, 2026; neither forward migration file remains.
 
-Hosted Dev has exactly these three app Cron job definitions as of September 24, 2026:
+Hosted Dev has exactly these three app Cron job definitions as of September 28, 2026:
 `tsokolitaw-payment-expirations`, `tsokolitaw-notification-retries`, and
-`tsokolitaw-account-deletions`. The second pre-v1 linked reset removed the `pg_cron` extension and
-jobs while retaining Vault. The extension and exactly these three jobs were recreated afterward.
+`tsokolitaw-account-deletions`. A linked reset removes the `pg_cron` extension and jobs and may also
+clear Vault. The extension, required Vault values and exactly these three jobs must be recreated afterward.
 Their routes, schedules, Vault-backed bearer authorization, and one HTTP 200 response per endpoint
 were verified. A future linked reset will remove the jobs again, so inspect and recreate them before
 calling that environment ready.

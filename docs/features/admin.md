@@ -23,16 +23,23 @@ This is an audited active-Admin operation; it is not a separate Payments page. R
 reserved until a decision. The list includes a bounded review queue as well as recent orders.
 
 `src/app/admin/journal/actions.ts` → `server-journal.ts` → `upsert_journal_post`.
-The editor controls type/display date/text, optional cover/video, and draft/published state.
-Video posts require a secure video URL. Published cards use the summary (or a compact
+The editor controls type/display date/text, an optional cover image, its presentation format, and
+draft/published state. Cover format is an explicit persisted choice: landscape 16:9, square 1:1, or
+portrait 4:5. Landscape is the default for new posts. The selected frame is reused on Home, Journal
+cards, announcements, and the full post so the layout does not guess from an image URL.
+Published cards use the summary (or a compact
 content fallback) and link by stable slug to a full public post page; drafts are not publicly readable.
-Cover uploads use `journal-media` and validated JPG/PNG/WebP ≤3 MiB (square not required).
+Cover uploads use `journal-media` and validated JPG/PNG/WebP ≤3 MiB (square not required). Public
+rendering uses `contain` inside the selected frame, so the complete image remains visible without
+automatic cropping; portrait full-post media is centered and width-bounded on larger screens.
 The editor previews a selected local cover before Save; persistence and publication still occur only
 after a successful server action.
 Stable slugs, publication timestamps, and audit entries are handled by SQL. Public `/journal`
 loads published content plus visible featured order reviews. Reviews remain in `reviews`, not
-duplicated Journal posts; moderation actions are under `src/app/admin/reviews/actions.ts`. The review
-queue intentionally exposes one publication action: `Publish in Journal` sets the required visible and
+duplicated Journal posts; moderation actions are under `src/app/admin/reviews/actions.ts`.
+Home's `Featured at TsokoLitaw` section independently loads the newest three published posts and links
+to the full Journal; drafts never appear there. The review queue intentionally exposes one publication
+action: `Publish in Journal` sets the required visible and
 featured state together, while `Remove from Journal` clears both. This avoids unsupported intermediate
 visibility states in the Admin interface.
 
@@ -106,7 +113,14 @@ review rating, cancellation and fulfillment outcomes use weighted distributions 
 cycles. This exercises paid sales, returning customers, product/payment mix, completion, current
 fulfillment, Manual GCash review, counter payment, review moderation, and upcoming inventory. Synthetic
 recipients use the reserved `.invalid` domain, and the fixture removes their notification deliveries before commit.
+Each synthetic Auth user includes a matching provider identity and confirmed-email fields so hosted
+Auth administration can enumerate the fixture safely.
 It does not create or promote an Admin identity; use the normal controlled Admin bootstrap separately.
+An active Admin must exist before the fixture runs because three published simulation Journal posts use
+that identity as their author. Local runs reference versioned files under `public/images/journal/`.
+Disposable Dev runs reference the matching Dev `journal-media` objects. SQL never uploads binary files;
+upload those images before running the Dev fixture. The post rows are removed from the database when
+the fixture refreshes its own fixed IDs.
 The payment-mode setting defaults to the current manual business flow, weighted between Manual GCash
 and pay at the counter. Set it to `automatic` only when the simulation should represent PayMongo-only
 checkout; the fixture does not mix mutually exclusive environment modes.

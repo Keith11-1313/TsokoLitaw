@@ -18,7 +18,7 @@ select set_config(
    where pg_extension.extname = 'pgtap'),
   true
 );
-select plan(10);
+select plan(15);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -40,23 +40,34 @@ select ok(
   has_function_privilege('service_role', 'public.upsert_journal_post(uuid,uuid,text,text,text,text,date,text,text,journal_status)', 'EXECUTE'),
   'service role can invoke the Journal writer'
 );
+select hasnt_column('public', 'journal_posts', 'video_url', 'Journal posts are image-only');
+select has_column('public', 'journal_posts', 'cover_format', 'Journal posts persist their cover format');
 select throws_ok(
-  $$select public.upsert_journal_post('e1000000-0000-4000-8000-000000000002',null,'Customer post','Summary','Customers cannot publish Journal content.','story','2099-06-01','','','draft')$$,
+  $$select public.upsert_journal_post('e1000000-0000-4000-8000-000000000002',null,'Customer post','Summary','Customers cannot publish Journal content.','story','2099-06-01','','landscape','draft')$$,
   'P0001', 'Active administrator access is required', 'customers cannot create Journal posts'
+);
+select throws_ok(
+  $$select public.upsert_journal_post('e1000000-0000-4000-8000-000000000001',null,'Video post','Summary','Video content is no longer supported.','video','2099-06-01','','landscape','draft')$$,
+  'P0001', 'Journal content type is invalid', 'video is not an accepted Journal content type'
+);
+select throws_ok(
+  $$select public.upsert_journal_post('e1000000-0000-4000-8000-000000000001',null,'Invalid cover','Summary','This cover format must be rejected.','story','2099-06-01','','banner','draft')$$,
+  'P0001', 'Journal cover format is invalid', 'unsupported cover formats are rejected'
 );
 
 select lives_ok(
-  $$insert into journal_test_post select public.upsert_journal_post('e1000000-0000-4000-8000-000000000001',null,'Campus update','Pickup schedule','Campus pickup is available during the announced schedule.','announcement','2099-06-02','','','draft')$$,
+  $$insert into journal_test_post select public.upsert_journal_post('e1000000-0000-4000-8000-000000000001',null,'Campus update','Pickup schedule','Campus pickup is available during the announced schedule.','announcement','2099-06-02','','landscape','draft')$$,
   'admin can create a Journal draft'
 );
 select is((select title from public.journal_posts where id = (select id from journal_test_post)), 'Campus update', 'Journal content is persisted');
 select ok((select published_at is null from public.journal_posts where id = (select id from journal_test_post)), 'draft is not publicly dated as published');
 
 select lives_ok(
-  $$select public.upsert_journal_post('e1000000-0000-4000-8000-000000000001',(select id from journal_test_post),'Campus update published','Updated schedule','The final campus pickup schedule is now available.','announcement','2099-06-03','https://example.test/cover.webp','','published')$$,
+  $$select public.upsert_journal_post('e1000000-0000-4000-8000-000000000001',(select id from journal_test_post),'Campus update published','Updated schedule','The final campus pickup schedule is now available.','announcement','2099-06-03','https://example.test/cover.webp','portrait','published')$$,
   'admin can edit and publish a Journal post'
 );
 select ok((select status = 'published' and published_at is not null from public.journal_posts where id = (select id from journal_test_post)), 'publication state and timestamp are persisted');
+select is((select cover_format from public.journal_posts where id = (select id from journal_test_post)), 'portrait', 'selected cover format is persisted');
 select is((select count(*)::integer from public.admin_audit_logs where action in ('journal.created', 'journal.updated')), 2, 'Journal creates and updates are audited');
 select ok((select public and file_size_limit = 3145728 from storage.buckets where id = 'journal-media'), 'Journal media bucket has the approved public-read and size configuration');
 

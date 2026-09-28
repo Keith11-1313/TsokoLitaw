@@ -105,7 +105,9 @@ exact-target approval before the final pre-APK contract is activated there.
   Storage and are available only to the owner or an Admin until Admin publication. Order detail opens
   the review modal. New reviews are hidden until moderation, and public cards expose neither customer
   email nor raw Storage paths.
-- Journal includes announcements, stories, features, community highlights and optional videos.
+- Journal includes announcements, stories, features, community highlights and optional cover images.
+  Admin explicitly chooses landscape 16:9, square 1:1, or portrait 4:5 for each post; public surfaces
+  preserve the full image inside that persisted format rather than cropping or guessing its shape.
   Admin Journal owns draft/publication and review moderation; reviews remain distinct records.
 - Resend sends confirmation, readiness, and unpaid cancellation events. No refund lifecycle events remain.
 

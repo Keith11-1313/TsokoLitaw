@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CustomerFooter } from "@/components/customer/customer-footer";
 import { CustomerHeader } from "@/components/customer/customer-header";
-import { FeaturedVideoSection } from "@/components/home/featured-video-section";
+import {
+  FeaturedJournalSection,
+  FeaturedJournalSectionFallback,
+} from "@/components/home/featured-journal-section";
 import { HomeHero } from "@/components/home/home-hero";
 import {
   CoatingShowcaseFallback,
@@ -27,7 +30,7 @@ const homeContent = {
     description:
       "Soft and chewy palitaw filled with warm, melted chocolate and topped with your choice of coating. Served fresh with our signature sea salt cream sauce for a delicious sweet-and-salty bite.",
   },
-  featuredVideo: {
+  featuredJournal: {
     heading: "Featured at TsokoLitaw",
   },
 } as const;
@@ -68,7 +71,9 @@ export default function Home() {
         </Suspense>
         <HowToOrderSection />
         <SeaSaltSection />
-        <FeaturedVideoSection {...homeContent.featuredVideo} />
+        <Suspense fallback={<FeaturedJournalSectionFallback {...homeContent.featuredJournal} />}>
+          <FeaturedJournalSection {...homeContent.featuredJournal} />
+        </Suspense>
         <HomeCallToAction />
       </main>
       <CustomerFooter

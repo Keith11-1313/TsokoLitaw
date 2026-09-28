@@ -22,7 +22,7 @@ Inspect the relevant page and assets before editing UI.
   `public/images/paper-texture.webp` layer at the shared customer-surface opacity. The texture
   continues through the customer header so the canvas has no flat-color seam. Admin uses a denser
   flat operational background, not a separate brand system.
-- Logo: `public/brand/logo.webp`; local Home media: `public/images/home/`, `public/videos/home/`.
+- Logo: `public/brand/logo.webp`; local Home media: `public/images/home/`.
   Home uses `hero.webp` for the opening collage, `hero-c.webp` for the product-story section, and
   `hero-ss.webp` for the sea-salt pairing. Import the opening hero statically through `next/image`
   so replacing the file produces a hashed optimized asset. Do not append an unconfigured query string
@@ -49,12 +49,16 @@ Order history/detail share receipt-style box counts, per-box contents, line tota
 
 Home follows a mobile-first product story after the hero: the reason for TsokoLitaw, the live active
 coating selection, the three-step website-to-campus pickup journey, the signature sea-salt cream
-pairing, featured media, and one final build-your-box action. The video starts muted/inline with sound
-controls and advances to the promotional image. Keep stable media sizing and reachable keyboard/touch
-controls. After the cream hero, story sections alternate white and cream surfaces, beginning with the
-white "Why we created TsokoLitaw" section. At about 390 px the coating cards use two columns and the
-pickup steps stack; at about 768 px and 1440 px they use four and three columns respectively. Not Found
-is a clear global fallback, also used for non-Admin requests to Admin routes.
+pairing, the three newest published Journal posts, and one final build-your-box action. The featured
+Journal section comes from the persisted Journal source rather than page-local preset media and ends
+with a link to the full Journal. Journal posts use optional uploaded cover images. Multi-image review
+galleries expose Previous/Next
+controls and an image counter without auto-advancing; a single image has no carousel controls. Keep
+stable media sizing and reachable keyboard/touch controls. After the cream hero, story sections
+alternate white and cream surfaces, beginning with the white "Why we created TsokoLitaw" section. At
+about 390 px the coating cards use two columns and the pickup steps stack; at about 768 px and 1440 px
+they use four and three columns respectively. Not Found is a clear global fallback, also used for
+non-Admin requests to Admin routes.
 
 ## Forms and editors
 
@@ -74,7 +78,10 @@ is a clear global fallback, also used for non-Admin requests to Admin routes.
   returned refs/handlers. Successful save may close directly. Discard/stay must not accidentally submit.
 - Log out uses the shared confirmation dialog and returns Home only on confirmation.
 - Image preview is not persisted publication. Browser and server decode JPG/PNG/WebP ≤3 MiB;
-  coatings must be square; Journal covers and optional review images need not be. Review images stay
+  coatings must be square; Journal covers and optional review images need not be. Journal covers use
+  an Admin-selected persisted landscape 16:9, square 1:1, or portrait 4:5 frame and `contain`, never
+  an automatic crop. Portrait media remains full-width on phones and is centered and bounded on full
+  post pages at larger breakpoints. Review images stay
   private until the review is published by an Admin. Do not crop/transform automatically.
 - Admin image fields reuse `ImageUploadField` for the same accessible drag-and-drop presentation.
   Keep file-specific validation beside the field and preview a valid local selection before Save;

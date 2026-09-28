@@ -46,16 +46,6 @@ export function integerError(value: string | number, label: string, min: number,
   return Number.isInteger(Number(value)) ? "" : `${label} must be a whole number.`;
 }
 
-export function secureUrlError(value: string, label: string, required = false) {
-  const normalized = value.trim();
-  if (!normalized) return required ? `${label} is required.` : "";
-  try {
-    return new URL(normalized).protocol === "https:" ? "" : `${label} must use https://.`;
-  } catch {
-    return `Enter a valid ${label.toLowerCase()}.`;
-  }
-}
-
 export function imageFileError(file: File | null | undefined) {
   if (!file || file.size === 0) return "";
   if (!ALLOWED_IMAGE_TYPES.has(file.type)) return "Choose a JPG, PNG, or WebP image.";
@@ -76,7 +66,8 @@ export async function browserImageError(file: File, requireSquare = false) {
       image.onerror = () => reject(new Error("decode"));
       image.src = url;
     });
-    if (!dimensions.width || !dimensions.height) return "This image has invalid dimensions and cannot be used.";
+    if (!dimensions.width || !dimensions.height)
+      return "This image has invalid dimensions and cannot be used.";
     if (requireSquare && dimensions.width !== dimensions.height) {
       return `Use a square 1:1 image. This file is ${dimensions.width} × ${dimensions.height}px.`;
     }
