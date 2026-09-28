@@ -3,11 +3,12 @@ import Link from "next/link";
 import { ArrowRight, FileText, Sparkles, Star } from "lucide-react";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
 import { ReviewImageGallery } from "@/components/feedback/review-image-gallery";
+import { JournalPostCard } from "@/components/journal/journal-post-card";
 import { JournalPostMedia } from "@/components/journal/journal-post-media";
 import { SiteContainer } from "@/components/layout/site-container";
 import { primaryButtonClassName } from "@/components/ui/button";
-import { getJournalCardSummary, journalContentTypeLabels } from "@/lib/journal";
-import { getPublishedJournalPosts, type JournalPostSummary } from "@/lib/server-journal";
+import { getJournalCardSummary } from "@/lib/journal";
+import { getPublishedJournalPosts } from "@/lib/server-journal";
 import { getPublicFeaturedReviews } from "@/lib/server-reviews";
 
 export const metadata: Metadata = {
@@ -22,31 +23,6 @@ function formatDisplayDate(value: string) {
     timeZone: "Asia/Manila",
     dateStyle: "long",
   }).format(new Date(`${value}T00:00:00+08:00`));
-}
-
-function JournalPostCard({ post }: { post: JournalPostSummary }) {
-  return (
-    <article className="rounded-card border border-border bg-surface p-5">
-      <JournalPostMedia post={post} />
-      <div className="mt-5">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
-          {journalContentTypeLabels[post.contentType]}
-        </p>
-        <h3 className="mt-1 font-display text-2xl">{post.title}</h3>
-        <p className="mt-1 text-xs text-muted-foreground">{formatDisplayDate(post.displayDate)}</p>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          {getJournalCardSummary(post.excerpt, post.content)}
-        </p>
-        <Link
-          href={`/journal/${post.slug}`}
-          className="mt-4 inline-flex min-h-11 items-center gap-2 font-bold text-brand underline underline-offset-4"
-        >
-          Read post
-          <ArrowRight aria-hidden="true" size={17} />
-        </Link>
-      </div>
-    </article>
-  );
 }
 
 function JournalEmptyState() {
@@ -133,9 +109,6 @@ export default async function JournalPage() {
       <SiteContainer className="py-8 sm:py-12">
         <header className="w-full">
           <h1 className="font-display text-4xl sm:text-5xl">The TsokoLitaw Journal</h1>
-          <p className="mt-4 leading-7 text-muted-foreground">
-            Announcements, kitchen stories, product features, and moments shared by our community.
-          </p>
         </header>
 
         {posts.length === 0 ? <JournalEmptyState /> : null}
@@ -160,7 +133,7 @@ export default async function JournalPage() {
                   <h2 id="announcement-heading" className="mt-2 font-display text-2xl sm:text-3xl">
                     {latestAnnouncement.title}
                   </h2>
-                  <p className="mt-3 max-w-4xl text-sm leading-6 text-muted-foreground">
+                  <p className="mt-3 max-w-4xl text-base leading-7 text-muted-foreground">
                     {getJournalCardSummary(latestAnnouncement.excerpt, latestAnnouncement.content)}
                   </p>
                 </div>
@@ -194,9 +167,9 @@ export default async function JournalPage() {
             <h2 id="stories-heading" className="font-display text-3xl">
               Stories and features
             </h2>
-            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <div className="mt-6 grid items-start gap-6">
               {remainingPosts.map((post) => (
-                <JournalPostCard key={post.id} post={post} />
+                <JournalPostCard key={post.id} post={post} dateStyle="long" />
               ))}
             </div>
           </section>

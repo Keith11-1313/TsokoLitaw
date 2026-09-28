@@ -81,7 +81,12 @@ non-Admin requests to Admin routes.
   coatings must be square; Journal covers and optional review images need not be. Journal covers use
   an Admin-selected persisted landscape 16:9, square 1:1, or portrait 4:5 frame and `contain`, never
   an automatic crop. Portrait media remains full-width on phones and is centered and bounded on full
-  post pages at larger breakpoints. Review images stay
+  post pages at larger breakpoints. Public Journal cards stay stacked on phones and become full-width
+  editorial rows on wider screens. Square and portrait covers place media beside the copy; landscape
+  covers place copy before media. Each card keeps one separated bottom action row, readable body text,
+  and its natural height rather than stretching to another card. Every format uses a bounded preview
+  of the available post body beneath the excerpt instead of leaving the content side mostly empty.
+  Review images stay
   private until the review is published by an Admin. Do not crop/transform automatically.
 - Admin image fields reuse `ImageUploadField` for the same accessible drag-and-drop presentation.
   Keep file-specific validation beside the field and preview a valid local selection before Save;

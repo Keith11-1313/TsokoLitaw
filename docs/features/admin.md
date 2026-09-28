@@ -26,7 +26,11 @@ reserved until a decision. The list includes a bounded review queue as well as r
 The editor controls type/display date/text, an optional cover image, its presentation format, and
 draft/published state. Cover format is an explicit persisted choice: landscape 16:9, square 1:1, or
 portrait 4:5. Landscape is the default for new posts. The selected frame is reused on Home, Journal
-cards, announcements, and the full post so the layout does not guess from an image URL.
+cards, announcements, and the full post so the layout does not guess from an image URL. Public card
+lists use that format for an editorial desktop composition while keeping a consistent stacked mobile
+layout. Public listings use full-width rows: square and portrait cards place media beside copy, while
+landscape cards place copy before media. Each card has one separated bottom action row and can show a
+bounded preview of the saved post body beneath the short summary.
 Published cards use the summary (or a compact
 content fallback) and link by stable slug to a full public post page; drafts are not publicly readable.
 Cover uploads use `journal-media` and validated JPG/PNG/WebP ≤3 MiB (square not required). Public

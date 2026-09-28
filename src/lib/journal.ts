@@ -19,14 +19,38 @@ export const journalCoverFormatLabels: Record<JournalCoverFormat, string> = {
   portrait: "Portrait (4:5)",
 };
 
-export function getJournalCardSummary(excerpt: string | null, content: string) {
+export function getJournalCardSummary(excerpt: string | null, content: string, maxLength = 180) {
   const summary = (excerpt?.trim() || content.trim()).replace(/\s+/g, " ");
-  if (summary.length <= 180) return summary;
+  if (summary.length <= maxLength) return summary;
 
-  const candidate = summary.slice(0, 181);
+  const candidate = summary.slice(0, maxLength + 1);
   const lastSpace = candidate.lastIndexOf(" ");
-  const end = lastSpace >= 120 ? lastSpace : 180;
+  const end = lastSpace >= Math.floor(maxLength * 0.7) ? lastSpace : maxLength;
   return `${summary.slice(0, end).trimEnd()}…`;
+}
+
+export function getJournalCardContentPreview(
+  excerpt: string | null,
+  content: string,
+  maxLength = 520,
+) {
+  const normalizedExcerpt = excerpt?.trim().replace(/\s+/g, " ") ?? "";
+  const normalizedContent = content
+    .trim()
+    .replace(/\r\n?/g, "\n")
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n\n");
+
+  if (!normalizedExcerpt || !normalizedContent || normalizedContent === normalizedExcerpt)
+    return null;
+  if (normalizedContent.length <= maxLength) return normalizedContent;
+
+  const candidate = normalizedContent.slice(0, maxLength + 1);
+  const lastSpace = candidate.lastIndexOf(" ");
+  const end = lastSpace >= Math.floor(maxLength * 0.7) ? lastSpace : maxLength;
+  return `${normalizedContent.slice(0, end).trimEnd()}…`;
 }
 
 export function isJournalContentType(value: string): value is JournalContentType {
