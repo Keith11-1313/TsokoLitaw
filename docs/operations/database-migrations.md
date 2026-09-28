@@ -158,6 +158,18 @@ Neither hosted site is operationally ready merely because its database reset pas
 The baseline includes the narrowly scoped `profiles` `SELECT` privilege required by the server-only
 OAuth callback.
 
+The September 28, 2026 pre-v1 reconstruction regenerated the public schema from its validated final
+state, removed duplicate post-dump definitions, and emitted the final grants once. Browser-facing
+roles have no administrative table or sequence privileges; Auth-trigger and Storage-bucket setup are
+kept as the only cross-schema bootstrap. The rebuilt schema was proven equivalent to the prior
+effective public schema after normalizing harmless grant-order differences, then passed a clean local
+reset, schema lint, and all 404 database assertions. Dev `mgkzphpznamjlgrpumjd` was reset to the single
+`20260911010000` marker with zero Auth users, profiles, orders, and non-font Storage objects. The three
+licensed font objects survived and were verified. Two Vault values and exactly the three documented
+Cron jobs were restored through a temporary service-role-only helper; the helper and its two temporary
+history markers were removed afterward. All three authenticated Cron endpoints returned HTTP 200 with
+zero work and zero failures. Production was not contacted.
+
 ## Database changes before v1.0
 
 Until the Android APK is accepted as v1.0, the accepted release state must return to one clean baseline

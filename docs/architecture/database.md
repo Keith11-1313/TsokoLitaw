@@ -61,6 +61,10 @@ The baseline defines the core functions below; later definitions are identified 
 The pre-v1 baseline removes discarded migration markers, refund tables/functions/types,
 phone fields, and the old checkout overload. `discount_total` remains active loyalty data.
 Auth triggers, Storage bucket definitions, RLS, grants and atomic transitions are retained.
+The clean pre-v1 baseline grants browser-facing `anon` and `authenticated` roles only the explicit
+table, column, and function access required by the application. They receive no administrative table
+privileges or sequence privileges, including through defaults for future objects. Public reads, the
+RLS-limited customer profile-name update, and server-only `service_role` access remain explicit.
 
 ## Rules not to reproduce as client-side writes
 
