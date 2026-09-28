@@ -25,17 +25,19 @@ export function Toast({
       role={tone === "error" ? "alert" : "status"}
       aria-live={tone === "error" ? "assertive" : "polite"}
       className={cn(
-        "fixed right-4 top-4 z-[130] flex max-w-[calc(100vw-2rem)] items-start gap-3 rounded-control border bg-surface px-4 py-3 text-sm shadow-xl sm:max-w-sm",
-        tone === "error" ? "border-danger text-danger-foreground" : "border-border text-brand",
+        "fixed right-4 top-4 z-[130] flex min-h-14 w-[calc(100vw-2rem)] max-w-sm items-center gap-3 rounded-control border px-4 py-2 text-sm shadow-xl sm:right-6 sm:top-6",
+        tone === "error"
+          ? "border-danger-foreground/25 bg-danger-background text-danger-foreground"
+          : "border-success-foreground/25 bg-success-background text-success-foreground",
       )}
     >
-      <Icon aria-hidden="true" className="mt-0.5 shrink-0" size={18} />
-      <p className="min-w-0 flex-1 leading-5">{message}</p>
+      <Icon aria-hidden="true" className="shrink-0" size={20} />
+      <p className="min-w-0 flex-1 font-bold leading-5">{message}</p>
       <button
         type="button"
         aria-label="Dismiss notification"
         onClick={onDismiss}
-        className="flex size-8 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        className="flex size-11 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
         <X aria-hidden="true" size={16} />
       </button>

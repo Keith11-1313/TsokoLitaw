@@ -73,6 +73,10 @@ non-Admin requests to Admin routes.
   options, labels and focus. Hidden native plumbing is not a duplicate visible dropdown.
 - The number stepper supports minus/input/plus, direct keyboard entry and arrows. Do not silently
   clamp invalid values into acceptance; maintain bounds/step feedback.
+- Inventory forms use one visible label per control. The unusable-piece quantity and note controls
+  align at the top on wider screens, with the recording action directly beneath the note field.
+- Toast notifications align their status icon, message, and dismissal control on one row, use the
+  semantic success/error surface, and retain a 44px dismissal target plus automatic dismissal.
 - `useEditorDialog` handles focus, scroll locking, Escape and dirty-close confirmation. Route user
   close actions through `requestClose`, pass `pending`, and mount `DiscardChangesDialog` using its
   returned refs/handlers. Successful save may close directly. Discard/stay must not accidentally submit.
