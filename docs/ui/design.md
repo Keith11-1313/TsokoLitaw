@@ -77,6 +77,10 @@ non-Admin requests to Admin routes.
   close actions through `requestClose`, pass `pending`, and mount `DiscardChangesDialog` using its
   returned refs/handlers. Successful save may close directly. Discard/stay must not accidentally submit.
 - Log out uses the shared confirmation dialog and returns Home only on confirmation.
+- Manual checkout presents payment methods as themed icon cards rather than visible browser radio
+  circles. The native radio controls remain available to assistive technology and keyboard users;
+  selection is shown through the card border, background, and explicit screen-reader text. Icons are
+  unframed so the compact cards do not contain redundant circles or reserved empty height.
 - Image preview is not persisted publication. Browser and server decode JPG/PNG/WebP ≤3 MiB;
   coatings must be square; Journal covers and optional review images need not be. Journal covers use
   an Admin-selected persisted landscape 16:9, square 1:1, or portrait 4:5 frame and `contain`, never

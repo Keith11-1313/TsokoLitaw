@@ -1,5 +1,6 @@
 "use client";
 
+import { SmartphoneNfc, Store } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import {
@@ -279,7 +280,7 @@ export function CheckoutContent({
                 >
                   {exceedsPreparedStock
                     ? `Your cart needs ${requestedPieces} pieces, but only ${remainingPieces} are available for this date. Remove some boxes or choose another date.`
-                    : `${remainingPieces} pieces are available for this date. Your cart needs ${requestedPieces}.`}
+                    : `${remainingPieces} pieces available`}
                 </div>
               ) : null}
               <FormField
@@ -325,6 +326,7 @@ export function CheckoutContent({
               <legend className="sr-only">Choose a payment method</legend>
               {paymentOptions.map((option) => {
                 const selected = paymentMethod === option;
+                const PaymentIcon = option === "manual_gcash" ? SmartphoneNfc : Store;
                 const label = option === "manual_gcash" ? "Manual GCash" : "Pay at the counter";
                 const description =
                   option === "manual_gcash"
@@ -333,7 +335,7 @@ export function CheckoutContent({
                 return (
                   <label
                     key={option}
-                    className={`flex min-h-28 cursor-pointer items-start gap-3 rounded-control border p-4 transition-colors ${selected ? "border-brand bg-brand/5" : "border-border bg-surface-muted"}`}
+                    className={`group flex cursor-pointer items-center gap-4 rounded-control border p-4 transition-[border-color,background-color,box-shadow] focus-within:ring-2 focus-within:ring-brand focus-within:ring-offset-2 hover:border-brand/60 ${selected ? "border-brand bg-brand/5 shadow-sm ring-1 ring-brand" : "border-border bg-surface-muted"}`}
                   >
                     <input
                       type="radio"
@@ -341,14 +343,23 @@ export function CheckoutContent({
                       value={option}
                       checked={selected}
                       onChange={() => setPaymentMethod(option)}
-                      className="mt-1 size-4 accent-brand"
+                      className="sr-only"
                     />
-                    <span>
-                      <strong className="block text-foreground">{label}</strong>
+                    <span
+                      aria-hidden="true"
+                      className={`flex size-9 shrink-0 items-center justify-center transition-colors ${selected ? "text-brand" : "text-muted-foreground group-hover:text-brand"}`}
+                    >
+                      <PaymentIcon size={28} strokeWidth={1.8} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <strong className="block font-display text-lg leading-6 text-foreground">
+                        {label}
+                      </strong>
                       <span className="mt-1 block text-sm leading-5 text-muted-foreground">
                         {description}
                       </span>
                     </span>
+                    <span className="sr-only">{selected ? "Selected" : "Select this method"}</span>
                   </label>
                 );
               })}
