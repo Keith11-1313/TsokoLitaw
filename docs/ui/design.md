@@ -86,6 +86,8 @@ non-Admin requests to Admin routes.
   covers place copy before media. Each card keeps one separated bottom action row, readable body text,
   and its natural height rather than stretching to another card. Every format uses a bounded preview
   of the available post body beneath the excerpt instead of leaving the content side mostly empty.
+  On desktop, titles, summaries, and body previews are clamped by format so the media determines the
+  editorial row height; the action remains visible and copy cannot create empty space below the image.
   Review images stay
   private until the review is published by an Admin. Do not crop/transform automatically.
 - Admin image fields reuse `ImageUploadField` for the same accessible drag-and-drop presentation.

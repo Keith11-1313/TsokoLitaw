@@ -26,7 +26,8 @@ export function JournalPostCard({
   dateStyle?: "medium" | "long";
 }) {
   const isLandscape = post.coverFormat === "landscape";
-  const previewLength = post.coverFormat === "portrait" ? 560 : 380;
+  const previewLength =
+    post.coverFormat === "portrait" ? 560 : post.coverFormat === "square" ? 380 : 220;
   const contentPreview = getJournalCardContentPreview(post.excerpt, post.content, previewLength);
   const summary = getJournalCardSummary(
     post.excerpt,
@@ -47,19 +48,29 @@ export function JournalPostCard({
       <div className={cn(isLandscape && "lg:order-2")}>
         <JournalPostMedia post={post} />
       </div>
-      <div className={cn("mt-5 flex min-w-0 flex-col lg:mt-0", isLandscape && "lg:order-1")}>
+      <div
+        className={cn(
+          "mt-5 flex min-w-0 flex-col lg:mt-0 lg:overflow-hidden",
+          isLandscape && "lg:order-1",
+        )}
+      >
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
           {journalContentTypeLabels[post.contentType]}
         </p>
-        <h3 className="mt-1 text-balance font-display text-2xl leading-tight lg:text-3xl">
+        <h3 className="mt-1 text-balance font-display text-2xl leading-tight lg:line-clamp-2 lg:text-3xl">
           {post.title}
         </h3>
         <p className="mt-2 text-sm text-muted-foreground">
           {formatDisplayDate(post.displayDate, dateStyle)}
         </p>
-        <p className="mt-4 text-base leading-7 text-muted-foreground">{summary}</p>
+        <p className="mt-4 text-base leading-7 text-muted-foreground lg:line-clamp-2">{summary}</p>
         {contentPreview ? (
-          <p className="mt-4 whitespace-pre-line text-base leading-7 text-foreground/85">
+          <p
+            className={cn(
+              "mt-4 whitespace-pre-line text-base leading-7 text-foreground/85",
+              isLandscape ? "lg:line-clamp-4" : "lg:line-clamp-8",
+            )}
+          >
             {contentPreview}
           </p>
         ) : null}

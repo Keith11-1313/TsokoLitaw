@@ -45,6 +45,11 @@ describe("JournalPostCard", () => {
     expect(screen.getByText("A short Journal card summary.").className).toContain(
       "text-muted-foreground",
     );
+    expect(
+      screen.getByText(
+        "A fuller Journal post body with useful details beyond the short card summary.",
+      ).className,
+    ).toContain("lg:line-clamp-4");
   });
 
   it("renders one separated action row", () => {

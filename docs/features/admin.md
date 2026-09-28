@@ -30,7 +30,8 @@ cards, announcements, and the full post so the layout does not guess from an ima
 lists use that format for an editorial desktop composition while keeping a consistent stacked mobile
 layout. Public listings use full-width rows: square and portrait cards place media beside copy, while
 landscape cards place copy before media. Each card has one separated bottom action row and can show a
-bounded preview of the saved post body beneath the short summary.
+bounded preview of the saved post body beneath the short summary. Desktop previews are clamped by the
+selected cover format so long copy cannot make the card taller than its media.
 Published cards use the summary (or a compact
 content fallback) and link by stable slug to a full public post page; drafts are not publicly readable.
 Cover uploads use `journal-media` and validated JPG/PNG/WebP ≤3 MiB (square not required). Public
