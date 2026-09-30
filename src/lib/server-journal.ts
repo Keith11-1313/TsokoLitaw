@@ -158,6 +158,16 @@ export async function saveAdminJournalPost(input: {
   return data as string;
 }
 
+export async function deleteAdminJournalDraft(input: { adminId: string; postId: string }) {
+  const { data, error } = await createAdminSupabaseClient().rpc("delete_journal_draft", {
+    target_admin_id: input.adminId,
+    target_post_id: input.postId,
+  });
+
+  if (error) throw new Error("Journal draft could not be deleted.", { cause: error });
+  return data as string | null;
+}
+
 export async function uploadJournalCover(input: { adminId: string; file: File }) {
   const validated = await validateUploadedImage(input.file, { label: "Journal cover" });
   const path = `${input.adminId}/${crypto.randomUUID()}.${validated.extension}`;
@@ -176,4 +186,19 @@ export async function removeJournalCover(path: string) {
   const { error } = await createAdminSupabaseClient().storage.from("journal-media").remove([path]);
   if (error)
     throw new Error("The newly uploaded Journal cover could not be cleaned up.", { cause: error });
+}
+
+export function journalCoverPathFromUrl(url: string) {
+  const marker = "/storage/v1/object/public/journal-media/";
+  const markerIndex = url.indexOf(marker);
+  if (markerIndex < 0) return null;
+
+  const encodedPath = url.slice(markerIndex + marker.length).split(/[?#]/, 1)[0];
+  if (!encodedPath) return null;
+
+  try {
+    return decodeURIComponent(encodedPath);
+  } catch {
+    return null;
+  }
 }

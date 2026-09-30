@@ -1355,6 +1355,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      delete_journal_draft: {
+        Args: { target_admin_id: string; target_post_id: string }
+        Returns: string
+      }
       expire_paymongo_order: {
         Args: { checkout_id: string; target_payment_id: string }
         Returns: boolean

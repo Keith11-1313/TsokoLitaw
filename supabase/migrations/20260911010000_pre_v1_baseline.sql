@@ -3272,6 +3272,66 @@ COMMENT ON FUNCTION "public"."upsert_journal_post"("target_admin_id" "uuid", "ta
 
 
 
+CREATE OR REPLACE FUNCTION "public"."delete_journal_draft"("target_admin_id" "uuid", "target_post_id" "uuid") RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+declare
+  target_post public.journal_posts%rowtype;
+begin
+  if not exists (
+    select 1 from public.profiles
+    where id = target_admin_id
+      and role = 'admin'
+      and is_active
+  ) then
+    raise exception 'Active administrator access is required';
+  end if;
+
+  select * into target_post
+  from public.journal_posts
+  where id = target_post_id
+  for update;
+
+  if target_post.id is null then
+    raise exception 'Journal draft was not found';
+  end if;
+
+  if target_post.status <> 'draft' then
+    raise exception 'Only Journal drafts can be deleted';
+  end if;
+
+  delete from public.journal_posts
+  where id = target_post.id;
+
+  insert into public.admin_audit_logs (
+    admin_id, action, entity_type, entity_id, metadata
+  ) values (
+    target_admin_id,
+    'journal.deleted',
+    'journal_post',
+    target_post.id::text,
+    jsonb_build_object(
+      'title', target_post.title,
+      'content_type', target_post.content_type,
+      'cover_format', target_post.cover_format,
+      'display_date', target_post.display_date,
+      'status', target_post.status
+    )
+  );
+
+  return target_post.cover_image_url;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."delete_journal_draft"("target_admin_id" "uuid", "target_post_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."delete_journal_draft"("target_admin_id" "uuid", "target_post_id" "uuid") IS 'Service-role-only Journal draft deletion with active-Admin validation, published-post protection, and audit logging.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."upsert_pickup_location"("target_admin_id" "uuid", "target_location_id" "uuid", "name_value" "text", "description_value" "text", "active_value" boolean) RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
@@ -5090,6 +5150,11 @@ GRANT ALL ON FUNCTION "public"."upsert_daily_inventory"("target_admin_id" "uuid"
 
 REVOKE ALL ON FUNCTION "public"."upsert_journal_post"("target_admin_id" "uuid", "target_post_id" "uuid", "title_value" "text", "excerpt_value" "text", "content_value" "text", "content_type_value" "text", "display_date_value" "date", "cover_image_url_value" "text", "cover_format_value" "text", "status_value" "public"."journal_status") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."upsert_journal_post"("target_admin_id" "uuid", "target_post_id" "uuid", "title_value" "text", "excerpt_value" "text", "content_value" "text", "content_type_value" "text", "display_date_value" "date", "cover_image_url_value" "text", "cover_format_value" "text", "status_value" "public"."journal_status") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."delete_journal_draft"("target_admin_id" "uuid", "target_post_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."delete_journal_draft"("target_admin_id" "uuid", "target_post_id" "uuid") TO "service_role";
 
 
 

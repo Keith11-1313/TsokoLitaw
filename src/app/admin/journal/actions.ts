@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { isUuid } from "@/lib/identifiers";
 import { isJournalContentType, isJournalCoverFormat, isJournalStatus } from "@/lib/journal";
-import { saveAdminJournalPost, removeJournalCover, uploadJournalCover } from "@/lib/server-journal";
+import {
+  deleteAdminJournalDraft,
+  journalCoverPathFromUrl,
+  saveAdminJournalPost,
+  removeJournalCover,
+  uploadJournalCover,
+} from "@/lib/server-journal";
 import type { FieldErrors } from "@/lib/form-validation";
 import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
 
@@ -113,6 +119,51 @@ export async function saveJournalPostAction(
           : error instanceof Error
             ? error.message
             : "Journal post could not be saved.",
+    };
+  }
+}
+
+export async function deleteJournalDraftAction(
+  _previousState: JournalActionState,
+  formData: FormData,
+): Promise<JournalActionState> {
+  const admin = await requireAdmin("/admin/journal");
+  const postId = String(formData.get("postId") ?? "").trim();
+
+  if (!isUuid(postId)) {
+    return { status: "error", message: "That Journal draft is unavailable." };
+  }
+
+  try {
+    await enforceMutationRateLimit({
+      scope: "admin-journal-delete",
+      userId: admin.id,
+      maximumRequests: 10,
+      windowSeconds: 300,
+    });
+
+    const coverImageUrl = await deleteAdminJournalDraft({ adminId: admin.id, postId });
+    const coverPath = coverImageUrl ? journalCoverPathFromUrl(coverImageUrl) : null;
+    if (coverPath) {
+      try {
+        await removeJournalCover(coverPath);
+      } catch (cleanupError) {
+        console.error("Deleted Journal draft cover cleanup failed", cleanupError);
+      }
+    }
+
+    revalidatePath("/admin/journal");
+    revalidatePath("/journal");
+    return { status: "success", message: "Journal draft deleted." };
+  } catch (error) {
+    return {
+      status: "error",
+      message:
+        error instanceof MutationRateLimitError
+          ? `Too many updates. Try again in about ${error.retryAfterSeconds} seconds.`
+          : error instanceof Error
+            ? error.message
+            : "Journal draft could not be deleted.",
     };
   }
 }

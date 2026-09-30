@@ -39,6 +39,9 @@ rendering uses `contain` inside the selected frame, so the complete image remain
 automatic cropping; portrait full-post media is centered and width-bounded on larger screens.
 The editor previews a selected local cover before Save; persistence and publication still occur only
 after a successful server action.
+Existing drafts can be permanently deleted from their Admin card after an explicit confirmation.
+The service-only `delete_journal_draft` RPC rechecks active-Admin access, locks the record, refuses
+published posts, and writes the deletion audit entry before the application removes its cover object.
 Stable slugs, publication timestamps, and audit entries are handled by SQL. Public `/journal`
 loads published content plus visible featured order reviews. Reviews remain in `reviews`, not
 duplicated Journal posts; moderation actions are under `src/app/admin/reviews/actions.ts`.
