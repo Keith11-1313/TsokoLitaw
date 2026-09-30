@@ -86,7 +86,7 @@ export default function PrivacyPage() {
   return (
     <LegalDocumentPage
       title="Privacy Policy"
-      introduction="A plain-language explanation of what TsokoLitaw collects, why it is needed, and the choices available to you."
+      introduction="An explanation of what TsokoLitaw collects, why it is needed, and the choices available to you."
       sections={sections}
       documentNote="Effective September 29, 2026"
     />
