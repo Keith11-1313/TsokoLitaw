@@ -46,6 +46,9 @@ Our Creations has one configurator: mobile before coating gallery, desktop stick
 mobile return-to-builder shortcut scrolls to that same stateful form rather than duplicating it.
 Checkout puts its summary before the form on mobile and in a sticky right column on desktop.
 Order history/detail share receipt-style box counts, per-box contents, line totals and optional breakdowns.
+My Orders keeps its Build a box action beside the heading on wider screens; on phones it becomes
+a labeled floating action above the bottom safe area, with enough page padding that the last order
+remains reachable.
 
 Home follows a mobile-first product story after the hero: the reason for TsokoLitaw, the live active
 coating selection, the three-step website-to-campus pickup journey, the signature sea-salt cream
