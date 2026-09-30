@@ -1,14 +1,88 @@
 "use client";
 
-import { ShoppingBag, Trash2 } from "lucide-react";
+import { ShoppingBag, Trash2, X } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { QuantityInput } from "@/components/ui/quantity-input";
 import { calculateItemUnitTotal, formatPhp, MAX_CART_LINE_QUANTITY } from "@/lib/commerce";
-import { primaryButtonClassName, secondaryButtonClassName } from "@/components/ui/button";
+import {
+  PrimaryButton,
+  SecondaryButton,
+  primaryButtonClassName,
+  secondaryButtonClassName,
+} from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { useEditorDialog } from "@/hooks/use-editor-dialog";
+
+function RemoveCartItemDialog({
+  label,
+  onClose,
+  onConfirm,
+}: {
+  label: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const { dialogRef, requestClose } = useEditorDialog({
+    isDirty: false,
+    pending: false,
+    onClose,
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-foreground/50 p-4"
+      onPointerDown={requestClose}
+    >
+      <section
+        ref={dialogRef}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="remove-cart-item-title"
+        aria-describedby="remove-cart-item-description"
+        onPointerDown={(event) => event.stopPropagation()}
+        className="w-full max-w-md rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <h2 id="remove-cart-item-title" className="font-display text-2xl text-foreground">
+            Remove this box?
+          </h2>
+          <button
+            type="button"
+            aria-label="Close remove box confirmation"
+            onClick={requestClose}
+            className="flex size-11 shrink-0 items-center justify-center text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            <X aria-hidden="true" size={20} />
+          </button>
+        </div>
+        <p
+          id="remove-cart-item-description"
+          className="mt-3 text-sm leading-6 text-muted-foreground"
+        >
+          {label} will be removed from your cart. You can build it again later.
+        </p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <SecondaryButton type="button" autoFocus onClick={requestClose}>
+            Keep box
+          </SecondaryButton>
+          <PrimaryButton
+            type="button"
+            onClick={onConfirm}
+            className="bg-danger-foreground text-surface hover:bg-danger-foreground/90"
+          >
+            <Trash2 aria-hidden="true" size={17} />
+            Remove box
+          </PrimaryButton>
+        </div>
+      </section>
+    </div>
+  );
+}
 
 export function CartPageContent() {
+  const [itemToRemoveId, setItemToRemoveId] = useState<string | null>(null);
   const {
     isReady,
     items,
@@ -19,6 +93,15 @@ export function CartPageContent() {
     setItemSelected,
     setAllItemsSelected,
   } = useCart();
+  const itemToRemove = items.find((item) => item.id === itemToRemoveId);
+
+  function confirmRemove() {
+    if (!itemToRemove) return;
+    removeItem(itemToRemove.id);
+    setItemToRemoveId(null);
+    window.requestAnimationFrame(() => document.getElementById("cart-heading")?.focus());
+  }
+
   if (!isReady)
     return (
       <section
@@ -34,7 +117,9 @@ export function CartPageContent() {
     return (
       <section className="rounded-card border border-border bg-surface px-6 py-16 text-center">
         <ShoppingBag className="mx-auto text-brand" size={42} />
-        <h1 className="mt-5 font-display text-3xl">Your cart is empty</h1>
+        <h1 id="cart-heading" tabIndex={-1} className="mt-5 font-display text-3xl">
+          Your cart is empty
+        </h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
           Build a box and it will wait here for checkout.
         </p>
@@ -49,7 +134,9 @@ export function CartPageContent() {
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[1fr_22rem]">
       <section>
-        <h1 className="font-display text-4xl">Your cart</h1>
+        <h1 id="cart-heading" tabIndex={-1} className="font-display text-4xl">
+          Your cart
+        </h1>
         <label className="mt-6 flex min-h-11 items-center gap-3 text-sm font-bold">
           <input
             type="checkbox"
@@ -121,7 +208,8 @@ export function CartPageContent() {
                       />
                       <button
                         type="button"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => setItemToRemoveId(item.id)}
+                        aria-label={`Remove ${item.variantLabel} from cart`}
                         className="flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-bold text-danger-foreground hover:bg-danger-background disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <Trash2 size={17} />
@@ -163,6 +251,13 @@ export function CartPageContent() {
           Continue shopping
         </Link>
       </aside>
+      {itemToRemove ? (
+        <RemoveCartItemDialog
+          label={itemToRemove.variantLabel}
+          onClose={() => setItemToRemoveId(null)}
+          onConfirm={confirmRemove}
+        />
+      ) : null}
     </div>
   );
 }
