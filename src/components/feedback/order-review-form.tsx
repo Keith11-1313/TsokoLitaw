@@ -238,8 +238,9 @@ export function OrderReviewForm({
         className="mt-6"
         disabled={pending || submitting || processingImages}
         busy={processingImages}
+        busyLabel="Preparing photos…"
         accept=".heic,.heif,.jpeg,.jpg,.png,.webp,image/heic,image/heif,image/jpeg,image/png,image/webp"
-        formatHint="HEIC, HEIF, JPG, PNG or WebP; up to 5 photos, 25 MB each before preparation"
+        formatHint="Up to 5 photos · HEIC/HEIF, JPG, PNG or WebP"
         multiple
         maxFiles={5}
         fileNames={images.map((image) => image.name)}
@@ -266,9 +267,6 @@ export function OrderReviewForm({
           }
         }}
       />
-      <p className="mt-2 text-xs text-muted-foreground">
-        Photos are prepared on your device before upload. The final set must fit within 3.5 MB.
-      </p>
       {state.status === "error" ? (
         <p
           role="alert"

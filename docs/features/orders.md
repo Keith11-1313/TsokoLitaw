@@ -57,8 +57,10 @@ Review images use the private `review-media` bucket and are served only to the o
 after authorized Admin publication through `moderate_order_review`. Public Journal shows only safe
 approved display data from `get_public_featured_reviews`: masked customer names, immutable ordered-box
 summaries, review date, rating, highlights, comment, and image count. No customer emails, full public
-names, or raw Storage paths are exposed. Multi-image galleries provide Previous/Next controls and an
-image counter, do not autoplay, and handle unavailable files. A single image has no carousel controls.
+names, or raw Storage paths are exposed. Multi-image galleries provide Previous/Next controls and
+compact position dots, do not autoplay, and handle unavailable files. Images can be opened in a
+full-screen viewer. Gallery images fit inside a stable
+4:3 frame without cropping; other aspect ratios show the surrounding surface. A single image has no carousel controls.
 Because `review-media` is private, galleries load the authorized application route directly in the
 signed-in browser instead of sending that route through the unauthenticated Next.js image optimizer.
 

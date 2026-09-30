@@ -53,7 +53,9 @@ pairing, the three newest published Journal posts, and one final build-your-box 
 Journal section comes from the persisted Journal source rather than page-local preset media and ends
 with a link to the full Journal. Journal posts use optional uploaded cover images. Multi-image review
 galleries expose Previous/Next
-controls and an image counter without auto-advancing; a single image has no carousel controls. Keep
+controls and compact position dots without auto-advancing; a single image has no carousel controls.
+Images open in a cream, rounded full-screen viewer with a contained image, compact dot navigation,
+close action, and keyboard Escape support. Keep
 stable media sizing and reachable keyboard/touch controls. After the cream hero, story sections
 alternate white and cream surfaces, beginning with the white About Us section headed "Why we created
 TsokoLitaw." At about 390 px the coating cards use two columns and the pickup steps stack; at about 768 px and 1440 px

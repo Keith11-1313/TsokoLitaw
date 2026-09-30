@@ -11,6 +11,7 @@ interface ImageUploadFieldProps {
   required?: boolean;
   disabled?: boolean;
   busy?: boolean;
+  busyLabel?: string;
   fileName?: string;
   previewUrl?: string;
   fileNames?: readonly string[];
@@ -31,6 +32,7 @@ export function ImageUploadField({
   required,
   disabled,
   busy,
+  busyLabel,
   fileName,
   previewUrl,
   fileNames,
@@ -47,7 +49,7 @@ export function ImageUploadField({
   const selectedNames = fileNames ?? (fileName ? [fileName] : []);
   const selectedPreviews = previewUrls ?? (previewUrl ? [previewUrl] : []);
   const prompt = busy
-    ? "Checking image…"
+    ? (busyLabel ?? "Checking image…")
     : selectedNames.length
       ? `${selectedNames.length} image${selectedNames.length === 1 ? "" : "s"} selected`
       : "Drag and drop or browse";

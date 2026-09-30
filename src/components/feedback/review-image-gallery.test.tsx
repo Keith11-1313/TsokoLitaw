@@ -17,6 +17,9 @@ describe("ReviewImageGallery", () => {
       .getAttribute("src");
     expect(source).toContain(`/api/review-images/${reviewId}?index=0`);
     expect(source).not.toContain("/_next/image");
+    expect(screen.getByRole("img", { name: "Customer review image 1 of 1" }).className).toContain(
+      "object-contain",
+    );
   });
 
   it("moves through multiple review images with explicit controls", () => {
@@ -29,5 +32,22 @@ describe("ReviewImageGallery", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Previous review image" }));
     expect(screen.getByRole("img", { name: "Customer review image 1 of 3" })).toBeTruthy();
+  });
+
+  it("opens the full image and closes it", () => {
+    HTMLDialogElement.prototype.showModal = function () {
+      this.setAttribute("open", "");
+    };
+    HTMLDialogElement.prototype.close = function () {
+      this.removeAttribute("open");
+    };
+    render(<ReviewImageGallery reviewId="review-id" imageCount={1} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "View review image 1 full screen" }));
+    const dialog = screen.getByRole("dialog", { name: "Review image 1 of 1" });
+    expect(dialog.className).toContain("bg-surface");
+    expect(screen.getByText("Community photo")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Close full-screen review image" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });
