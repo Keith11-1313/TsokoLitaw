@@ -46,6 +46,13 @@ The pre-v1 baseline removes the retired online refund subsystem.
 Order detail opens the review modal. `orders/[orderId]/review/actions.ts` → `server-reviews.ts`
 → `submit_order_review`: active owner, completed order, one review, a required one-to-five rating,
 an optional bounded comment, allow-listed tasting highlights, and up to five validated review images.
+The review form accepts HEIC/HEIF/JPG/PNG/WebP source photos (up to 25 MiB each) and prepares them
+on the customer's device before submission. HEIC/HEIF conversion is loaded only when needed; all
+submitted images are JPEG or WebP. The current single-request action still limits the prepared
+images to 3 MiB each and 3.5 MiB combined so the request stays below hosting limits. A photo set
+that cannot fit at usable quality is rejected with an inline error. Larger combined galleries
+require a separately authorized direct-to-Storage upload flow.
+
 Review images use the private `review-media` bucket and are served only to the owner, an Admin, or
 after authorized Admin publication through `moderate_order_review`. Public Journal shows only safe
 approved display data from `get_public_featured_reviews`: masked customer names, immutable ordered-box

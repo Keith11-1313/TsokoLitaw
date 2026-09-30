@@ -1,12 +1,16 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OrderReviewForm } from "./order-review-form";
 import { OrderReviewModal } from "./order-review-modal";
+import { prepareReviewImages } from "@/lib/review-image-processing";
 
 vi.mock("@/app/orders/[orderId]/review/actions", () => ({
   submitReviewAction: vi.fn(),
+}));
+vi.mock("@/lib/review-image-processing", () => ({
+  prepareReviewImages: vi.fn(),
 }));
 
 afterEach(cleanup);
@@ -46,6 +50,26 @@ describe("OrderReviewForm", () => {
     );
     expect(screen.getByLabelText("Rich cocoa flavor")).toBeTruthy();
     expect(screen.getByLabelText("Add review images (optional)")).toBeTruthy();
+  });
+
+  it("shows a preparation error and prevents submission", async () => {
+    vi.mocked(prepareReviewImages).mockRejectedValueOnce(
+      new Error("These photos cannot fit at a usable quality. Choose fewer or smaller photos."),
+    );
+    render(<OrderReviewForm {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "5 star rating" }));
+    const image = (name: string) =>
+      new File([new Uint8Array(2 * 1024 * 1024)], name, { type: "image/jpeg" });
+    fireEvent.change(screen.getByLabelText("Add review images (optional)"), {
+      target: { files: [image("first.jpg"), image("second.jpg")] },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain("Choose fewer or smaller photos"),
+    );
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Submit review" }).disabled).toBe(
+      true,
+    );
   });
 
   it("shows the reviewed state without asking for another submission", () => {

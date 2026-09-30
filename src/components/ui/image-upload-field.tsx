@@ -17,6 +17,8 @@ interface ImageUploadFieldProps {
   previewUrls?: readonly string[];
   multiple?: boolean;
   maxFiles?: number;
+  accept?: string;
+  formatHint?: string;
   error?: string;
   className?: string;
   onChange: ChangeEventHandler<HTMLInputElement>;
@@ -35,6 +37,8 @@ export function ImageUploadField({
   previewUrls,
   multiple,
   maxFiles,
+  accept = "image/jpeg,image/png,image/webp",
+  formatHint,
   error,
   className,
   onChange,
@@ -83,7 +87,8 @@ export function ImageUploadField({
         )}
         <span className="mt-3 max-w-full break-words font-bold text-foreground">{prompt}</span>
         <span className="mt-1 text-xs font-normal text-muted-foreground">
-          JPG, PNG or WebP up to 3 MB{multiple && maxFiles ? ` each, up to ${maxFiles} images` : ""}
+          {formatHint ??
+            `JPG, PNG or WebP up to 3 MB${multiple && maxFiles ? ` each, up to ${maxFiles} images` : ""}`}
         </span>
         <input
           id={id}
@@ -92,7 +97,7 @@ export function ImageUploadField({
           aria-label={label}
           aria-describedby={errorId}
           aria-invalid={Boolean(error) || undefined}
-          accept="image/jpeg,image/png,image/webp"
+          accept={accept}
           multiple={multiple}
           required={required}
           disabled={disabled}

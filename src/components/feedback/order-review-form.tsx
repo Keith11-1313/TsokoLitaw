@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { Star } from "lucide-react";
 import { submitReviewAction, type ReviewActionState } from "@/app/orders/[orderId]/review/actions";
 import { PrimaryButton } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { FormField } from "@/components/ui/form-field";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { ReviewImageGallery } from "@/components/feedback/review-image-gallery";
 import { cn } from "@/lib/cn";
+import { prepareReviewImages } from "@/lib/review-image-processing";
 import { REVIEW_HIGHLIGHTS, type ReviewOrderItemSummary } from "@/lib/reviews";
 
 const initialState: ReviewActionState = { status: "idle", message: "" };
@@ -63,7 +64,9 @@ export function OrderReviewForm({
   const [images, setImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [imageError, setImageError] = useState("");
+  const [processingImages, setProcessingImages] = useState(false);
   const [state, formAction, pending] = useActionState(submitReviewAction, initialState);
+  const [submitting, startSubmit] = useTransition();
 
   useEffect(
     () => () => {
@@ -132,7 +135,16 @@ export function OrderReviewForm({
   }
 
   return (
-    <form action={formAction}>
+    <form
+      onSubmit={(event) => {
+        if (processingImages || imageError) event.preventDefault();
+      }}
+      action={(formData) => {
+        formData.delete("images");
+        images.forEach((image) => formData.append("images", image));
+        startSubmit(() => formAction(formData));
+      }}
+    >
       <input type="hidden" name="orderId" value={orderId} />
       <input type="hidden" name="rating" value={rating || ""} />
       <div className="rounded-control border border-border bg-surface-muted p-4 text-sm sm:p-5">
@@ -224,34 +236,39 @@ export function OrderReviewForm({
         name="images"
         label="Add review images (optional)"
         className="mt-6"
-        disabled={pending}
+        disabled={pending || submitting || processingImages}
+        busy={processingImages}
+        accept=".heic,.heif,.jpeg,.jpg,.png,.webp,image/heic,image/heif,image/jpeg,image/png,image/webp"
+        formatHint="HEIC, HEIF, JPG, PNG or WebP; up to 5 photos, 25 MB each before preparation"
         multiple
         maxFiles={5}
         fileNames={images.map((image) => image.name)}
         previewUrls={previewUrls}
         error={imageError || state.fieldErrors?.image}
-        onChange={(event) => {
+        onChange={async (event) => {
           const nextImages = Array.from(event.currentTarget.files ?? []);
-          const invalid =
-            nextImages.length > 5 ||
-            nextImages.some(
-              (image) =>
-                !["image/jpeg", "image/png", "image/webp"].includes(image.type) ||
-                image.size > 3 * 1024 * 1024,
-            );
-          previewUrls.forEach((url) => URL.revokeObjectURL(url));
-          if (invalid) {
-            event.currentTarget.value = "";
-            setImages([]);
-            setPreviewUrls([]);
-            setImageError("Choose up to five JPG, PNG, or WebP images no larger than 3 MB each.");
-            return;
-          }
+          event.currentTarget.value = "";
           setImageError("");
-          setImages(nextImages);
-          setPreviewUrls(nextImages.map((image) => URL.createObjectURL(image)));
+          setImages([]);
+          setPreviewUrls([]);
+          if (!nextImages.length) return;
+          setProcessingImages(true);
+          try {
+            const prepared = await prepareReviewImages(nextImages);
+            setImages(prepared);
+            setPreviewUrls(prepared.map((image) => URL.createObjectURL(image)));
+          } catch (error) {
+            setImageError(
+              error instanceof Error ? error.message : "These images could not be prepared.",
+            );
+          } finally {
+            setProcessingImages(false);
+          }
         }}
       />
+      <p className="mt-2 text-xs text-muted-foreground">
+        Photos are prepared on your device before upload. The final set must fit within 3.5 MB.
+      </p>
       {state.status === "error" ? (
         <p
           role="alert"
@@ -265,8 +282,12 @@ export function OrderReviewForm({
           {state.fieldErrors.rating}
         </p>
       ) : null}
-      <PrimaryButton className="mt-6 w-full" type="submit" disabled={!rating || pending}>
-        {pending ? "Submitting review…" : "Submit review"}
+      <PrimaryButton
+        className="mt-6 w-full"
+        type="submit"
+        disabled={!rating || pending || submitting || processingImages || !!imageError}
+      >
+        {pending || submitting ? "Submitting review…" : "Submit review"}
       </PrimaryButton>
     </form>
   );

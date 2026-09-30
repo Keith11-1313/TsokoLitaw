@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireCustomer } from "@/lib/auth";
 import { isUuid } from "@/lib/identifiers";
 import { removeReviewImages, submitCustomerReview, uploadReviewImages } from "@/lib/server-reviews";
-import { REVIEW_HIGHLIGHTS } from "@/lib/reviews";
+import { MAX_REVIEW_SUBMISSION_IMAGE_BYTES, REVIEW_HIGHLIGHTS } from "@/lib/reviews";
 import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
 
 export type ReviewActionState = {
@@ -54,6 +54,7 @@ export async function submitReviewAction(
   }
   if (
     images.length > 5 ||
+    images.reduce((total, image) => total + image.size, 0) > MAX_REVIEW_SUBMISSION_IMAGE_BYTES ||
     images.some(
       (image) =>
         !new Set(["image/jpeg", "image/png", "image/webp"]).has(image.type) ||
@@ -62,8 +63,9 @@ export async function submitReviewAction(
   ) {
     return {
       status: "error",
-      message: "Upload up to five JPG, PNG, or WebP images no larger than 3 MB each.",
-      fieldErrors: { image: "Choose up to five valid images no larger than 3 MB each." },
+      message:
+        "Choose up to five JPG, PNG, or WebP images, no larger than 3 MB each or 3.5 MB together.",
+      fieldErrors: { image: "Use up to five valid images totalling no more than 3.5 MB." },
     };
   }
 
