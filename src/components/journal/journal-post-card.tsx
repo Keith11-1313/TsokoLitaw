@@ -27,13 +27,9 @@ export function JournalPostCard({
 }) {
   const isLandscape = post.coverFormat === "landscape";
   const previewLength =
-    post.coverFormat === "portrait" ? 560 : post.coverFormat === "square" ? 380 : 220;
+    post.coverFormat === "portrait" ? 560 : post.coverFormat === "square" ? 380 : 520;
   const contentPreview = getJournalCardContentPreview(post.excerpt, post.content, previewLength);
-  const summary = getJournalCardSummary(
-    post.excerpt,
-    post.content,
-    !post.excerpt ? previewLength : 180,
-  );
+  const summary = post.excerpt ? getJournalCardSummary(post.excerpt, post.content) : null;
 
   return (
     <article
@@ -63,12 +59,16 @@ export function JournalPostCard({
         <p className="mt-2 text-sm text-muted-foreground">
           {formatDisplayDate(post.displayDate, dateStyle)}
         </p>
-        <p className="mt-4 text-base leading-7 text-muted-foreground lg:line-clamp-2">{summary}</p>
+        {summary ? (
+          <p className="mt-4 text-base leading-7 text-muted-foreground lg:line-clamp-2">
+            {summary}
+          </p>
+        ) : null}
         {contentPreview ? (
           <p
             className={cn(
               "mt-4 whitespace-pre-line text-base leading-7 text-foreground/85",
-              isLandscape ? "lg:line-clamp-4" : "lg:line-clamp-8",
+              isLandscape ? (summary ? "lg:line-clamp-4" : "lg:line-clamp-6") : "lg:line-clamp-8",
             )}
           >
             {contentPreview}

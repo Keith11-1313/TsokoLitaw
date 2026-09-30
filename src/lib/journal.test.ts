@@ -21,6 +21,10 @@ describe("Journal presentation", () => {
     expect(getJournalCardContentPreview("Short summary.", content)).toBe(content);
   });
 
+  it("provides the body preview when there is no excerpt", () => {
+    expect(getJournalCardContentPreview(null, "Full post content.")).toBe("Full post content.");
+  });
+
   it("does not repeat content that is identical to the excerpt", () => {
     expect(getJournalCardContentPreview("Same text.", " Same   text. ")).toBeNull();
   });

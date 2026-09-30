@@ -52,6 +52,18 @@ describe("JournalPostCard", () => {
     ).toContain("lg:line-clamp-4");
   });
 
+  it("uses the longer body preview when a post has no short summary", () => {
+    const post = postWithFormat("landscape");
+    post.excerpt = null;
+    post.content = "A useful announcement with more details for customers. ".repeat(20);
+    render(<JournalPostCard post={post} />);
+
+    const preview = screen.getByText(/A useful announcement with more details for customers/);
+    expect(preview.className).toContain("lg:line-clamp-6");
+    expect(preview.textContent?.length).toBeGreaterThan(220);
+    expect(preview.textContent).toMatch(/…$/);
+  });
+
   it("renders one separated action row", () => {
     render(<JournalPostCard post={postWithFormat("landscape")} />);
 

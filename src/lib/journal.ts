@@ -43,8 +43,7 @@ export function getJournalCardContentPreview(
     .filter(Boolean)
     .join("\n\n");
 
-  if (!normalizedExcerpt || !normalizedContent || normalizedContent === normalizedExcerpt)
-    return null;
+  if (!normalizedContent || normalizedContent === normalizedExcerpt) return null;
   if (normalizedContent.length <= maxLength) return normalizedContent;
 
   const candidate = normalizedContent.slice(0, maxLength + 1);
