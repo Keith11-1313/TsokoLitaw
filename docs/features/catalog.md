@@ -16,6 +16,9 @@ at ₱0 per piece; the default complimentary Sea salt cream is ₱0 once per box
 additional portion.
 The storefront builder shows the current complimentary extra between box size and coating style,
 before optional paid add-ons, so customers can see that it is already included.
+On phones the builder remains first, but an early Browse coating photos link after the size and
+style controls skips the rest of the form. Choosing a coating updates that same builder; the
+mobile return shortcut brings customers back to review the box and add it to the cart.
 
 Browser calculation in `commerce.ts` is an estimate. Checkout reloads the catalog and calls
 `priceCheckoutCart` on the server; existing orders retain their old snapshot prices/names.

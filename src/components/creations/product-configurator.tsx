@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronUp, Minus, Plus, ShoppingBag, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Minus, Plus, ShoppingBag, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
@@ -13,7 +13,7 @@ import {
   MAX_ADDON_QUANTITY,
   MAX_CART_LINE_QUANTITY,
 } from "@/lib/commerce";
-import { PrimaryButton } from "@/components/ui/button";
+import { PrimaryButton, secondaryButtonClassName } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { QuantityInput } from "@/components/ui/quantity-input";
 import { cn } from "@/lib/cn";
@@ -152,9 +152,14 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_27rem]">
       <section className="order-2 min-w-0 lg:order-1" aria-labelledby="coatings-heading">
-        <h2 id="coatings-heading" className="font-display text-3xl">
+        <h2 id="coatings-heading" tabIndex={-1} className="scroll-mt-24 font-display text-3xl">
           Choose your coating
         </h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground lg:hidden">
+          {mode === "single"
+            ? "Tap a photo to choose one coating for your box."
+            : `Use the + and − buttons to assign all ${variant.pieceCount} pieces.`}
+        </p>
 
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {coatings.map((coating) => {
@@ -282,6 +287,14 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
                   ))}
                 </div>
               </fieldset>
+
+              <a
+                href="#coatings-heading"
+                className={cn(secondaryButtonClassName, "w-full rounded-control lg:hidden")}
+              >
+                Browse coating photos
+                <ChevronDown aria-hidden="true" size={18} />
+              </a>
             </div>
 
             <div className="rounded-control bg-surface-control p-4">
@@ -408,7 +421,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
             </div>
             <PrimaryButton type="button" onClick={returnToBuilder} className="shrink-0">
               <ChevronUp aria-hidden="true" size={18} />
-              Review box
+              Review &amp; add
             </PrimaryButton>
           </div>
         </div>
