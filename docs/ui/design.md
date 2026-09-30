@@ -98,6 +98,9 @@ non-Admin requests to Admin routes.
   editorial row height; the action remains visible and copy cannot create empty space below the image.
   Review images stay
   private until the review is published by an Admin. Do not crop/transform automatically.
+- The global Not Found page uses the local transparent empty-box illustration, a direct recovery
+  message, and Home/Orders actions. Keep it centered, responsive, and free of unrelated navigation
+  so people can recover quickly from invalid customer routes.
 - Admin image fields reuse `ImageUploadField` for the same accessible drag-and-drop presentation.
   Keep file-specific validation beside the field and preview a valid local selection before Save;
   the preview does not imply that the upload has persisted. The generic incomplete-form message
