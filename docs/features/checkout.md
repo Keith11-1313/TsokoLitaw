@@ -36,7 +36,8 @@ then render `src/components/checkout/checkout-content.tsx`.
   the browser removes only those checked-out lines immediately. The order then lives in My Orders;
   cancellation or expiry does not copy old lines back into the cart. Other cart lines remain untouched.
   Hydration removes lines tied to the retired pending-checkout storage markers so deleted pre-release
-  test orders cannot leave unusable cart cards.
+  test orders cannot leave unusable cart cards. The cart page shows a loading state until browser
+  storage is restored, rather than briefly claiming the cart is empty.
 - Pickup definitions/eligibility: [inventory guide](inventory.md); never authorize stock from cached availability.
 - Input limits and user-facing server errors: `checkout/actions.ts`, with server/SQL limits kept consistent.
 

@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 
 export function CartPageContent() {
   const {
+    isReady,
     items,
     selectedItemIds,
     selectedSubtotal,
@@ -18,6 +19,17 @@ export function CartPageContent() {
     setItemSelected,
     setAllItemsSelected,
   } = useCart();
+  if (!isReady)
+    return (
+      <section
+        role="status"
+        aria-live="polite"
+        className="rounded-card border border-border bg-surface px-6 py-16 text-center"
+      >
+        <ShoppingBag className="mx-auto text-brand" size={42} aria-hidden="true" />
+        <h1 className="mt-5 font-display text-3xl">Loading your cart…</h1>
+      </section>
+    );
   if (items.length === 0)
     return (
       <section className="rounded-card border border-border bg-surface px-6 py-16 text-center">
