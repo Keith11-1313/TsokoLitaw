@@ -14,6 +14,8 @@ one free portion per box and charges only the customer's additional selected qua
 values are editable catalog data, not hardcoded checkout prices. The initial default coating is Plain
 at ₱0 per piece; the default complimentary Sea salt cream is ₱0 once per box and ₱15 for each
 additional portion.
+The storefront builder shows the current complimentary extra between box size and coating style,
+before optional paid add-ons, so customers can see that it is already included.
 
 Browser calculation in `commerce.ts` is an estimate. Checkout reloads the catalog and calls
 `priceCheckoutCart` on the server; existing orders retain their old snapshot prices/names.

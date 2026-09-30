@@ -250,33 +250,39 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
           </h2>
 
           <div className="mt-5 space-y-5">
-            <CustomSelect
-              label="Box size"
-              value={variantId}
-              onChange={changeVariant}
-              options={variants.map((item) => ({ value: item.id, label: item.label }))}
-            />
+            <div className="grid gap-3">
+              <CustomSelect
+                label="Box size"
+                value={variantId}
+                onChange={changeVariant}
+                options={variants.map((item) => ({ value: item.id, label: item.label }))}
+              />
 
-            <fieldset>
-              <legend className="text-sm font-bold">Coating style</legend>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                {(["single", "mixed"] as const).map((value) => (
-                  <button
-                    type="button"
-                    key={value}
-                    onClick={() => changeMode(value)}
-                    className={cn(
-                      "min-h-12 rounded-control border px-3 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
-                      mode === value
-                        ? "border-brand bg-brand text-surface"
-                        : "border-border bg-surface",
-                    )}
-                  >
-                    {value === "single" ? "Single" : "Mixed"}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
+              <p className="text-center text-sm italic leading-5 text-brand/60">
+                * Complimentary {complimentaryAddon.name} with every box.
+              </p>
+
+              <fieldset>
+                <legend className="text-sm font-bold">Coating style</legend>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {(["single", "mixed"] as const).map((value) => (
+                    <button
+                      type="button"
+                      key={value}
+                      onClick={() => changeMode(value)}
+                      className={cn(
+                        "min-h-12 rounded-control border px-3 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
+                        mode === value
+                          ? "border-brand bg-brand text-surface"
+                          : "border-border bg-surface",
+                      )}
+                    >
+                      {value === "single" ? "Single" : "Mixed"}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            </div>
 
             <div className="rounded-control bg-surface-control p-4">
               <div className="flex items-center justify-between gap-3">
