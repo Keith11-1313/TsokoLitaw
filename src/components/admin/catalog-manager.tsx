@@ -17,7 +17,7 @@ import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { NumberStepper } from "@/components/ui/quantity-input";
 import { useFormGate } from "@/hooks/use-form-gate";
 import { useEditorDialog } from "@/hooks/use-editor-dialog";
-import { browserImageError } from "@/lib/form-validation";
+import { browserImageError, numberError } from "@/lib/form-validation";
 import { formatPhp } from "@/lib/commerce";
 import type {
   AdminCatalogAddon,
@@ -44,7 +44,7 @@ function VariantCard({ variant }: { variant: AdminCatalogProduct["variants"][num
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<CatalogActionState>(initialState);
   const [basePrice, setBasePrice] = useState(variant.basePrice);
-  const validPrice = Number.isFinite(basePrice) && basePrice >= 0 && basePrice <= 10000;
+  const validPrice = !numberError(basePrice, "Base box price", 0, 10000, 0.01);
 
   function save(isActive: boolean) {
     startTransition(async () =>

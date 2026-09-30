@@ -10,6 +10,9 @@ describe("form validation", () => {
   it("rejects invalid numeric ranges, steps, and integers", () => {
     expect(numberError(10.005, "Price", 0, 10000, 0.01)).toContain("increments");
     expect(numberError(10.25, "Price", 0, 10000, 0.01)).toBe("");
+    expect(numberError(40.05, "Price", 0, 10000, 0.01)).toBe("");
+    expect(numberError(55.43, "Price", 0, 10000, 0.01)).toBe("");
+    expect(numberError(75.01, "Price", 0, 10000, 0.01)).toBe("");
     expect(integerError(1.5, "Quantity", 1, 10)).not.toBe("");
     expect(integerError(4, "Quantity", 1, 10)).toBe("");
   });
