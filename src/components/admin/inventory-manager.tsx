@@ -205,15 +205,15 @@ function ConsumptionForm({ record }: { record: AdminInventoryRecord }) {
               className="h-12 w-full rounded-control bg-surface-control px-3 font-normal"
             />
           </label>
-          <SecondaryButton
-            className="mt-4 w-full sm:w-auto"
-            type="submit"
-            disabled={pending || !canSubmit}
-          >
-            {pending ? "Recording…" : "Record consumption"}
-          </SecondaryButton>
         </div>
       </div>
+      <SecondaryButton
+        className="mt-4 w-full sm:w-auto"
+        type="submit"
+        disabled={pending || !canSubmit}
+      >
+        {pending ? "Recording…" : "Record consumption"}
+      </SecondaryButton>
       <div className="mt-4 space-y-3">
         <ActionMessage state={state} />
         <FormStatusHint message={statusMessage} />
