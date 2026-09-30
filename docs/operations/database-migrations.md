@@ -122,6 +122,19 @@ brand-font objects. Linked lint and migration dry-run parity passed. One authent
 Cron endpoint returned HTTP 200 with zero work and zero failures. The owner must sign in again before
 the approved email can be promoted back to Admin.
 
+On September 30, 2026, the owner approved a Dev-only coordinated reset to activate audited Journal
+draft deletion already folded into the clean pre-v1 baseline. The confirmed target was
+`mgkzphpznamjlgrpumjd`; Production was not contacted. The discarded state contained 4 Auth users and
+profiles, 3 orders and payments, 2 reviews, 4 Journal posts, and 21 non-font Storage objects. There
+were no pending orders, pending PayMongo payments, or Manual GCash receipts under review. The reset
+reapplied the single baseline and controlled seed, restored the three licensed brand-font objects,
+and recreated exactly the three documented Cron jobs from two restored Vault values using the Dev
+site `https://tsokolitaw.vercel.app`. The temporary service-role restoration and verification helpers
+were removed from the schema and migration history. Final verification found zero Auth/application
+records, only the three intended font objects, the deployed `delete_journal_draft` contract, one
+matching migration marker, no linked schema lint errors, all 414 linked PostgreSQL assertions passing,
+and HTTP 200 from each authenticated Dev Cron endpoint.
+
 During post-reset review-image testing on September 22, 2026, the application-equivalent
 `service_role` request exposed incomplete table ACLs inherited from the dumped baseline: the
 private review-image route could not read `public.reviews` and converted that authorization error
@@ -131,7 +144,7 @@ current public tables and usage on public sequences without expanding `anon` or 
 access. This correction and the Phase 15B dashboard migration were folded into the single baseline on
 September 28, 2026; neither forward migration file remains.
 
-Hosted Dev has exactly these three app Cron job definitions as of September 28, 2026:
+Hosted Dev has exactly these three app Cron job definitions as of September 30, 2026:
 `tsokolitaw-payment-expirations`, `tsokolitaw-notification-retries`, and
 `tsokolitaw-account-deletions`. A linked reset removes the `pg_cron` extension and jobs and may also
 clear Vault. The extension, required Vault values and exactly these three jobs must be recreated afterward.
