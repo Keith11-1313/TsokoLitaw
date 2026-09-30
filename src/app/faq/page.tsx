@@ -42,6 +42,11 @@ const faqGroups: readonly FaqGroup[] = [
           "A coating is the finish selected for each TsokoLitaw piece. An extra is an optional addition for the box. The builder shows the current choices and any added cost before you place the item in your cart.",
       },
       {
+        question: "Is sea salt cream included with my box?",
+        answer:
+          "Yes. One portion of sea salt cream is included with every box at no extra charge. You can choose an additional extra in the builder if one is available; its price is shown before you add the box to your cart.",
+      },
+      {
         question: "Can the price in my cart change?",
         answer:
           "Your cart is saved in your browser, but checkout reloads the current product prices, coatings, extras, rewards, and availability. Review the final total shown at checkout before placing your order.",
@@ -134,6 +139,21 @@ const faqGroups: readonly FaqGroup[] = [
         question: "When can I leave a review?",
         answer:
           "After an order is completed, its owner can submit one review from the order detail page. A rating is required, while the comment, tasting highlights, and images are optional. Reviews are checked by an Admin before they appear publicly.",
+      },
+      {
+        question: "Can I add photos to my review?",
+        answer:
+          "Yes. You can add up to five photos when submitting a review. The form prepares supported phone photos before upload and will tell you if a photo cannot be used.",
+      },
+      {
+        question: "Can I edit or remove a review after submitting it?",
+        answer: (
+          <>
+            There is no self-service edit or delete option. Email{" "}
+            <a href="mailto:tsokolitaw@gmail.com">tsokolitaw@gmail.com</a> if your review needs
+            correction or removal.
+          </>
+        ),
       },
       {
         question: "What allergens should I consider?",

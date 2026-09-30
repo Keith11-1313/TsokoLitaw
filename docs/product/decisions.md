@@ -108,7 +108,8 @@ exact-target approval before the final pre-APK contract is activated there.
   Coatings/add-ons remain payable. SQL protects single use, restores pending redemptions on
   cancellation/expiry, and settles a zero-total order without PayMongo.
 - One review per owned completed order. Rating 1–5 is required; the bounded comment, allow-listed
-  tasting highlights and validated JPG/PNG/WebP image are optional. Review images remain in private
+  tasting highlights and up to five images are optional. The form accepts HEIC/HEIF/JPG/PNG/WebP
+  source photos and prepares them on the customer device before upload. Review images remain in private
   Storage and are available only to the owner or an Admin until Admin publication. Order detail opens
   the review modal. New reviews are hidden until moderation, and public cards expose neither customer
   email nor raw Storage paths.
