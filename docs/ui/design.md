@@ -102,6 +102,9 @@ non-Admin requests to Admin routes.
 - The global Not Found page uses the local transparent empty-box illustration, a direct recovery
   message, and Home/Orders actions. Keep it centered, responsive, and free of unrelated navigation
   so people can recover quickly from invalid customer routes.
+- The customer FAQ is linked from the Footer only. Its grouped native disclosure controls remain
+  keyboard-operable, clearly focused, readable without client-side JavaScript, and cover ordering,
+  pickup, payments, rewards, reviews, product care, accounts, and support.
 - Admin image fields reuse `ImageUploadField` for the same accessible drag-and-drop presentation.
   Keep file-specific validation beside the field and preview a valid local selection before Save;
   the preview does not imply that the upload has persisted. The generic incomplete-form message

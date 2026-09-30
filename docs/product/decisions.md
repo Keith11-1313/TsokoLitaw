@@ -18,9 +18,10 @@ TsokoLitaw is a student-operated chocolate-filled Litaw business for campus pick
 subdomain, microservices, repositories/factories, or a native storefront rewrite is not needed.
 
 Main navigation: Home, Our Creations, Journal. Account/Profile and Cart are header actions;
-My Orders belongs inside Account, not the main navigation. Terms and Privacy belong in Footer
-and Checkout. Legacy Vlog/Feedback URLs redirect to Journal. This avoids duplicate shopping
-actions and keeps private activity separate from public discovery.
+My Orders belongs inside Account, not the main navigation. The customer FAQ is linked only from the
+Footer. Terms and Privacy belong in Footer and Checkout. Legacy Vlog/Feedback URLs redirect to
+Journal. This avoids duplicate shopping actions and keeps private activity separate from public
+discovery.
 
 The Privacy Policy and Terms effective September 29, 2026 are the current customer-facing policy
 copy. They explain actual account, payment, pickup, review, retention, and dispute operations in plain
