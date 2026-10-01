@@ -135,6 +135,21 @@ records, only the three intended font objects, the deployed `delete_journal_draf
 matching migration marker, no linked schema lint errors, all 414 linked PostgreSQL assertions passing,
 and HTTP 200 from each authenticated Dev Cron endpoint.
 
+On October 1, 2026, the owner approved a coordinated Production rebaseline for
+`zkmlzktvjkjrbznvrsxb` after confirming that no records or provider funds required retention and
+declining a backup. The pre-reset inventory contained 7 Auth users, 2 cancelled/expired orders,
+2 failed payments, no review or Journal records, no Storage objects, 3 Vault entries, and the 3
+documented active Cron jobs. The clean public schema and Auth users were replaced with the single
+`20260911010000` baseline and controlled seed; Vault and Cron were retained. Production then had
+zero Auth users, orders, payments, reviews, and Journal posts, the seeded catalog, five intended
+Storage buckets, one matching migration marker, no pending migrations, and no linked schema-lint
+errors. The three licensed font objects were restored to `brand-fonts/v1/` and returned HTTP 200.
+The merged `main` deployment completed after the database change, and the new public builder and
+FAQ loaded. The two five-minute Cron jobs subsequently reported success, with contemporaneous HTTP 200
+responses; two HTTP 500 responses occurred during the schema switch. Confirm approved Admin access and
+publish intended pickup availability before accepting orders; verify Production payment mode and
+provider configuration independently.
+
 During post-reset review-image testing on September 22, 2026, the application-equivalent
 `service_role` request exposed incomplete table ACLs inherited from the dumped baseline: the
 private review-image route could not read `public.reviews` and converted that authorization error
