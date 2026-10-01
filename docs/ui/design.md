@@ -42,8 +42,10 @@ line lengths, no page-level overflow, explicit labels, visible focus, and semant
 Admin uses a mobile drawer and stacked content-heavy cards; truly comparative tables may scroll
 inside their own container. Existing grids/container widths take precedence over arbitrary new widths.
 
-Our Creations has one configurator: mobile before coating gallery, desktop sticky sidebar. The
-mobile return-to-builder shortcut scrolls to that same stateful form rather than duplicating it.
+Our Creations has one configurator: compact coating choices inside Your coating on mobile and
+tablet, with the photo gallery and sticky sidebar from the desktop breakpoint. Single uses native
+radio inputs styled as thumbnail options; Mixed uses thumbnail rows with 44px minus/plus controls.
+Both presentations share selection, allocation, and pricing state.
 Checkout puts its summary before the form on mobile and in a sticky right column on desktop.
 Order history/detail share receipt-style box counts, per-box contents, line totals and optional breakdowns.
 My Orders keeps its Build a box action beside the heading on wider screens; on phones it becomes
