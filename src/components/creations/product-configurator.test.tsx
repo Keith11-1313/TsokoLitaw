@@ -70,3 +70,25 @@ describe("mobile coating discovery", () => {
     ).toBe("true");
   });
 });
+
+describe("builder extras and allergen notice", () => {
+  it("shows add-on quantity only for a selected add-on and places allergens after box quantity", async () => {
+    const user = userEvent.setup();
+    render(<ProductConfigurator catalog={catalog} />);
+
+    expect(screen.queryByRole("spinbutton", { name: "Qty. per box" })).toBeNull();
+    const boxQuantity = screen.getByRole("spinbutton", { name: "Box quantity" });
+    const allergenNotice = screen.getByText(/Allergen notice:/);
+    expect(
+      boxQuantity.compareDocumentPosition(allergenNotice) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    await user.click(screen.getByRole("combobox", { name: "Add-on" }));
+    await user.click(screen.getByRole("option", { name: "Sea salt cream" }));
+    expect(screen.getByRole("spinbutton", { name: "Qty. per box" })).toBeTruthy();
+
+    await user.click(screen.getByRole("combobox", { name: "Add-on" }));
+    await user.click(screen.getByRole("option", { name: "No additional extra" }));
+    expect(screen.queryByRole("spinbutton", { name: "Qty. per box" })).toBeNull();
+  });
+});

@@ -344,14 +344,14 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
               ) : null}
             </div>
 
-            <p className="rounded-control bg-surface-muted p-4 text-xs leading-5 text-muted-foreground">
-              Allergen notice: products may contain peanuts, dairy, coconut, sesame, and chocolate
-              ingredients.
-            </p>
-
             {addons.length ? (
               <div className="space-y-4">
-                <div className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <div
+                  className={cn(
+                    "grid items-end gap-4",
+                    selectedAddon && "sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2",
+                  )}
+                >
                   <CustomSelect
                     label="Add-on"
                     value={addonId}
@@ -364,14 +364,15 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
                       })),
                     ]}
                   />
-                  <QuantityInput
-                    label="Qty. per box"
-                    value={addonQuantity}
-                    onChange={setAddonQuantity}
-                    min={selectedAddon ? 1 : 0}
-                    max={selectedAddon ? MAX_ADDON_QUANTITY : 0}
-                    disabled={!selectedAddon}
-                  />
+                  {selectedAddon ? (
+                    <QuantityInput
+                      label="Qty. per box"
+                      value={addonQuantity}
+                      onChange={setAddonQuantity}
+                      min={1}
+                      max={MAX_ADDON_QUANTITY}
+                    />
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -382,6 +383,11 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
               min={1}
               max={MAX_CART_LINE_QUANTITY}
             />
+
+            <p className="rounded-control bg-surface-muted p-4 text-xs leading-5 text-muted-foreground">
+              Allergen notice: products may contain peanuts, dairy, coconut, sesame, and chocolate
+              ingredients.
+            </p>
 
             <div className="flex items-center justify-between border-t border-border pt-5">
               <span className="font-bold">Item total</span>
