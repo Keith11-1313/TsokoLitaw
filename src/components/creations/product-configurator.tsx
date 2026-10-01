@@ -1,8 +1,8 @@
 "use client";
 
-import { Check, ChevronDown, ChevronUp, Minus, Plus, ShoppingBag, X } from "lucide-react";
+import { Check, Minus, Plus, ShoppingBag, X } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { AddToCartModal } from "@/components/creations/add-to-cart-modal";
 import {
@@ -13,7 +13,7 @@ import {
   MAX_ADDON_QUANTITY,
   MAX_CART_LINE_QUANTITY,
 } from "@/lib/commerce";
-import { PrimaryButton, secondaryButtonClassName } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { QuantityInput } from "@/components/ui/quantity-input";
 import { cn } from "@/lib/cn";
@@ -23,7 +23,6 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
   const { variants, coatings, addons } = catalog;
   const { addItem } = useCart();
   const defaultCoating = coatings.find((coating) => coating.isDefault) ?? coatings[0];
-  const builderRef = useRef<HTMLElement>(null);
   const [variantId, setVariantId] = useState(variants[0].id);
   const [mode, setMode] = useState<"single" | "mixed">("single");
   const [singleCoating, setSingleCoating] = useState(defaultCoating.id);
@@ -38,7 +37,6 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
     quantity: number;
     total: number;
   } | null>(null);
-  const [showMobileBuilderShortcut, setShowMobileBuilderShortcut] = useState(false);
 
   const variant = variants.find((item) => item.id === variantId) ?? variants[0];
   const selectedCoating = coatings.find((coating) => coating.id === singleCoating) ?? coatings[0];
@@ -69,17 +67,6 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
     () => Object.fromEntries(coatings.map((coating) => [coating.id, coating.pricePerPiece])),
     [coatings],
   );
-
-  useEffect(() => {
-    const builder = builderRef.current;
-    if (!builder) return;
-
-    const observer = new IntersectionObserver(([entry]) => {
-      setShowMobileBuilderShortcut(!entry.isIntersecting && entry.boundingClientRect.bottom < 0);
-    });
-    observer.observe(builder);
-    return () => observer.disconnect();
-  }, []);
 
   function closeAddedItem() {
     setAddedItem(null);
@@ -145,21 +132,12 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
     });
   }
 
-  function returnToBuilder() {
-    builderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_27rem]">
-      <section className="order-2 min-w-0 lg:order-1" aria-labelledby="coatings-heading">
+      <section className="hidden min-w-0 lg:order-1 lg:block" aria-labelledby="coatings-heading">
         <h2 id="coatings-heading" tabIndex={-1} className="scroll-mt-24 font-display text-3xl">
           Choose your coating
         </h2>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground lg:hidden">
-          {mode === "single"
-            ? "Tap a photo to choose one coating for your box."
-            : `Use the + and − buttons to assign all ${variant.pieceCount} pieces.`}
-        </p>
 
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {coatings.map((coating) => {
@@ -182,7 +160,12 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
                   ) : null}
                 </div>
                 <div className="p-4">
-                  <h3 className="font-display text-xl">{coating.name}</h3>
+                  <div className="flex flex-wrap items-baseline gap-x-1.5">
+                    <h3 className="font-display text-xl">{coating.name}</h3>
+                    <span className="text-xs italic text-brand/60">
+                      {formatPhp(coating.pricePerPiece)} / piece
+                    </span>
+                  </div>
                   <p className="mt-1 min-h-10 text-sm leading-5 text-muted-foreground">
                     {coating.description}
                   </p>
@@ -242,10 +225,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
         </div>
       </section>
 
-      <aside
-        ref={builderRef}
-        className="order-1 scroll-mt-4 self-start lg:order-2 lg:sticky lg:top-6"
-      >
+      <aside className="order-1 self-start lg:order-2 lg:sticky lg:top-6">
         <section
           className="rounded-card border border-border bg-surface p-5 shadow-sm sm:p-7"
           aria-labelledby="build-box-heading"
@@ -287,17 +267,108 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
                   ))}
                 </div>
               </fieldset>
-
-              <a
-                href="#coatings-heading"
-                className={cn(secondaryButtonClassName, "w-full rounded-control lg:hidden")}
-              >
-                Browse coating photos
-                <ChevronDown aria-hidden="true" size={18} />
-              </a>
             </div>
 
-            <div className="rounded-control bg-surface-control p-4">
+            <fieldset className="min-w-0 rounded-control bg-surface-control p-3 lg:hidden">
+              <legend className="sr-only">Your coating</legend>
+              <div className="flex items-center justify-between gap-2">
+                <p
+                  aria-hidden="true"
+                  className="text-xs font-bold uppercase tracking-wide text-subtle-foreground"
+                >
+                  Your coating
+                </p>
+                {mode === "mixed" ? (
+                  <span className="text-xs font-bold" role="status">
+                    {mixedTotal}/{variant.pieceCount} pieces
+                  </span>
+                ) : null}
+              </div>
+              <div className={cn("mt-3 gap-2", mode === "single" ? "flex flex-wrap" : "grid")}>
+                {coatings.map((coating) => {
+                  const count = counts[coating.id] ?? 0;
+                  const selected = mode === "single" ? singleCoating === coating.id : count > 0;
+                  const content = (
+                    <>
+                      <Image
+                        src={coating.imageSrc}
+                        alt=""
+                        width={36}
+                        height={36}
+                        sizes="36px"
+                        className="size-9 shrink-0 rounded-md object-cover"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold">{coating.name}</span>
+                        <span className="block text-xs italic text-brand/60">
+                          {formatPhp(coating.pricePerPiece)} / piece
+                        </span>
+                      </span>
+                    </>
+                  );
+                  return mode === "single" ? (
+                    <label key={coating.id} className="relative cursor-pointer">
+                      <input
+                        type="radio"
+                        name="mobile-coating"
+                        aria-label={coating.name}
+                        value={coating.id}
+                        checked={selected}
+                        onChange={() => chooseSingle(coating.id)}
+                        className="peer sr-only"
+                      />
+                      <span
+                        className={cn(
+                          "flex min-h-12 items-center gap-2 rounded-control border p-1.5 pr-3 transition peer-focus-visible:ring-2 peer-focus-visible:ring-focus",
+                          selected ? "border-brand bg-brand/10" : "border-border bg-surface",
+                        )}
+                      >
+                        {content}
+                      </span>
+                    </label>
+                  ) : (
+                    <div
+                      key={coating.id}
+                      className={cn(
+                        "flex min-w-0 items-center gap-2 overflow-hidden rounded-control border bg-surface pl-1.5",
+                        selected ? "border-brand bg-brand/10" : "border-border",
+                      )}
+                    >
+                      {content}
+                      <div className="ml-auto flex shrink-0 items-center border-l border-border">
+                        <button
+                          type="button"
+                          aria-label={`Decrease ${coating.name} pieces`}
+                          disabled={count === 0}
+                          onClick={() => adjust(coating.id, -1)}
+                          className="grid size-11 place-items-center focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus disabled:opacity-35"
+                        >
+                          <Minus size={16} aria-hidden="true" />
+                        </button>
+                        <span
+                          className="w-5 text-center text-sm font-bold"
+                          aria-label={`${coating.name}: ${count} pieces`}
+                        >
+                          {count}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Increase ${coating.name} pieces`}
+                          disabled={mixedTotal >= variant.pieceCount}
+                          onClick={() => adjust(coating.id, 1)}
+                          className="grid size-11 place-items-center focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus disabled:opacity-35"
+                        >
+                          <Plus size={16} aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {error ? <p className="mt-2 text-xs text-danger-foreground">{error}</p> : null}
+            </fieldset>
+
+            <div className="hidden rounded-control bg-surface-control p-4 lg:block">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-bold uppercase tracking-wide text-subtle-foreground">
                   Your coating
@@ -344,14 +415,14 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
               ) : null}
             </div>
 
-            <p className="rounded-control bg-surface-muted p-4 text-xs leading-5 text-muted-foreground">
-              Allergen notice: products may contain peanuts, dairy, coconut, sesame, and chocolate
-              ingredients.
-            </p>
-
             {addons.length ? (
               <div className="space-y-4">
-                <div className="grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <div
+                  className={cn(
+                    "grid items-end gap-4",
+                    selectedAddon && "sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2",
+                  )}
+                >
                   <CustomSelect
                     label="Add-on"
                     value={addonId}
@@ -364,14 +435,15 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
                       })),
                     ]}
                   />
-                  <QuantityInput
-                    label="Qty. per box"
-                    value={addonQuantity}
-                    onChange={setAddonQuantity}
-                    min={selectedAddon ? 1 : 0}
-                    max={selectedAddon ? MAX_ADDON_QUANTITY : 0}
-                    disabled={!selectedAddon}
-                  />
+                  {selectedAddon ? (
+                    <QuantityInput
+                      label="Qty. per box"
+                      value={addonQuantity}
+                      onChange={setAddonQuantity}
+                      min={1}
+                      max={MAX_ADDON_QUANTITY}
+                    />
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -382,6 +454,11 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
               min={1}
               max={MAX_CART_LINE_QUANTITY}
             />
+
+            <p className="rounded-control bg-surface-muted p-4 text-xs leading-5 text-muted-foreground">
+              Allergen notice: products may contain peanuts, dairy, coconut, sesame, and chocolate
+              ingredients.
+            </p>
 
             <div className="flex items-center justify-between border-t border-border pt-5">
               <span className="font-bold">Item total</span>
@@ -406,25 +483,6 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
           total={addedItem.total}
           onClose={closeAddedItem}
         />
-      ) : null}
-      {showMobileBuilderShortcut && !addedItem ? (
-        <div
-          className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-12px_30px_-22px_rgba(54,30,10,0.7)] backdrop-blur lg:hidden"
-          aria-label="Box builder shortcut"
-        >
-          <div className="mx-auto flex max-w-md items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                Current box
-              </p>
-              <p className="font-display text-xl text-brand">{formatPhp(unitTotal * quantity)}</p>
-            </div>
-            <PrimaryButton type="button" onClick={returnToBuilder} className="shrink-0">
-              <ChevronUp aria-hidden="true" size={18} />
-              Review &amp; add
-            </PrimaryButton>
-          </div>
-        </div>
       ) : null}
     </div>
   );

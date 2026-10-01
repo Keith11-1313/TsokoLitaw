@@ -16,9 +16,14 @@ at ₱0 per piece; the default complimentary Sea salt cream is ₱0 once per box
 additional portion.
 The storefront builder shows the current complimentary extra between box size and coating style,
 before optional paid add-ons, so customers can see that it is already included.
-On phones the builder remains first, but an early Browse coating photos link after the size and
-style controls skips the rest of the form. Choosing a coating updates that same builder; the
-mobile return shortcut brings customers back to review the box and add it to the cart.
+The optional add-on quantity appears only after a paid add-on is selected. The allergen notice
+follows box quantity, above the item total.
+Below the desktop breakpoint, Your coating contains compact thumbnail radio choices for Single
+and thumbnail rows with bounded minus/count/plus controls for Mixed. The assigned-piece count and
+incomplete-allocation message stay beside these controls. There is no separate mobile gallery or
+gallery/return shortcut. Desktop retains its photo gallery and sticky builder, sharing the same state.
+Compact choices and desktop gallery cards show the persisted coating price per piece in subdued
+italic text, including zero-priced coatings.
 
 Browser calculation in `commerce.ts` is an estimate. Checkout reloads the catalog and calls
 `priceCheckoutCart` on the server; existing orders retain their old snapshot prices/names.

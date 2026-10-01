@@ -51,22 +51,56 @@ beforeAll(() => {
 afterEach(cleanup);
 
 describe("mobile coating discovery", () => {
-  it("links directly to photos and updates the same builder when a coating is selected", async () => {
+  it("selects a mobile coating and updates the price", async () => {
     const user = userEvent.setup();
     render(<ProductConfigurator catalog={catalog} />);
 
-    expect(screen.getByRole("link", { name: "Browse coating photos" }).getAttribute("href")).toBe(
-      "#coatings-heading",
-    );
-    expect(screen.getByRole("heading", { name: "Choose your coating" }).getAttribute("id")).toBe(
-      "coatings-heading",
-    );
-
-    await user.click(screen.getByRole("button", { name: /Cocoa Cocoa finish/ }));
+    await user.click(screen.getByRole("radio", { name: "Cocoa" }));
+    expect((screen.getByRole("radio", { name: "Cocoa" }) as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByText("₱60.00")).toBeTruthy();
 
     expect(screen.getByText("Cocoa", { selector: "p" })).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: /Cocoa Cocoa finish/ }).getAttribute("aria-pressed"),
+      screen.getByRole("button", { name: /Cocoa.*Cocoa finish/ }).getAttribute("aria-pressed"),
     ).toBe("true");
+  });
+
+  it("requires a full mixed allocation and prevents adding excess pieces", async () => {
+    const user = userEvent.setup();
+    render(<ProductConfigurator catalog={catalog} />);
+    await user.click(screen.getByRole("button", { name: "Mixed" }));
+    const addToCart = screen.getByRole("button", { name: "Add to cart" }) as HTMLButtonElement;
+    expect(addToCart.disabled).toBe(true);
+    const increase = screen.getByRole("button", {
+      name: "Increase Cocoa pieces",
+    }) as HTMLButtonElement;
+    for (let i = 0; i < 4; i++) await user.click(increase);
+    expect(addToCart.disabled).toBe(false);
+    expect(increase.disabled).toBe(true);
+    expect(screen.getByText("₱60.00")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Decrease Cocoa pieces" }));
+    expect(addToCart.disabled).toBe(true);
+  });
+});
+
+describe("builder extras and allergen notice", () => {
+  it("shows add-on quantity only for a selected add-on and places allergens after box quantity", async () => {
+    const user = userEvent.setup();
+    render(<ProductConfigurator catalog={catalog} />);
+
+    expect(screen.queryByRole("spinbutton", { name: "Qty. per box" })).toBeNull();
+    const boxQuantity = screen.getByRole("spinbutton", { name: "Box quantity" });
+    const allergenNotice = screen.getByText(/Allergen notice:/);
+    expect(
+      boxQuantity.compareDocumentPosition(allergenNotice) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    await user.click(screen.getByRole("combobox", { name: "Add-on" }));
+    await user.click(screen.getByRole("option", { name: "Sea salt cream" }));
+    expect(screen.getByRole("spinbutton", { name: "Qty. per box" })).toBeTruthy();
+
+    await user.click(screen.getByRole("combobox", { name: "Add-on" }));
+    await user.click(screen.getByRole("option", { name: "No additional extra" }));
+    expect(screen.queryByRole("spinbutton", { name: "Qty. per box" })).toBeNull();
   });
 });
