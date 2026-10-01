@@ -5,8 +5,10 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "reac
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HeaderActions } from "./header-actions";
 
+const cartCount = vi.hoisted(() => ({ value: 2 }));
+
 vi.mock("@/components/cart/cart-provider", () => ({
-  useCart: () => ({ itemCount: 2 }),
+  useCart: () => ({ itemCount: cartCount.value }),
 }));
 
 vi.mock("@/components/customer/customer-navigation-link", () => ({
@@ -29,9 +31,19 @@ vi.mock("@/components/auth/logout-button", () => ({
   ),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  cartCount.value = 2;
+});
 
 describe("HeaderActions", () => {
+  it("uses the singular accessible cart label for one item", () => {
+    cartCount.value = 1;
+    render(<HeaderActions isSignedIn />);
+
+    expect(screen.getByRole("link", { name: "View cart with 1 item" })).toBeTruthy();
+  });
+
   it("expands the signed-in account menu inside the mobile navigation", () => {
     render(<HeaderActions mobile isSignedIn isAdmin />);
 

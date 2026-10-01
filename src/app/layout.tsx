@@ -1,22 +1,39 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { DM_Serif_Display, Lato } from "next/font/google";
 import "./globals.css";
 import "@/bones/registry";
 import { CartProvider } from "@/components/cart/cart-provider";
 import { AppLoadingSkeleton } from "@/components/layout/app-loading-skeleton";
+import { getSupabasePublicEnvironment } from "@/lib/supabase/env";
 
-const lato = Lato({
-  variable: "--font-lato",
-  subsets: ["latin"],
-  weight: ["400", "700", "900"],
-});
+const brandFontsBaseUrl = new URL(
+  "/storage/v1/object/public/brand-fonts/v1/",
+  getSupabasePublicEnvironment().url,
+).toString();
 
-const dmSerifDisplay = DM_Serif_Display({
-  variable: "--font-dm-serif",
-  subsets: ["latin"],
-  weight: "400",
-});
+const brandFontFaces = `
+@font-face {
+  font-family: "Pally";
+  src: url("${brandFontsBaseUrl}pally-variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Neco";
+  src: url("${brandFontsBaseUrl}neco-variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Neco";
+  src: url("${brandFontsBaseUrl}neco-variable-italic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 400 900;
+  font-display: swap;
+}
+`;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.tsokolitaw.com"),
@@ -24,26 +41,30 @@ export const metadata: Metadata = {
   description:
     "Soft and chewy palitaw filled with warm, melted chocolate and served fresh with your choice of coating.",
   applicationName: "TsokoLitaw",
-  icons: { icon: "/icon.png" },
+  icons: { icon: [{ url: "/brand/logo.webp?v=20260922", type: "image/webp" }] },
   openGraph: {
     type: "website",
     siteName: "TsokoLitaw",
     title: "TsokoLitaw",
     description: "The Filipino chocolate Xiao Long Bao, prepared for campus pickup.",
-    images: [{ url: "/images/home/hero-image.webp", alt: "TsokoLitaw chocolate-filled palitaw" }],
+    images: [{ url: "/images/home/hero.webp", alt: "TsokoLitaw chocolate-filled palitaw" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "TsokoLitaw",
     description: "The Filipino chocolate Xiao Long Bao, prepared for campus pickup.",
-    images: ["/images/home/hero-image.webp"],
+    images: ["/images/home/hero.webp"],
   },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${lato.variable} ${dmSerifDisplay.variable} antialiased`}>
+      <head suppressHydrationWarning>
+        <link rel="preconnect" href={getSupabasePublicEnvironment().url} crossOrigin="anonymous" />
+        <style suppressHydrationWarning>{brandFontFaces}</style>
+      </head>
+      <body className="antialiased">
         <a
           href="#main-content"
           className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-full bg-brand px-5 py-3 text-sm font-bold text-surface shadow-xl transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2"

@@ -32,6 +32,7 @@ function Editor({ pending = false, onClose }: { pending?: boolean; onClose: () =
               { value: "hidden", label: "Hidden" },
             ]}
           />
+          <input type="file" name="image" aria-label="Image" />
           <button type="button" onClick={requestClose}>
             Close
           </button>

@@ -15,11 +15,12 @@ Paths below are relative to the repository root. Use `@/` for imports from `src/
 | `src/lib/paymongo*.ts`, `resend-webhook.ts`           | Provider contracts, mode checks and signature handling             |
 | `src/types/`                                          | Hand-maintained UI/domain types plus generated schema boundary     |
 | `supabase/migrations/`                                | Applied schema and subsequent transactional SQL definitions        |
+| `supabase/fixtures/`                                  | Explicitly guarded, opt-in simulation data; never normal seed data |
 | `supabase/tests/database/`                            | Local pgTAP invariants and permission checks                       |
 | `scripts/`                                            | Controlled Admin bootstrap and database type generator             |
 | `tests/performance/`                                  | Staged k6 workloads and their runbook                              |
 | `src/app/globals.css`                                 | Shared visual tokens and global styles                             |
-| `public/brand/`, `public/images/`, `public/videos/`   | Local brand and Home media; catalog media is in Supabase Storage   |
+| `public/brand/`, `public/images/`                     | Local brand and Home images; catalog media is in Supabase Storage  |
 | `references/`                                         | Rough historical artwork, not page assets or current requirements  |
 
 ## Dense files: where to look inside

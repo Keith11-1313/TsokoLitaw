@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useState, type ChangeEvent } from "react";
-import { Plus, X } from "lucide-react";
-import { saveJournalPostAction, type JournalActionState } from "@/app/admin/journal/actions";
+import { Plus, Trash2, X } from "lucide-react";
+import {
+  deleteJournalDraftAction,
+  saveJournalPostAction,
+  type JournalActionState,
+} from "@/app/admin/journal/actions";
 import { PrimaryButton, SecondaryButton, secondaryButtonClassName } from "@/components/ui/button";
 import { DiscardChangesDialog } from "@/components/admin/discard-changes-dialog";
 import { FormField } from "@/components/ui/form-field";
@@ -15,9 +19,10 @@ import { useEditorDialog } from "@/hooks/use-editor-dialog";
 import { browserImageError } from "@/lib/form-validation";
 import {
   JOURNAL_CONTENT_TYPES,
+  JOURNAL_COVER_FORMATS,
   JOURNAL_STATUSES,
   journalContentTypeLabels,
-  type JournalContentType,
+  journalCoverFormatLabels,
 } from "@/lib/journal";
 import type { JournalPostSummary } from "@/lib/server-journal";
 
@@ -42,9 +47,7 @@ function JournalEditor({
   const [imageError, setImageError] = useState("");
   const [imageChecking, setImageChecking] = useState(false);
   const [coverName, setCoverName] = useState("");
-  const [contentType, setContentType] = useState<JournalContentType>(
-    post?.contentType ?? "announcement",
-  );
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState("");
   const { formRef, formProps, canSubmit, statusMessage, refresh, isDirty } = useFormGate({
     requireDirty: Boolean(post),
     extraValid: !imageError && !imageChecking,
@@ -59,16 +62,26 @@ function JournalEditor({
     setCoverName(file?.name ?? "");
     input.setCustomValidity("");
     if (!file) {
+      setCoverPreviewUrl("");
       refresh();
       return;
     }
+    setCoverPreviewUrl(URL.createObjectURL(file));
     setImageChecking(true);
     const nextError = await browserImageError(file);
     setImageError(nextError);
     input.setCustomValidity(nextError);
+    if (nextError) setCoverPreviewUrl("");
     setImageChecking(false);
     refresh();
   }
+
+  useEffect(
+    () => () => {
+      if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl);
+    },
+    [coverPreviewUrl],
+  );
 
   useEffect(() => {
     if (state.status === "success") onClose();
@@ -127,7 +140,6 @@ function JournalEditor({
               defaultValue: post?.title,
               minLength: 3,
               maxLength: 120,
-              autoFocus: true,
             }}
           />
           <CustomSelect
@@ -135,7 +147,6 @@ function JournalEditor({
             name="contentType"
             required
             defaultValue={post?.contentType ?? "announcement"}
-            onChange={(value) => setContentType(value as JournalContentType)}
             options={JOURNAL_CONTENT_TYPES.map((type) => ({
               value: type,
               label: journalContentTypeLabels[type],
@@ -159,6 +170,16 @@ function JournalEditor({
             options={JOURNAL_STATUSES.map((status) => ({
               value: status,
               label: status === "published" ? "Published" : "Draft",
+            }))}
+          />
+          <CustomSelect
+            label="Cover format"
+            name="coverFormat"
+            required
+            defaultValue={post?.coverFormat ?? "landscape"}
+            options={JOURNAL_COVER_FORMATS.map((format) => ({
+              value: format,
+              label: journalCoverFormatLabels[format],
             }))}
           />
           <FormField
@@ -187,25 +208,13 @@ function JournalEditor({
             id="journal-cover"
             name="coverImage"
             label="Cover image (optional)"
+            className="sm:col-span-2"
             error={imageError || state.fieldErrors?.coverImage}
             disabled={pending}
             busy={imageChecking}
             fileName={coverName}
-            previewUrl={post?.coverImageUrl ?? ""}
+            previewUrl={coverPreviewUrl || post?.coverImageUrl || ""}
             onChange={validateCover}
-          />
-          <FormField
-            id="journal-video"
-            label={contentType === "video" ? "Video link" : "Video link (optional)"}
-            required={contentType === "video"}
-            error={state.fieldErrors?.videoUrl}
-            inputProps={{
-              name: "videoUrl",
-              type: "url",
-              pattern: "https://.*",
-              defaultValue: post?.videoUrl ?? "",
-              placeholder: "https://…",
-            }}
           />
           {post?.coverImageUrl ? (
             <label className="flex min-h-11 items-center gap-3 text-sm sm:col-span-2">
@@ -243,9 +252,92 @@ function JournalEditor({
   );
 }
 
+function DeleteDraftDialog({ post, onClose }: { post: JournalPostSummary; onClose: () => void }) {
+  const [state, formAction, pending] = useActionState(deleteJournalDraftAction, initialState);
+  const { dialogRef, requestClose } = useEditorDialog({
+    isDirty: false,
+    pending,
+    onClose,
+  });
+
+  useEffect(() => {
+    if (state.status === "success") onClose();
+  }, [state.status, onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-foreground/50 p-4"
+      onPointerDown={requestClose}
+    >
+      <section
+        ref={dialogRef}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-journal-draft-title"
+        aria-describedby="delete-journal-draft-description"
+        onPointerDown={(event) => event.stopPropagation()}
+        className="w-full max-w-md rounded-card border border-border bg-surface p-6 shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-danger-foreground">
+              Permanent action
+            </p>
+            <h2
+              id="delete-journal-draft-title"
+              className="mt-1 font-display text-2xl text-foreground"
+            >
+              Delete this draft?
+            </h2>
+          </div>
+          <button
+            type="button"
+            aria-label="Close delete draft confirmation"
+            disabled={pending}
+            onClick={requestClose}
+            className="flex size-11 shrink-0 items-center justify-center text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50"
+          >
+            <X aria-hidden="true" size={22} />
+          </button>
+        </div>
+        <p
+          id="delete-journal-draft-description"
+          className="mt-3 text-sm leading-6 text-muted-foreground"
+        >
+          “{post.title}” and its cover image will be permanently deleted. This action cannot be
+          undone.
+        </p>
+        {state.status === "error" ? (
+          <p
+            role="alert"
+            className="mt-4 rounded-control bg-danger-background p-4 text-sm text-danger-foreground"
+          >
+            {state.message}
+          </p>
+        ) : null}
+        <form action={formAction} className="mt-6 grid gap-3 sm:grid-cols-2">
+          <input type="hidden" name="postId" value={post.id} />
+          <SecondaryButton type="button" autoFocus disabled={pending} onClick={requestClose}>
+            Keep draft
+          </SecondaryButton>
+          <PrimaryButton
+            type="submit"
+            disabled={pending}
+            className="bg-danger-foreground text-surface hover:bg-danger-foreground/90"
+          >
+            <Trash2 aria-hidden="true" size={17} />
+            {pending ? "Deleting…" : "Delete draft"}
+          </PrimaryButton>
+        </form>
+      </section>
+    </div>
+  );
+}
+
 export function JournalManager({ posts }: { posts: JournalPostSummary[] }) {
   const [editorOpen, setEditorOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<JournalPostSummary | null>(null);
+  const [draftToDelete, setDraftToDelete] = useState<JournalPostSummary | null>(null);
 
   function openEditor(post: JournalPostSummary | null) {
     setSelectedPost(post);
@@ -294,9 +386,7 @@ export function JournalManager({ posts }: { posts: JournalPostSummary[] }) {
               <p className="mt-4 line-clamp-3 text-sm leading-6 text-muted-foreground">
                 {post.excerpt || post.content}
               </p>
-              <div
-                className={`mt-6 grid gap-3 ${post.status === "published" ? "sm:grid-cols-2" : ""}`}
-              >
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <SecondaryButton type="button" className="w-full" onClick={() => openEditor(post)}>
                   Edit post
                 </SecondaryButton>
@@ -304,7 +394,16 @@ export function JournalManager({ posts }: { posts: JournalPostSummary[] }) {
                   <Link href={`/journal/${post.slug}`} className={secondaryButtonClassName}>
                     View published post
                   </Link>
-                ) : null}
+                ) : (
+                  <SecondaryButton
+                    type="button"
+                    className="w-full border-danger-foreground text-danger-foreground hover:bg-danger-background"
+                    onClick={() => setDraftToDelete(post)}
+                  >
+                    <Trash2 aria-hidden="true" size={17} />
+                    Delete draft
+                  </SecondaryButton>
+                )}
               </div>
             </article>
           ))}
@@ -323,6 +422,9 @@ export function JournalManager({ posts }: { posts: JournalPostSummary[] }) {
           post={selectedPost}
           onClose={() => setEditorOpen(false)}
         />
+      ) : null}
+      {draftToDelete ? (
+        <DeleteDraftDialog post={draftToDelete} onClose={() => setDraftToDelete(null)} />
       ) : null}
     </>
   );

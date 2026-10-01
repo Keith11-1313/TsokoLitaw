@@ -6,12 +6,11 @@ import { isUuid } from "@/lib/identifiers";
 import {
   saveCatalogAddon,
   saveCatalogCoating,
-  updateCatalogProduct,
   updateCatalogVariant,
   uploadCatalogImage,
   removeCatalogImage,
 } from "@/lib/server-catalog";
-import type { FieldErrors } from "@/lib/form-validation";
+import { numberError, type FieldErrors } from "@/lib/form-validation";
 import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
 
 export type CatalogActionState = {
@@ -49,49 +48,25 @@ async function guard(adminId: string) {
   });
 }
 
-export async function saveProductAction(
-  _state: CatalogActionState,
-  formData: FormData,
-): Promise<CatalogActionState> {
-  const admin = await requireAdmin("/admin/products");
-  const productId = String(formData.get("productId") ?? "");
-  const description = String(formData.get("description") ?? "").trim();
-  const priceValue = String(formData.get("pricePerPiece") ?? "").trim();
-  const price = Number(priceValue);
-  if (
-    !isUuid(productId) ||
-    description.length < 10 ||
-    description.length > 500 ||
-    !priceValue ||
-    !Number.isFinite(price) ||
-    price < 0 ||
-    price > 10000 ||
-    !Number.isInteger(price * 100)
-  ) {
-    return { status: "error", message: "Check the product description and price." };
-  }
-  try {
-    await guard(admin.id);
-    await updateCatalogProduct({ adminId: admin.id, productId, description, pricePerPiece: price });
-    refreshCatalog();
-    return { status: "success", message: "Product pricing saved." };
-  } catch (error) {
-    return failure(error, "Product settings could not be saved.");
-  }
-}
-
 export async function saveVariantAction(input: {
   variantId: string;
   isActive: boolean;
+  basePrice: number;
 }): Promise<CatalogActionState> {
   const admin = await requireAdmin("/admin/products");
   if (!isUuid(input.variantId))
     return { status: "error", message: "That box size is unavailable." };
+  if (numberError(input.basePrice, "Base box price", 0, 10000, 0.01))
+    return { status: "error", message: "Enter a valid base box price in pesos and centavos." };
   try {
     await guard(admin.id);
-    await updateCatalogVariant({ adminId: admin.id, ...input });
+    await updateCatalogVariant({
+      adminId: admin.id,
+      ...input,
+      basePrice: Number(input.basePrice.toFixed(2)),
+    });
     refreshCatalog();
-    return { status: "success", message: "Box availability saved." };
+    return { status: "success", message: "Box size saved." };
   } catch (error) {
     return failure(error, "Box availability could not be saved.");
   }
@@ -114,13 +89,7 @@ export async function saveCoatingAction(
     fieldErrors.name = "Use a name between 2 and 80 characters.";
   if (description.length < 10 || description.length > 300)
     fieldErrors.description = "Use a description between 10 and 300 characters.";
-  if (
-    !priceValue ||
-    !Number.isFinite(price) ||
-    price < 0 ||
-    price > 10000 ||
-    !Number.isInteger(price * 100)
-  )
+  if (!priceValue || numberError(price, "Price per piece", 0, 10000, 0.01))
     fieldErrors.pricePerPiece = "Enter a PHP price from 0 to 10,000 using cents.";
   if ((coatingIdValue && !isUuid(coatingIdValue)) || Object.keys(fieldErrors).length)
     return { status: "error", message: "Check the highlighted coating details.", fieldErrors };
@@ -188,10 +157,7 @@ export async function saveAddonAction(
     name.length < 2 ||
     name.length > 80 ||
     !priceValue ||
-    !Number.isFinite(price) ||
-    price < 0 ||
-    price > 10000 ||
-    !Number.isInteger(price * 100)
+    numberError(price, "Extra price", 0, 10000, 0.01)
   )
     return { status: "error", message: "Enter a valid name and price for the extra." };
   try {

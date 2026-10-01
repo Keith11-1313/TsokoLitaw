@@ -27,13 +27,11 @@ describe("ManualPaymentStatusPanel", () => {
         state="under_review"
         orderId="7f52ac67-0ff6-4ff4-a27f-ab56f086f1ce"
         orderNumber="TL-0002"
-      >
-        <button type="button">Check payment status</button>
-      </ManualPaymentStatusPanel>,
+      />,
     );
 
     expect(screen.getByText(/order is still reserved/i)).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Return to checkout" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Check payment status" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Check payment status" })).toBeNull();
   });
 });

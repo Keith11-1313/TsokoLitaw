@@ -3,17 +3,23 @@
 Start at `src/app/checkout/page.tsx`: require the customer, load pickup availability and loyalty,
 then render `src/components/checkout/checkout-content.tsx`.
 
-1. **Browser:** selected cart lines, customer details, date/window/location, optional reward, Terms
+1. **Browser:** selected cart lines, customer details, date/window/location, optional reward, the
+   server-allowed payment choice, Terms
    acceptance. A checkout UUID is retained for retry; browser totals and remaining-stock labels are guidance.
 2. **Action:** `src/app/checkout/actions.ts` authenticates, validates bounded IDs/counts/text, and
    applies the distributed user/IP rate limit. The user ID comes from the verified profile, not input.
 3. **Server:** `server-checkout.ts` reloads the live catalog through `server-commerce.ts`, runs
    `commerce.ts:priceCheckoutCart`, adds the current complimentary extra once per box, reads current
    Terms, and constructs trusted priced snapshots. Browser cart data cannot choose the free extra.
+   Policy copy effective September 29, 2026 clarifies account use, authoritative order snapshots,
+   payment evidence, pickup, defects, missed pickup, review publication, and privacy handling. The
+   controlled seed marks version `2026-09-29` current so each new order records the accepted version.
 4. **Transaction:** `create_checkout_order` in the pre-v1 baseline locks/rechecks the account,
    pickup, inventory and reward. It inserts snapshots and pins the payment method in one transaction,
    or returns the existing order for the same owner/idempotency key. Contact is email-only.
-5. **Payment:** Manual GCash stores the server-total QR and routes to the owned receipt page.
+5. **Payment:** Automatic mode offers PayMongo only. Manual mode offers Manual GCash and Pay at the
+   Counter. Manual GCash stores the server-total QR and routes to the owned receipt page. Counter
+   payment creates a tracked confirmed order with payment pending and routes to order detail.
    PayMongo creates its hosted checkout. An explicit resume expires the previous provider session and
    atomically attaches a fresh one, so an expired QR is not reopened.
    Zero-total loyalty settles without external payment. See [payments](payments.md).
@@ -30,7 +36,10 @@ then render `src/components/checkout/checkout-content.tsx`.
   the browser removes only those checked-out lines immediately. The order then lives in My Orders;
   cancellation or expiry does not copy old lines back into the cart. Other cart lines remain untouched.
   Hydration removes lines tied to the retired pending-checkout storage markers so deleted pre-release
-  test orders cannot leave unusable cart cards.
+  test orders cannot leave unusable cart cards. The cart page shows a loading state until browser
+  storage is restored, rather than briefly claiming the cart is empty. Removing a cart line requires
+  confirmation; canceling the dialog leaves the line untouched, and confirmed removal returns focus
+  to the cart heading.
 - Pickup definitions/eligibility: [inventory guide](inventory.md); never authorize stock from cached availability.
 - Input limits and user-facing server errors: `checkout/actions.ts`, with server/SQL limits kept consistent.
 

@@ -12,8 +12,8 @@
 Project IDs and domains above are public identifiers, not secrets. Verify them against the owner's
 current dashboards before any hosted operation; this document does not query deployment state.
 
-`development` → Dev deployment → Dev Supabase → PayMongo test mode.
-`main` → Production deployment → Production Supabase → PayMongo live mode.
+`development` → Dev deployment → Dev Supabase → configured payment method; PayMongo uses test mode.
+`main` → Production deployment → Production Supabase → configured payment method; PayMongo uses live mode.
 
 ## What actually chooses the environment
 
@@ -46,19 +46,35 @@ project. The **Dev Vercel project can have that label** while remaining the Dev 
 | `INITIAL_ADMIN_EMAIL`                  | Private local-only bootstrap input; not a Vercel variable                              |
 | `SUPABASE_DB_PASSWORD`                 | CLI-only password for deliberate hosted database operations, not browser configuration |
 
+The public Supabase URL also selects the environment-specific `brand-fonts` Storage bucket used for
+the licensed Pally and Neco WOFF2 files. Font binaries stay outside the public Git repository. Dev
+and Production must each receive the same three versioned objects after the bucket migration is
+applied; uploading to one project does not populate the other.
+
+Other Storage is isolated too. `catalog-media` and `journal-media` are public application media;
+`payment-receipts` and `review-media` are private. Review uploads must remain private until an Admin
+publishes the associated review, and public rendering must use the authorized application route rather
+than exposing raw object paths. A hosted reset clears these objects even when Vault survives, so audit
+and restore only required assets for the exact target before declaring that environment healthy.
+
 Use `.env.example` as the maintained application-variable template. Do not restore the retired
 `REFUND_DESTINATION_ENCRYPTION_KEY` or add unused email settings from old docs.
 Public variables are built into the client, while server variables are captured by the running deployment.
-Any Vercel variable change, including `PAYMENT_METHOD`, requires a new deployment in the same project
+Any Vercel variable change, including `PAYMENT_MODE`, requires a new deployment in the same project
 and environment scope. Local server-variable changes require restarting the Next.js process.
 
 ## External services
 
-`PAYMENT_METHOD=paymongo` is the backward-compatible default. `manual_gcash` also requires
-server-only `GCASH_BASE_QR_PAYLOAD` (decoded recipient QR). Do not put the actual payload in Git.
-Keep PayMongo configuration/webhooks working for pre-existing PayMongo orders when switching modes.
-Both methods require the new pre-v1 baseline. Old Production is incompatible with the cleanup branch;
-do not merge/deploy it there until a separately approved coordinated database replacement.
+`PAYMENT_MODE` is required and fails closed when missing or invalid. `automatic` offers PayMongo only;
+`manual` offers Manual GCash and Pay at the Counter. Manual mode requires server-only
+`GCASH_BASE_QR_PAYLOAD` (decoded recipient QR). Do not put the actual payload in Git. Keep PayMongo
+configuration/webhooks working for pre-existing PayMongo orders when switching modes. All methods
+require a compatible pre-v1 baseline. Hosted Dev has the accepted September 24 Phase 15A contract and
+the Phase 15B dashboard migration; its matching Phase 15B application deployment must be verified
+separately. Production remains on the earlier shared baseline until a separately approved coordinated
+activation.
+A Git deployment still does not apply SQL; verify the target schema and environment-specific
+configuration independently.
 
 - PayMongo: separate Dev/test and Production/live webhook endpoints, both subscribed only to
   `checkout_session.payment.paid`. Secrets and signature mode must match. Never copy a live key to Preview.
@@ -87,3 +103,13 @@ npx supabase db push --dry-run
 The CLI link is separate from the app's variables and separate from local Docker.
 A Git merge never applies SQL. Follow [migration promotion](../operations/database-migrations.md).
 Never run `db reset --linked`, seed Production, blindly use `--include-all`, or assume a preview uses safe keys.
+
+## Simulation data boundary
+
+`supabase/fixtures/dashboard-simulation.sql` is separate from migrations and `supabase/seed.sql`.
+Its `local` and `disposable-dev` guards are required but do not identify the connected project for you.
+Before selecting `disposable-dev`, verify the SQL Editor header or connection target is Dev project
+`mgkzphpznamjlgrpumjd`. The fixture must never run on Production project
+`zkmlzktvjkjrbznvrsxb`. Use `manual` simulation mode for Manual GCash plus pay at the counter, or
+`automatic` for PayMongo-only history; do not mix the environment modes. Synthetic data does not
+prove a Vercel deployment, Cron job, provider integration, or dashboard acceptance is healthy.

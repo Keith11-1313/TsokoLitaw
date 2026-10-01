@@ -1,8 +1,20 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { CustomerFooter } from "@/components/customer/customer-footer";
 import { CustomerHeader } from "@/components/customer/customer-header";
-import { FeaturedVideoSection } from "@/components/home/featured-video-section";
+import {
+  FeaturedJournalSection,
+  FeaturedJournalSectionFallback,
+} from "@/components/home/featured-journal-section";
 import { HomeHero } from "@/components/home/home-hero";
+import {
+  CoatingShowcaseFallback,
+  HomeCallToAction,
+  HomeCoatingShowcase,
+  HowToOrderSection,
+  SeaSaltSection,
+  WhyTsokoLitawSection,
+} from "@/components/home/home-story-sections";
 
 export const metadata: Metadata = {
   title: "TsokoLitaw | The Filipino Chocolate Xiao Long Bao",
@@ -18,7 +30,7 @@ const homeContent = {
     description:
       "Soft and chewy palitaw filled with warm, melted chocolate and topped with your choice of coating. Served fresh with our signature sea salt cream sauce for a delicious sweet-and-salty bite.",
   },
-  featuredVideo: {
+  featuredJournal: {
     heading: "Featured at TsokoLitaw",
   },
 } as const;
@@ -51,9 +63,18 @@ export default function Home() {
         }}
       />
       <CustomerHeader activePath="/" />
-      <main id="main-content" className="customer-photo-background" tabIndex={-1}>
+      <main id="main-content" className="customer-paper-surface" tabIndex={-1}>
         <HomeHero {...homeContent.hero} />
-        <FeaturedVideoSection {...homeContent.featuredVideo} />
+        <WhyTsokoLitawSection />
+        <Suspense fallback={<CoatingShowcaseFallback />}>
+          <HomeCoatingShowcase />
+        </Suspense>
+        <HowToOrderSection />
+        <SeaSaltSection />
+        <Suspense fallback={<FeaturedJournalSectionFallback {...homeContent.featuredJournal} />}>
+          <FeaturedJournalSection {...homeContent.featuredJournal} />
+        </Suspense>
+        <HomeCallToAction />
       </main>
       <CustomerFooter
         address="University of Caloocan City - Congressional Campus"

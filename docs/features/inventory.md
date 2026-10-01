@@ -8,7 +8,8 @@ These are separate Admin responsibilities, feeding the same checkout.
 | `READY_STOCK`   | Explicit date/windows/locations                       | Prepared pieces for that date                                                  |
 | `HYBRID`        | Explicit date/windows/locations                       | Same-day uses prepared pieces; eligible advance orders use made-to-order rules |
 
-Every mode requires website checkout and online payment. No automatic daily availability,
+Every mode requires website checkout and a configured payment path: PayMongo, Manual GCash, or
+tracked Pay at the Counter. No automatic daily availability,
 delivery addresses, cash sales, walk-in stock writer, or redundant Inventory availability switch exists.
 
 ## Execution paths

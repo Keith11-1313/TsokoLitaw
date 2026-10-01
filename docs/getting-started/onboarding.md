@@ -1,8 +1,10 @@
 # Your first maintenance task
 
 TsokoLitaw sells configurable dessert boxes for campus pickup. Customers sign in with Google,
-choose boxes, pay through QR Ph, and track their orders. Admin publishes catalog/pickup options
-and manages fulfillment. The application is pre-release until the Android APK is accepted as v1.0. Hosted Production is an environment name, not a release milestone.
+choose boxes, complete website checkout, and track their orders. Depending on the configured mode,
+payment uses PayMongo QR Ph, Manual GCash, or a tracked Pay at the Counter order. Admin publishes
+catalog/pickup options and manages fulfillment. The application is pre-release until the Android APK
+is accepted as v1.0. Hosted Production is an environment name, not a release milestone.
 
 1. Read [environment isolation](environments.md) before obtaining credentials.
 2. Follow [local setup](local-setup.md); use hosted Dev for ordinary UI work, disposable local Supabase for SQL tests.
@@ -14,6 +16,11 @@ and manages fulfillment. The application is pre-release until the Android APK is
    [tests](../maintenance/testing.md). Check responsive/keyboard behavior for UI changes.
 6. Review the diff and the Dev deployment before the user promotes it through one PR to `main`.
    SQL promotion is separate from Git and Vercel.
+
+For dashboard-only visual or reporting checks, the optional
+[simulation fixture](../features/admin.md#dashboard-simulation-fixture) can populate realistic synthetic
+history after the normal schema and controlled catalog seed exist. Start with its rollback-only dry run.
+It is not part of onboarding, does not create an Admin, and must never be run against Production.
 
 ## Trace one order
 

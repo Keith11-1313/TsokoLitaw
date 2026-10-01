@@ -2,9 +2,20 @@
 
 ## Choosing the checkout method
 
-Server-only `PAYMENT_METHOD` accepts `paymongo` (default) or `manual_gcash`. New checkout uses
-`create_checkout_order`, the single atomic writer, and pins `orders.payment_method` in that transaction. Retries/resume read the stored method. Changing the environment variable
-does not change existing orders. Zero-total loyalty still settles without an external payment.
+Required server-only `PAYMENT_MODE` accepts `automatic` or `manual`. Automatic offers PayMongo only.
+Manual lets the customer choose Manual GCash or Pay at the Counter. New checkout uses
+`create_checkout_order`, the single atomic writer, and pins `orders.payment_method` in that
+transaction. Retries use the stored method; changing the deployment mode does not change existing
+orders. Zero-total loyalty still settles without an external payment.
+
+## Pay at the Counter
+
+This remains a website order, never an untracked walk-in sale. The atomic checkout reserves the
+chosen inventory/reward, inserts a `pay_at_counter` payment row for the exact server-priced total,
+and starts the order at `CONFIRMED` with payment `PENDING` and no countdown expiry. Admin may move
+the order through `PREPARING` and `READY_FOR_PICKUP` while unpaid, but SQL blocks `COMPLETED` until
+an active Admin uses the audited `record_counter_payment` operation. Staff must receive the exact
+amount before confirming it. The action is idempotent and does not accept a browser-supplied amount.
 
 ## Manual GCash
 
@@ -36,6 +47,9 @@ Manual correction remains required because wallet layouts and OCR output can cha
 Server validation accepts only decoded JPG/PNG/WebP up to 3 MiB. Originals are in private
 `payment-receipts` Storage; `manual_payment_submissions` retains attempts and decisions with
 owner/Admin read RLS. Receipt URLs authenticate each request; no public Storage URL is returned.
+The customer payment page and Admin review dialog show the authorized receipt inline, with an
+optional full-size link. Under-review status is already authoritative on the page, so the customer
+does not receive a redundant manual status-check control.
 Customer-entered receipt details use `reported_reference`, `reported_amount`, `reported_paid_at`,
 and `reported_recipient` so they cannot be confused with the verified payment record.
 Known SQL failures clean up only the newly uploaded file. Unknown commit outcomes retain evidence;
@@ -58,7 +72,10 @@ event. Known reused references are detected before the review mutation, and Admi
 that already used the reference before approval. The partial unique index remains the final
 concurrency safeguard so one normalized reference cannot pay multiple orders.
 Screenshots/OCR/customer corrections are untrusted; the Admin checkbox is an acknowledgment,
-not independent verification by an API.
+not independent verification by an API. The decision controls appear only for an under-review
+submission. Choosing rejection progressively reveals the required reason field; approved and
+rejected submissions use read-only outcome panels. Refresh and decision results use accessible,
+auto-dismissing toast feedback while actionable errors remain visible in the dialog.
 
 Reject requires a reason, retains the old receipt and opens a 15-minute correction window.
 Admin rejection uses editable text with optional suggestions; the final written reason is stored
@@ -67,8 +84,10 @@ An uncorrected pending order can then expire/release normally. Do not reject an 
 transfer merely to clear the queue; resolve discrepancies with the customer first. Rejection and
 submission add no new email events; customers check their order status. Paid concerns remain in person.
 
-Local tests: `012_manual_gcash.test.sql`, `gcash-qr.test.ts`, `receipt-details.test.ts`, plus the
-existing payment/loyalty/inventory suite. Apply the pre-v1 baseline only through the coordinated reset workflow before the dependent app. Validate the complete flow on Dev, then deliberately promote to Production.
+Local tests: `012_manual_gcash.test.sql`, `014_pay_at_counter.test.sql`, `gcash-qr.test.ts`,
+`receipt-details.test.ts`, plus the
+existing payment/loyalty/inventory suite. For future database-dependent payment changes, validate SQL
+and application behavior on Dev before deliberately coordinating the Production migration and deployment.
 
 Local acceptance (September 11, 2026): production-build browser checks at 390, 768 and 1440 px
 covered QR display, on-device OCR of a synthetic receipt, submission, owner/anonymous receipt

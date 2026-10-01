@@ -3,11 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { requireCustomer } from "@/lib/auth";
 import { isUuid } from "@/lib/identifiers";
-import { submitCustomerReview } from "@/lib/server-reviews";
-import {
-  enforceMutationRateLimit,
-  MutationRateLimitError,
-} from "@/lib/server-rate-limit";
+import { removeReviewImages, submitCustomerReview, uploadReviewImages } from "@/lib/server-reviews";
+import { MAX_REVIEW_SUBMISSION_IMAGE_BYTES, REVIEW_HIGHLIGHTS } from "@/lib/reviews";
+import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
 
 export type ReviewActionState = {
   status: "idle" | "success" | "error";
@@ -23,17 +21,55 @@ export async function submitReviewAction(
   const profile = await requireCustomer(`/orders/${orderId}/review`);
   const rating = Number(formData.get("rating"));
   const comment = String(formData.get("comment") ?? "").trim();
+  const highlights = formData.getAll("highlights").map(String);
+  const images = formData
+    .getAll("images")
+    .filter((image): image is File => image instanceof File && image.size > 0);
 
   if (!isUuid(orderId)) {
     return { status: "error", message: "That completed order is unavailable." };
   }
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return { status: "error", message: "Choose a rating from one to five stars.", fieldErrors: { rating: "Choose one to five stars." } };
+    return {
+      status: "error",
+      message: "Choose a rating from one to five stars.",
+      fieldErrors: { rating: "Choose one to five stars." },
+    };
   }
-  if (comment.length < 10 || comment.length > 1000) {
-    return { status: "error", message: "Write a review between 10 and 1000 characters.", fieldErrors: { comment: "Write between 10 and 1,000 characters." } };
+  if (comment.length > 1000) {
+    return {
+      status: "error",
+      message: "Your optional comment is too long.",
+      fieldErrors: { comment: "Use no more than 1,000 characters." },
+    };
+  }
+  if (
+    highlights.length > REVIEW_HIGHLIGHTS.length ||
+    new Set(highlights).size !== highlights.length ||
+    highlights.some(
+      (highlight) => !REVIEW_HIGHLIGHTS.includes(highlight as (typeof REVIEW_HIGHLIGHTS)[number]),
+    )
+  ) {
+    return { status: "error", message: "Choose valid tasting highlights." };
+  }
+  if (
+    images.length > 5 ||
+    images.reduce((total, image) => total + image.size, 0) > MAX_REVIEW_SUBMISSION_IMAGE_BYTES ||
+    images.some(
+      (image) =>
+        !new Set(["image/jpeg", "image/png", "image/webp"]).has(image.type) ||
+        image.size > 3 * 1024 * 1024,
+    )
+  ) {
+    return {
+      status: "error",
+      message:
+        "Choose up to five JPG, PNG, or WebP images, no larger than 3 MB each or 3.5 MB together.",
+      fieldErrors: { image: "Use up to five valid images totalling no more than 3.5 MB." },
+    };
   }
 
+  let uploadedPaths: string[] = [];
   try {
     await enforceMutationRateLimit({
       scope: "review-submit",
@@ -41,18 +77,37 @@ export async function submitReviewAction(
       maximumRequests: 4,
       windowSeconds: 600,
     });
-    await submitCustomerReview({ userId: profile.id, orderId, rating, comment });
+    if (images.length)
+      uploadedPaths = await uploadReviewImages({ userId: profile.id, orderId, files: images });
+    await submitCustomerReview({
+      userId: profile.id,
+      orderId,
+      rating,
+      comment,
+      highlights,
+      imagePaths: uploadedPaths,
+    });
     revalidatePath("/orders");
     revalidatePath(`/orders/${orderId}`);
     revalidatePath(`/orders/${orderId}/review`);
     revalidatePath("/admin/journal");
-    return { status: "success", message: "Thank you. Your review has been submitted." };
+    return { status: "success", message: "Thank you. Your review is very much appreciated." };
   } catch (error) {
+    if (uploadedPaths.length) {
+      try {
+        await removeReviewImages(uploadedPaths);
+      } catch (cleanupError) {
+        console.error("Review image cleanup failed", cleanupError);
+      }
+    }
     return {
       status: "error",
-      message: error instanceof MutationRateLimitError
-        ? `Too many attempts. Try again in about ${error.retryAfterSeconds} seconds.`
-        : error instanceof Error ? error.message : "Your review could not be submitted.",
+      message:
+        error instanceof MutationRateLimitError
+          ? `Too many attempts. Try again in about ${error.retryAfterSeconds} seconds.`
+          : error instanceof Error
+            ? error.message
+            : "Your review could not be submitted.",
     };
   }
 }

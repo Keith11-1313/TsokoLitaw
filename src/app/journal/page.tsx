@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, FileText, PlayCircle, Sparkles, Star } from "lucide-react";
+import { ArrowRight, FileText, Sparkles, Star } from "lucide-react";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
-import { DessertPlaceholder } from "@/components/home/dessert-placeholder";
+import { ReviewImageGallery } from "@/components/feedback/review-image-gallery";
+import { JournalPostCard } from "@/components/journal/journal-post-card";
+import { JournalPostMedia } from "@/components/journal/journal-post-media";
 import { SiteContainer } from "@/components/layout/site-container";
-import { primaryButtonClassName, secondaryButtonClassName } from "@/components/ui/button";
-import { getJournalCardSummary, journalContentTypeLabels } from "@/lib/journal";
-import { getPublishedJournalPosts, type JournalPostSummary } from "@/lib/server-journal";
+import { primaryButtonClassName } from "@/components/ui/button";
+import { getJournalCardSummary } from "@/lib/journal";
+import { getPublishedJournalPosts } from "@/lib/server-journal";
 import { getPublicFeaturedReviews } from "@/lib/server-reviews";
 
 export const metadata: Metadata = {
@@ -21,48 +23,6 @@ function formatDisplayDate(value: string) {
     timeZone: "Asia/Manila",
     dateStyle: "long",
   }).format(new Date(`${value}T00:00:00+08:00`));
-}
-
-function PostMedia({ post }: { post: JournalPostSummary }) {
-  if (post.coverImageUrl) {
-    return (
-      <div
-        role="img"
-        aria-label={`Cover image for ${post.title}`}
-        className="aspect-[16/9] rounded-control bg-surface-muted bg-cover bg-center"
-        style={{ backgroundImage: `url(${JSON.stringify(post.coverImageUrl).slice(1, -1)})` }}
-      />
-    );
-  }
-
-  return (
-    <DessertPlaceholder variant={post.contentType === "product_feature" ? "hero" : "featured"} />
-  );
-}
-
-function JournalPostCard({ post }: { post: JournalPostSummary }) {
-  return (
-    <article className="rounded-card border border-border bg-surface p-5">
-      <PostMedia post={post} />
-      <div className="mt-5">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">
-          {journalContentTypeLabels[post.contentType]}
-        </p>
-        <h3 className="mt-1 font-display text-2xl">{post.title}</h3>
-        <p className="mt-1 text-xs text-muted-foreground">{formatDisplayDate(post.displayDate)}</p>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          {getJournalCardSummary(post.excerpt, post.content)}
-        </p>
-        <Link
-          href={`/journal/${post.slug}`}
-          className="mt-4 inline-flex min-h-11 items-center gap-2 font-bold text-brand underline underline-offset-4"
-        >
-          Read post
-          <ArrowRight aria-hidden="true" size={17} />
-        </Link>
-      </div>
-    </article>
-  );
 }
 
 function JournalEmptyState() {
@@ -142,15 +102,13 @@ export default async function JournalPage() {
   ]);
   const latestAnnouncement = posts.find((post) => post.contentType === "announcement") ?? null;
   const remainingPosts = posts.filter((post) => post.id !== latestAnnouncement?.id);
+  const latestAnnouncementHasMedia = Boolean(latestAnnouncement?.coverImageUrl);
 
   return (
     <CustomerPageShell activePath="/journal">
       <SiteContainer className="py-8 sm:py-12">
         <header className="w-full">
           <h1 className="font-display text-4xl sm:text-5xl">The TsokoLitaw Journal</h1>
-          <p className="mt-4 leading-7 text-muted-foreground">
-            Announcements, kitchen stories, product features, and moments shared by our community.
-          </p>
         </header>
 
         {posts.length === 0 ? <JournalEmptyState /> : null}
@@ -160,12 +118,10 @@ export default async function JournalPage() {
             className="mt-10 overflow-hidden rounded-card border border-border bg-surface"
             aria-labelledby="announcement-heading"
           >
-            <div
-              className={latestAnnouncement.coverImageUrl ? "grid md:grid-cols-[1fr_22rem]" : ""}
-            >
+            <div className={latestAnnouncementHasMedia ? "grid md:grid-cols-[1fr_22rem]" : ""}>
               <div
                 className={
-                  latestAnnouncement.coverImageUrl
+                  latestAnnouncementHasMedia
                     ? "p-6 sm:p-8"
                     : "grid gap-5 p-6 sm:p-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-8"
                 }
@@ -177,13 +133,13 @@ export default async function JournalPage() {
                   <h2 id="announcement-heading" className="mt-2 font-display text-2xl sm:text-3xl">
                     {latestAnnouncement.title}
                   </h2>
-                  <p className="mt-3 max-w-4xl text-sm leading-6 text-muted-foreground">
+                  <p className="mt-3 max-w-4xl text-base leading-7 text-muted-foreground">
                     {getJournalCardSummary(latestAnnouncement.excerpt, latestAnnouncement.content)}
                   </p>
                 </div>
                 <div
                   className={
-                    latestAnnouncement.coverImageUrl
+                    latestAnnouncementHasMedia
                       ? "mt-5 flex flex-wrap gap-3"
                       : "flex flex-wrap gap-3 md:justify-end"
                   }
@@ -195,28 +151,12 @@ export default async function JournalPage() {
                     Read announcement
                     <ArrowRight aria-hidden="true" size={17} />
                   </Link>
-                  {latestAnnouncement.videoUrl ? (
-                    <a
-                      href={latestAnnouncement.videoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={secondaryButtonClassName}
-                    >
-                      <PlayCircle aria-hidden="true" size={18} />
-                      Watch video
-                    </a>
-                  ) : null}
                 </div>
               </div>
-              {latestAnnouncement.coverImageUrl ? (
-                <div
-                  role="img"
-                  aria-label={`Cover image for ${latestAnnouncement.title}`}
-                  className="min-h-64 bg-surface-muted bg-cover bg-center md:min-h-full"
-                  style={{
-                    backgroundImage: `url(${JSON.stringify(latestAnnouncement.coverImageUrl).slice(1, -1)})`,
-                  }}
-                />
+              {latestAnnouncementHasMedia ? (
+                <div className="p-5 md:p-6">
+                  <JournalPostMedia post={latestAnnouncement} />
+                </div>
               ) : null}
             </div>
           </section>
@@ -227,9 +167,9 @@ export default async function JournalPage() {
             <h2 id="stories-heading" className="font-display text-3xl">
               Stories and features
             </h2>
-            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <div className="mt-6 grid items-start gap-6">
               {remainingPosts.map((post) => (
-                <JournalPostCard key={post.id} post={post} />
+                <JournalPostCard key={post.id} post={post} dateStyle="long" />
               ))}
             </div>
           </section>
@@ -260,9 +200,44 @@ export default async function JournalPage() {
                       />
                     ))}
                   </div>
-                  <p className="mt-4 leading-7">“{review.comment}”</p>
-                  <footer className="mt-4 text-sm font-bold text-muted-foreground">
-                    {review.customerName}
+                  <ReviewImageGallery reviewId={review.id} imageCount={review.imageCount} />
+                  {review.orderedItems.length ? (
+                    <div className="mt-4 rounded-control bg-surface-muted p-4 text-sm">
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                        Ordered
+                      </p>
+                      {review.orderedItems.map((item, index) => (
+                        <p key={`${item.name}-${index}`} className="mt-2 break-words font-bold">
+                          {item.name} × {item.quantity}
+                        </p>
+                      ))}
+                    </div>
+                  ) : null}
+                  {review.highlights.length ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {review.highlights.map((highlight) => (
+                        <span
+                          key={highlight}
+                          className="rounded-full bg-surface-muted px-3 py-1 text-xs font-bold text-brand"
+                        >
+                          {highlight}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  {review.comment ? (
+                    <p className="mt-4 break-words leading-7 [overflow-wrap:anywhere]">
+                      “{review.comment}”
+                    </p>
+                  ) : null}
+                  <footer className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm font-bold text-muted-foreground">
+                    <span>{review.customerName}</span>
+                    <time dateTime={review.reviewedAt}>
+                      {new Intl.DateTimeFormat("en-PH", {
+                        dateStyle: "medium",
+                        timeZone: "Asia/Manila",
+                      }).format(new Date(review.reviewedAt))}
+                    </time>
                   </footer>
                 </blockquote>
               ))}

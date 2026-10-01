@@ -1,5 +1,6 @@
 "use client";
 
+import { SmartphoneNfc, Store } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import {
@@ -15,11 +16,14 @@ import { FormField } from "@/components/ui/form-field";
 import type { AuthProfile } from "@/lib/auth";
 import type { CustomerLoyaltyStatus } from "@/lib/server-loyalty";
 import type { CheckoutAvailability } from "@/types/pickup";
+import type { CheckoutPaymentMethod, PaymentMode } from "@/lib/payment-method";
 
 interface CheckoutContentProps {
   availability: CheckoutAvailability;
   profile: AuthProfile;
   loyalty: CustomerLoyaltyStatus;
+  paymentMode: PaymentMode;
+  paymentOptions: readonly CheckoutPaymentMethod[];
   resumeOrderId: string | null;
 }
 
@@ -27,6 +31,8 @@ export function CheckoutContent({
   availability,
   profile,
   loyalty,
+  paymentMode,
+  paymentOptions,
   resumeOrderId,
 }: CheckoutContentProps) {
   const { selectedItems, selectedSubtotal, removeCheckedOutItems } = useCart();
@@ -36,6 +42,7 @@ export function CheckoutContent({
   const [customerNotes, setCustomerNotes] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [useReward, setUseReward] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>(paymentOptions[0]);
   const [submission, setSubmission] = useState<CheckoutSubmissionResult | null>(null);
   const [dateId, setDateId] = useState(availability.dates[0]?.id ?? "");
   const selectedDate =
@@ -76,6 +83,7 @@ export function CheckoutContent({
           useReward && selectedItems.some((item) => item.pieceCount === 4)
             ? (loyalty.availableRewards[0]?.id ?? null)
             : null,
+        paymentMethod,
         items: selectedItems.map((item) => ({
           variantId: item.variantId,
           coatingCounts: item.coatingCounts,
@@ -272,7 +280,7 @@ export function CheckoutContent({
                 >
                   {exceedsPreparedStock
                     ? `Your cart needs ${requestedPieces} pieces, but only ${remainingPieces} are available for this date. Remove some boxes or choose another date.`
-                    : `${remainingPieces} pieces are available for this date. Your cart needs ${requestedPieces}.`}
+                    : `${remainingPieces} pieces available`}
                 </div>
               ) : null}
               <FormField
@@ -296,6 +304,71 @@ export function CheckoutContent({
               There are no pickup dates available right now. Please check again after TsokoLitaw
               announces the next campus schedule.
             </div>
+          )}
+        </section>
+
+        <section
+          className="rounded-card border border-border bg-surface p-6 sm:p-8"
+          aria-labelledby="checkout-payment-title"
+        >
+          <h2 id="checkout-payment-title" className="font-display text-2xl">
+            Payment
+          </h2>
+          {paymentMode === "automatic" ? (
+            <div className="mt-5 rounded-control border border-border bg-surface-muted p-4">
+              <p className="font-bold text-foreground">Secure online payment</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                You will continue to PayMongo after the order is reserved.
+              </p>
+            </div>
+          ) : (
+            <fieldset className="mt-5 grid gap-3 sm:grid-cols-2">
+              <legend className="sr-only">Choose a payment method</legend>
+              {paymentOptions.map((option) => {
+                const selected = paymentMethod === option;
+                const PaymentIcon = option === "manual_gcash" ? SmartphoneNfc : Store;
+                const label = option === "manual_gcash" ? "Manual GCash" : "Pay at the counter";
+                const description =
+                  option === "manual_gcash"
+                    ? "Send the exact amount, then submit your receipt for verification."
+                    : "Place the order now and pay before receiving it at campus pickup.";
+                return (
+                  <label
+                    key={option}
+                    className={`group flex cursor-pointer items-center gap-4 rounded-control border p-4 transition-[border-color,background-color,box-shadow] focus-within:ring-2 focus-within:ring-brand focus-within:ring-offset-2 hover:border-brand/60 ${selected ? "border-brand bg-brand/5 shadow-sm ring-1 ring-brand" : "border-border bg-surface-muted"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment-method"
+                      value={option}
+                      checked={selected}
+                      onChange={() => setPaymentMethod(option)}
+                      className="sr-only"
+                    />
+                    <span
+                      aria-hidden="true"
+                      className={`flex size-9 shrink-0 items-center justify-center transition-colors ${selected ? "text-brand" : "text-muted-foreground group-hover:text-brand"}`}
+                    >
+                      <PaymentIcon size={28} strokeWidth={1.8} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <strong className="block font-display text-lg leading-6 text-foreground">
+                        {label}
+                      </strong>
+                      <span className="mt-1 block text-sm leading-5 text-muted-foreground">
+                        {description}
+                      </span>
+                    </span>
+                    <span className="sr-only">{selected ? "Selected" : "Select this method"}</span>
+                  </label>
+                );
+              })}
+              {submission?.fieldErrors?.paymentMethod ? (
+                <p className="text-sm font-bold text-danger-foreground sm:col-span-2" role="alert">
+                  {submission.fieldErrors.paymentMethod}
+                </p>
+              ) : null}
+            </fieldset>
           )}
         </section>
 
@@ -347,7 +420,11 @@ export function CheckoutContent({
             ? "Pickup unavailable"
             : exceedsPreparedStock
               ? "Reduce cart quantities"
-              : "Continue to payment"}
+              : checkoutTotal === 0
+                ? "Place order"
+                : paymentMethod === "pay_at_counter"
+                  ? "Place order"
+                  : "Continue to payment"}
         </PrimaryButton>
       </form>
 

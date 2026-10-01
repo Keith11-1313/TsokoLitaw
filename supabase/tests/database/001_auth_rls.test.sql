@@ -293,11 +293,11 @@ select is(
 );
 select ok(
   (
-    select order_number ~ '^TL-[0-9]{4,}$'
+    select order_number ~ '^TL[0-9]{9}$'
     from public.orders
     where checkout_idempotency_key = '96000000-0000-4000-8000-000000000003'
   ),
-  'new orders receive a short shared kiosk number'
+  'new orders receive a dated daily order number'
 );
 
 insert into public.orders (

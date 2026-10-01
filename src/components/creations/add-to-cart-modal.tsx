@@ -14,21 +14,15 @@ interface AddToCartModalProps {
   onClose: () => void;
 }
 
-export function AddToCartModal({
-  variantLabel,
-  quantity,
-  total,
-  onClose,
-}: AddToCartModalProps) {
+export function AddToCartModal({ variantLabel, quantity, total, onClose }: AddToCartModalProps) {
   const dialogRef = useRef<HTMLElement>(null);
   const checkCartRef = useRef<HTMLAnchorElement>(null);
   const titleId = useId();
   const descriptionId = useId();
 
   useEffect(() => {
-    const previousFocus = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     checkCartRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -73,7 +67,7 @@ export function AddToCartModal({
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         onPointerDown={(event) => event.stopPropagation()}
-        className="w-full max-w-md rounded-card border border-border bg-surface p-6 text-center shadow-2xl sm:p-8"
+        className="w-full max-w-md rounded-card border border-border bg-surface p-6 text-center shadow-2xl sm:max-w-lg sm:p-8"
       >
         <div className="flex justify-end">
           <button
@@ -86,22 +80,37 @@ export function AddToCartModal({
           </button>
         </div>
 
-        <span className="mx-auto flex size-16 items-center justify-center rounded-full bg-brand text-surface shadow-md" aria-hidden="true">
+        <span
+          className="mx-auto flex size-16 items-center justify-center rounded-full bg-brand text-surface shadow-md"
+          aria-hidden="true"
+        >
           <ShoppingBag size={28} />
         </span>
 
         <h2 id={titleId} className="mt-2 font-display text-3xl text-foreground">
           Added to your cart
         </h2>
-        <p id={descriptionId} role="status" className="mt-3 text-sm leading-6 text-muted-foreground">
+        <p
+          id={descriptionId}
+          role="status"
+          className="mt-3 text-sm leading-6 text-muted-foreground"
+        >
           {quantity} × {variantLabel} was added. Current addition: {formatPhp(total)}.
         </p>
 
         <div className="mt-7 grid gap-3 sm:grid-cols-2">
-          <button type="button" onClick={onClose} className={`${secondaryButtonClassName} w-full`}>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`${secondaryButtonClassName} w-full whitespace-nowrap sm:px-5`}
+          >
             Continue shopping
           </button>
-          <Link ref={checkCartRef} href="/cart" className={`${primaryButtonClassName} w-full`}>
+          <Link
+            ref={checkCartRef}
+            href="/cart"
+            className={`${primaryButtonClassName} w-full whitespace-nowrap sm:px-5`}
+          >
             <ShoppingBag aria-hidden="true" size={17} />
             Check cart
           </Link>

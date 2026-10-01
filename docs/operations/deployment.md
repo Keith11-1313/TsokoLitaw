@@ -16,9 +16,11 @@ Agents do not perform those Git operations. Both branches are connected to **sep
    dependent code **only when the old production app is compatible**. Otherwise stop and plan a
    coordinated release; do not introduce a window where either app/schema combination is broken.
 5. Review/merge the PR to `main`; check the Production Vercel deployment is Ready at the expected commit.
-6. Smoke-test the canonical site: public pages, Google sign-in/logout, correct catalog/pickup,
+6. Smoke-test the canonical site: public pages (including FAQ, Terms, and Privacy), Google sign-in/logout, correct catalog/pickup,
    own order history, and Admin guard. Test changed operations deliberately; a real QR Ph charge
    or live-key change requires separate explicit approval.
+   Confirm `/robots.txt` permits intended public pages and excludes private routes, and that
+   `/sitemap.xml` lists only canonical public URLs. Do not give every page a fabricated modification date.
 7. Inspect route/provider/Cron results, not just successful build output. Relink the CLI to Dev
    after any approved Production database session.
 

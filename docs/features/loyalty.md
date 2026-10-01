@@ -21,6 +21,6 @@ Change display in Profile/Checkout/Admin Customers. Change earning/redemption ru
 server pricing contract, SQL triggers/writer, snapshots, and tests considered together. Do not
 implement an application-side reward read followed by a separate redemption update.
 
-Definitions: initial migration for earning; `20260911010000_pre_v1_baseline.sql` for
-checkout. Tests: `011_loyalty.test.sql`, `010_customers.test.sql`, `commerce.test.ts`,
+Definitions: `20260911010000_pre_v1_baseline.sql`. Tests: `011_loyalty.test.sql`,
+`010_customers.test.sql`, `commerce.test.ts`,
 and payment/cancellation integration tests. See [database](../architecture/database.md).

@@ -6,6 +6,7 @@ import { SiteContainer } from "@/components/layout/site-container";
 import { requireCustomer } from "@/lib/auth";
 import { getCheckoutAvailability } from "@/lib/server-commerce";
 import { getCustomerLoyaltyStatus } from "@/lib/server-loyalty";
+import { getCheckoutPaymentOptions, getPaymentMode } from "@/lib/payment-method";
 
 export const metadata: Metadata = {
   title: "Checkout | TsokoLitaw",
@@ -21,12 +22,23 @@ export default async function CheckoutPage({ searchParams }: PageProps<"/checkou
     getCheckoutAvailability(),
     getCustomerLoyaltyStatus(profile.id),
   ]);
+  const paymentMode = getPaymentMode();
+  const paymentOptions = getCheckoutPaymentOptions();
 
   return (
     <CustomerPageShell>
       <SiteContainer className="py-8 sm:py-12">
         <h1 className="font-display text-4xl text-foreground">Checkout</h1>
-        <div className="mt-7 sm:mt-9"><CheckoutContent availability={availability} profile={profile} loyalty={loyalty} resumeOrderId={payment === "cancelled" && typeof order === "string" ? order : null} /></div>
+        <div className="mt-7 sm:mt-9">
+          <CheckoutContent
+            availability={availability}
+            profile={profile}
+            loyalty={loyalty}
+            paymentMode={paymentMode}
+            paymentOptions={paymentOptions}
+            resumeOrderId={payment === "cancelled" && typeof order === "string" ? order : null}
+          />
+        </div>
       </SiteContainer>
     </CustomerPageShell>
   );

@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  imageFileError,
-  integerError,
-  numberError,
-  secureUrlError,
-  textError,
-} from "./form-validation";
+import { imageFileError, integerError, numberError, textError } from "./form-validation";
 
 describe("form validation", () => {
   it("validates trimmed text boundaries", () => {
@@ -16,13 +10,11 @@ describe("form validation", () => {
   it("rejects invalid numeric ranges, steps, and integers", () => {
     expect(numberError(10.005, "Price", 0, 10000, 0.01)).toContain("increments");
     expect(numberError(10.25, "Price", 0, 10000, 0.01)).toBe("");
+    expect(numberError(40.05, "Price", 0, 10000, 0.01)).toBe("");
+    expect(numberError(55.43, "Price", 0, 10000, 0.01)).toBe("");
+    expect(numberError(75.01, "Price", 0, 10000, 0.01)).toBe("");
     expect(integerError(1.5, "Quantity", 1, 10)).not.toBe("");
     expect(integerError(4, "Quantity", 1, 10)).toBe("");
-  });
-
-  it("requires secure URLs", () => {
-    expect(secureUrlError("http://example.com", "Video link")).toContain("https://");
-    expect(secureUrlError("https://example.com/watch", "Video link")).toBe("");
   });
 
   it("rejects the supplied image size before decoding", () => {

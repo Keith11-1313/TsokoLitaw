@@ -98,28 +98,28 @@ function StockEditor({
       ) : null}
 
       <div className={showHeading ? "mt-5 grid gap-4 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2"}>
-        <div className="space-y-2 text-sm font-bold">
-          <span className="block">Pickup date</span>
-          {record ? (
+        {record ? (
+          <div className="space-y-2 text-sm font-bold">
+            <span className="block">Pickup date</span>
             <>
               <input type="hidden" name="pickupDate" value={record.pickupDate} />
               <span className="flex min-h-12 items-center rounded-control bg-surface-control px-4 font-normal">
                 {formatDate(record.pickupDate)}
               </span>
             </>
-          ) : (
-            <CustomSelect
-              label="Choose date"
-              name="pickupDate"
-              required
-              placeholder="Choose a published Ready stock date"
-              options={dates.map((date) => ({
-                value: date.pickupDate,
-                label: `${formatDate(date.pickupDate)} · ${modeLabel(date.availabilityMode)}`,
-              }))}
-            />
-          )}
-        </div>
+          </div>
+        ) : (
+          <CustomSelect
+            label="Pickup date"
+            name="pickupDate"
+            required
+            placeholder="Choose a published Ready stock date"
+            options={dates.map((date) => ({
+              value: date.pickupDate,
+              label: `${formatDate(date.pickupDate)} · ${modeLabel(date.availabilityMode)}`,
+            }))}
+          />
+        )}
 
         <div>
           <NumberStepper
@@ -184,7 +184,7 @@ function ConsumptionForm({ record }: { record: AdminInventoryRecord }) {
         Use this only for damaged, spoiled, or otherwise unsellable pieces. All customer sales are
         paid through the website.
       </p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1.4fr]">
+      <div className="mt-4 grid items-start gap-4 sm:grid-cols-[1fr_1.4fr]">
         <NumberStepper
           label="Unusable pieces"
           error={state.fieldErrors?.quantity}
@@ -195,22 +195,28 @@ function ConsumptionForm({ record }: { record: AdminInventoryRecord }) {
           required
           defaultValue={1}
         />
-        <label className="space-y-2 text-sm font-bold">
-          <span>Note (optional)</span>
-          <input
-            name="notes"
-            maxLength={240}
-            placeholder="Example: 3 pieces damaged during preparation"
-            className="min-h-12 w-full rounded-control bg-surface-control px-3 font-normal"
-          />
-        </label>
+        <div className="min-w-0">
+          <label className="block space-y-2 text-sm font-bold">
+            <span className="block">Note (optional)</span>
+            <input
+              name="notes"
+              maxLength={240}
+              placeholder="Example: 3 pieces damaged during preparation"
+              className="h-12 w-full rounded-control bg-surface-control px-3 font-normal"
+            />
+          </label>
+        </div>
       </div>
+      <SecondaryButton
+        className="mt-4 w-full sm:w-auto"
+        type="submit"
+        disabled={pending || !canSubmit}
+      >
+        {pending ? "Recording…" : "Record consumption"}
+      </SecondaryButton>
       <div className="mt-4 space-y-3">
         <ActionMessage state={state} />
         <FormStatusHint message={statusMessage} />
-        <SecondaryButton type="submit" disabled={pending || !canSubmit}>
-          {pending ? "Recording…" : "Record consumption"}
-        </SecondaryButton>
       </div>
     </form>
   );

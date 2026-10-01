@@ -4,7 +4,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getCommerceCatalog } from "@/lib/server-commerce";
 import { priceCheckoutCart } from "@/lib/commerce";
 import type { CheckoutCartInput } from "@/types/commerce";
-import { getPaymentMethod } from "@/lib/payment-method";
+import { resolveCheckoutPaymentMethod, type CheckoutPaymentMethod } from "@/lib/payment-method";
 import { createGcashQrPayload } from "@/lib/gcash-qr";
 
 export interface CreatePendingOrderInput {
@@ -16,6 +16,7 @@ export interface CreatePendingOrderInput {
   customerNotes: string;
   termsAccepted: boolean;
   loyaltyRewardId: string | null;
+  paymentMethod: CheckoutPaymentMethod;
   items: readonly CheckoutCartInput[];
 }
 
@@ -24,6 +25,7 @@ export interface PendingOrderResult {
   orderNumber: string;
   total: number;
   created: boolean;
+  paymentMethod: CheckoutPaymentMethod;
 }
 
 export async function createPendingOrder(
@@ -87,7 +89,7 @@ export async function createPendingOrder(
     })),
   }));
 
-  const method = getPaymentMethod();
+  const method = resolveCheckoutPaymentMethod(input.paymentMethod);
   const qrPayload =
     method === "manual_gcash" && total > 0
       ? createGcashQrPayload(process.env.GCASH_BASE_QR_PAYLOAD ?? "", total)
@@ -118,5 +120,6 @@ export async function createPendingOrder(
     orderNumber: result.created_order_number,
     total: Number(result.created_total),
     created: result.was_created,
+    paymentMethod: result.created_payment_method as CheckoutPaymentMethod,
   };
 }

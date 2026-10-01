@@ -30,12 +30,13 @@ export function BrandLockup({
     <div className={cn("inline-flex items-center gap-3", className)}>
       {showMark ? (
         <Image
-          src="/brand/logo.webp"
+          src="/brand/logo.webp?v=20260922"
           alt=""
           width={48}
           height={48}
           sizes="48px"
-          className={cn("shrink-0 rounded-full object-contain", markClassName ?? "size-12")}
+          unoptimized
+          className={cn("shrink-0 object-contain", markClassName ?? "size-12")}
           aria-hidden="true"
         />
       ) : null}
@@ -43,7 +44,7 @@ export function BrandLockup({
         <span className="flex flex-col">
           <span
             className={cn(
-              "font-display text-2xl leading-none",
+              "font-display text-2xl font-medium leading-none",
               inverted ? "text-surface" : "text-brand",
               titleClassName,
             )}

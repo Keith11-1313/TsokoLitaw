@@ -1,26 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   BOX_VARIANTS,
-  INITIAL_PIECE_PRICE,
-  calculateBoxPrice,
   calculateCartLineTotal,
   calculateConfiguredCoatingCharge,
   calculateCoatingCharge,
   calculateItemUnitTotal,
-  createBoxVariants,
   hasCompleteCoatingAllocation,
   priceCheckoutCart,
 } from "./commerce";
 
 describe("box pricing", () => {
-  it("derives the initial box totals from the ₱10 per-piece seed", () => {
-    expect(INITIAL_PIECE_PRICE).toBe(10);
-    expect(BOX_VARIANTS.map((variant) => variant.price)).toEqual([40, 60, 80]);
-  });
-
-  it("recalculates every size from an admin-configured per-piece price", () => {
-    expect(createBoxVariants(12.5).map((variant) => variant.price)).toEqual([50, 75, 100]);
-    expect(calculateBoxPrice(6, 14)).toBe(84);
+  it("uses the configured fixed base price for each box size", () => {
+    expect(BOX_VARIANTS.map((variant) => variant.price)).toEqual([40, 55, 75]);
   });
 });
 
@@ -72,7 +63,6 @@ describe("server-authoritative cart pricing", () => {
     productId: "product-1",
     productName: "Chocolate-Filled Litaw",
     productDescription: "Chocolate center",
-    piecePrice: 10,
     variants: [{ id: "variant-4", label: "Box of 4", pieceCount: 4 as const, price: 40 }],
     coatings: [
       {

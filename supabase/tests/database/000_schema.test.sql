@@ -24,7 +24,7 @@ select set_config(
   true
 );
 
-select plan(76);
+select plan(90);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'products', 'products table exists');
@@ -46,6 +46,16 @@ select hasnt_column('public', 'coatings', 'additional_type_price', 'obsolete add
 select hasnt_column('public', 'coatings', 'is_allergen', 'obsolete per-coating allergen flag is removed');
 select hasnt_column('public', 'coatings', 'allergen_note', 'obsolete per-coating allergen note is removed');
 select hasnt_column('public', 'journal_posts', 'icon_key', 'unused Journal icon storage is absent');
+select ok(
+  (
+    select public
+      and file_size_limit = 262144
+      and allowed_mime_types = array['font/woff2']
+    from storage.buckets
+    where id = 'brand-fonts'
+  ),
+  'brand font bucket is public-read and limited to small WOFF2 files'
+);
 select hasnt_column('public', 'order_item_coatings', 'is_included_type', 'retired coating pricing distinction is absent');
 select has_column('public', 'order_items', 'coating_total_snapshot', 'order items store the complete coating total');
 select hasnt_column('public', 'order_items', 'extra_coating_total_snapshot', 'retired extra-coating name is absent');
@@ -90,6 +100,36 @@ select ok(
   has_table_privilege('service_role', 'public.profiles', 'SELECT'),
   'service role can verify profile state during authentication callbacks'
 );
+select ok(
+  (select bool_and(has_table_privilege('service_role', format('%I.%I', n.nspname, c.relname), 'SELECT'))
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind in ('r', 'p')),
+  'service role can select every public application table'
+);
+select ok(
+  (select bool_and(has_table_privilege('service_role', format('%I.%I', n.nspname, c.relname), 'INSERT'))
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind in ('r', 'p')),
+  'service role can insert into every public application table'
+);
+select ok(
+  (select bool_and(has_table_privilege('service_role', format('%I.%I', n.nspname, c.relname), 'UPDATE'))
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind in ('r', 'p')),
+  'service role can update every public application table'
+);
+select ok(
+  (select bool_and(has_table_privilege('service_role', format('%I.%I', n.nspname, c.relname), 'DELETE'))
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind in ('r', 'p')),
+  'service role can delete from every public application table'
+);
+select ok(
+  (select bool_and(has_sequence_privilege('service_role', format('%I.%I', n.nspname, c.relname), 'USAGE,SELECT,UPDATE'))
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind = 'S'),
+  'service role can use every public application sequence'
+);
 select ok(not has_table_privilege('authenticated', 'public.payment_webhook_events', 'INSERT'), 'authenticated clients cannot insert webhook events');
 select ok(not has_table_privilege('authenticated', 'public.business_settings', 'UPDATE'), 'authenticated clients cannot update settings directly');
 select ok(not has_table_privilege('authenticated', 'public.mutation_rate_limit_buckets', 'SELECT'), 'authenticated clients cannot read rate-limit buckets');
@@ -97,6 +137,74 @@ select ok(not has_table_privilege('authenticated', 'public.mutation_rate_limit_b
 select ok(
   has_column_privilege('authenticated', 'public.profiles', 'full_name', 'UPDATE'),
   'authenticated users can update their full name subject to RLS'
+);
+
+select ok(
+  (select bool_and(
+    not has_table_privilege('anon', format('%I.%I', n.nspname, c.relname), 'REFERENCES')
+    and not has_table_privilege('anon', format('%I.%I', n.nspname, c.relname), 'TRIGGER')
+    and not has_table_privilege('anon', format('%I.%I', n.nspname, c.relname), 'TRUNCATE')
+    and not has_table_privilege('anon', format('%I.%I', n.nspname, c.relname), 'MAINTAIN')
+  )
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public' and c.relkind in ('r', 'p')),
+  'anonymous clients have no administrative privileges on public tables'
+);
+select ok(
+  (select bool_and(
+    not has_table_privilege('authenticated', format('%I.%I', n.nspname, c.relname), 'REFERENCES')
+    and not has_table_privilege('authenticated', format('%I.%I', n.nspname, c.relname), 'TRIGGER')
+    and not has_table_privilege('authenticated', format('%I.%I', n.nspname, c.relname), 'TRUNCATE')
+    and not has_table_privilege('authenticated', format('%I.%I', n.nspname, c.relname), 'MAINTAIN')
+  )
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public' and c.relkind in ('r', 'p')),
+  'authenticated clients have no administrative privileges on public tables'
+);
+select ok(
+  (select bool_and(
+    not has_sequence_privilege('anon', format('%I.%I', n.nspname, c.relname), 'USAGE')
+    and not has_sequence_privilege('anon', format('%I.%I', n.nspname, c.relname), 'SELECT')
+    and not has_sequence_privilege('anon', format('%I.%I', n.nspname, c.relname), 'UPDATE')
+  )
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public' and c.relkind = 'S'),
+  'anonymous clients have no privileges on public sequences'
+);
+select ok(
+  (select bool_and(
+    not has_sequence_privilege('authenticated', format('%I.%I', n.nspname, c.relname), 'USAGE')
+    and not has_sequence_privilege('authenticated', format('%I.%I', n.nspname, c.relname), 'SELECT')
+    and not has_sequence_privilege('authenticated', format('%I.%I', n.nspname, c.relname), 'UPDATE')
+  )
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public' and c.relkind = 'S'),
+  'authenticated clients have no privileges on public sequences'
+);
+
+create table public.__browser_privilege_probe (
+  id bigint generated by default as identity primary key
+);
+
+select ok(
+  not has_table_privilege('anon', 'public.__browser_privilege_probe', 'REFERENCES')
+  and not has_table_privilege('anon', 'public.__browser_privilege_probe', 'TRIGGER')
+  and not has_table_privilege('anon', 'public.__browser_privilege_probe', 'TRUNCATE')
+  and not has_table_privilege('anon', 'public.__browser_privilege_probe', 'MAINTAIN')
+  and not has_table_privilege('authenticated', 'public.__browser_privilege_probe', 'REFERENCES')
+  and not has_table_privilege('authenticated', 'public.__browser_privilege_probe', 'TRIGGER')
+  and not has_table_privilege('authenticated', 'public.__browser_privilege_probe', 'TRUNCATE')
+  and not has_table_privilege('authenticated', 'public.__browser_privilege_probe', 'MAINTAIN'),
+  'new public tables do not inherit browser-role administrative privileges'
+);
+select ok(
+  not has_sequence_privilege('anon', 'public.__browser_privilege_probe_id_seq', 'USAGE')
+  and not has_sequence_privilege('anon', 'public.__browser_privilege_probe_id_seq', 'SELECT')
+  and not has_sequence_privilege('anon', 'public.__browser_privilege_probe_id_seq', 'UPDATE')
+  and not has_sequence_privilege('authenticated', 'public.__browser_privilege_probe_id_seq', 'USAGE')
+  and not has_sequence_privilege('authenticated', 'public.__browser_privilege_probe_id_seq', 'SELECT')
+  and not has_sequence_privilege('authenticated', 'public.__browser_privilege_probe_id_seq', 'UPDATE'),
+  'new public sequences do not inherit browser-role privileges'
 );
 select ok(
   not has_column_privilege('authenticated', 'public.profiles', 'role', 'UPDATE'),
@@ -233,6 +341,14 @@ select ok(
 select ok(
   has_function_privilege('service_role', 'public.count_admin_customers(uuid,text)', 'EXECUTE'),
   'service role can count Admin customers'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.get_admin_dashboard_summary(uuid,timestamp with time zone,timestamp with time zone,timestamp with time zone,timestamp with time zone)', 'EXECUTE'),
+  'authenticated clients cannot invoke Admin dashboard aggregates directly'
+);
+select ok(
+  has_function_privilege('service_role', 'public.get_admin_dashboard_summary(uuid,timestamp with time zone,timestamp with time zone,timestamp with time zone,timestamp with time zone)', 'EXECUTE'),
+  'service role can invoke Admin dashboard aggregates'
 );
 select ok(
   not has_function_privilege('authenticated', 'public.replace_paymongo_checkout(uuid,text,text,text)', 'EXECUTE'),

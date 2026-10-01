@@ -202,7 +202,7 @@ function CartAction({ itemCount }: { itemCount: number }) {
   return (
     <Link
       href="/cart"
-      aria-label={`View cart with ${itemCount} items`}
+      aria-label={`View cart with ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
       className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-surface-muted text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
     >
       <ShoppingBag aria-hidden="true" size={19} />

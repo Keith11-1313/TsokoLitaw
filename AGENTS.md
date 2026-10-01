@@ -28,9 +28,10 @@ baseline over compatibility solely for disposable pre-release data. A coordinate
 replace migration history after dependency review and local validation; confirm the exact hosted
 project and destructive scope before resetting it. Never infer that provider funds are disposable.
 
-Phase 13 production/security is complete; Phase 14 UI stabilization is in progress.
-Phase 15 is the approved thin TWA Android APK after UI stability. Optional Phase 16 is public-page
-aggregate Web Analytics after APK stability. See [roadmap](docs/roadmap.md); planned features are not implemented.
+Phase 13 production/security, Phase 14 UI stabilization, and Phase 15A final commerce/payment work
+are complete. Required Phase 15B Admin Dashboard decision support is active; Phase 15C, the thin TWA
+Android APK, follows. Optional Phase 16 is public-page aggregate Web Analytics after APK stability.
+See [roadmap](docs/roadmap.md); work listed there is not implemented until verified.
 
 Keep one Next.js application with Admin under `/admin`, suited to a campus business of roughly
 1,000 customers. Avoid unnecessary dependencies, services, repositories/factories, generic layers,
@@ -52,10 +53,10 @@ or speculative abstractions. Readability cleanup must not redesign working archi
 - Keep payment and fulfillment state separate. Website cancellation is pending-unpaid only.
   Paid concerns are settled in person; no new refund API or destination collection.
   The retired refund subsystem was removed in the pre-v1 baseline. Hosted Dev
-  `mgkzphpznamjlgrpumjd` was rebaselined with approved Auth/test-data/Storage disposal on
-  September 11, 2026. Its app Cron jobs remain paused pending matching code activation;
-  follow the database migration runbook. This is not ongoing reset permission.
-  Production `zkmlzktvjkjrbznvrsxb` is untouched and not approved for reset or baseline push.
+  `mgkzphpznamjlgrpumjd` and Production `zkmlzktvjkjrbznvrsxb` were rebaselined through separate,
+  explicitly approved resets with Auth/test-data/Storage disposal. Matching application code and
+  exactly three app Cron jobs were activated and verified in each environment; follow the database
+  migration runbook. Those completed approvals are not ongoing reset permission.
 - Preserve bounded validation, distributed rate limiting, provider timeouts, notification claim/
   retry/idempotency rules, and audit records. Email delivery never changes payment state.
 - Dev and Production have separate Vercel projects, Supabase data/Auth/Storage, credentials,
@@ -73,8 +74,9 @@ All active Admin-managed add-ons feed the builder; server reloads current values
 
 Campus pickup only. Every sellable date/window/location is explicitly published in Admin Pickup.
 Made to order follows lead/cutoff rules; Ready stock needs date-specific prepared pieces; Hybrid
-uses prepared stock for same-day orders. Every mode uses website checkout and online payment.
-No cash/untracked walk-in flow or redundant Inventory availability switch.
+uses prepared stock for same-day orders. Every mode uses website checkout. Payment is PayMongo,
+Manual GCash, or tracked Pay at the Counter according to the configured mode; there is no
+cash/untracked walk-in flow or redundant Inventory availability switch.
 
 Inventory assigns prepared pieces to existing eligible dates, shared by every box size.
 It does not create schedules; a prepared total cannot fall below committed/consumed pieces.
@@ -96,7 +98,7 @@ moderation for public visibility. Admin has one equal-permission role with at mo
 - Preserve `useFormGate` and `useEditorDialog` contracts, dirty-close handling and focus restoration.
 - Validate JPG/PNG/WebP uploads on client and server, ≤3 MiB; coating media exactly square.
   Catalog publication remains audited, with cleanup only of newly uploaded objects on failed saves.
-- Assets: logo `public/brand/logo.png`; Home media under `public/images/home/` and
+- Assets: logo `public/brand/logo.webp`; Home media under `public/images/home/` and
   `public/videos/home/`; coating photos in Supabase `catalog-media`. Use Lucide for missing icons.
   Do not embed reference PNGs as pages or add random remote/paid assets.
 - Generated schema types and Boneyard bones are not hand-edited. Use documented generators.

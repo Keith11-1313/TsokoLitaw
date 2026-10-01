@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 function snapshot(form: HTMLFormElement) {
   const values: string[] = [];
   new FormData(form).forEach((value, key) => {
+    if (value instanceof File && !value.name && value.size === 0) return;
     values.push(
       value instanceof File
         ? `${key}=file:${value.name}:${value.size}:${value.lastModified}`

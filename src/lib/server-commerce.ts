@@ -18,18 +18,19 @@ const coatingTones: Record<string, Coating["tone"]> = {
   plain: "plain",
   "sesame-seeds": "sesame",
   "cookies-and-cream": "cookies-cream",
+  "chocolate-sprinkles": "sprinkles",
 };
 
 interface CatalogProductRow {
   id: string;
   name: string;
   description: string;
-  price_per_piece: number | string;
   product_variants: Array<{
     id: string;
     name: string;
     piece_count: number;
     sort_order: number;
+    base_price: number | string;
   }> | null;
 }
 
@@ -88,12 +89,12 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
           id,
           name,
           description,
-          price_per_piece,
           product_variants (
             id,
             name,
             piece_count,
             sort_order
+            ,base_price
           )
         `,
           )
@@ -128,7 +129,6 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
   }
 
   const product: CatalogProductRow = productResult.data;
-  const piecePrice = asMoney(product.price_per_piece);
   const variants = (product.product_variants ?? [])
     .sort((left, right) => left.sort_order - right.sort_order)
     .flatMap((variant): CommerceCatalog["variants"][number][] => {
@@ -142,7 +142,7 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
           id: variant.id,
           label: variant.name,
           pieceCount,
-          price: pieceCount * piecePrice,
+          price: asMoney(variant.base_price),
         },
       ];
     });
@@ -150,7 +150,7 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
     id: coating.id,
     name: coating.name,
     description: coating.description,
-    imageSrc: coating.image_url ?? "/images/home/placeholder-square.jpg",
+    imageSrc: coating.image_url ?? "/images/placeholder.webp",
     pricePerPiece: asMoney(coating.price_per_piece),
     isDefault: coating.is_default ?? index === 0,
     tone: coatingTones[coating.slug] ?? "plain",
@@ -175,7 +175,6 @@ async function loadCommerceCatalog(): Promise<CommerceCatalog> {
     productId: product.id,
     productName: product.name,
     productDescription: product.description,
-    piecePrice,
     variants,
     coatings,
     addons,

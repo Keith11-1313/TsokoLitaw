@@ -110,6 +110,15 @@ describe("PayMongo webhook verification", () => {
     expect(parsePayMongoPaidEvent(directCheckoutPayload(), "test")).toEqual(expected);
   });
 
+  it("accepts the dated daily order-number format", () => {
+    const payload = paidPayload();
+    payload.data.data.attributes.reference_number = "TL220926001";
+    expect(parsePayMongoPaidEvent(payload, "test")).toMatchObject({
+      orderNumber: "TL220926001",
+      summary: { reference_number: "TL220926001" },
+    });
+  });
+
   it("ignores unrelated events and rejects live or malformed paid events", () => {
     expect(
       parsePayMongoPaidEvent(

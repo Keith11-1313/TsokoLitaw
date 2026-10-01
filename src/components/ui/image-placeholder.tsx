@@ -20,7 +20,7 @@ export function ImagePlaceholder({
       {...props}
     >
       <Image
-        src="/images/home/placeholder-square.jpg"
+        src="/images/placeholder.webp"
         alt={label}
         fill
         sizes="(min-width: 768px) 20rem, calc(100vw - 2rem)"

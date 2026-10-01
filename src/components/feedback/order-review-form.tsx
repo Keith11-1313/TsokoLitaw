@@ -1,24 +1,41 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { Star } from "lucide-react";
 import { submitReviewAction, type ReviewActionState } from "@/app/orders/[orderId]/review/actions";
 import { PrimaryButton } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
+import { ReviewImageGallery } from "@/components/feedback/review-image-gallery";
 import { cn } from "@/lib/cn";
+import { prepareReviewImages } from "@/lib/review-image-processing";
+import { REVIEW_HIGHLIGHTS, type ReviewOrderItemSummary } from "@/lib/reviews";
 
 const initialState: ReviewActionState = { status: "idle", message: "" };
 
 interface OrderReviewFormProps {
   orderId: string;
   orderNumber: string;
-  itemSummary: string;
+  itemSummary: ReviewOrderItemSummary[];
   existingReview: null | {
+    id: string;
     rating: number;
     comment: string;
+    highlights: string[];
+    imageCount: number;
     createdAt: string;
   };
+  onSubmitted?: () => void;
 }
+
+const ratingDescriptions = [
+  "",
+  "Disappointing",
+  "Could be better",
+  "Good",
+  "Very good",
+  "Excellent",
+];
 
 function ReviewStars({ rating }: { rating: number }) {
   return (
@@ -40,36 +57,126 @@ export function OrderReviewForm({
   orderNumber,
   itemSummary,
   existingReview,
+  onSubmitted,
 }: OrderReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [images, setImages] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [imageError, setImageError] = useState("");
+  const [processingImages, setProcessingImages] = useState(false);
   const [state, formAction, pending] = useActionState(submitReviewAction, initialState);
+  const [submitting, startSubmit] = useTransition();
+
+  useEffect(
+    () => () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    },
+    [previewUrls],
+  );
+
+  useEffect(() => {
+    if (state.status === "success") onSubmitted?.();
+  }, [onSubmitted, state.status]);
 
   if (existingReview || state.status === "success") {
     const savedRating = existingReview?.rating ?? rating;
     return (
-      <section className="text-center">
+      <section className="py-4 text-center">
         <ReviewStars rating={savedRating} />
-        <h2 className="mt-4 font-display text-2xl">Thank you for reviewing {orderNumber}</h2>
+        <h2 className="mt-4 font-display text-2xl">Review submitted</h2>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-          {existingReview?.comment ?? state.message}
+          Your review is very much appreciated.
         </p>
+        <div className="mx-auto mt-5 max-w-xl rounded-control border border-border bg-surface-muted p-4 text-left text-sm">
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+            Your order
+          </p>
+          {itemSummary.map((item, index) => (
+            <div key={`${item.name}-${index}`} className="mt-3">
+              <p className="font-bold">
+                {item.name} × {item.quantity}
+              </p>
+              {item.coatings.length ? (
+                <p className="mt-1 break-words leading-6 text-muted-foreground">
+                  {item.coatings.join(" · ")}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+        {existingReview?.comment ? (
+          <p className="mx-auto mt-4 max-w-xl rounded-control bg-surface-muted p-4 text-sm leading-6">
+            {existingReview.comment}
+          </p>
+        ) : null}
+        {existingReview?.highlights.length ? (
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {existingReview.highlights.map((highlight) => (
+              <span
+                key={highlight}
+                className="rounded-full bg-surface-muted px-3 py-1 text-xs font-bold text-brand"
+              >
+                {highlight}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {existingReview ? (
+          <div className="mx-auto max-w-xl">
+            <ReviewImageGallery
+              reviewId={existingReview.id}
+              imageCount={existingReview.imageCount}
+            />
+          </div>
+        ) : null}
       </section>
     );
   }
 
   return (
-    <form action={formAction}>
+    <form
+      onSubmit={(event) => {
+        if (processingImages || imageError) event.preventDefault();
+      }}
+      action={(formData) => {
+        formData.delete("images");
+        images.forEach((image) => formData.append("images", image));
+        startSubmit(() => formAction(formData));
+      }}
+    >
       <input type="hidden" name="orderId" value={orderId} />
       <input type="hidden" name="rating" value={rating || ""} />
-      <div className="rounded-control bg-surface-muted p-4 text-sm">
-        <p className="font-bold">Your order</p>
-        <p className="mt-1 leading-6 text-muted-foreground">{itemSummary}</p>
+      <div className="rounded-control border border-border bg-surface-muted p-4 text-sm sm:p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+          Order summary
+        </p>
+        <ul className="mt-4 space-y-4">
+          {itemSummary.map((item, index) => (
+            <li
+              key={`${item.name}-${index}`}
+              className="border-t border-border pt-4 first:border-0 first:pt-0"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <p className="font-bold leading-6">{item.name}</p>
+                <span className="shrink-0 rounded-full border border-border bg-surface px-3 py-1 text-xs font-bold">
+                  {item.quantity} {item.quantity === 1 ? "box" : "boxes"}
+                </span>
+              </div>
+              {item.coatings.length ? (
+                <div className="mt-3 border-l-2 border-brand/25 pl-3">
+                  <p className="text-xs font-bold text-muted-foreground">Coatings</p>
+                  <p className="mt-1 leading-6 text-brand">{item.coatings.join(" · ")}</p>
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
       </div>
       <p className="mt-6 text-center text-sm font-bold">Rating for {orderNumber}</p>
       <fieldset className="mt-5">
         <legend className="sr-only">Choose a rating</legend>
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-3">
           {[1, 2, 3, 4, 5].map((value) => (
             <button
               key={value}
@@ -77,7 +184,7 @@ export function OrderReviewForm({
               aria-label={`${value} star rating`}
               aria-pressed={rating === value}
               onClick={() => setRating(value)}
-              className="flex size-12 items-center justify-center rounded-control bg-surface-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="flex size-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
               <Star
                 className={cn(
@@ -88,29 +195,78 @@ export function OrderReviewForm({
             </button>
           ))}
         </div>
+        {rating ? (
+          <p className="mt-3 text-center text-sm font-bold text-brand" aria-live="polite">
+            {ratingDescriptions[rating]}
+          </p>
+        ) : null}
+      </fieldset>
+      <fieldset className="mt-6">
+        <legend className="text-sm font-bold">What stood out?</legend>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {REVIEW_HIGHLIGHTS.map((highlight) => (
+            <label key={highlight} className="cursor-pointer">
+              <input type="checkbox" name="highlights" value={highlight} className="peer sr-only" />
+              <span className="inline-flex min-h-11 items-center rounded-full border border-border bg-surface px-4 text-sm font-bold transition-colors peer-checked:border-brand peer-checked:bg-brand peer-checked:text-surface peer-focus-visible:ring-2 peer-focus-visible:ring-focus">
+                {highlight}
+              </span>
+            </label>
+          ))}
+        </div>
       </fieldset>
       <FormField
         id="review-comment"
-        label="Tell us about your box and pickup experience"
+        label="Tell us about your experience"
         as="textarea"
-        required
         error={state.fieldErrors?.comment}
         className="mt-6"
         textareaProps={{
           name: "comment",
-          minLength: 10,
           maxLength: 1000,
           placeholder: "What did you enjoy?",
           value: comment,
           onChange: (event) => setComment(event.currentTarget.value.slice(0, 1000)),
         }}
       />
-      <p
-        className={`mt-2 text-right text-xs font-bold ${comment.length < 10 ? "text-danger-foreground" : "text-muted-foreground"}`}
-        aria-live="polite"
-      >
+      <p className="mt-2 text-right text-xs font-bold text-muted-foreground" aria-live="polite">
         {comment.length}/1000
       </p>
+      <ImageUploadField
+        id="review-image"
+        name="images"
+        label="Add review images (optional)"
+        className="mt-6"
+        disabled={pending || submitting || processingImages}
+        busy={processingImages}
+        busyLabel="Preparing photos…"
+        accept=".heic,.heif,.jpeg,.jpg,.png,.webp,image/heic,image/heif,image/jpeg,image/png,image/webp"
+        formatHint="Up to 5 photos · HEIC/HEIF, JPG, PNG or WebP"
+        multiple
+        maxFiles={5}
+        fileNames={images.map((image) => image.name)}
+        previewUrls={previewUrls}
+        error={imageError || state.fieldErrors?.image}
+        onChange={async (event) => {
+          const nextImages = Array.from(event.currentTarget.files ?? []);
+          event.currentTarget.value = "";
+          setImageError("");
+          setImages([]);
+          setPreviewUrls([]);
+          if (!nextImages.length) return;
+          setProcessingImages(true);
+          try {
+            const prepared = await prepareReviewImages(nextImages);
+            setImages(prepared);
+            setPreviewUrls(prepared.map((image) => URL.createObjectURL(image)));
+          } catch (error) {
+            setImageError(
+              error instanceof Error ? error.message : "These images could not be prepared.",
+            );
+          } finally {
+            setProcessingImages(false);
+          }
+        }}
+      />
       {state.status === "error" ? (
         <p
           role="alert"
@@ -127,9 +283,9 @@ export function OrderReviewForm({
       <PrimaryButton
         className="mt-6 w-full"
         type="submit"
-        disabled={!rating || comment.trim().length < 10 || pending}
+        disabled={!rating || pending || submitting || processingImages || !!imageError}
       >
-        {pending ? "Submitting review…" : "Submit review"}
+        {pending || submitting ? "Submitting review…" : "Submit review"}
       </PrimaryButton>
     </form>
   );

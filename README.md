@@ -1,7 +1,9 @@
 # TsokoLitaw
 
 Mobile-first storefront and Admin interface for a student-operated chocolate-filled Litaw business.
-Customers configure 4-, 6-, or 8-piece boxes, pay online with QR Ph, and collect at published campus pickups.
+Customers configure 4-, 6-, or 8-piece boxes, complete website checkout, and collect at published
+campus pickups. Depending on the configured mode, payment uses PayMongo QR Ph, Manual GCash, or a
+tracked Pay at the Counter order.
 
 **New maintainer:** start with [onboarding](docs/getting-started/onboarding.md).
 The [documentation index](docs/index.md) points to feature paths, SQL rules, testing and deployment.
@@ -11,9 +13,10 @@ The [documentation index](docs/index.md) points to feature paths, SQL rules, tes
 Next.js App Router, React, strict TypeScript, Tailwind, Supabase PostgreSQL/Auth/Storage,
 PayMongo Hosted Checkout, Resend and Vercel. One application; no separate native commerce backend.
 
-Production/security is implemented. Phase 14 UI stabilization is in progress.
-The thin Android TWA APK (Phase 15) and optional public-page analytics (Phase 16) are planned,
-not installed features. See the [roadmap](docs/roadmap.md).
+Production/security, Phase 14 UI stabilization, and the Phase 15A commerce/payment update are
+complete. Work is now active on the required Admin Dashboard improvements (Phase 15B), followed by
+the thin Android TWA APK (Phase 15C). Optional public-page analytics (Phase 16) remains planned
+and is not an installed feature. See the [roadmap](docs/roadmap.md).
 
 ## Quick start
 
@@ -46,6 +49,9 @@ Do not reset a hosted database for onboarding.
 
 Database tests/reset commands and their safety conditions belong in the
 [testing guide](docs/maintenance/testing.md), not an unconditional quick start.
+The guarded [dashboard simulation fixture](docs/features/admin.md#dashboard-simulation-fixture) is
+optional test data for local or explicitly disposable Dev only. It is not a migration, normal seed,
+backup, Production procedure, or proof that the dashboard deployment is accepted.
 
 ## Dev is not Production
 

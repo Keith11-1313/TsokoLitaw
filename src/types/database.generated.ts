@@ -189,6 +189,21 @@ export type Database = {
           },
         ]
       }
+      daily_order_counters: {
+        Row: {
+          last_value: number
+          order_date: string
+        }
+        Insert: {
+          last_value: number
+          order_date: string
+        }
+        Update: {
+          last_value?: number
+          order_date?: string
+        }
+        Relationships: []
+      }
       inventory_adjustments: {
         Row: {
           created_at: string
@@ -239,6 +254,7 @@ export type Database = {
           author_id: string
           content: string
           content_type: string
+          cover_format: string
           cover_image_url: string | null
           created_at: string
           display_date: string
@@ -249,12 +265,12 @@ export type Database = {
           status: Database["public"]["Enums"]["journal_status"]
           title: string
           updated_at: string
-          video_url: string | null
         }
         Insert: {
           author_id: string
           content: string
           content_type: string
+          cover_format?: string
           cover_image_url?: string | null
           created_at?: string
           display_date?: string
@@ -265,12 +281,12 @@ export type Database = {
           status?: Database["public"]["Enums"]["journal_status"]
           title: string
           updated_at?: string
-          video_url?: string | null
         }
         Update: {
           author_id?: string
           content?: string
           content_type?: string
+          cover_format?: string
           cover_image_url?: string | null
           created_at?: string
           display_date?: string
@@ -281,7 +297,6 @@ export type Database = {
           status?: Database["public"]["Enums"]["journal_status"]
           title?: string
           updated_at?: string
-          video_url?: string | null
         }
         Relationships: [
           {
@@ -1069,6 +1084,7 @@ export type Database = {
       }
       product_variants: {
         Row: {
+          base_price: number
           created_at: string
           id: string
           is_active: boolean
@@ -1079,6 +1095,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          base_price: number
           created_at?: string
           id?: string
           is_active?: boolean
@@ -1089,6 +1106,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          base_price?: number
           created_at?: string
           id?: string
           is_active?: boolean
@@ -1188,7 +1206,9 @@ export type Database = {
           comment: string
           created_at: string
           display_name_snapshot: string
+          highlights: string[]
           id: string
+          image_paths: string[]
           is_featured: boolean
           is_visible: boolean
           order_id: string
@@ -1200,7 +1220,9 @@ export type Database = {
           comment: string
           created_at?: string
           display_name_snapshot: string
+          highlights?: string[]
           id?: string
+          image_paths?: string[]
           is_featured?: boolean
           is_visible?: boolean
           order_id: string
@@ -1212,7 +1234,9 @@ export type Database = {
           comment?: string
           created_at?: string
           display_name_snapshot?: string
+          highlights?: string[]
           id?: string
+          image_paths?: string[]
           is_featured?: boolean
           is_visible?: boolean
           order_id?: string
@@ -1322,6 +1346,7 @@ export type Database = {
         Returns: {
           created_order_id: string
           created_order_number: string
+          created_payment_method: string
           created_total: number
           was_created: boolean
         }[]
@@ -1329,6 +1354,10 @@ export type Database = {
       deactivate_due_account: {
         Args: { target_user_id: string }
         Returns: boolean
+      }
+      delete_journal_draft: {
+        Args: { target_admin_id: string; target_post_id: string }
+        Returns: string
       }
       expire_paymongo_order: {
         Args: { checkout_id: string; target_payment_id: string }
@@ -1356,6 +1385,39 @@ export type Database = {
           loyalty_threshold: number
           redeemed_rewards: number
           user_id: string
+        }[]
+      }
+      get_admin_dashboard_decisions: {
+        Args: {
+          period_end: string
+          period_start: string
+          previous_end: string
+          previous_start: string
+          target_admin_id: string
+        }
+        Returns: Json
+      }
+      get_admin_dashboard_summary: {
+        Args: {
+          period_end: string
+          period_start: string
+          previous_end: string
+          previous_start: string
+          target_admin_id: string
+        }
+        Returns: Json
+      }
+      get_public_featured_reviews: {
+        Args: { result_limit?: number }
+        Returns: {
+          comment_value: string
+          customer_name: string
+          highlight_values: string[]
+          image_count: number
+          ordered_items: Json
+          rating_value: number
+          review_id: string
+          reviewed_at: string
         }[]
       }
       get_public_pickup_inventory: {
@@ -1443,6 +1505,10 @@ export type Database = {
         Returns: string
       }
       prune_mutation_rate_limit_buckets: { Args: never; Returns: number }
+      record_counter_payment: {
+        Args: { target_admin_id: string; target_order_id: string }
+        Returns: boolean
+      }
       record_inventory_consumption: {
         Args: {
           notes_value: string
@@ -1496,6 +1562,8 @@ export type Database = {
       submit_order_review: {
         Args: {
           comment_value: string
+          highlights_value?: string[]
+          image_paths_value?: string[]
           rating_value: number
           target_order_id: string
           target_user_id: string
@@ -1524,6 +1592,7 @@ export type Database = {
       update_catalog_variant: {
         Args: {
           active_value: boolean
+          base_price_value: number
           target_admin_id: string
           target_variant_id: string
         }
@@ -1578,6 +1647,7 @@ export type Database = {
         Args: {
           content_type_value: string
           content_value: string
+          cover_format_value: string
           cover_image_url_value: string
           display_date_value: string
           excerpt_value: string
@@ -1585,7 +1655,6 @@ export type Database = {
           target_admin_id: string
           target_post_id: string
           title_value: string
-          video_url_value: string
         }
         Returns: string
       }

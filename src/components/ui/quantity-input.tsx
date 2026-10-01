@@ -90,7 +90,7 @@ export function NumberStepper({
       </label>
       <div
         className={cn(
-          "grid min-h-12 grid-cols-[3rem_minmax(3rem,1fr)_3rem] overflow-hidden rounded-control border bg-surface-control transition focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/20",
+          "grid h-12 grid-cols-[3rem_minmax(3rem,1fr)_3rem] overflow-hidden rounded-control border bg-surface-control transition focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/20",
           shownError ? "border-danger-foreground" : "border-transparent",
           disabled && "opacity-50",
         )}
@@ -100,7 +100,7 @@ export function NumberStepper({
           aria-label={`Decrease ${label}`}
           disabled={!canDecrease}
           onClick={() => commit(parsed - step)}
-          className="grid min-h-12 place-items-center border-r border-border-subtle p-0 text-foreground transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-35"
+          className="grid h-full place-items-center border-r border-border-subtle p-0 text-foreground transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-35"
         >
           <Minus aria-hidden="true" className="block" size={18} />
         </button>
@@ -150,7 +150,7 @@ export function NumberStepper({
           aria-label={`Increase ${label}`}
           disabled={!canIncrease}
           onClick={() => commit(parsed + step)}
-          className="grid min-h-12 place-items-center border-l border-border-subtle p-0 text-foreground transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-35"
+          className="grid h-full place-items-center border-l border-border-subtle p-0 text-foreground transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-35"
         >
           <Plus aria-hidden="true" className="block" size={18} />
         </button>

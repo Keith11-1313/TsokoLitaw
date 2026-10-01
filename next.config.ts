@@ -12,10 +12,10 @@ const isDevelopment = process.env.NODE_ENV === "development";
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDevelopment ? " 'unsafe-eval'" : ""}`,
-  "worker-src 'self'",
+  "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https://lh3.googleusercontent.com${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
-  "font-src 'self' data:",
+  `font-src 'self' data:${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
   `connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ""}${supabaseWebSocketOrigin ? ` ${supabaseWebSocketOrigin}` : ""}${isDevelopment ? " http://localhost:* ws://localhost:*" : ""}`,
   "object-src 'none'",
   "base-uri 'self'",

@@ -2,7 +2,9 @@
 
 `/orders` and `/orders/[orderId]` use `server-orders.ts` ownership-scoped snapshot reads.
 `orders-list.tsx` owns filters/pagination presentation; `order-line-items.tsx` renders the shared receipt.
-Order numbers come from PostgreSQL's shared sequence (`TL-0001` style), not per-page counters.
+New order numbers are allocated atomically in PostgreSQL as `TLDDMMYY001`, with the final three
+digits restarting for each Manila calendar date. Existing `TL-0001` style numbers remain valid
+historical references and provider callbacks accept both formats.
 Receipts show the snapshotted complimentary extra as a separate `₱0.00` line. Paid extras remain
 separate. Reordering copies paid selections only; the new checkout applies the current complimentary extra.
 Cancelled, expired, and completed order details offer `Order again` only when every saved catalog
@@ -15,12 +17,14 @@ PENDING_PAYMENT → PAID → CONFIRMED → PREPARING → READY_FOR_PICKUP → CO
 Terminal alternatives: CANCELLED, EXPIRED
 ```
 
-This describes the domain vocabulary; verified payment normally commits payment `PAID` and order
-`CONFIRMED` together. Admin fulfillment uses `transition_order_status` for the paid forward-only
+This describes the domain vocabulary; verified online payment normally commits payment `PAID` and
+order `CONFIRMED` together. Pay-at-counter orders start `CONFIRMED` / `PENDING`, may be prepared and
+made ready while unpaid, and cannot become `COMPLETED` until Admin records payment. Admin fulfillment uses `transition_order_status` for the forward-only
 `CONFIRMED → PREPARING → READY_FOR_PICKUP → COMPLETED` path. The action is under
 `src/app/admin/orders/actions.ts`, with server orchestration in `server-orders.ts` and an SQL audit record.
 
 Payment states are separate: `PENDING`, `UNDER_REVIEW` (Manual GCash only), `PAID`, `FAILED`.
+For pay-at-counter, `PENDING` means payment is due at campus pickup and has no automatic expiry.
 Under review keeps fulfillment at `PENDING_PAYMENT`; the customer label explains payment review.
 See [manual payment verification](payments.md#manual-gcash) for proof, approval and rejection.
 There is no payment `EXPIRED` value: expiration transitions unpaid payment to `FAILED` and order
@@ -40,9 +44,25 @@ The pre-v1 baseline removes the retired online refund subsystem.
 ## Reviews
 
 Order detail opens the review modal. `orders/[orderId]/review/actions.ts` → `server-reviews.ts`
-→ `submit_order_review`: active owner, completed order, one review, bounded text and rating.
-Reviews are hidden until authorized Admin moderation through `moderate_order_review`.
-Public Journal shows only safe approved display data; no customer emails.
+→ `submit_order_review`: active owner, completed order, one review, a required one-to-five rating,
+an optional bounded comment, allow-listed tasting highlights, and up to five validated review images.
+The review form accepts HEIC/HEIF/JPG/PNG/WebP source photos (up to 25 MiB each) and prepares them
+on the customer's device before submission. HEIC/HEIF conversion is loaded only when needed; all
+submitted images are JPEG or WebP. The current single-request action still limits the prepared
+images to 3 MiB each and 3.5 MiB combined so the request stays below hosting limits. A photo set
+that cannot fit at usable quality is rejected with an inline error. Larger combined galleries
+require a separately authorized direct-to-Storage upload flow.
+
+Review images use the private `review-media` bucket and are served only to the owner, an Admin, or
+after authorized Admin publication through `moderate_order_review`. Public Journal shows only safe
+approved display data from `get_public_featured_reviews`: masked customer names, immutable ordered-box
+summaries, review date, rating, highlights, comment, and image count. No customer emails, full public
+names, or raw Storage paths are exposed. Multi-image galleries provide Previous/Next controls and
+compact position dots, do not autoplay, and handle unavailable files. Images can be opened in a
+full-screen viewer. Gallery images fit inside a stable
+4:3 frame without cropping; other aspect ratios show the surrounding surface. A single image has no carousel controls.
+Because `review-media` is private, galleries load the authorized application route directly in the
+signed-in browser instead of sending that route through the unauthenticated Next.js image optimizer.
 
 Tests: `order-status.test.ts`, `components/orders/orders-list.test.tsx`, local `001_auth_rls`,
 `002_payments`, `003_cancellation`,

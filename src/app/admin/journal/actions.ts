@@ -3,9 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { isUuid } from "@/lib/identifiers";
-import { isJournalContentType, isJournalStatus } from "@/lib/journal";
-import { saveAdminJournalPost, removeJournalCover, uploadJournalCover } from "@/lib/server-journal";
-import { secureUrlError, type FieldErrors } from "@/lib/form-validation";
+import { isJournalContentType, isJournalCoverFormat, isJournalStatus } from "@/lib/journal";
+import {
+  deleteAdminJournalDraft,
+  journalCoverPathFromUrl,
+  saveAdminJournalPost,
+  removeJournalCover,
+  uploadJournalCover,
+} from "@/lib/server-journal";
+import type { FieldErrors } from "@/lib/form-validation";
 import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
 
 export type JournalActionState = {
@@ -29,8 +35,8 @@ export async function saveJournalPostAction(
   const contentType = String(formData.get("contentType") ?? "");
   const displayDate = String(formData.get("displayDate") ?? "");
   const status = String(formData.get("status") ?? "");
+  const coverFormat = String(formData.get("coverFormat") ?? "");
   const existingCoverImageUrl = String(formData.get("existingCoverImageUrl") ?? "").trim();
-  const videoUrl = String(formData.get("videoUrl") ?? "").trim();
   const removeCover = formData.get("removeCover") === "on";
   const coverImage = formData.get("coverImage");
 
@@ -45,26 +51,15 @@ export async function saveJournalPostAction(
     fieldErrors.content = "Use content between 10 and 5,000 characters.";
   if (Object.keys(fieldErrors).length)
     return { status: "error", message: "Check the highlighted Journal fields.", fieldErrors };
-  if (!isJournalContentType(contentType) || !isJournalStatus(status)) {
+  if (
+    !isJournalContentType(contentType) ||
+    !isJournalStatus(status) ||
+    !isJournalCoverFormat(coverFormat)
+  ) {
     return { status: "error", message: "Choose valid Journal type and publication values." };
   }
   if (!datePattern.test(displayDate) || Number.isNaN(Date.parse(`${displayDate}T00:00:00Z`))) {
     return { status: "error", message: "Choose a valid display date." };
-  }
-  const videoUrlError = secureUrlError(videoUrl, "Video link");
-  if (contentType === "video" && !videoUrl) {
-    return {
-      status: "error",
-      message: "Video posts need a video link.",
-      fieldErrors: { videoUrl: "Add a secure video link for this post." },
-    };
-  }
-  if (videoUrlError) {
-    return {
-      status: "error",
-      message: "Video links must use a valid secure URL.",
-      fieldErrors: { videoUrl: videoUrlError },
-    };
   }
   if (coverImage instanceof File && coverImage.size > 0) {
     if (!allowedImageTypes.has(coverImage.type) || coverImage.size > 3 * 1024 * 1024) {
@@ -101,7 +96,7 @@ export async function saveJournalPostAction(
       contentType,
       displayDate,
       coverImageUrl,
-      videoUrl,
+      coverFormat,
       status,
     });
 
@@ -124,6 +119,51 @@ export async function saveJournalPostAction(
           : error instanceof Error
             ? error.message
             : "Journal post could not be saved.",
+    };
+  }
+}
+
+export async function deleteJournalDraftAction(
+  _previousState: JournalActionState,
+  formData: FormData,
+): Promise<JournalActionState> {
+  const admin = await requireAdmin("/admin/journal");
+  const postId = String(formData.get("postId") ?? "").trim();
+
+  if (!isUuid(postId)) {
+    return { status: "error", message: "That Journal draft is unavailable." };
+  }
+
+  try {
+    await enforceMutationRateLimit({
+      scope: "admin-journal-delete",
+      userId: admin.id,
+      maximumRequests: 10,
+      windowSeconds: 300,
+    });
+
+    const coverImageUrl = await deleteAdminJournalDraft({ adminId: admin.id, postId });
+    const coverPath = coverImageUrl ? journalCoverPathFromUrl(coverImageUrl) : null;
+    if (coverPath) {
+      try {
+        await removeJournalCover(coverPath);
+      } catch (cleanupError) {
+        console.error("Deleted Journal draft cover cleanup failed", cleanupError);
+      }
+    }
+
+    revalidatePath("/admin/journal");
+    revalidatePath("/journal");
+    return { status: "success", message: "Journal draft deleted." };
+  } catch (error) {
+    return {
+      status: "error",
+      message:
+        error instanceof MutationRateLimitError
+          ? `Too many updates. Try again in about ${error.retryAfterSeconds} seconds.`
+          : error instanceof Error
+            ? error.message
+            : "Journal draft could not be deleted.",
     };
   }
 }

@@ -150,7 +150,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
                       ? "Loyalty reward"
                       : order.paymentMethod === "manual_gcash"
                         ? "Manual GCash"
-                        : "PayMongo"}
+                        : order.paymentMethod === "pay_at_counter"
+                          ? "Pay at the counter"
+                          : "PayMongo"}
                   </dd>
                 </div>
               </dl>
@@ -175,11 +177,14 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
               order.paymentWindowOpen ? (
                 <ResumePaymentButton orderId={order.id} />
               ) : null}
+              {order.paymentMethod === "pay_at_counter" && order.paymentStatus !== "PAID" ? (
+                <p className="mt-4 rounded-control bg-warning-background p-4 text-sm leading-6 text-warning-foreground">
+                  Pay the exact total at campus pickup. Your order can be prepared now, but it will
+                  not be released as completed until an administrator records the payment.
+                </p>
+              ) : null}
               {canOrderAgain ? (
                 <div className="mt-5 border-t border-border pt-5">
-                  <p className="mb-3 text-xs leading-5 text-muted-foreground">
-                    Current prices and availability are checked again at checkout.
-                  </p>
                   {exactOrderCanBeRepeated ? (
                     <ReorderButton items={reorderItems} />
                   ) : (
@@ -194,18 +199,12 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
               ) : null}
             </section>
             {reviewContext ? (
-              <section className="rounded-card border border-border bg-surface p-6">
-                <h2 className="font-display text-2xl">Share your experience</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Each completed order can receive one customer review.
-                </p>
-                <OrderReviewModal
-                  orderId={reviewContext.orderId}
-                  orderNumber={reviewContext.orderNumber}
-                  itemSummary={reviewContext.itemSummary}
-                  existingReview={reviewContext.existingReview}
-                />
-              </section>
+              <OrderReviewModal
+                orderId={reviewContext.orderId}
+                orderNumber={reviewContext.orderNumber}
+                itemSummary={reviewContext.itemSummary}
+                existingReview={reviewContext.existingReview}
+              />
             ) : null}
             {order.canCancel ? (
               <section className="rounded-card border border-danger-foreground/30 bg-surface p-6">

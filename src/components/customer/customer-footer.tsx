@@ -17,20 +17,11 @@ export function CustomerFooter({
   className,
 }: CustomerFooterProps) {
   return (
-    <footer
-      className={cn(
-        "bg-brand py-14 text-surface sm:py-16 lg:py-[4.5rem]",
-        className,
-      )}
-    >
+    <footer className={cn("bg-brand py-14 text-surface sm:py-16 lg:py-[4.5rem]", className)}>
       <SiteContainer>
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.25fr_1fr_auto] lg:gap-20">
           <div className="max-w-sm">
-            <BrandLockup
-              inverted
-              showSubtitle={false}
-              titleClassName="text-3xl"
-            />
+            <BrandLockup inverted showSubtitle={false} titleClassName="text-3xl" />
             <p className="mt-5 text-sm leading-6 text-surface/80">
               Craving something sweet? Order your TsokoLitaw online and pick it up fresh on campus.
             </p>
@@ -49,7 +40,9 @@ export function CustomerFooter({
               >
                 {address}
               </a>
-              <a className="underline-offset-4 hover:underline" href={`mailto:${supportEmail}`}>{supportEmail}</a>
+              <a className="underline-offset-4 hover:underline" href={`mailto:${supportEmail}`}>
+                {supportEmail}
+              </a>
             </address>
           </div>
 
@@ -82,7 +75,17 @@ export function CustomerFooter({
 
         <div className="mt-12 flex flex-col gap-4 border-t border-surface/15 pt-8 text-xs text-surface/70 sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; {new Date().getFullYear()} TsokoLitaw. All rights reserved.</p>
-          <nav className="flex flex-wrap gap-4" aria-label="Legal"><Link className="underline-offset-4 hover:underline" href="/terms">Terms &amp; Conditions</Link><Link className="underline-offset-4 hover:underline" href="/privacy">Privacy</Link></nav>
+          <nav className="flex flex-wrap gap-4" aria-label="Help and legal">
+            <Link className="underline-offset-4 hover:underline" href="/faq">
+              FAQ
+            </Link>
+            <Link className="underline-offset-4 hover:underline" href="/terms">
+              Terms &amp; Conditions
+            </Link>
+            <Link className="underline-offset-4 hover:underline" href="/privacy">
+              Privacy
+            </Link>
+          </nav>
         </div>
       </SiteContainer>
     </footer>

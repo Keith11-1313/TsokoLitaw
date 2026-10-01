@@ -2,15 +2,19 @@ import "server-only";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { validateUploadedImage } from "@/lib/server-image-validation";
+import type { ReviewOrderItemSummary } from "@/lib/reviews";
 
 export interface CustomerReviewContext {
   orderId: string;
   orderNumber: string;
-  itemSummary: string;
+  itemSummary: ReviewOrderItemSummary[];
   existingReview: null | {
     id: string;
     rating: number;
     comment: string;
+    highlights: string[];
+    imageCount: number;
     createdAt: string;
   };
 }
@@ -22,6 +26,8 @@ export interface AdminReviewSummary {
   customerName: string;
   rating: number;
   comment: string;
+  highlights: string[];
+  imageCount: number;
   isVisible: boolean;
   isFeatured: boolean;
   createdAt: string;
@@ -32,6 +38,10 @@ export interface PublicFeaturedReview {
   customerName: string;
   rating: number;
   comment: string;
+  highlights: string[];
+  imageCount: number;
+  reviewedAt: string;
+  orderedItems: Array<{ name: string; quantity: number; pieceCount: number }>;
 }
 
 interface ReviewContextRow {
@@ -46,12 +56,15 @@ interface ReviewContextRow {
       piece_count: number;
     }> | null;
   }> | null;
-  reviews: Array<{
-    id: string;
-    rating: number;
-    comment: string;
-    created_at: string;
-  }> | null;
+}
+
+interface CustomerReviewRow {
+  id: string;
+  rating: number;
+  comment: string;
+  highlights: string[];
+  image_paths: string[];
+  created_at: string;
 }
 
 export async function getCustomerReviewContext(
@@ -61,7 +74,8 @@ export async function getCustomerReviewContext(
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("orders")
-    .select(`
+    .select(
+      `
       id,
       order_number,
       status,
@@ -72,14 +86,9 @@ export async function getCustomerReviewContext(
           coating_name_snapshot,
           piece_count
         )
-      ),
-      reviews (
-        id,
-        rating,
-        comment,
-        created_at
       )
-    `)
+    `,
+    )
     .eq("id", orderId)
     .eq("user_id", userId)
     .eq("status", "COMPLETED")
@@ -89,24 +98,38 @@ export async function getCustomerReviewContext(
   if (!data) return null;
 
   const order = data as unknown as ReviewContextRow;
-  const existingReview = order.reviews?.[0] ?? null;
+  const { data: reviewData, error: reviewError } = await supabase
+    .from("reviews")
+    .select("id, rating, comment, highlights, image_paths, created_at")
+    .eq("order_id", order.id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (reviewError) {
+    throw new Error("Submitted review could not be loaded.", { cause: reviewError });
+  }
+
+  const existingReview = reviewData as CustomerReviewRow | null;
   return {
     orderId: order.id,
     orderNumber: order.order_number,
-    itemSummary: (order.order_items ?? [])
-      .map((item) => {
-        const coatings = (item.order_item_coatings ?? [])
-          .map((coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`)
-          .join(", ");
-        return `${item.variant_name_snapshot} × ${item.quantity}${coatings ? ` · ${coatings}` : ""}`;
-      })
-      .join("; "),
-    existingReview: existingReview ? {
-      id: existingReview.id,
-      rating: existingReview.rating,
-      comment: existingReview.comment,
-      createdAt: existingReview.created_at,
-    } : null,
+    itemSummary: (order.order_items ?? []).map((item) => ({
+      name: item.variant_name_snapshot,
+      quantity: item.quantity,
+      coatings: (item.order_item_coatings ?? []).map(
+        (coating) => `${coating.coating_name_snapshot} × ${coating.piece_count}`,
+      ),
+    })),
+    existingReview: existingReview
+      ? {
+          id: existingReview.id,
+          rating: existingReview.rating,
+          comment: existingReview.comment,
+          highlights: existingReview.highlights,
+          imageCount: existingReview.image_paths.length,
+          createdAt: existingReview.created_at,
+        }
+      : null,
   };
 }
 
@@ -115,6 +138,8 @@ export async function submitCustomerReview(input: {
   orderId: string;
   rating: number;
   comment: string;
+  highlights: string[];
+  imagePaths: string[];
 }) {
   const admin = createAdminSupabaseClient();
   const { data, error } = await admin.rpc("submit_order_review", {
@@ -122,6 +147,8 @@ export async function submitCustomerReview(input: {
     target_order_id: input.orderId,
     rating_value: input.rating,
     comment_value: input.comment,
+    highlights_value: input.highlights,
+    image_paths_value: input.imagePaths,
   });
 
   if (error) {
@@ -136,21 +163,60 @@ export async function submitCustomerReview(input: {
   return data as string;
 }
 
+export async function uploadReviewImages(input: {
+  userId: string;
+  orderId: string;
+  files: File[];
+}) {
+  const validated = await Promise.all(
+    input.files.map((file) => validateUploadedImage(file, { label: "review image" })),
+  );
+  const uploaded: string[] = [];
+  try {
+    for (const image of validated) {
+      const path = `${input.userId}/${input.orderId}/${crypto.randomUUID()}.${image.extension}`;
+      const { error } = await createAdminSupabaseClient()
+        .storage.from("review-media")
+        .upload(path, image.buffer, {
+          contentType: image.contentType,
+          cacheControl: "3600",
+          upsert: false,
+        });
+      if (error) throw error;
+      uploaded.push(path);
+    }
+    return uploaded;
+  } catch (error) {
+    if (uploaded.length)
+      await createAdminSupabaseClient().storage.from("review-media").remove(uploaded);
+    throw new Error("Your review images could not be uploaded.", { cause: error });
+  }
+}
+
+export async function removeReviewImages(paths: string[]) {
+  const { error } = await createAdminSupabaseClient().storage.from("review-media").remove(paths);
+  if (error) throw new Error("The new review images could not be cleaned up.", { cause: error });
+}
+
 export async function getAdminReviews(): Promise<AdminReviewSummary[]> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("reviews")
-    .select(`
+    .select(
+      `
       id,
       order_id,
       display_name_snapshot,
       rating,
       comment,
+      highlights,
+      image_paths,
       is_visible,
       is_featured,
       created_at,
       orders (order_number)
-    `)
+    `,
+    )
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -165,6 +231,8 @@ export async function getAdminReviews(): Promise<AdminReviewSummary[]> {
       customerName: review.display_name_snapshot,
       rating: review.rating,
       comment: review.comment,
+      highlights: review.highlights,
+      imageCount: review.image_paths.length,
       isVisible: review.is_visible,
       isFeatured: review.is_featured,
       createdAt: review.created_at,
@@ -174,20 +242,23 @@ export async function getAdminReviews(): Promise<AdminReviewSummary[]> {
 
 export async function getPublicFeaturedReviews(): Promise<PublicFeaturedReview[]> {
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase
-    .from("reviews")
-    .select("id, display_name_snapshot, rating, comment")
-    .eq("is_featured", true)
-    .order("created_at", { ascending: false })
-    .limit(6);
+  const { data, error } = await supabase.rpc("get_public_featured_reviews", {
+    result_limit: 6,
+  });
 
   if (error) throw new Error("Featured reviews could not be loaded.", { cause: error });
 
   return (data ?? []).map((review) => ({
-    id: review.id,
-    customerName: review.display_name_snapshot,
-    rating: review.rating,
-    comment: review.comment,
+    id: review.review_id,
+    customerName: review.customer_name,
+    rating: review.rating_value,
+    comment: review.comment_value,
+    highlights: review.highlight_values,
+    imageCount: review.image_count,
+    reviewedAt: review.reviewed_at,
+    orderedItems: Array.isArray(review.ordered_items)
+      ? (review.ordered_items as Array<{ name: string; quantity: number; pieceCount: number }>)
+      : [],
   }));
 }
 

@@ -378,8 +378,10 @@ export async function getCustomerOrderDetail(
   };
 }
 
-export async function getAdminOrders(): Promise<AdminOrderSummary[]> {
-  await expireDueDirectPayments();
+export async function getAdminOrders(
+  options: { expirePayments?: boolean } = {},
+): Promise<AdminOrderSummary[]> {
+  if (options.expirePayments !== false) await expireDueDirectPayments();
   const supabase = await createServerSupabaseClient();
   const selection = `
       id,
@@ -486,4 +488,19 @@ export async function transitionAdminOrderStatus(input: {
   }
 
   return data as OrderStatus;
+}
+
+export async function recordAdminCounterPayment(input: { adminId: string; orderId: string }) {
+  const admin = createAdminSupabaseClient();
+  const { data, error } = await admin.rpc("record_counter_payment", {
+    target_admin_id: input.adminId,
+    target_order_id: input.orderId,
+  });
+
+  if (error) {
+    throw new Error("The counter payment could not be recorded. Refresh and verify the order.", {
+      cause: error,
+    });
+  }
+  return data;
 }

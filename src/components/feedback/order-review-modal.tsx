@@ -1,67 +1,122 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { OrderReviewForm } from "@/components/feedback/order-review-form";
-import { primaryButtonClassName } from "@/components/ui/button";
+import { primaryButtonClassName, secondaryButtonClassName } from "@/components/ui/button";
+import type { ReviewOrderItemSummary } from "@/lib/reviews";
 
 interface OrderReviewModalProps {
   orderId: string;
   orderNumber: string;
-  itemSummary: string;
+  itemSummary: ReviewOrderItemSummary[];
   existingReview: null | {
+    id: string;
     rating: number;
     comment: string;
+    highlights: string[];
+    imageCount: number;
     createdAt: string;
   };
 }
 
 export function OrderReviewModal(props: OrderReviewModalProps) {
   const [open, setOpen] = useState(false);
+  const [submitted, setSubmitted] = useState(Boolean(props.existingReview));
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  const handleSubmitted = useCallback(() => setSubmitted(true), []);
 
   useEffect(() => {
     if (!open) return;
     const trigger = triggerRef.current;
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     closeRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Tab") return;
+
+      const focusable = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
       trigger?.focus();
     };
   }, [open]);
 
   return (
-    <>
-      <button ref={triggerRef} type="button" className={`${primaryButtonClassName} mt-5`} onClick={() => setOpen(true)}>
-        {props.existingReview ? "View your review" : "Review this order"}
+    <section className="rounded-card border border-border bg-surface p-6">
+      <h2 className="font-display text-2xl">
+        {submitted ? "Review submitted" : "Share your experience"}
+      </h2>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+        {submitted
+          ? "You already reviewed this order. You can view your submitted review below."
+          : "Each completed order can receive one customer review."}
+      </p>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={`${submitted ? secondaryButtonClassName : primaryButtonClassName} mt-5 w-full`}
+        onClick={() => setOpen(true)}
+      >
+        {submitted ? "View my review" : "Review this order"}
       </button>
-      {open ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-foreground/40 p-4" onPointerDown={() => setOpen(false)}>
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="order-review-title"
-            onPointerDown={(event) => event.stopPropagation()}
-            className="my-auto w-full max-w-2xl rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Completed order</p>
-                <h2 id="order-review-title" className="mt-1 font-display text-3xl">Review {props.orderNumber}</h2>
-              </div>
-              <button ref={closeRef} type="button" aria-label="Close review dialog" onClick={() => setOpen(false)} className="flex size-11 shrink-0 items-center justify-center text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
-                <X aria-hidden="true" size={22} />
-              </button>
-            </div>
-            <div className="mt-6"><OrderReviewForm {...props} /></div>
-          </section>
-        </div>
-      ) : null}
-    </>
+      {open
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[110] flex items-start justify-center overflow-y-auto bg-foreground/40 p-3 sm:p-6"
+              onPointerDown={() => setOpen(false)}
+            >
+              <section
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="order-review-title"
+                onPointerDown={(event) => event.stopPropagation()}
+                className="my-auto w-full max-w-2xl rounded-card border border-border bg-surface p-5 shadow-2xl sm:p-8"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <h2 id="order-review-title" className="font-display text-3xl">
+                    {submitted ? "My review" : "Review"} {props.orderNumber}
+                  </h2>
+                  <button
+                    ref={closeRef}
+                    type="button"
+                    aria-label="Close review dialog"
+                    onClick={() => setOpen(false)}
+                    className="flex size-11 shrink-0 items-center justify-center text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                  >
+                    <X aria-hidden="true" size={22} />
+                  </button>
+                </div>
+                <div className="mt-6">
+                  <OrderReviewForm {...props} onSubmitted={handleSubmitted} />
+                </div>
+              </section>
+            </div>,
+            document.body,
+          )
+        : null}
+    </section>
   );
 }

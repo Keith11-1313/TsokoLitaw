@@ -18,9 +18,16 @@ TsokoLitaw is a student-operated chocolate-filled Litaw business for campus pick
 subdomain, microservices, repositories/factories, or a native storefront rewrite is not needed.
 
 Main navigation: Home, Our Creations, Journal. Account/Profile and Cart are header actions;
-My Orders belongs inside Account, not the main navigation. Terms and Privacy belong in Footer
-and Checkout. Legacy Vlog/Feedback URLs redirect to Journal. This avoids duplicate shopping
-actions and keeps private activity separate from public discovery.
+My Orders belongs inside Account, not the main navigation. The customer FAQ is linked only from the
+Footer. Terms and Privacy belong in Footer and Checkout. Legacy Vlog/Feedback URLs redirect to
+Journal. This avoids duplicate shopping actions and keeps private activity separate from public
+discovery.
+
+The Privacy Policy and Terms effective September 29, 2026 are the current customer-facing policy
+copy. They explain actual account, payment, pickup, review, retention, and dispute operations in plain
+language without changing the underlying product state machine. Checkout records Terms version
+`2026-09-29`; later material policy changes require a new persisted version rather than silently
+rewriting the version previously accepted with an order.
 
 ## Identity and contact
 
@@ -37,7 +44,7 @@ actions and keeps private activity separate from public discovery.
 
 - Currency PHP; configurable boxes TsokoMini (4), TsokoMore (6), TsokoMuch (8 pieces).
 - The exterior choices are **coatings**, not flavors/toppings: Cocoa, Milk, Palitaw, Crushed Nuts,
-  Plain, Sesame Seeds, Cookies and Cream. Palitaw means sugar, niyog, sesame seeds.
+  Plain, Sesame Seeds, Cookies and Cream, Chocolate Sprinkles. Palitaw means sugar, niyog, sesame seeds.
 - Base unit price is piece count × the current Admin-managed product price per piece.
   Each coated piece adds its coating's Admin-managed per-piece charge. Mixed allocations total
   the whole box; a single-coating box allocates every piece to that choice.
@@ -46,8 +53,9 @@ actions and keeps private activity separate from public discovery.
   per box. Different configurations are separate cart lines.
 - Customer screens call add-ons “Extras.” Code and database names retain the standard `addon`
   term so the technical contract stays consistent.
-- Seed prices (base ₱10/piece, coating ₱5/piece, initial cream add-on ₱18) are provisional data,
-  not permanent application constants. The old distinct-extra-coating pricing rule is superseded.
+- Seed prices are TsokoMini ₱40, TsokoMore ₱55 and TsokoMuch ₱75. Plain is the default ₱0
+  coating; the other seeded coatings add ₱5 per piece. Sea salt cream is the default extra at ₱15.
+  These remain Admin-managed data, not permanent application constants.
 - Customer allergen communication is one general notice, not per-coating Admin allergen controls.
   Notice covers nuts, dairy, coconut, sesame, chocolate/cookie ingredients and cross-contact.
 - Coating images persist in Supabase Storage and are square JPG/PNG/WebP, at most 3 MiB.
@@ -58,7 +66,8 @@ Normal Admin catalog changes never reprice existing orders.
 
 ## Pickup and stock
 
-All sales use website checkout and online payment. Campus pickup only; no cash/walk-in or delivery flow.
+All sales use authenticated website checkout. Collection may be online or the tracked Pay at the
+Counter method; there is no untracked cash/walk-in order or delivery flow. Campus pickup only.
 Launch locations are UCC Congress — 3rd Floor and Covered Court. Monday–Saturday, 7 AM–7 PM is
 the operating window, not automatic availability. Admin publishes every actual date/window/location.
 Provisional rules are one-day lead time, 5 PM cutoff, hourly slots, and 15-minute grace period.
@@ -75,9 +84,11 @@ No separate Inventory “available online” switch or window-box capacity is re
 
 ## Payments and order state
 
-Server-selected PayMongo Hosted Checkout or Manual GCash QR with Admin verification. The method
-and manual QR are pinned per order; environment changes affect new orders only. Browser success,
-receipt images and OCR are not payment proof. See [manual workflow](../features/payments.md#manual-gcash).
+Required `PAYMENT_MODE` is server-selected: `automatic` offers PayMongo only, while `manual` lets
+customers choose Manual GCash or Pay at the Counter. The selected method and manual QR are pinned
+per order; environment changes affect new orders only. Browser success, receipt images and OCR are
+not payment proof. Counter orders remain tracked website orders and require audited Admin payment
+confirmation before completion. See [payment workflows](../features/payments.md).
 For PayMongo:
 Signed verified events and exact SQL reference/amount matching determine paid state. Default payment
 expiry is 15 minutes, configurable. Provider checkout must close before reserved stock is released.
@@ -86,17 +97,25 @@ Order and payment status remain distinct; see [orders](../features/orders.md). W
 is **pending unpaid only**, not “until preparation.” Paid settlement concerns are handled in person.
 No new online refunds or destination collection. Prepared/no-show orders are non-refundable subject
 to non-waivable rights. The retired refund rows, states and reconciliation code are removed in the
-pre-v1 baseline. Hosted Dev was rebaselined with approved disposable-data removal; Production was
-not reset and remains untouched.
+pre-v1 baseline. Hosted Dev and Production received the earlier shared baseline through separate,
+explicitly approved disposable-data resets before Phase 15 began. Dev later received the complete
+Phase 15A contract through the approved September 24 reset; Production still requires separate
+exact-target approval before the final pre-APK contract is activated there.
 
 ## Loyalty, Journal and communication
 
 - Seven completed orders earn one free 4-piece reward; only the eligible base box price is discounted.
   Coatings/add-ons remain payable. SQL protects single use, restores pending redemptions on
   cancellation/expiry, and settles a zero-total order without PayMongo.
-- One review per owned completed order; rating 1–5 and bounded comment. Order detail opens the
-  review modal. New reviews are hidden until Admin moderation. Public cards do not disclose email.
-- Journal includes announcements, stories, features, community highlights and optional videos.
+- One review per owned completed order. Rating 1–5 is required; the bounded comment, allow-listed
+  tasting highlights and up to five images are optional. The form accepts HEIC/HEIF/JPG/PNG/WebP
+  source photos and prepares them on the customer device before upload. Review images remain in private
+  Storage and are available only to the owner or an Admin until Admin publication. Order detail opens
+  the review modal. New reviews are hidden until moderation, and public cards expose neither customer
+  email nor raw Storage paths.
+- Journal includes announcements, stories, features, community highlights and optional cover images.
+  Admin explicitly chooses landscape 16:9, square 1:1, or portrait 4:5 for each post; public surfaces
+  preserve the full image inside that persisted format rather than cropping or guessing its shape.
   Admin Journal owns draft/publication and review moderation; reviews remain distinct records.
 - Resend sends confirmation, readiness, and unpaid cancellation events. No refund lifecycle events remain.
 
@@ -110,7 +129,10 @@ Dev and Production remain isolated deployments/data/providers. SQL promotion is 
 Ordinary work follows development → reviewed PR → main; feature branches are reserved for risky/large work.
 See [environments](../getting-started/environments.md) and [deployment](../operations/deployment.md).
 
-Phase 15's approved thin TWA APK and optional Phase 16 public-only analytics are **planned**, not
-implemented features. Their scope and remaining work live only in the [roadmap](../roadmap.md).
+Phase 15A's final commerce/payment update is complete. Required Phase 15B Admin Dashboard
+decision-support work is active, then Phase 15C builds and accepts the approved thin TWA APK.
+Optional Phase 16 public-only analytics remains planned. Their scope and remaining work live only
+in the [roadmap](../roadmap.md).
 Completed phase-by-phase implementation checklists remain recoverable through Git rather than
-being repeated as current instructions. Applied SQL history is retained in place.
+being repeated as current instructions. Ordinary applied migrations are immutable; the explicitly
+approved pre-v1 baseline replacement follows the separate database migration runbook.
