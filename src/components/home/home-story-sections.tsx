@@ -4,6 +4,7 @@ import { CreditCard, MapPin, PackageOpen } from "lucide-react";
 import { SiteContainer } from "@/components/layout/site-container";
 import { secondaryButtonClassName } from "@/components/ui/button";
 import { getPublicCommerceCatalog } from "@/lib/server-commerce";
+import { formatPhp } from "@/lib/commerce";
 
 const orderSteps = [
   {
@@ -51,16 +52,15 @@ export function WhyTsokoLitawSection() {
               id="why-tsokolitaw-heading"
               className="mt-3 font-display text-4xl leading-tight text-brand sm:text-5xl"
             >
-              Why we created TsokoLitaw
+              When plain palitaw isn&apos;t enough.
             </h2>
             <p className="mt-6 text-lg leading-8 text-muted-foreground">
-              We started with the soft, chewy character of Filipino palitaw and gave every bite a
-              chocolate surprise. TsokoLitaw keeps the familiar rice-cake base, adds a warm
-              chocolate center, and lets you finish it with a coating you enjoy.
+              We started with a simple idea: plain palitaw could be more exciting. So we kept the
+              soft and chewy texture people already know, added a chocolate center, and gave it
+              different coatings to choose from.
             </p>
-            <p className="mt-4 leading-7 text-muted-foreground">
-              It is a playful take on kakanin made for sharing, gifting, or enjoying between
-              classes.
+            <p className="mt-4 text-lg leading-7 text-muted-foreground">
+              Pick your box: 4 pcs for ₱40 | 6 pcs for ₱55 | 8 pcs for ₱75
             </p>
           </div>
         </div>
@@ -126,7 +126,12 @@ export async function HomeCoatingShowcase() {
                   />
                 </div>
                 <div className="p-4 sm:p-5">
-                  <h3 className="font-display text-lg text-brand sm:text-xl">{coating.name}</h3>
+                  <div className="flex flex-wrap items-baseline gap-x-1.5">
+                    <h3 className="font-display text-lg text-brand sm:text-xl">{coating.name}</h3>
+                    <span className="text-xs italic text-brand/60">
+                     {formatPhp(coating.pricePerPiece)} / piece
+                    </span>
+                  </div>
                   <p className="mt-2 hidden text-sm leading-6 text-muted-foreground sm:block">
                     {coating.description}
                   </p>
@@ -224,16 +229,16 @@ export function SeaSaltSection() {
               Sweet meets salty
             </p>
             <h2 id="sea-salt-heading" className="mt-3 font-display text-4xl text-brand sm:text-5xl">
-              The perfect partner: sea-salt cream
+              Chocolate hits better with sea-salt cream
             </h2>
             <p className="mt-6 text-lg leading-8 text-muted-foreground">
-              Chocolate brings the richness. Sea-salt cream brings the balance. Its smooth, lightly
-              salty finish softens chocolate&apos;s bitter edge and keeps every bite from feeling
-              too sweet.
+              Rich chocolate is good on its own, but the sea-salt cream gives it that extra balance.
+              It adds a smooth, lightly salty finish that makes each bite less heavy and more
+              satisfying.
             </p>
-            <p className="mt-4 leading-7 text-muted-foreground">
-              Every box includes the signature pairing, with extra sea-salt cream available when one
-              dip is not enough.
+            <p className="mt-4 text-lg leading-7 text-muted-foreground">
+              Every box comes with 1 complimentary sea-salt cream dip. Want more? Add an extra one
+              for ₱15.
             </p>
           </div>
         </div>
