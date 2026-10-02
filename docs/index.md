@@ -28,7 +28,7 @@ Start with [onboarding](getting-started/onboarding.md). Read only the guides rel
 
 - [Current product rules and decision rationale](product/decisions.md)
 - [Design and shared form contracts](ui/design.md)
-- [Roadmap: completed UI stabilization, active dashboard work, planned APK, optional analytics](roadmap.md)
+- [Roadmap: dashboard acceptance, APK readiness, and optional analytics](roadmap.md)
 
 These guides replace the former root specifications, onboarding document, and completed phase checklists.
 Historical versions remain in Git; they are not instructions to replay old migrations or reset hosted data.

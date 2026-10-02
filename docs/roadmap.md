@@ -6,8 +6,8 @@ Disposable test data does not require backward-compatibility layers. Database cl
 is approved in principle; each hosted reset still needs its exact project and scope confirmed.
 
 The production/security baseline (Phase 13), UI stabilization (Phase 14), and final commerce/payment
-update (Phase 15A) are complete. Phase 15B is the active Admin Dashboard decision-support phase
-before Phase 15C builds and accepts the Android APK.
+update (Phase 15A) are complete. Phase 15B dashboard code and SQL are implemented; authenticated
+browser acceptance remains open. Phase 15C readiness is being verified before building the Android APK.
 Completion of an earlier smoke test does not establish that every future deployment is healthy.
 Use the current [release checks](operations/deployment.md), not old checked-off implementation lists.
 
@@ -36,14 +36,14 @@ Use the current [release checks](operations/deployment.md), not old checked-off 
   interfaces, notifications and dashboard provider labels. Validate locally before any hosted reset.
 - Hosted Dev received the approved coordinated reset on September 24, including seed data, restored
   fonts, linked database validation and recreated Cron jobs. The owner accepted the matching Dev
-  application work and Phase 15A as complete. Production remains a later, separately approved
-  coordinated activation before the APK database freeze closes.
+  application work and Phase 15A as complete. Production received its separately approved coordinated
+  activation on October 1; see the database migration runbook.
 
-## Phase 15B — Admin Dashboard decision support (Dev database active; deployment acceptance pending)
+## Phase 15B — Admin Dashboard decision support (implemented; browser acceptance pending)
 
 Phase 15A is complete. The Phase 15B application, SQL and test changes are implemented, and the
-approved migration is active in hosted Dev. Matching Dev application deployment and responsive browser
-acceptance remain required before marking the phase complete; Production remains unchanged.
+dashboard contract is folded into the single baseline active in hosted Dev and Production.
+Authenticated responsive browser acceptance remains required before marking the phase complete.
 
 The opt-in dashboard simulation fixture provides deterministic campus-shaped data for responsive and
 reporting review. It is a testing aid only: loading it into disposable Dev does not complete Phase 15B,
@@ -91,13 +91,22 @@ the single application. No offline ordering or payment.
 
 Complete Phase 15B, then complete this gate before building and accepting the signed v1 APK:
 
-Current status (September 24, 2026): the Phase 15A commerce/payment contract and Phase 15B dashboard
-database contract are active in hosted Dev. The latest approved reset restored the licensed brand fonts,
-passed linked schema lint and all 393 application database assertions, and recreated exactly three Cron
-jobs with seven definition checks and three HTTP 200 endpoint smokes. Matching Phase 15B application
-deployment and browser acceptance remain open. Production was not changed by either September 24 Dev
-reset, so the final coordinated Production activation and cross-environment verification below also
-remain open.
+Readiness review (October 2, 2026): read-only hosted checks confirmed that Dev
+`mgkzphpznamjlgrpumjd` and Production `zkmlzktvjkjrbznvrsxb` each record only baseline
+`20260911010000`; local code also has only that migration, including the dashboard RPC.
+Dev linked schema lint passed. Both projects reported `ACTIVE_HEALTHY`. Remote `development` and
+`main` both pointed to `e1e6b4ee65b6f5533d38300bc453210500400f07`; this does not independently
+verify the running Vercel commit. Both hosted Home URLs returned HTTP 200. Five dashboard
+date-range/chart tests passed. Production activation and font restoration are recorded in the
+October 1 migration-runbook entry.
+
+The freeze gate remains open for authenticated dashboard review at phone/tablet/desktop sizes,
+deployed-commit confirmation, and current environment-specific Auth/payment/notification/Cron checks.
+Dev Admin redirected to Login because the review browser had no authenticated session. Matching
+migration markers do not prove full schema or configuration equivalence. Do not run clean-data tests
+against populated hosted databases. This review changed no hosted application data, schema,
+credentials or migration history; the CLI remains linked to Dev. No Android manifest, Digital Asset
+Links, TWA wrapper or APK implementation exists yet.
 
 - Finish database and Storage-backed feature work, then review every migration added after
   `20260911010000_pre_v1_baseline.sql`.
@@ -106,7 +115,7 @@ remain open.
   squash, never while hosted migration history still depends on them.
 - Obtain exact-target approval before resetting Dev or Production. Confirm that no records, Auth
   identities, Storage files or provider-linked funds require retention before deleting anything.
-- Rebaseline both hosted projects to the same single migration marker, restore required public assets
+- If further schema consolidation is needed, rebaseline both hosted projects to the same single migration marker, restore required public assets
   such as the versioned brand fonts, deploy matching application code, and recreate only the three
   approved Cron jobs with each environment's existing secrets.
 - Re-run database, web, payment, notification and hosted smoke checks. Do not start the final APK
@@ -149,9 +158,8 @@ Begin only after the website and Phase 15C APK are stable.
   Google Business Profile is optional and needs separate eligibility assessment.
 - Resolve reported dependency advisories in a targeted, tested maintenance update; do not mix
   forced upgrades into this documentation/structure pass.
-- Hosted Dev and Production refund retirement, migration consolidation, and matching application
-  deployment were completed for the earlier shared baseline. Hosted Dev now has the accepted Phase
-  15A baseline plus its temporary service-role grant migration. Production still requires its own
-  exact-target approval and coordinated final activation before the APK freeze can close. Each
+- Hosted Dev and Production record the same consolidated pre-v1 baseline; temporary service-role
+  grant and dashboard migrations were folded into it. Production's approved October 1 activation is
+  recorded in the migration runbook. Remaining acceptance checks still apply. Each
   environment must have exactly three active application Cron jobs; verify them after every reset or
   relevant deployment using the database migration runbook.
