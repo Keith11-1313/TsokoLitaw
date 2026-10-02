@@ -20,6 +20,7 @@ describe("public search metadata", () => {
       "https://www.tsokolitaw.com/our-creations",
       "https://www.tsokolitaw.com/journal",
       "https://www.tsokolitaw.com/faq",
+      "https://www.tsokolitaw.com/install",
       "https://www.tsokolitaw.com/terms",
       "https://www.tsokolitaw.com/privacy",
     ]);

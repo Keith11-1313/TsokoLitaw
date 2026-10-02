@@ -45,7 +45,7 @@ rewriting the version previously accepted with an order.
 - Currency PHP; configurable boxes TsokoMini (4), TsokoMore (6), TsokoMuch (8 pieces).
 - The exterior choices are **coatings**, not flavors/toppings: Cocoa, Milk, Palitaw, Crushed Nuts,
   Plain, Sesame Seeds, Cookies and Cream, Chocolate Sprinkles. Palitaw means sugar, niyog, sesame seeds.
-- Base unit price is piece count × the current Admin-managed product price per piece.
+- Base unit price is the current Admin-managed fixed base price for the selected box size.
   Each coated piece adds its coating's Admin-managed per-piece charge. Mixed allocations total
   the whole box; a single-coating box allocates every piece to that choice.
 - Exactly one active coating is the default. Exactly one active extra is complimentary, with one
@@ -99,8 +99,8 @@ No new online refunds or destination collection. Prepared/no-show orders are non
 to non-waivable rights. The retired refund rows, states and reconciliation code are removed in the
 pre-v1 baseline. Hosted Dev and Production received the earlier shared baseline through separate,
 explicitly approved disposable-data resets before Phase 15 began. Dev later received the complete
-Phase 15A contract through the approved September 24 reset; Production still requires separate
-exact-target approval before the final pre-APK contract is activated there.
+Phase 15A contract through the approved September 24 reset; Production received its separately
+approved final baseline activation on October 1, recorded in the database migration runbook.
 
 ## Loyalty, Journal and communication
 
@@ -121,6 +121,12 @@ exact-target approval before the final pre-APK contract is activated there.
 
 ## Operations and future scope
 
+On October 2, the owner cancelled current APK and analytics work in favor of a footer-only
+Install app link and `/install` browser tutorials. This is home-screen access to the existing website,
+not an APK release. The six guides cover Safari, Chrome, Brave, Firefox, DuckDuckGo and Opera;
+unavailable home-screen menus fall back to Chrome or Safari. The prior APK-based v1.0 definition needs a separate
+owner decision before a website shortcut can be treated as release acceptance.
+
 Admin Dashboard is a bounded read-only cross-feature summary; Catalog, Orders, Pickup, Inventory,
 Customers and Journal own their respective mutations. Customers includes Admin/customer profiles,
 role labels and zero-activity accounts. Fixed brand and provider secrets are not editable settings.
@@ -130,7 +136,8 @@ Ordinary work follows development → reviewed PR → main; feature branches are
 See [environments](../getting-started/environments.md) and [deployment](../operations/deployment.md).
 
 Phase 15A's final commerce/payment update is complete. Required Phase 15B Admin Dashboard
-decision-support work is active, then Phase 15C builds and accepts the approved thin TWA APK.
+decision-support code and SQL are implemented, with browser acceptance still open. Phase 15C readiness
+precedes building and accepting the approved thin TWA APK.
 Optional Phase 16 public-only analytics remains planned. Their scope and remaining work live only
 in the [roadmap](../roadmap.md).
 Completed phase-by-phase implementation checklists remain recoverable through Git rather than

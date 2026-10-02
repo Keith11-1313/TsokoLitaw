@@ -69,6 +69,12 @@ non-Admin requests to Admin routes.
 
 ## Forms and editors
 
+The footer-only Install app link opens `/install`. Native disclosure guides cover Safari, Chrome,
+Brave, Firefox, DuckDuckGo and Opera, with local WebP browser logos and numbered steps. Keep
+the headings to logo and browser name; do not add separate device subtitles in the rows or expanded tutorials. Explain home-screen website
+access honestly: no APK download or offline ordering is provided. Unsupported menus use Chrome or
+Safari as a fallback; do not promise automatic installation or detect installation from a button click.
+
 - Validate in browser for feedback and **again on server/SQL** for authoritative writes.
 - Errors appear after blur and update while corrected. Existing-record Save requires valid changed
   values; create/checkout/review/confirm requires valid complete values. Pending actions stay disabled.

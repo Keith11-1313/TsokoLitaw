@@ -76,14 +76,20 @@ export function CustomerFooter({
         <div className="mt-12 flex flex-col gap-4 border-t border-surface/15 pt-8 text-xs text-surface/70 sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; {new Date().getFullYear()} TsokoLitaw. All rights reserved.</p>
           <nav className="flex flex-wrap gap-4" aria-label="Help and legal">
-            <Link className="underline-offset-4 hover:underline" href="/faq">
-              FAQ
-            </Link>
             <Link className="underline-offset-4 hover:underline" href="/terms">
               Terms &amp; Conditions
             </Link>
             <Link className="underline-offset-4 hover:underline" href="/privacy">
               Privacy
+            </Link>
+            <Link className="underline-offset-4 hover:underline" href="/faq">
+              FAQ
+            </Link>
+            <Link
+              className="underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface"
+              href="/install"
+            >
+              Install app
             </Link>
           </nav>
         </div>
