@@ -99,7 +99,7 @@ export async function HomeCoatingShowcase() {
               Make every box yours
             </p>
             <h2 id="coatings-heading" className="mt-3 font-display text-4xl text-brand sm:text-5xl">
-              Eight ways to finish your TsokoLitaw
+              Different ways to enjoy your TsokoLitaw
             </h2>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">
               Keep every piece the same or combine coatings in one box. The chocolate-filled center
