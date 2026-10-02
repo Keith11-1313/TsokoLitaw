@@ -121,6 +121,12 @@ approved final baseline activation on October 1, recorded in the database migrat
 
 ## Operations and future scope
 
+On October 2, the owner cancelled current APK and analytics work in favor of a footer-only
+Install app link and `/install` browser tutorials. This is home-screen access to the existing website,
+not an APK release. The six guides cover Safari, Chrome, Brave, Firefox, DuckDuckGo and Opera;
+unavailable home-screen menus fall back to Chrome or Safari. The prior APK-based v1.0 definition needs a separate
+owner decision before a website shortcut can be treated as release acceptance.
+
 Admin Dashboard is a bounded read-only cross-feature summary; Catalog, Orders, Pickup, Inventory,
 Customers and Journal own their respective mutations. Customers includes Admin/customer profiles,
 role labels and zero-activity accounts. Fixed brand and provider secrets are not editable settings.

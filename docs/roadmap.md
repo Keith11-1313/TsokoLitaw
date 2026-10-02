@@ -1,5 +1,11 @@
 # Current work and approved next phases
 
+Owner direction (October 2, 2026): cancel the current Phase 15C APK and Phase 16 analytics work.
+The active replacement is a footer-only Install app link to `/install`, with browser tutorials for
+adding the existing website to the home screen. This adds no Android wrapper, analytics, database
+change, offline ordering or automatic installation. The prior APK-based v1.0 acceptance definition
+has not been replaced by a new release definition. The specifications below remain reference scope.
+
 The owner defines v1.0 as the completed and accepted Phase 15C Android APK plus the working web app.
 Until then the whole application is pre-release, including the Vercel Production environment.
 Disposable test data does not require backward-compatibility layers. Database cleanup/rebaselining
@@ -81,7 +87,7 @@ replace browser acceptance, validate provider/Cron behavior, or authorize any Pr
   with pgTAP. Add component tests for filtering, trend semantics, chart/table accessibility and mobile
   layouts before the final rebaseline.
 
-## Phase 15C — required Android APK (planned)
+## Phase 15C — Android APK (cancelled from current work)
 
 Build a PWABuilder/Bubblewrap **Trusted Web Activity** around `https://www.tsokolitaw.com`, not
 Capacitor, an embedded WebView, React Native or native commerce. The existing online website remains
@@ -138,7 +144,7 @@ Links, TWA wrapper or APK implementation exists yet.
 Ordinary website updates need no APK rebuild; wrapper/signing changes do. Do not introduce a
 second authentication/payment stack inside Android.
 
-## Phase 16 — optional basic Web Analytics (not implemented)
+## Phase 16 — optional basic Web Analytics (cancelled from current work; not implemented)
 
 Begin only after the website and Phase 15C APK are stable.
 
