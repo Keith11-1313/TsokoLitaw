@@ -35,6 +35,11 @@ submission. PostgreSQL remains authoritative and rejects any window outside thos
 
 ## Piece accounting
 
+The always-visible Stock history section has its own pickup-date selector (independent of the stock editor), showing its latest 50 inventory
+adjustments, newest first: signed piece changes, reason, optional note and Manila timestamp.
+The reader uses the authenticated Admin RLS policy; no extra database permissions are granted.
+Customer order reservations are not adjustment entries. Blank notes display “No note provided.”
+
 `daily_inventory` is per **product and pickup date**. All 4/6/8-piece boxes share the balance.
 Requested demand is `quantity × piece count`. Available pieces are
 `stock_total - stock_reserved - stock_sold`; consumed/waste quantities use this same balance.

@@ -22,6 +22,13 @@ export interface AdminInventoryRecord {
   stockConsumed: number;
   stockAvailable: number;
   updatedAt: string;
+  adjustments: Array<{
+    id: string;
+    quantityDelta: number;
+    reason: string;
+    notes: string | null;
+    createdAt: string;
+  }>;
 }
 
 interface InventoryRow {
@@ -33,6 +40,13 @@ interface InventoryRow {
   stock_sold: number;
   updated_at: string;
   products: { name: string } | null;
+  inventory_adjustments: Array<{
+    id: string;
+    quantity_delta: number;
+    reason: string;
+    notes: string | null;
+    created_at: string;
+  }> | null;
 }
 
 function getManilaDate() {
@@ -59,11 +73,14 @@ export async function getAdminInventory() {
     supabase
       .from("daily_inventory")
       .select(
-        "id,pickup_date,product_id,stock_total,stock_reserved,stock_sold,updated_at,products(name)",
+        "id,pickup_date,product_id,stock_total,stock_reserved,stock_sold,updated_at,products(name),inventory_adjustments(id,quantity_delta,reason,notes,created_at)",
       )
       .not("product_id", "is", null)
       .gte("pickup_date", getManilaDate())
-      .order("pickup_date"),
+      .order("pickup_date")
+      .order("created_at", { referencedTable: "inventory_adjustments", ascending: false })
+      .order("id", { referencedTable: "inventory_adjustments", ascending: false })
+      .limit(50, { referencedTable: "inventory_adjustments" }),
   ]);
 
   if (productResult.error || !productResult.data || datesResult.error || inventoryResult.error) {
@@ -91,6 +108,13 @@ export async function getAdminInventory() {
     stockConsumed: row.stock_sold,
     stockAvailable: row.stock_total - row.stock_reserved - row.stock_sold,
     updatedAt: row.updated_at,
+    adjustments: (row.inventory_adjustments ?? []).map((entry) => ({
+      id: entry.id,
+      quantityDelta: entry.quantity_delta,
+      reason: entry.reason,
+      notes: entry.notes,
+      createdAt: entry.created_at,
+    })),
   }));
 
   return {

@@ -81,8 +81,10 @@ Safari as a fallback; do not promise automatic installation or detect installati
 - `useFormGate` needs `formRef`, `formProps`, named inputs, and `extraValid` for asynchronous media
   checks. Its baseline is the initial mount: remount an editor when changing records; it does not
   automatically adopt a saved baseline.
-- `CustomSelect` uses a hidden native select for form values/constraint validity. Its change event
-  must reach the form gate. Preserve keyboard arrows, Enter/Space, Escape, outside close, disabled
+- `CustomSelect` uses a hidden native select for form values/constraint validity. Its change event must reach the form gate.
+  Menus are anchored below the trigger with a gap, or above the entire labeled control when viewport
+  space is limited; do not overlay the trigger/label. `hideLabel` is visual only and retains its accessible name.
+  Preserve keyboard arrows, Enter/Space, Escape, outside close, disabled
   options, labels and focus. Hidden native plumbing is not a duplicate visible dropdown.
 - The number stepper supports minus/input/plus, direct keyboard entry and arrows. Do not silently
   clamp invalid values into acceptance; maintain bounds/step feedback.
