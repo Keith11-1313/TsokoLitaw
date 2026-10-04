@@ -116,7 +116,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
             <h2 id="items-title" className="font-display text-2xl">
               Order items
             </h2>
-            <OrderLineItems items={order.items} className="mt-5" />
+            <OrderLineItems items={order.items} className="mt-5" showPriceBreakdown />
             <div className="mt-6 grid gap-4 border-t border-border pt-6 text-sm sm:grid-cols-2">
               <p className="flex gap-2">
                 <CalendarDays aria-hidden="true" size={18} />

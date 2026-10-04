@@ -2,6 +2,11 @@
 
 `/orders` and `/orders/[orderId]` use `server-orders.ts` ownership-scoped snapshot reads.
 `orders-list.tsx` owns filters/pagination presentation; `order-line-items.tsx` renders the shared receipt.
+My Orders uses All, Active (Received, Preparing, Ready for pickup), and Past (Completed).
+The same three filter buttons appear on mobile and desktop; there is no mobile dropdown.
+Pending payment, cancelled, and expired orders remain under All. Counts apply to the current page.
+List cards show status, total, pickup details, and a full-width View order action without item breakdowns.
+Order details always show the per-box price breakdown; checkout keeps its expandable breakdown.
 New order numbers are allocated atomically in PostgreSQL as `TLDDMMYY001`, with the final three
 digits restarting for each Manila calendar date. Existing `TL-0001` style numbers remain valid
 historical references and provider callbacks accept both formats.
