@@ -29,6 +29,9 @@ card labels say “shown” rather than presenting their values as directory-wid
 
 ## Order list pagination
 
+Orders keeps search and status controls beside the page heading on desktop, before its summary cards.
+Controls stack beneath the heading on smaller screens and retain accessible labels.
+
 Admin Orders uses the same compact pagination styling, automatic 10/20/50/100 row sizes,
 and hidden single-page navigation as Customers, on both desktop tables and mobile cards.
 Search/status/size changes restart at page one. This paginates the existing bounded loaded

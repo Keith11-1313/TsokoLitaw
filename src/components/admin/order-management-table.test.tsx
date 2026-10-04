@@ -32,6 +32,22 @@ const orders: AdminOrderSummary[] = Array.from({ length: 45 }, (_, index) => ({
 }));
 
 describe("Admin order pagination", () => {
+  it("places accessible filters in the page header before summary cards", () => {
+    const { container } = render(
+      <OrderManagementTable
+        orders={[]}
+        summary={<section aria-label="Order summary">Summary cards</section>}
+      />,
+    );
+    const header = container.querySelector("header");
+    expect(header?.contains(screen.getByRole("heading", { name: "Orders" }))).toBe(true);
+    expect(header?.contains(screen.getByRole("searchbox", { name: "Search orders" }))).toBe(true);
+    expect(header?.contains(screen.getByRole("combobox", { name: "Status filter" }))).toBe(true);
+    expect(
+      header?.compareDocumentPosition(screen.getByRole("region", { name: "Order summary" }))! &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
   it("pages the same order set in desktop and mobile views", async () => {
     const user = userEvent.setup();
     render(<OrderManagementTable orders={orders} />);

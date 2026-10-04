@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { ArrowRight, Search } from "lucide-react";
 import {
   recordCounterPaymentAction,
@@ -344,10 +344,12 @@ export function OrderManagementTable({
   orders,
   initialQuery = "",
   initialStatus = "ALL",
+  summary,
 }: {
   orders: AdminOrderSummary[];
   initialQuery?: string;
   initialStatus?: "ALL" | OrderStatus;
+  summary?: ReactNode;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState<"ALL" | OrderStatus>(initialStatus);
@@ -375,37 +377,42 @@ export function OrderManagementTable({
 
   return (
     <section aria-label="Order management list">
-      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_14rem]">
-        <label className="block space-y-2">
-          <span className="block text-sm font-bold text-foreground">Search orders</span>
-          <span className="relative block">
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
-              size={17}
-            />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setRequestedPage(1);
-              }}
-              placeholder="Order number, name, email, or item"
-              className="min-h-12 w-full rounded-control border border-border bg-surface pl-11 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20"
-            />
-          </span>
-        </label>
-        <CustomSelect
-          label="Status filter"
-          value={status}
-          onChange={(next) => {
-            setStatus(next as "ALL" | OrderStatus);
-            setRequestedPage(1);
-          }}
-          options={statusOptions}
-        />
-      </div>
+      <header className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <h1 className="font-display text-[2rem] leading-tight sm:text-[2.25rem]">Orders</h1>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem] xl:w-[36rem]">
+          <label className="block space-y-2">
+            <span className="sr-only">Search orders</span>
+            <span className="relative block">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                size={17}
+              />
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setRequestedPage(1);
+                }}
+                placeholder="Search number, name, email, or item"
+                className="min-h-12 w-full rounded-control border border-border bg-surface pl-11 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20"
+              />
+            </span>
+          </label>
+          <CustomSelect
+            label="Status filter"
+            hideLabel
+            value={status}
+            onChange={(next) => {
+              setStatus(next as "ALL" | OrderStatus);
+              setRequestedPage(1);
+            }}
+            options={statusOptions}
+          />
+        </div>
+      </header>
+      {summary ? <div className="mt-7">{summary}</div> : null}
 
       <div className="mt-6 lg:hidden">
         {visibleOrders.length ? (
