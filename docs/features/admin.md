@@ -63,6 +63,11 @@ New capabilities require an operational purpose and approval, not just a new tab
 
 ## Dashboard reporting
 
+Coatings purchased and Extras purchased use vertical category bar charts with a zero-based
+count axis and exact counts above columns. Narrow screens scroll inside the chart, not the page;
+an optional purchase breakdown preserves names, totals/revenue and percentage shares for accessible reading.
+These are category comparisons, not statistical histogram bins. Reporting sources are unchanged.
+
 The Dashboard defaults to the last seven Manila calendar days through the current time and also
 supports 30 days, this month to date, and the complete previous month. Paid sales and paid-order
 trends use the confirmed payment timestamp rather than order creation time. Fixed-day presets compare
