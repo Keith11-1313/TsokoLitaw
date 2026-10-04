@@ -49,9 +49,8 @@ Both presentations share selection, allocation, and pricing state.
 Checkout puts its summary before the form on mobile and in a sticky right column on desktop.
 Order history uses compact summary cards with full-width actions. Order details show receipt-style
 box counts, per-box contents, line totals and always-visible price breakdowns.
-My Orders keeps its Build a box action beside the heading on wider screens; on phones it becomes
-a labeled floating action above the bottom safe area, with enough page padding that the last order
-remains reachable.
+My Orders keeps its Build a box action beside the heading on wider screens. Phones have no
+floating action; customers can build a box through Our Creations in the shared navigation.
 
 Home follows a mobile-first product story after the hero: the reason for TsokoLitaw, the live active
 coating selection, the three-step website-to-campus pickup journey, the signature sea-salt cream
