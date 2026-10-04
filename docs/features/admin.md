@@ -27,6 +27,13 @@ The customer count is the matching total; returning-customer and reward cards su
 The directory heading, revenue subtitle, and card supporting captions are omitted. Page-only
 card labels say “shown” rather than presenting their values as directory-wide totals.
 
+## Order list pagination
+
+Admin Orders uses the same compact pagination styling, automatic 10/20/50/100 row sizes,
+and hidden single-page navigation as Customers, on both desktop tables and mobile cards.
+Search/status/size changes restart at page one. This paginates the existing bounded loaded
+recent-order and payment-review set, not the entire historical database; the range says loaded orders.
+
 ## Journal flow
 
 Orders also owns [Manual GCash verification](payments.md#manual-gcash): open the payment review
