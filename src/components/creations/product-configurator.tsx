@@ -163,7 +163,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
                   <div className="flex flex-wrap items-baseline gap-x-1.5">
                     <h3 className="font-display text-xl">{coating.name}</h3>
                     <span className="text-xs italic text-brand/60">
-                      {formatPhp(coating.pricePerPiece)} / piece
+                      +{formatPhp(coating.pricePerPiece)} / piece
                     </span>
                   </div>
                   <p className="mt-1 min-h-10 text-sm leading-5 text-muted-foreground">
