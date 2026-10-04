@@ -377,7 +377,7 @@ function PickupRules({ settings }: { settings: AdminPickupSettings }) {
       className="rounded-card border border-border bg-surface p-6"
     >
       <h2 className="font-display text-2xl">Pickup rules</h2>
-      <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <NumberStepper
           label="Made-to-order lead days"
           error={state.fieldErrors?.minimumLeadDays}
