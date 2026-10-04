@@ -1,11 +1,23 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { BadgeCheck, Gift, Repeat2, Search, UserRound, UsersRound } from "lucide-react";
+import {
+  BadgeCheck,
+  Gift,
+  Repeat2,
+  Search,
+  UserRound,
+  UsersRound,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminPageLayout } from "@/components/admin/admin-page-layout";
 import { AdminDataTable, type AdminTableColumn } from "@/components/admin/admin-data-table";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
+import { CustomerPageSize } from "@/components/admin/customer-page-size";
 import { primaryButtonClassName, secondaryButtonClassName } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth";
 import { cn } from "@/lib/cn";
@@ -13,7 +25,7 @@ import { formatPhp } from "@/lib/commerce";
 import { getAdminCustomerSummaries } from "@/lib/server-customers";
 
 export const metadata: Metadata = { title: "Customers | TsokoLitaw Admin" };
-const CUSTOMERS_PER_PAGE = 20;
+const PAGE_SIZES = [10, 20, 50, 100];
 const columns: readonly AdminTableColumn[] = [
   { key: "customer", label: "Customer" },
   { key: "account", label: "Account" },
@@ -37,26 +49,27 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
   const parameters = await searchParams;
   const search = typeof parameters.q === "string" ? parameters.q.trim().slice(0, 100) : "";
   const requestedPage = typeof parameters.page === "string" ? Number(parameters.page) : 1;
-  const currentPage = Number.isInteger(requestedPage) ? Math.max(requestedPage, 1) : 1;
-  const pageStart = (currentPage - 1) * CUSTOMERS_PER_PAGE;
+  const currentPage = Number.isSafeInteger(requestedPage)
+    ? Math.min(Math.max(requestedPage, 1), 1000000)
+    : 1;
+  const requestedSize = typeof parameters.size === "string" ? Number(parameters.size) : 20;
+  const pageSize = PAGE_SIZES.includes(requestedSize) ? requestedSize : 20;
+  const pageStart = (currentPage - 1) * pageSize;
   const { customers, totalCount } = await getAdminCustomerSummaries(
     admin.id,
     search,
     currentPage,
-    CUSTOMERS_PER_PAGE,
+    pageSize,
   );
-  const totalPages = Math.max(1, Math.ceil(totalCount / CUSTOMERS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   if (currentPage > totalPages) {
     const query = new URLSearchParams();
     if (search) query.set("q", search);
+    query.set("size", String(pageSize));
     if (totalPages > 1) query.set("page", String(totalPages));
     redirect(`/admin/customers${query.size ? `?${query.toString()}` : ""}`);
   }
   const returningCustomers = customers.filter((customer) => customer.completedOrders >= 2).length;
-  const completedRevenue = customers.reduce(
-    (total, customer) => total + customer.completedSpend,
-    0,
-  );
   const availableRewards = customers.reduce(
     (total, customer) => total + customer.availableRewards,
     0,
@@ -151,76 +164,78 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
     last: formatDate(customer.lastOrderAt),
   }));
 
+  const pageHref = (page: number) =>
+    `/admin/customers?${new URLSearchParams({
+      ...(search ? { q: search } : {}),
+      page: String(page),
+      size: String(pageSize),
+    })}`;
+  const pageWindowStart = Math.max(2, Math.min(currentPage - 1, totalPages - 3));
+  const pageNumbers = Array.from(
+    new Set(
+      totalPages <= 7
+        ? Array.from({ length: totalPages }, (_, index) => index + 1)
+        : [1, totalPages, pageWindowStart, pageWindowStart + 1, pageWindowStart + 2],
+    ),
+  )
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+  const searchForm = (
+    <form action="/admin/customers" method="get" className="flex w-full flex-wrap gap-2 sm:w-auto">
+      <input type="hidden" name="size" value={pageSize} />
+      <label className="relative block min-w-0 flex-1 sm:w-80 sm:flex-none">
+        <span className="sr-only">Search customers</span>
+        <Search
+          aria-hidden="true"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+          size={17}
+        />
+        <input
+          name="q"
+          type="search"
+          defaultValue={search}
+          maxLength={100}
+          placeholder="Search name or email"
+          className="min-h-12 w-full rounded-control border border-border bg-background pl-11 pr-4 outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
+        />
+      </label>
+      <button type="submit" className={cn(primaryButtonClassName, "min-h-12 px-6")}>
+        Search
+      </button>
+      {search ? (
+        <Link
+          href={`/admin/customers?size=${pageSize}`}
+          className={cn(secondaryButtonClassName, "min-h-12 px-6")}
+        >
+          Clear
+        </Link>
+      ) : null}
+    </form>
+  );
+
   return (
-    <AdminPageLayout activePath="/admin/customers" title="Customers">
+    <AdminPageLayout activePath="/admin/customers" title="Customers" actions={searchForm}>
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <AdminStatCard compact icon={UsersRound} label="Customers" value={String(totalCount)} />
         <AdminStatCard
           compact
           icon={Repeat2}
-          label="Returning customers"
+          label="Returning customers (shown)"
           value={String(returningCustomers)}
-          supportingText="On this page"
         />
         <AdminStatCard
           compact
           icon={Gift}
-          label="Available rewards"
+          label="Available rewards (shown)"
           value={String(availableRewards)}
-          supportingText="On this page"
         />
         <AdminStatCard
           compact
           icon={BadgeCheck}
-          label="Used rewards"
+          label="Used rewards (shown)"
           value={String(redeemedRewards)}
-          supportingText="On this page"
         />
       </div>
-
-      <section className="mb-5 rounded-card border border-border bg-surface p-4 sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h2 className="font-display text-2xl text-foreground">Account directory</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {formatPhp(completedRevenue)} from completed orders shown.
-            </p>
-          </div>
-          <form
-            action="/admin/customers"
-            method="get"
-            className="flex w-full flex-col gap-3 sm:flex-row lg:max-w-2xl"
-          >
-            <label className="relative block min-w-0 flex-1">
-              <span className="sr-only">Search customers</span>
-              <Search
-                aria-hidden="true"
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
-                size={17}
-              />
-              <input
-                name="q"
-                type="search"
-                defaultValue={search}
-                maxLength={100}
-                placeholder="Search by name or email"
-                className="min-h-12 w-full rounded-control border border-border bg-background pl-11 pr-4 outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
-              />
-            </label>
-            <button type="submit" className={cn(primaryButtonClassName, "min-h-12 px-6")}>
-              Search
-            </button>
-            {search ? (
-              <Link
-                href="/admin/customers"
-                className={cn(secondaryButtonClassName, "min-h-12 px-6")}
-              >
-                Clear
-              </Link>
-            ) : null}
-          </form>
-        </div>
-      </section>
 
       <AdminDataTable
         caption="Account directory"
@@ -229,38 +244,109 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
         minimumWidth="64rem"
         emptyMessage="No customers found."
       />
-      <div className="mt-4 flex flex-col gap-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-3 flex flex-col gap-3 text-sm text-muted-foreground xl:flex-row xl:items-center xl:justify-between">
         <p>
           Showing {customers.length ? pageStart + 1 : 0}–
-          {Math.min(pageStart + customers.length, totalCount)} of {totalCount} accounts. Order
-          totals include completed, paid orders only.
+          {Math.min(pageStart + customers.length, totalCount)} of {totalCount} accounts
         </p>
-        {totalPages > 1 ? (
-          <nav className="flex gap-2" aria-label="Customer directory pages">
-            {currentPage > 1 ? (
-              <Link
-                href={`/admin/customers?${new URLSearchParams({
-                  ...(search ? { q: search } : {}),
-                  page: String(currentPage - 1),
-                })}`}
-                className={cn(secondaryButtonClassName, "min-h-10 px-4 py-2")}
-              >
-                Previous
-              </Link>
-            ) : null}
-            {currentPage < totalPages ? (
-              <Link
-                href={`/admin/customers?${new URLSearchParams({
-                  ...(search ? { q: search } : {}),
-                  page: String(currentPage + 1),
-                })}`}
-                className={cn(primaryButtonClassName, "min-h-10 px-4 py-2")}
-              >
-                Next
-              </Link>
-            ) : null}
-          </nav>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <CustomerPageSize pageSize={pageSize} search={search} />
+          {totalPages > 1 ? (
+            <nav
+              className="flex flex-wrap items-center gap-2"
+              aria-label="Customer directory pages"
+            >
+              <p className="text-sm text-muted-foreground sm:mr-1">
+                Page {currentPage} of {totalPages}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { label: "First page", Icon: ChevronsLeft, page: 1, disabled: currentPage === 1 },
+                  {
+                    label: "Previous page",
+                    Icon: ChevronLeft,
+                    page: currentPage - 1,
+                    disabled: currentPage === 1,
+                  },
+                ].map(({ label, Icon, page, disabled }) =>
+                  disabled ? (
+                    <button
+                      key={label}
+                      disabled
+                      aria-label={label}
+                      className="inline-flex size-11 items-center justify-center rounded-control border border-border opacity-40"
+                    >
+                      <Icon size={16} aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <Link
+                      key={label}
+                      href={pageHref(page)}
+                      aria-label={label}
+                      className="inline-flex size-11 items-center justify-center rounded-control border border-border hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                    >
+                      <Icon size={16} aria-hidden="true" />
+                    </Link>
+                  ),
+                )}
+                {pageNumbers.map((page, index) => (
+                  <span key={page} className="inline-flex items-center gap-2">
+                    {index > 0 && page - pageNumbers[index - 1] > 1 ? (
+                      <span aria-hidden="true">…</span>
+                    ) : null}
+                    <Link
+                      href={pageHref(page)}
+                      aria-label={`Page ${page}`}
+                      aria-current={page === currentPage ? "page" : undefined}
+                      className={cn(
+                        "inline-flex size-11 items-center justify-center rounded-control border text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
+                        page === currentPage
+                          ? "border-brand bg-brand text-surface"
+                          : "border-border hover:bg-surface-muted",
+                      )}
+                    >
+                      {page}
+                    </Link>
+                  </span>
+                ))}
+                {[
+                  {
+                    label: "Next page",
+                    Icon: ChevronRight,
+                    page: currentPage + 1,
+                    disabled: currentPage === totalPages,
+                  },
+                  {
+                    label: "Last page",
+                    Icon: ChevronsRight,
+                    page: totalPages,
+                    disabled: currentPage === totalPages,
+                  },
+                ].map(({ label, Icon, page, disabled }) =>
+                  disabled ? (
+                    <button
+                      key={label}
+                      disabled
+                      aria-label={label}
+                      className="inline-flex size-11 items-center justify-center rounded-control border border-border opacity-40"
+                    >
+                      <Icon size={16} aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <Link
+                      key={label}
+                      href={pageHref(page)}
+                      aria-label={label}
+                      className="inline-flex size-11 items-center justify-center rounded-control border border-border hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                    >
+                      <Icon size={16} aria-hidden="true" />
+                    </Link>
+                  ),
+                )}
+              </div>
+            </nav>
+          ) : null}
+        </div>
       </div>
     </AdminPageLayout>
   );

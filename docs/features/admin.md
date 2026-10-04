@@ -14,6 +14,19 @@ and business state, and record audited mutations. Browser visibility is not acce
 | Customers | `/admin/customers`, `server-customers.ts`                                         | Support directory with roles, completed-order and loyalty aggregates |
 | Journal   | `/admin/journal`, `journal-manager.tsx`, `server-journal.ts`, `server-reviews.ts` | Published posts and moderated community highlights                   |
 
+## Customers directory
+
+Customers has a header search and a rows-per-page control (10, 20, 50, or 100; default 20).
+Search and pagination retain the selected size; changing the shared size selector automatically
+loads page one, retaining search, without an Apply button. The compact table footer groups
+the account range, size selector, and pagination. A single page has no navigation controls.
+Multiple pages show accessible icon First/Previous and Next/Last controls, numbered pages with
+ellipses, and Page X of Y. Boundary controls are disabled and the current page is marked accessibly;
+controls wrap on phones and retain 44px targets.
+The customer count is the matching total; returning-customer and reward cards summarize the current page.
+The directory heading, revenue subtitle, and card supporting captions are omitted. Page-only
+card labels say “shown” rather than presenting their values as directory-wide totals.
+
 ## Journal flow
 
 Orders also owns [Manual GCash verification](payments.md#manual-gcash): open the payment review
