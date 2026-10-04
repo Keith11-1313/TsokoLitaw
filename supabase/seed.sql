@@ -104,7 +104,6 @@ insert into public.business_settings (key, value)
 values
   ('payment_expiry_minutes', '15'::jsonb),
   ('manual_payment_expiry_minutes', '30'::jsonb),
-  ('pickup_grace_minutes', '15'::jsonb),
   ('minimum_lead_days', '1'::jsonb),
   ('daily_cutoff_time', '"17:00"'::jsonb),
   ('pickup_slot_interval_minutes', '60'::jsonb),

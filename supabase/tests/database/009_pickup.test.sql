@@ -24,7 +24,7 @@ select set_config(
   true
 );
 
-select plan(19);
+select plan(22);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -126,7 +126,7 @@ select is(
 
 select lives_ok(
   $$ select public.update_pickup_settings(
-    '9a000000-0000-4000-8000-000000000001', 2, '16:30', 20, '07:30', '18:30'
+    '9a000000-0000-4000-8000-000000000001', 2, '16:30', '07:30', '18:30'
   ) $$,
   'an active Admin can update pickup rules'
 );
@@ -135,6 +135,13 @@ select is(
   2,
   'the customer-safe settings reader returns the saved lead time'
 );
+select is((select count(*) from public.business_settings where key = 'pickup_grace_minutes'),
+  0::bigint, 'the unused pickup grace setting is removed');
+select ok(to_regprocedure('public.update_pickup_settings(uuid,integer,time,integer,time,time)') is null,
+  'the obsolete pickup grace writer signature is removed');
+select throws_ok(
+  $$ select public.update_pickup_settings('9a000000-0000-4000-8000-000000000002', 1, '17:00', '07:00', '19:00') $$,
+  'P0001', 'Active administrator access is required', 'the replacement writer still rejects customers');
 select is(
   (select count(*) from public.get_public_pickup_inventory() where pickup_date = '2099-03-01'),
   0::bigint,

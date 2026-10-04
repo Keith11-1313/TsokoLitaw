@@ -54,7 +54,7 @@ const sections: readonly LegalSection[] = [
   {
     heading: "Campus pickup",
     paragraphs: [
-      "Orders must be collected at the campus location, date, and window selected during checkout. Customers must follow campus access rules and arrive within the communicated window and grace period. Pickup availability is published by TsokoLitaw and is not guaranteed merely because the campus is open.",
+      "Orders must be collected at the campus location, date, and window selected during checkout. Customers must follow campus access rules and arrive within the communicated pickup window. Pickup availability is published by TsokoLitaw and is not guaranteed merely because the campus is open.",
       "Products are fulfilled when released at pickup to the customer or a person the customer authorizes to receive the order. TsokoLitaw may request enough order information to prevent release to the wrong person. Customers should inspect the order promptly and report a missing, incorrect, damaged, or unsafe item as soon as reasonably possible.",
     ],
   },

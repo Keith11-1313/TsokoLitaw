@@ -1434,7 +1434,6 @@ export type Database = {
           minimum_lead_days: number
           operating_end: string
           operating_start: string
-          pickup_grace_minutes: number
         }[]
       }
       is_active_user: { Args: never; Returns: boolean }
@@ -1601,7 +1600,6 @@ export type Database = {
       update_pickup_settings: {
         Args: {
           daily_cutoff_time_value: string
-          grace_minutes_value: number
           minimum_lead_days_value: number
           operating_end_value: string
           operating_start_value: string

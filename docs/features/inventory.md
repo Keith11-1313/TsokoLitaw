@@ -14,6 +14,12 @@ delivery addresses, cash sales, walk-in stock writer, or redundant Inventory ava
 
 ## Execution paths
 
+Pickup rules contain lead days, daily cutoff and operating hours only. The unused pickup grace
+setting was removed in `20261004010000_remove_pickup_grace.sql`; it never extended windows or
+enforced late/no-show handling. Preserve the applied baseline and deploy the replacement five-argument
+`update_pickup_settings` RPC with matching application code. No order, inventory or payment records
+are reset. Historic audit metadata may retain the old setting as a record of earlier changes.
+
 - `/admin/pickup` → `pickup-manager.tsx` → Pickup `actions.ts` → `server-pickup.ts` →
   `upsert_pickup_schedule`, `set_pickup_date_open`, `upsert_pickup_location`, `update_pickup_settings`.
 - `/admin/inventory` → `inventory-manager.tsx` → Inventory `actions.ts` → `server-inventory.ts` →

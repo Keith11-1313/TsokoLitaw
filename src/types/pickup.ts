@@ -21,7 +21,6 @@ export interface CheckoutPickupDate {
 
 export interface CheckoutAvailability {
   dates: readonly CheckoutPickupDate[];
-  graceMinutes: number;
   operatingDays: string;
   operatingHours: string;
 }

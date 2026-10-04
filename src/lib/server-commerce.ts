@@ -59,7 +59,6 @@ interface PickupDateRow {
 interface PublicPickupSettingsRow {
   minimum_lead_days: number;
   daily_cutoff_time: string;
-  pickup_grace_minutes: number;
   operating_start: string;
   operating_end: string;
 }
@@ -291,7 +290,6 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
   const settings = ((settingsResult.data ?? [])[0] ?? {
     minimum_lead_days: 1,
     daily_cutoff_time: "17:00",
-    pickup_grace_minutes: 15,
     operating_start: "07:00",
     operating_end: "19:00",
   }) as PublicPickupSettingsRow;
@@ -368,7 +366,6 @@ async function loadCheckoutAvailability(): Promise<CheckoutAvailability> {
 
   return {
     dates: checkoutDates,
-    graceMinutes: Number(settings.pickup_grace_minutes),
     operatingDays: "Monday to Saturday",
     operatingHours: `${formatPickupTime(settings.operating_start)} to ${formatPickupTime(settings.operating_end)}`,
   };

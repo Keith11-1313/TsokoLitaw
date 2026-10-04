@@ -147,11 +147,9 @@ export async function savePickupSettingsAction(
 ): Promise<PickupActionState> {
   const admin = await requireAdmin("/admin/pickup");
   const minimumLeadDaysValue = String(formData.get("minimumLeadDays") ?? "").trim();
-  const graceMinutesValue = String(formData.get("graceMinutes") ?? "").trim();
   const settings: AdminPickupSettings = {
     minimumLeadDays: Number(minimumLeadDaysValue),
     dailyCutoffTime: String(formData.get("dailyCutoffTime") ?? ""),
-    graceMinutes: Number(graceMinutesValue),
     operatingStart: String(formData.get("operatingStart") ?? ""),
     operatingEnd: String(formData.get("operatingEnd") ?? ""),
   };
@@ -162,29 +160,19 @@ export async function savePickupSettingsAction(
     settings.minimumLeadDays < 0 ||
     settings.minimumLeadDays > 30 ||
     !validTime(settings.dailyCutoffTime) ||
-    !graceMinutesValue ||
-    !Number.isInteger(settings.graceMinutes) ||
-    settings.graceMinutes < 0 ||
-    settings.graceMinutes > 120 ||
     !validTime(settings.operatingStart) ||
     !validTime(settings.operatingEnd) ||
     settings.operatingEnd <= settings.operatingStart
   ) {
     return {
       status: "error",
-      message: "Check the lead time, cutoff, grace period, and operating hours.",
+      message: "Check the lead time, cutoff, and operating hours.",
       fieldErrors: {
         ...(!minimumLeadDaysValue ||
         !Number.isInteger(settings.minimumLeadDays) ||
         settings.minimumLeadDays < 0 ||
         settings.minimumLeadDays > 30
           ? { minimumLeadDays: "Use a whole number from 0 to 30." }
-          : {}),
-        ...(!graceMinutesValue ||
-        !Number.isInteger(settings.graceMinutes) ||
-        settings.graceMinutes < 0 ||
-        settings.graceMinutes > 120
-          ? { graceMinutes: "Use a whole number from 0 to 120." }
           : {}),
         ...(settings.operatingEnd <= settings.operatingStart
           ? { operatingEnd: "Operating end must be after the start." }

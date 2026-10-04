@@ -398,15 +398,6 @@ function PickupRules({ settings }: { settings: AdminPickupSettings }) {
             defaultValue: settings.dailyCutoffTime,
           }}
         />
-        <NumberStepper
-          label="Pickup grace (minutes)"
-          error={state.fieldErrors?.graceMinutes}
-          name="graceMinutes"
-          required
-          min={0}
-          max={120}
-          defaultValue={settings.graceMinutes}
-        />
         <FormField
           id="operating-start"
           label="Operating start"

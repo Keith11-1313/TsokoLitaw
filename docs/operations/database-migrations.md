@@ -1,5 +1,17 @@
 # Database changes and promotion
 
+## October 4 Pickup grace cleanup — Dev database activated
+
+`20261004010000_remove_pickup_grace.sql` removes the unused setting and replaces its reader/writer
+contracts without resetting records. The applied baseline is unchanged. The new writer takes five
+arguments, so coordinate matching Dev application deployment and migration activation; the old
+deployed Admin form cannot save against the replacement signature. Local lint and all 417 database
+assertions passed. At the owner's explicit request, migration `20261004010000` was applied to Dev
+`mgkzphpznamjlgrpumjd` before matching application deployment. Linked schema lint passed, migration
+history matches, and the subsequent dry-run has no pending migrations. Matching Dev code deployment
+and Admin save/checkout smoke checks remain required. Production `zkmlzktvjkjrbznvrsxb` was not
+changed. No hosted reset or seed was run.
+
 ## Pre-v1 rebaseline history and current activation state
 
 The owner approved discarding pre-release Dev records, Auth users and Storage files.
