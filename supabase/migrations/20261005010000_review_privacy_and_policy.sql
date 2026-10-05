@@ -1,116 +1,12 @@
--- Controlled operational seed data only. Do not add real users, orders,
--- administrator identities, payment records, or secrets to this file.
-
-insert into public.products (
-  id,
-  name,
-  slug,
-  description,
-  price_per_piece,
-  is_active
-)
-values (
-  '10000000-0000-4000-8000-000000000001',
-  'Chocolate-Filled Litaw',
-  'chocolate-filled-litaw',
-  'Soft Litaw pieces with a chocolate center and a customer-selected coating.',
-  10.00,
-  true
-)
-on conflict (id) do update set
-  name = excluded.name,
-  slug = excluded.slug,
-  description = excluded.description,
-  price_per_piece = excluded.price_per_piece,
-  is_active = excluded.is_active;
-
-insert into public.product_variants (
-  id,
-  product_id,
-  name,
-  piece_count,
-  base_price,
-  is_active,
-  sort_order
-)
-values
-  ('11000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000001', 'TsokoMini (4 pcs)', 4, 40.00, true, 1),
-  ('11000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000001', 'TsokoMore (6 pcs)', 6, 55.00, true, 2),
-  ('11000000-0000-4000-8000-000000000008', '10000000-0000-4000-8000-000000000001', 'TsokoMuch (8 pcs)', 8, 75.00, true, 3)
-on conflict (id) do update set
-  name = excluded.name,
-  piece_count = excluded.piece_count,
-  base_price = excluded.base_price,
-  is_active = excluded.is_active,
-  sort_order = excluded.sort_order;
-
-insert into public.coatings (
-  id,
-  name,
-  slug,
-  description,
-  image_url,
-  price_per_piece,
-  is_active,
-  is_default,
-  sort_order
-)
-values
-  ('12000000-0000-4000-8000-000000000001', 'Cocoa', 'cocoa', 'A rich cocoa coating over the chocolate-filled base.', null, 5.00, true, false, 1),
-  ('12000000-0000-4000-8000-000000000002', 'Milk', 'milk', 'A creamy milk coating with a soft, mellow finish.', null, 5.00, true, false, 2),
-  ('12000000-0000-4000-8000-000000000003', 'Palitaw', 'palitaw', 'A combination of sugar, niyog, and sesame seeds.', null, 5.00, true, false, 3),
-  ('12000000-0000-4000-8000-000000000004', 'Crushed Nuts', 'crushed-nuts', 'A crunchy crushed-nut coating for added texture.', null, 5.00, true, false, 4),
-  ('12000000-0000-4000-8000-000000000005', 'Plain', 'plain', 'The soft Litaw exterior with no additional coating.', null, 0.00, true, true, 5),
-  ('12000000-0000-4000-8000-000000000006', 'Sesame Seeds', 'sesame-seeds', 'A toasted sesame seed coating with a nutty aroma.', null, 5.00, true, false, 6),
-  ('12000000-0000-4000-8000-000000000007', 'Cookies and Cream', 'cookies-and-cream', 'Crushed chocolate cookies blended with a creamy coating.', null, 5.00, true, false, 7),
-  ('12000000-0000-4000-8000-000000000008', 'Chocolate Sprinkles', 'chocolate-sprinkles', 'Chocolate sprinkles with a crisp finish.', null, 5.00, true, false, 8)
-on conflict (id) do update set
-  name = excluded.name,
-  slug = excluded.slug,
-  description = excluded.description,
-  image_url = excluded.image_url,
-  price_per_piece = excluded.price_per_piece,
-  is_active = excluded.is_active,
-  is_default = excluded.is_default,
-  sort_order = excluded.sort_order;
-
-insert into public.addons (id, name, slug, price, is_active, is_default)
-values (
-  '13000000-0000-4000-8000-000000000001',
-  'Sea salt cream',
-  'extra-sea-salt-cream',
-  15.00,
-  true,
-  true
-)
-on conflict (id) do update set
-  name = excluded.name,
-  slug = excluded.slug,
-  price = excluded.price,
-  is_active = excluded.is_active,
-  is_default = excluded.is_default;
-
-insert into public.pickup_locations (id, name, description, is_active, sort_order)
-values
-  ('14000000-0000-4000-8000-000000000001', 'UCC Congress — 3rd Floor', 'Campus pickup at the third floor.', true, 1),
-  ('14000000-0000-4000-8000-000000000002', 'UCC Congress — Covered Court', 'Campus pickup at the covered court.', true, 2)
-on conflict (id) do update set
-  name = excluded.name,
-  description = excluded.description,
-  is_active = excluded.is_active,
-  sort_order = excluded.sort_order;
-
-insert into public.business_settings (key, value)
-values
-  ('payment_expiry_minutes', '15'::jsonb),
-  ('manual_payment_expiry_minutes', '30'::jsonb),
-  ('minimum_lead_days', '1'::jsonb),
-  ('daily_cutoff_time', '"17:00"'::jsonb),
-  ('pickup_slot_interval_minutes', '60'::jsonb),
-  ('pickup_operating_days', '["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"]'::jsonb),
-  ('pickup_operating_hours', '{"start":"07:00","end":"19:00"}'::jsonb),
-  ('loyalty_threshold', '7'::jsonb)
-on conflict (key) do update set value = excluded.value, updated_at = now();
+-- Public review reads use only the masked SECURITY DEFINER projection.
+-- Owners and Admins retain direct access to authorized raw rows.
+drop policy reviews_read_visible_owner_or_admin on public.reviews;
+create policy reviews_read_owner_or_admin on public.reviews
+for select to authenticated
+using ((user_id = (select auth.uid()) and public.is_active_user()) or public.is_admin());
+revoke select (id, display_name_snapshot, rating, comment, is_featured, created_at)
+on public.reviews from anon;
+revoke select on public.reviews from anon;
 
 -- Preserve historical versions and order acceptance snapshots.
 do $guard$
@@ -288,6 +184,3 @@ Changes to this policy
 
 This policy may be updated when the service, providers, operating model, or legal requirements change. The revised date will appear on this page. Material changes will receive additional notice when appropriate or legally required, and a new checkout policy version may require acceptance before another order is placed.$policy$, '2026-10-05 00:00:00+08'::timestamptz, true)
 on conflict (version) do update set is_current = true;
-
--- Pickup dates and windows are intentionally not seeded. Admin publishes only
--- the dates the team can serve, choosing MADE_TO_ORDER, READY_STOCK, or HYBRID.

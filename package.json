@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "predev": "node scripts/prepare-receipt-ocr.mjs",
-    "prebuild": "node scripts/prepare-receipt-ocr.mjs",
+    "prebuild": "node scripts/check-policy-sync.mjs && node scripts/prepare-receipt-ocr.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
