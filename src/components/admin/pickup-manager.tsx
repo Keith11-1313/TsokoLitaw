@@ -391,6 +391,7 @@ function PickupRules({ settings }: { settings: AdminPickupSettings }) {
         <FormField
           id="cutoff-time"
           label="Daily order cutoff"
+          error={state.fieldErrors?.dailyCutoffTime}
           required
           inputProps={{
             name: "dailyCutoffTime",
@@ -401,6 +402,7 @@ function PickupRules({ settings }: { settings: AdminPickupSettings }) {
         <FormField
           id="operating-start"
           label="Operating start"
+          error={state.fieldErrors?.operatingStart}
           required
           inputProps={{
             name: "operatingStart",

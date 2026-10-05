@@ -147,11 +147,15 @@ export async function savePickupSettingsAction(
 ): Promise<PickupActionState> {
   const admin = await requireAdmin("/admin/pickup");
   const minimumLeadDaysValue = String(formData.get("minimumLeadDays") ?? "").trim();
+  const normalizeTime = (value: FormDataEntryValue | null) =>
+    String(value ?? "")
+      .trim()
+      .replace(/^([0-2]\d:[0-5]\d):00$/, "$1");
   const settings: AdminPickupSettings = {
     minimumLeadDays: Number(minimumLeadDaysValue),
-    dailyCutoffTime: String(formData.get("dailyCutoffTime") ?? ""),
-    operatingStart: String(formData.get("operatingStart") ?? ""),
-    operatingEnd: String(formData.get("operatingEnd") ?? ""),
+    dailyCutoffTime: normalizeTime(formData.get("dailyCutoffTime")),
+    operatingStart: normalizeTime(formData.get("operatingStart")),
+    operatingEnd: normalizeTime(formData.get("operatingEnd")),
   };
   const validTime = (value: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
   if (
@@ -174,7 +178,18 @@ export async function savePickupSettingsAction(
         settings.minimumLeadDays > 30
           ? { minimumLeadDays: "Use a whole number from 0 to 30." }
           : {}),
-        ...(settings.operatingEnd <= settings.operatingStart
+        ...(!validTime(settings.dailyCutoffTime)
+          ? { dailyCutoffTime: "Choose a valid cutoff time in hours and minutes." }
+          : {}),
+        ...(!validTime(settings.operatingStart)
+          ? { operatingStart: "Choose a valid start time in hours and minutes." }
+          : {}),
+        ...(!validTime(settings.operatingEnd)
+          ? { operatingEnd: "Choose a valid end time in hours and minutes." }
+          : {}),
+        ...(validTime(settings.operatingStart) &&
+        validTime(settings.operatingEnd) &&
+        settings.operatingEnd <= settings.operatingStart
           ? { operatingEnd: "Operating end must be after the start." }
           : {}),
       },

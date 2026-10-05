@@ -151,9 +151,9 @@ export async function getAdminPickup() {
   }) as { start?: string; end?: string };
   const settings: AdminPickupSettings = {
     minimumLeadDays: Number(settingValue(settingRows, "minimum_lead_days", 1)),
-    dailyCutoffTime: String(settingValue(settingRows, "daily_cutoff_time", "17:00")),
-    operatingStart: hours.start ?? "07:00",
-    operatingEnd: hours.end ?? "19:00",
+    dailyCutoffTime: String(settingValue(settingRows, "daily_cutoff_time", "17:00")).slice(0, 5),
+    operatingStart: (hours.start ?? "07:00").slice(0, 5),
+    operatingEnd: (hours.end ?? "19:00").slice(0, 5),
   };
 
   return { dates, locations, settings };

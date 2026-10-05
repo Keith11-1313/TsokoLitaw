@@ -20,6 +20,9 @@ windows or enforced late/no-show handling. The five-argument `update_pickup_sett
 matching application code. Dev was explicitly reset for the consolidated baseline; Production has
 not received that reset. Historic audit metadata in older retained environments may include the setting.
 The four rule fields share one row on desktop, two columns on tablet, and stack on phones.
+Admin rule times are normalized to `HH:mm` when loading the form. The save action also accepts
+database-style `HH:mm:00`, normalizes it before validation, and shows field-specific invalid-time
+errors. Nonzero seconds and malformed times remain invalid; lead-day/cutoff eligibility is unchanged.
 
 - `/admin/pickup` → `pickup-manager.tsx` → Pickup `actions.ts` → `server-pickup.ts` →
   `upsert_pickup_schedule`, `set_pickup_date_open`, `upsert_pickup_location`, `update_pickup_settings`.
