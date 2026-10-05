@@ -447,7 +447,7 @@ export function CatalogManager({
             Add coating
           </PrimaryButton>
         </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {coatings.map((coating) => (
             <article key={coating.id} className="rounded-card border border-border bg-surface p-5">
               <div
