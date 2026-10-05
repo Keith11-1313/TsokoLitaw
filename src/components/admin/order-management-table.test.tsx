@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OrderManagementTable } from "./order-management-table";
@@ -44,8 +44,8 @@ describe("Admin order pagination", () => {
     expect(header?.contains(screen.getByRole("searchbox", { name: "Search orders" }))).toBe(true);
     expect(header?.contains(screen.getByRole("combobox", { name: "Status filter" }))).toBe(true);
     expect(
-      header?.compareDocumentPosition(screen.getByRole("region", { name: "Order summary" }))! &
-        Node.DOCUMENT_POSITION_FOLLOWING,
+      (header?.compareDocumentPosition(screen.getByRole("region", { name: "Order summary" })) ??
+        0) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
   it("pages the same order set in desktop and mobile views", async () => {
@@ -70,10 +70,10 @@ describe("Admin order pagination", () => {
     await user.click(screen.getByRole("option", { name: "10" }));
     expect(screen.getByText("Showing 1–10 of 45 matching loaded orders")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Last page" }));
-    await user.type(screen.getByRole("searchbox"), "TEST-45");
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "TEST-45" } });
     expect(screen.getByText("Showing 1–1 of 1 matching loaded orders")).toBeTruthy();
     expect(screen.queryByRole("navigation", { name: "Order list pages" })).toBeNull();
-    await user.clear(screen.getByRole("searchbox"));
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "" } });
     await user.click(screen.getByRole("button", { name: "Last page" }));
     await user.click(screen.getByRole("combobox", { name: "Status filter" }));
     await user.click(screen.getByRole("option", { name: "Cancelled" }));
@@ -86,7 +86,7 @@ describe("Admin order pagination", () => {
     await user.click(screen.getByRole("button", { name: "Last page" }));
     view.rerender(<OrderManagementTable orders={orders.slice(0, 2)} />);
     expect(screen.getByText("Showing 1–2 of 2 matching loaded orders")).toBeTruthy();
-    await user.type(screen.getByRole("searchbox"), "not-found");
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "not-found" } });
     expect(screen.getByText("Showing 0–0 of 0 matching loaded orders")).toBeTruthy();
     expect(screen.queryByRole("navigation", { name: "Order list pages" })).toBeNull();
   });
