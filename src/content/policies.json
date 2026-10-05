@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-05",
+  "version": "2026-10-05-admin-customer",
   "lastUpdated": "October 1, 2026",
   "effectiveAt": "2026-10-05 00:00:00+08",
   "terms": [
@@ -13,7 +13,7 @@
     {
       "heading": "Accounts and customer responsibility",
       "paragraphs": [
-        "Checkout requires a TsokoLitaw account authenticated through Google. Customers must use their own account, keep it reasonably secure, provide accurate information, and promptly report suspected unauthorized activity. The external Google account remains governed by Google's terms and is not deleted by closing TsokoLitaw access.",
+        "Checkout requires a TsokoLitaw customer account authenticated through Google. Admin accounts are for business operations only and cannot place personal orders, submit customer reviews, or earn or redeem customer loyalty rewards. Customers must use their own account, keep it reasonably secure, provide accurate information, and promptly report suspected unauthorized activity. The external Google account remains governed by Google's terms and is not deleted by closing TsokoLitaw access.",
         "The person placing an order confirms that they have legal capacity to do so or have appropriate parent or guardian authorization. Customers are responsible for reviewing the product, quantity, price, allergen notice, payment method, pickup schedule, and policy version displayed before confirming an order."
       ]
     },

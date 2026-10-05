@@ -85,6 +85,9 @@ Each date has an independent balance. Historical snapshots must not follow later
 
 Customer navigation is Home, Our Creations, Journal; Profile and Cart are actions.
 Customer contact is email-only; do not reintroduce unused mobile-number collection.
+Admin accounts are business-only, not customers: no personal checkout, customer payments/reviews,
+customer Profile/deletion, or loyalty earning/redemption. Public browsing is allowed. Customer
+directory and customer KPIs exclude Admin profiles; Admin management of customer orders stays intact.
 My Orders belongs inside Account. Reviews originate only from owned completed orders and require
 moderation for public visibility. Admin has one equal-permission role with at most ten approved identities.
 

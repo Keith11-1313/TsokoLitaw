@@ -70,7 +70,8 @@ and environment scope. Local server-variable changes require restarting the Next
 `GCASH_BASE_QR_PAYLOAD` (decoded recipient QR). Do not put the actual payload in Git. Keep PayMongo
 configuration/webhooks working for pre-existing PayMongo orders when switching modes. All methods
 require a compatible pre-v1 schema. The recorded Production activation is the October 1 baseline;
-Dev additionally received `20261004010000` pickup-grace cleanup on October 4. Matching deployment
+Dev received the consolidated single-marker October 5 rebaseline for pickup-grace cleanup,
+review privacy, policy synchronization and Admin/customer separation. Production remains unchanged. Matching deployment
 and smoke checks remain required. Verify current hosted state before promotion using the
 [migration runbook](../operations/database-migrations.md); these records are not live verification.
 A Git deployment still does not apply SQL; verify the target schema and environment-specific

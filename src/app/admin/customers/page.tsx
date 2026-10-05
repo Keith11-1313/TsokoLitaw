@@ -94,15 +94,8 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
     ),
     account: (
       <div className="flex flex-col items-start gap-2">
-        <span
-          className={cn(
-            "inline-flex rounded-full px-3 py-1 text-xs font-bold",
-            customer.accountRole === "admin"
-              ? "bg-brand/10 text-brand"
-              : "bg-surface-muted text-foreground",
-          )}
-        >
-          {customer.accountRole === "admin" ? "Admin" : "Customer"}
+        <span className="inline-flex rounded-full bg-surface-muted px-3 py-1 text-xs font-bold text-foreground">
+          Customer
         </span>
         <span
           className={cn(

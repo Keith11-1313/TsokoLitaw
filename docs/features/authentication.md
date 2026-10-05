@@ -3,13 +3,19 @@
 Entry: `/login`, `src/app/auth/actions.ts`, and `src/app/auth/callback/route.ts`.
 Google → environment-specific Supabase Auth → `/auth/callback` → cookie-backed app session.
 `src/proxy.ts` refreshes cookies; `src/lib/auth.ts` verifies claims and loads an active profile.
-`requireCustomer` protects checkout/account/order routes, while `requireAdmin` also checks the role.
+`requireCustomer` requires the active customer role on checkout/account/order routes; Admins
+are redirected to `/admin`. `requireAdmin` requires the active Admin role.
 Signed-in non-Admins receive Not Found at Admin URLs. Hiding a link is not authorization.
 
 ## Database and external dependencies
 
 `profiles` references `auth.users`; the pre-v1 baseline's Auth trigger creates the profile.
-RLS and `is_active_user`/`is_admin` protect reads. Role/active fields are not customer-editable.
+RLS and `is_active_user`/`is_admin` protect reads. `is_active_customer` limits self-profile updates
+to customers. Role/active fields are not customer-editable. Customer SQL writers independently
+reject Admin actors for checkout, provider payment preparation, receipts, cancellations and reviews.
+Login and callback redirects are role-aware. Admins can browse public pages, but customer cart,
+Profile, My Orders and purchase controls are unavailable; business management remains available.
+Admin completion of customer orders still awards the owning customer's loyalty, never the Admin's.
 The service-only bootstrap (`scripts/bootstrap-admin.mjs`, `promote_admin_by_email`) requires an
 approved existing Google identity and enforces the ten-Admin limit. See [setup](../getting-started/local-setup.md).
 

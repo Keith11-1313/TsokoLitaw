@@ -58,7 +58,7 @@ const faqGroups: readonly FaqGroup[] = [
       {
         question: "Do I need an account to order?",
         answer:
-          "You can browse without signing in, but checkout requires a TsokoLitaw account using Google sign-in. Your account keeps your orders, payment status, pickup details, loyalty progress, and eligible reviews together.",
+          "You can browse without signing in, but checkout requires a TsokoLitaw customer account using Google sign-in. Admin accounts manage the business and cannot order as customers. Your customer account keeps your orders, payment status, pickup details, loyalty progress, and eligible reviews together.",
       },
     ],
   },

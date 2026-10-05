@@ -37,6 +37,13 @@ insert into auth.users (
     'authenticated', 'authenticated', 'customer-summary@example.test',
     '{"provider":"google","providers":["google"]}', '{"name":"Summary Customer"}',
     now(), now()
+  ),
+  (
+    'ca000000-0000-4000-8000-000000000003',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated', 'second-customer@example.test',
+    '{"provider":"google","providers":["google"]}', '{"name":"Second Customer"}',
+    now(), now()
   );
 
 update public.profiles set role = 'admin'
@@ -160,11 +167,11 @@ select is(
   'the summary includes redeemed loyalty rewards'
 );
 select is(
-  (select account_role from public.get_admin_customer_summaries(
+  (select count(*) from public.get_admin_customer_summaries(
     'ca000000-0000-4000-8000-000000000001', 'customers admin', 100
   )),
-  'admin'::public.profile_role,
-  'an Admin account with no storefront order is included and labelled with the Admin role'
+  0::bigint,
+  'Admin accounts are excluded from the customer directory'
 );
 select throws_ok(
   $$ select * from public.get_admin_customer_summaries(

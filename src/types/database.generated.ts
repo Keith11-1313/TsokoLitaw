@@ -1436,6 +1436,7 @@ export type Database = {
           operating_start: string
         }[]
       }
+      is_active_customer: { Args: never; Returns: boolean }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       list_due_paymongo_checkouts: {

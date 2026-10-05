@@ -3,7 +3,7 @@ import { LoginPreview } from "@/components/auth/login-preview";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
 import { SiteContainer } from "@/components/layout/site-container";
 import { getAuthProfile } from "@/lib/auth";
-import { getSafeNextPath } from "@/lib/auth-redirect";
+import { getRoleNextPath, getSafeNextPath } from "@/lib/auth-redirect";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -14,9 +14,12 @@ export const metadata: Metadata = {
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const params = await searchParams;
-  const nextPath = getSafeNextPath(typeof params.next === "string" ? params.next : null, "/profile");
+  const nextPath = getSafeNextPath(
+    typeof params.next === "string" ? params.next : null,
+    "/profile",
+  );
   const profile = await getAuthProfile();
-  if (profile) redirect(nextPath);
+  if (profile) redirect(getRoleNextPath(profile.role, nextPath));
 
   return (
     <CustomerPageShell>

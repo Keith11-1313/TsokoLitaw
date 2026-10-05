@@ -16,6 +16,10 @@ and business state, and record audited mutations. Browser visibility is not acce
 
 ## Customers directory
 
+Only customer-role profiles are listed and counted; Admin identities are excluded. Dashboard
+purchasing/returning-customer counts also exclude Admins. Financial order totals still preserve
+historical paid transactions rather than discarding revenue when an account's role changes.
+
 Customers has a header search and a rows-per-page control (10, 20, 50, or 100; default 20).
 Search and pagination retain the selected size; changing the shared size selector automatically
 loads page one, retaining search, without an Apply button. The compact table footer groups

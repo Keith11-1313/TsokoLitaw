@@ -21,7 +21,7 @@ if (process.argv.includes("--print")) {
 } else {
   for (const path of [
     "supabase/seed.sql",
-    "supabase/migrations/20261005010000_review_privacy_and_policy.sql",
+    "supabase/migrations/20260911010000_pre_v1_baseline.sql",
   ]) {
     const sql = readFileSync(new URL(path, root), "utf8").replaceAll("\r\n", "\n");
     if (!sql.includes(`$policy$${content}$policy$`) || !sql.includes(`'${policy.version}'`)) {

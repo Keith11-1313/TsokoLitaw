@@ -112,17 +112,17 @@ values
   ('loyalty_threshold', '7'::jsonb)
 on conflict (key) do update set value = excluded.value, updated_at = now();
 
--- Preserve historical versions and order acceptance snapshots.
+-- New eligibility policy; never rewrite previously accepted text.
 do $guard$
 begin
-  if exists (select 1 from public.terms_versions where version = '2026-10-05' and md5(content) <> '0a202a04465e027d8163fb4468b0d5b4') then
-    raise exception 'Policy version 2026-10-05 has different text; create a new version';
+  if exists (select 1 from public.terms_versions where version = '2026-10-05-admin-customer' and md5(content) <> '981a124b7ecb06478c0936d16e592f63') then
+    raise exception 'Policy version 2026-10-05-admin-customer has different text; create a new version';
   end if;
 end;
 $guard$;
-update public.terms_versions set is_current = false where is_current and version <> '2026-10-05';
+update public.terms_versions set is_current = false where is_current and version <> '2026-10-05-admin-customer';
 insert into public.terms_versions (version, content, effective_at, is_current)
-values ('2026-10-05', $policy$TsokoLitaw checkout policies — version 2026-10-05
+values ('2026-10-05-admin-customer', $policy$TsokoLitaw checkout policies — version 2026-10-05-admin-customer
 
 Last updated: October 1, 2026
 
@@ -136,7 +136,7 @@ A feature or record clearly identified as a preview, simulation, sandbox transac
 
 Accounts and customer responsibility
 
-Checkout requires a TsokoLitaw account authenticated through Google. Customers must use their own account, keep it reasonably secure, provide accurate information, and promptly report suspected unauthorized activity. The external Google account remains governed by Google's terms and is not deleted by closing TsokoLitaw access.
+Checkout requires a TsokoLitaw customer account authenticated through Google. Admin accounts are for business operations only and cannot place personal orders, submit customer reviews, or earn or redeem customer loyalty rewards. Customers must use their own account, keep it reasonably secure, provide accurate information, and promptly report suspected unauthorized activity. The external Google account remains governed by Google's terms and is not deleted by closing TsokoLitaw access.
 
 The person placing an order confirms that they have legal capacity to do so or have appropriate parent or guardian authorization. Customers are responsible for reviewing the product, quantity, price, allergen notice, payment method, pickup schedule, and policy version displayed before confirming an order.
 

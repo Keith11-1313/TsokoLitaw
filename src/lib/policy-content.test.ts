@@ -17,7 +17,7 @@ describe("checkout policy snapshot", () => {
   it("matches the reviewed migration and clean seed exactly", () => {
     for (const path of [
       "supabase/seed.sql",
-      "supabase/migrations/20261005010000_review_privacy_and_policy.sql",
+      "supabase/migrations/20260911010000_pre_v1_baseline.sql",
     ]) {
       const sql = readFileSync(path, "utf8").replaceAll("\r\n", "\n");
       expect(sql).toContain(`$policy$${getPolicyContent()}$policy$`);

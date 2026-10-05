@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSafeNextPath } from "@/lib/auth-redirect";
+import { getRoleNextPath, getSafeNextPath } from "@/lib/auth-redirect";
 import { getTrustedRequestOrigin } from "@/lib/site-url";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
       const adminSupabase = createAdminSupabaseClient();
       const { data: profile, error: profileError } = await adminSupabase
         .from("profiles")
-        .select("is_active")
+        .select("is_active, role")
         .eq("id", userId)
         .maybeSingle();
 
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${redirectOrigin}/auth/account-deleted`);
       }
 
-      return NextResponse.redirect(`${redirectOrigin}${nextPath}`);
+      return NextResponse.redirect(`${redirectOrigin}${getRoleNextPath(profile.role, nextPath)}`);
     }
 
     console.error("[auth/callback] Supabase code exchange failed", {

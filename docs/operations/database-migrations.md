@@ -1,5 +1,35 @@
 # Database changes and promotion
 
+## October 5 Admin/customer separation — Dev rebaseline activated
+
+The consolidated `20260911010000_pre_v1_baseline.sql` enforces customer-role checkout, payment,
+cancellation and review writers, customer-only profile/deletion cancellation, loyalty ownership,
+and customer-directory/dashboard counts. Matching application guards hide customer actions from
+Admins and redirect customer routes to `/admin`. Admin business operations remain unchanged.
+It archives policy version `2026-10-05-admin-customer`; displayed policy dates remain October 1.
+Shared policy checks target this baseline snapshot and the seed. The owner explicitly confirmed
+Dev-only disposal of accounts, commerce, reviews, Journal and uploaded media, including disposable
+paid test orders. The Pickup-grace, review-privacy and role-separation forward changes were folded
+into one locally rehearsed baseline; the temporary migration files were removed as part of this
+coordinated replacement. Production was not contacted or changed and still requires separate approval.
+Local validation passed: 218 application tests, 443 database assertions, SQL lint, generated types,
+typecheck, application lint, formatting checks and the production build. Authenticated browser
+acceptance remains pending. Read-only Dev inventory found 5 Auth users (4 Admins, 1 customer),
+18 Admin-owned orders, 18 payments, 2 reviews, 3 Journal posts, 47 Storage objects and 3 active Cron
+jobs. There were 11 paid test orders, 3 pending orders, no provider-bound pending checkout and no
+Manual GCash review queue. The approved reset deleted all 5 Auth users, 18 orders/payments,
+2 reviews, 3 Journal posts and 44 non-font Storage objects without retaining a data backup.
+The three licensed fonts were retained and verified by HTTP 200. Vault's six entries and exactly
+the three existing Cron jobs survived the transactional public-schema replacement.
+Final Dev state has zero Auth/profile/order/payment/review/Journal records, the controlled seed
+(one product, three variants, eight coatings), the current matching policy hash, no pickup grace,
+and only migration marker `20260911010000`. Linked lint and migration dry-run parity passed.
+An initial account-deletion smoke request returned HTTP 500 immediately after the schema switch;
+its underlying due-profile query passed on recheck. Repeated smoke checks returned HTTP 200
+from all three endpoints with zero examined records and zero failures.
+Matching application deployment, fresh approved Admin sign-in/bootstrap, catalog media upload,
+pickup publication and authenticated customer/Admin acceptance are still required.
+
 ## October 5 review privacy and policy synchronization — Dev activated
 
 `20261005010000_review_privacy_and_policy.sql` removes public raw-review reads while retaining

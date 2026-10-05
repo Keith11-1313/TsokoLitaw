@@ -26,8 +26,9 @@ discovery.
 The Privacy Policy, Terms, and FAQ display “Last updated: October 1, 2026” at the owner's request.
 They explain actual account, payment, pickup, review, retention, and dispute operations in plain
 language without changing the underlying product state machine. Checkout records policy version
-`2026-10-05`, archiving displayed Terms and Privacy from `src/content/policies.json`.
-The new migration requires coordinated activation; preparing these files does not apply hosted SQL.
+`2026-10-05-admin-customer`, archiving displayed Terms and Privacy from `src/content/policies.json`.
+The consolidated baseline was activated in Dev through the approved October 5 reset; Production
+has not received these changes. Preparing/deploying application files alone never applies SQL.
 The October 1 display date is separate from the acceptance version. Later material policy changes require a new persisted version rather than silently
 rewriting the version previously accepted with an order.
 
@@ -36,7 +37,9 @@ rewriting the version previously accepted with an order.
 - Google OAuth through Supabase; no guest checkout. Same sign-in flow for new/returning users.
 - Customer contact is email-only; no phone number is collected or forwarded to providers. Logout requires confirmation and returns Home.
 - Up to ten approved Google identities share one equal-permission Admin role, checked server-side.
-  Active Admins may place their own customer orders, not choose another owner at checkout.
+  Admin accounts operate the business only: no personal checkout, customer payments/reviews,
+  customer Profile or account deletion, or loyalty earning/redemption. Public browsing remains
+  available. Only customer-role profiles appear in the Customers directory and customer KPIs.
 - Default environment-specific Supabase Auth domains are intentional; no paid custom Auth domain.
 - Account deletion is a cancellable 90-day request followed by permanent profile deactivation,
   not deletion of Google, Supabase Auth identity, or relational history. Pending deletion blocks

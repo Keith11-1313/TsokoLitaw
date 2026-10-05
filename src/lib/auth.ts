@@ -62,6 +62,7 @@ export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
 export async function requireCustomer(nextPath: string) {
   const profile = await getAuthProfile();
   if (!profile) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  if (profile.role !== "customer") redirect("/admin");
   return profile;
 }
 

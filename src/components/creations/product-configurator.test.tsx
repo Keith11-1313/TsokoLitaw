@@ -51,6 +51,17 @@ beforeAll(() => {
 afterEach(cleanup);
 
 describe("mobile coating discovery", () => {
+  it("lets Admins browse prices but prevents adding a box", async () => {
+    const user = userEvent.setup();
+    render(<ProductConfigurator catalog={catalog} canOrder={false} />);
+    const button = screen.getByRole("button", {
+      name: "Customer accounts only",
+    }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(screen.queryByRole("button", { name: "Add to cart" })).toBeNull();
+    await user.click(button);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
   it("selects a mobile coating and updates the price", async () => {
     const user = userEvent.setup();
     render(<ProductConfigurator catalog={catalog} />);

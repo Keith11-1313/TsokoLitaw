@@ -13,7 +13,7 @@ then render `src/components/checkout/checkout-content.tsx`.
    Terms, and constructs trusted priced snapshots. Browser cart data cannot choose the free extra.
    Policy copy displays Last updated: October 1, 2026 and clarifies account use, authoritative order snapshots,
    payment evidence, pickup, defects, missed pickup, review publication, and privacy handling. The
-   shared source is `src/content/policies.json`; version `2026-10-05` archives displayed Terms
+   shared source is `src/content/policies.json`; version `2026-10-05-admin-customer` archives displayed Terms
    and Privacy verbatim. The new migration and clean seed contain that snapshot. Checkout refuses
    creation if the current database version or content differs from the application. Deploy the
    matching migration and code together. Historical acceptance records remain unchanged.

@@ -32,7 +32,7 @@ export default async function ProfilePage() {
             </section>
             <aside className="space-y-5">
               <LoyaltyProgressCard loyalty={loyalty} />
-              <ProfileAccountShortcuts isAdmin={profile.role === "admin"} />
+              <ProfileAccountShortcuts />
               <AccountDangerZone deletionScheduledFor={profile.deletionScheduledFor} />
             </aside>
           </div>

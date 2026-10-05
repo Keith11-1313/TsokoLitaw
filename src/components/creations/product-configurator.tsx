@@ -19,7 +19,13 @@ import { QuantityInput } from "@/components/ui/quantity-input";
 import { cn } from "@/lib/cn";
 import type { CommerceCatalog } from "@/types/commerce";
 
-export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
+export function ProductConfigurator({
+  catalog,
+  canOrder = true,
+}: {
+  catalog: CommerceCatalog;
+  canOrder?: boolean;
+}) {
   const { variants, coatings, addons } = catalog;
   const { addItem } = useCart();
   const defaultCoating = coatings.find((coating) => coating.isDefault) ?? coatings[0];
@@ -106,7 +112,7 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
   }
 
   function submit() {
-    if (error) return;
+    if (error || !canOrder) return;
     const coatingCounts = mode === "single" ? { [singleCoating]: variant.pieceCount } : counts;
     const selectedQuantity = quantity;
     addItem({
@@ -466,12 +472,12 @@ export function ProductConfigurator({ catalog }: { catalog: CommerceCatalog }) {
             </div>
             <PrimaryButton
               type="button"
-              disabled={Boolean(error)}
+              disabled={Boolean(error) || !canOrder}
               onClick={submit}
               className="w-full rounded-control! text-base"
             >
               <ShoppingBag size={18} />
-              Add to cart
+              {canOrder ? "Add to cart" : "Customer accounts only"}
             </PrimaryButton>
           </div>
         </section>
