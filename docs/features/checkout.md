@@ -11,9 +11,13 @@ then render `src/components/checkout/checkout-content.tsx`.
 3. **Server:** `server-checkout.ts` reloads the live catalog through `server-commerce.ts`, runs
    `commerce.ts:priceCheckoutCart`, adds the current complimentary extra once per box, reads current
    Terms, and constructs trusted priced snapshots. Browser cart data cannot choose the free extra.
-   Policy copy effective September 29, 2026 clarifies account use, authoritative order snapshots,
+   Policy copy displays Last updated: October 1, 2026 and clarifies account use, authoritative order snapshots,
    payment evidence, pickup, defects, missed pickup, review publication, and privacy handling. The
-   controlled seed marks version `2026-09-29` current so each new order records the accepted version.
+   shared source is `src/content/policies.json`; version `2026-10-05` archives displayed Terms
+   and Privacy verbatim. The new migration and clean seed contain that snapshot. Checkout refuses
+   creation if the current database version or content differs from the application. Deploy the
+   matching migration and code together. Historical acceptance records remain unchanged.
+   The October 1 display date is separate from the October 5 acceptance version/effective date.
 4. **Transaction:** `create_checkout_order` in the pre-v1 baseline locks/rechecks the account,
    pickup, inventory and reward. It inserts snapshots and pins the payment method in one transaction,
    or returns the existing order for the same owner/idempotency key. Contact is email-only.

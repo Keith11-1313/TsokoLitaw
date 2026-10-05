@@ -13,7 +13,8 @@ is approved in principle; each hosted reset still needs its exact project and sc
 
 The production/security baseline (Phase 13), UI stabilization (Phase 14), and final commerce/payment
 update (Phase 15A) are complete. Phase 15B dashboard code and SQL are implemented; authenticated
-browser acceptance remains open. Phase 15C readiness is being verified before building the Android APK.
+browser acceptance remains open. APK and analytics are not active next steps; the install tutorial
+is implemented, and UI/operational validation continues against current code.
 Completion of an earlier smoke test does not establish that every future deployment is healthy.
 Use the current [release checks](operations/deployment.md), not old checked-off implementation lists.
 
@@ -95,9 +96,10 @@ the single application. No offline ordering or payment.
 
 ### Required v1 database freeze before the APK
 
-Complete Phase 15B, then complete this gate before building and accepting the signed v1 APK:
+Historical gate, to revisit only if APK work is explicitly resumed: complete Phase 15B, then
+complete this gate before building and accepting the signed v1 APK. It is not an active build instruction.
 
-Readiness review (October 2, 2026): read-only hosted checks confirmed that Dev
+Historical readiness review (October 2, 2026; not current migration state): read-only hosted checks confirmed that Dev
 `mgkzphpznamjlgrpumjd` and Production `zkmlzktvjkjrbznvrsxb` each record only baseline
 `20260911010000`; local code also has only that migration, including the dashboard RPC.
 Dev linked schema lint passed. Both projects reported `ACTIVE_HEALTHY`. Remote `development` and
@@ -164,8 +166,9 @@ Begin only after the website and Phase 15C APK are stable.
   Google Business Profile is optional and needs separate eligibility assessment.
 - Resolve reported dependency advisories in a targeted, tested maintenance update; do not mix
   forced upgrades into this documentation/structure pass.
-- Hosted Dev and Production record the same consolidated pre-v1 baseline; temporary service-role
-  grant and dashboard migrations were folded into it. Production's approved October 1 activation is
-  recorded in the migration runbook. Remaining acceptance checks still apply. Each
+- The earlier service-role grant and dashboard migrations were folded into the pre-v1 baseline.
+  Production's recorded October 1 activation uses that baseline; Dev additionally received the
+  October 4 pickup-grace forward migration. Verify target compatibility before promotion; do not
+  delete an applied migration or assume both environments still match. See the migration runbook. Each
   environment must have exactly three active application Cron jobs; verify them after every reset or
   relevant deployment using the database migration runbook.

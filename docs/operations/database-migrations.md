@@ -1,5 +1,27 @@
 # Database changes and promotion
 
+## October 5 review privacy and policy synchronization — Dev activated
+
+`20261005010000_review_privacy_and_policy.sql` removes public raw-review reads while retaining
+active-owner/Admin access and the existing masked public projection. It inserts policy version
+`2026-10-05`, containing the exact displayed Terms and Privacy, without modifying older versions
+or order acceptance snapshots. The display date remains October 1 at the owner's request.
+Deploy the migration and matching checkout guard together: mismatched version/content blocks
+new checkout rather than recording acceptance against unrelated text.
+Run `node scripts/check-policy-sync.mjs` to verify shared content against migration/seed;
+production prebuild also runs it. Future content changes require a new reviewed version and migration,
+not edits to an applied snapshot. On October 5, the owner approved Dev activation after Docker
+became available. A verified-empty local reset, schema lint, all 425 database assertions, generated
+type parity, and typecheck passed. The inactive-owner test fixture was corrected to include its
+required deactivation timestamp before the successful full rerun.
+Only this pending migration was applied to confirmed Dev `mgkzphpznamjlgrpumjd`; no hosted reset
+or seed ran. Before/after counts remained 5 Auth users, 18 orders, 2 reviews and 47 Storage objects.
+The old policy content hash is unchanged, version `2026-10-05` is current with the matching displayed
+text hash, anonymous raw-name grants are removed, owner/Admin-only RLS is active, and all three
+expected Cron jobs remain active. Linked schema lint passed, migration history matches local files,
+and the final dry-run reports no pending migrations. Matching application deployment and authenticated checkout/review
+smoke checks remain required. Production was not contacted or changed.
+
 ## October 4 Pickup grace cleanup — Dev database activated
 
 `20261004010000_remove_pickup_grace.sql` removes the unused setting and replaces its reader/writer
@@ -212,15 +234,17 @@ zero work and zero failures. Production was not contacted.
 
 ## Database changes before v1.0
 
-Until the Android APK is accepted as v1.0, the accepted release state must return to one clean baseline
+The earlier APK-based acceptance definition has not been replaced, but APK work is cancelled from
+current scope. The pre-v1 consolidation policy remains: the accepted release state must return to one clean baseline
 migration. Temporary forward migrations may be used during active development so a bounded change can
-be tested safely in Dev without rewriting an already-applied file. Before the final APK build, review
+be tested safely in Dev without rewriting an already-applied file. Before final release acceptance (or an APK build if reapproved), review
 and fold every such migration into the baseline, then perform one coordinated Dev and Production
 rebaseline with exact-target approval so both hosted migration markers return to `20260911010000`.
 Do not delete a temporary migration while hosted history still records it, and do not accumulate
 compatibility layers for disposable pre-release data. Preserve RLS/grants, exact payment matching,
 and atomic inventory/reward transitions. Read the [function map](../architecture/database.md) and the
-required pre-APK freeze gate in the [roadmap](../roadmap.md).
+historical pre-APK freeze gate in the [roadmap](../roadmap.md). Neither this policy nor a docs update
+authorizes a hosted reset; exact-target approval is still required.
 
 After v1.0, treat the accepted baseline as immutable and use reviewed forward migrations for every
 schema change.

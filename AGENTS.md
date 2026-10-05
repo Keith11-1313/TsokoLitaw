@@ -29,8 +29,9 @@ replace migration history after dependency review and local validation; confirm 
 project and destructive scope before resetting it. Never infer that provider funds are disposable.
 
 Phase 13 production/security, Phase 14 UI stabilization, and Phase 15A final commerce/payment work
-are complete. Required Phase 15B Admin Dashboard decision support is active; Phase 15C, the thin TWA
-Android APK, follows. Optional Phase 16 is public-page aggregate Web Analytics after APK stability.
+are complete. Phase 15B dashboard code and SQL are implemented; authenticated browser acceptance
+remains open. On October 2 the owner cancelled current Phase 15C APK and Phase 16 analytics work
+in favor of the implemented `/install` browser tutorial. It is not an APK or release acceptance.
 See [roadmap](docs/roadmap.md); work listed there is not implemented until verified.
 
 Keep one Next.js application with Admin under `/admin`, suited to a campus business of roughly

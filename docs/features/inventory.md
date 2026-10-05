@@ -19,6 +19,7 @@ setting was removed in `20261004010000_remove_pickup_grace.sql`; it never extend
 enforced late/no-show handling. Preserve the applied baseline and deploy the replacement five-argument
 `update_pickup_settings` RPC with matching application code. No order, inventory or payment records
 are reset. Historic audit metadata may retain the old setting as a record of earlier changes.
+The four rule fields share one row on desktop, two columns on tablet, and stack on phones.
 
 - `/admin/pickup` → `pickup-manager.tsx` → Pickup `actions.ts` → `server-pickup.ts` →
   `upsert_pickup_schedule`, `set_pickup_date_open`, `upsert_pickup_location`, `update_pickup_settings`.

@@ -23,10 +23,12 @@ Footer. Terms and Privacy belong in Footer and Checkout. Legacy Vlog/Feedback UR
 Journal. This avoids duplicate shopping actions and keeps private activity separate from public
 discovery.
 
-The Privacy Policy and Terms effective September 29, 2026 are the current customer-facing policy
-copy. They explain actual account, payment, pickup, review, retention, and dispute operations in plain
-language without changing the underlying product state machine. Checkout records Terms version
-`2026-09-29`; later material policy changes require a new persisted version rather than silently
+The Privacy Policy, Terms, and FAQ display “Last updated: October 1, 2026” at the owner's request.
+They explain actual account, payment, pickup, review, retention, and dispute operations in plain
+language without changing the underlying product state machine. Checkout records policy version
+`2026-10-05`, archiving displayed Terms and Privacy from `src/content/policies.json`.
+The new migration requires coordinated activation; preparing these files does not apply hosted SQL.
+The October 1 display date is separate from the acceptance version. Later material policy changes require a new persisted version rather than silently
 rewriting the version previously accepted with an order.
 
 ## Identity and contact
@@ -60,8 +62,8 @@ rewriting the version previously accepted with an order.
   Notice covers nuts, dairy, coconut, sesame, chocolate/cookie ingredients and cross-contact.
 - Coating images persist in Supabase Storage and are square JPG/PNG/WebP, at most 3 MiB.
 
-Cart data is browser-local and untrusted. Customers can select a subset to pay for; verified payment
-removes only the purchased selection. Server checkout reloads prices and creates immutable snapshots.
+Cart data is browser-local and untrusted. Customers can select a subset to pay for; a successful
+order creation removes only those checked-out lines, even if payment remains pending. Server checkout reloads prices and creates immutable snapshots.
 Normal Admin catalog changes never reprice existing orders.
 
 ## Pickup and stock
@@ -70,7 +72,9 @@ All sales use authenticated website checkout. Collection may be online or the tr
 Counter method; there is no untracked cash/walk-in order or delivery flow. Campus pickup only.
 Launch locations are UCC Congress — 3rd Floor and Covered Court. Monday–Saturday, 7 AM–7 PM is
 the operating window, not automatic availability. Admin publishes every actual date/window/location.
-Provisional rules are one-day lead time, 5 PM cutoff, hourly slots, and 15-minute grace period.
+Seed defaults are one-day lead time, 5 PM cutoff, and hourly slots; Admin controls the current rules.
+The unused pickup grace setting is removed by the October 4 forward migration. There is no
+automatic late/no-show grace enforcement; collect within the saved pickup window and contact support if late.
 
 Made to order uses published schedules/cutoffs without prepared inventory. Ready stock uses the
 published prepared-piece upper limit for that date. Hybrid uses prepared pieces for same-day pickup
@@ -136,9 +140,8 @@ Ordinary work follows development → reviewed PR → main; feature branches are
 See [environments](../getting-started/environments.md) and [deployment](../operations/deployment.md).
 
 Phase 15A's final commerce/payment update is complete. Required Phase 15B Admin Dashboard
-decision-support code and SQL are implemented, with browser acceptance still open. Phase 15C readiness
-precedes building and accepting the approved thin TWA APK.
-Optional Phase 16 public-only analytics remains planned. Their scope and remaining work live only
+decision-support code and SQL are implemented, with browser acceptance still open. Current Phase 15C
+APK and Phase 16 analytics work are cancelled, not upcoming implemented features. Their historical scope lives only
 in the [roadmap](../roadmap.md).
 Completed phase-by-phase implementation checklists remain recoverable through Git rather than
 being repeated as current instructions. Ordinary applied migrations are immutable; the explicitly

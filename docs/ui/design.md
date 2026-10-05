@@ -49,6 +49,7 @@ Both presentations share selection, allocation, and pricing state.
 Checkout puts its summary before the form on mobile and in a sticky right column on desktop.
 Order history uses compact summary cards with full-width actions. Order details show receipt-style
 box counts, per-box contents, line totals and always-visible price breakdowns.
+My Orders uses the same All/Active/Past buttons on phones and desktop, not a mobile dropdown.
 My Orders keeps its Build a box action beside the heading on wider screens. Phones have no
 floating action; customers can build a box through Our Creations in the shared navigation.
 
@@ -91,6 +92,10 @@ Safari as a fallback; do not promise automatic installation or detect installati
 - Inventory forms use one visible label per control. The unusable-piece quantity and note controls
   align at the top on wider screens, with the recording action beneath the field row and aligned to
   the form's left edge.
+- Pickup rules use one/two/four columns on phone/tablet/desktop. Admin Customers and Orders keep
+  filters in their page header and compact table pagination beneath the results. Rows per page
+  applies immediately; navigation is hidden for a single page. See the Admin guide for the different
+  server-paged customer directory and bounded loaded-order list.
 - Toast notifications align their status icon, message, and dismissal control on one row, use the
   semantic success/error surface, and retain a 44px dismissal target plus automatic dismissal.
 - `useEditorDialog` handles focus, scroll locking, Escape and dirty-close confirmation. Route user

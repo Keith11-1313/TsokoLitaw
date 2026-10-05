@@ -14,9 +14,9 @@ Next.js App Router, React, strict TypeScript, Tailwind, Supabase PostgreSQL/Auth
 PayMongo Hosted Checkout, Resend and Vercel. One application; no separate native commerce backend.
 
 Production/security, Phase 14 UI stabilization, and the Phase 15A commerce/payment update are
-complete. Work is now active on the required Admin Dashboard improvements (Phase 15B), followed by
-the thin Android TWA APK (Phase 15C). Optional public-page analytics (Phase 16) remains planned
-and is not an installed feature. See the [roadmap](docs/roadmap.md).
+complete. Phase 15B dashboard code and SQL are implemented; authenticated browser acceptance remains
+open. The owner cancelled current APK (Phase 15C) and analytics (Phase 16) work. `/install` provides
+browser home-screen tutorials, not an APK or offline ordering. See the [roadmap](docs/roadmap.md).
 
 ## Quick start
 

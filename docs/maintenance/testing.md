@@ -62,6 +62,11 @@ For Home changes, also confirm the two/four/four-column coating grid, the one/th
 steps, the cream/white section alternation, the current statically imported hero, and a fresh console
 without hydration failures at those widths.
 Use Dev and an authorized account for protected pages. Do not bypass production authorization to take screenshots.
+For Customers/Orders pagination, check single-page navigation suppression, 10/20/50/100 row
+selection, first/last disabled controls, numbered pages/ellipses, reset after filtering, and no
+page-level overflow. Customer pagination queries the server; Admin Orders paginates its loaded set.
+For public copy changes, `src/app/public-information.test.tsx` checks displayed dates and current
+FAQ/Terms/Privacy behavior. A display date is not a persisted checkout acceptance-version update.
 For critical behavior changes, test negative and duplicate/racing cases in addition to a happy path.
 
 The staged k6 runbook is [tests/performance/README.md](../../tests/performance/README.md).
