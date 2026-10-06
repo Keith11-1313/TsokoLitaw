@@ -54,7 +54,7 @@ balance; it is not a reset of the previous day's row. Admin writes are audited a
 nonnegative remaining pieces. Expiry/cancellation releases pieces atomically with state changes;
 provider-bound orders require PayMongo expiry first.
 
-The additive `20261006020000_stock_release_snapshots.sql` repairs customer cancellation and both
+The consolidated `20260911010000_pre_v1_baseline.sql` defines customer cancellation and both
 expiry paths: Hybrid eligibility uses the order's original Manila placement date, never the processing
 date. Piece release uses `quantity × piece_count_snapshot`, not the current catalog. Each product is
 updated in deterministic order; insufficient/missing reserved inventory aborts the transaction rather

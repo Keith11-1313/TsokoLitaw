@@ -1,5 +1,35 @@
 # Database changes and promotion
 
+## October 6 final website-v1 consolidation — Dev rebaseline activated
+
+The owner approved a Dev-only reset of `mgkzphpznamjlgrpumjd`, without a data backup,
+after confirming disposable test records and no real-fund retention requirement. Production
+`zkmlzktvjkjrbznvrsxb` was not contacted or changed. The two October 6 forward migrations
+were folded into `20260911010000_pre_v1_baseline.sql`: five stock/payment function definitions
+were replaced in place, and the two private Admin cancellation RPCs were included once.
+The temporary forward files were removed only after hosted history returned to the single
+`20260911010000` marker. Earlier activation sections below describe historical states.
+
+The consolidated local baseline passed a clean reset, SQL lint, 573 assertions in 19 files,
+252 application tests, application lint, typecheck and the production build. Generated types
+are unchanged. All public function definitions and ACLs matched current Dev before replacement
+and matched again afterward. The displayed/stored policy synchronization check passed.
+
+The approved disposal removed 10 Auth users/profiles, 17 orders/payments (including five paid
+test payments and one receipt under review), two reviews, three Journal posts, and 13 non-font
+Storage files through the Storage API. No pending provider checkout was attached. No backup
+was retained; Git does not recover discarded data. The public-schema replacement, Auth deletion,
+seed and migration marker replacement committed atomically. The three licensed font objects,
+six Vault entries and all three Cron IDs, schedules, active flags and command hashes survived.
+
+Read-only verification found zero Auth/profile/order/payment/review/Journal records, one product,
+three variants, eight coatings, the matching `2026-10-05-admin-customer` policy, and one migration.
+Linked SQL lint and migration dry-run parity passed. All three retained fonts returned HTTP 200.
+One authenticated request to each Dev Cron endpoint returned HTTP 200 with zero examined records
+and zero failures. Fresh sign-in, approved Admin bootstrap, catalog-media restoration,
+pickup publication and customer/Admin retesting remain necessary. This Dev operation does not
+mark Production ready or authorize its reset; website-v1 acceptance still needs Production parity.
+
 ## October 6 stock-release and payment-lock repair — Dev activated
 
 `20261006020000_stock_release_snapshots.sql` was applied additively to verified Dev
