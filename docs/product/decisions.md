@@ -7,8 +7,11 @@ when a rule changes; do not duplicate every rule into README or a second specifi
 
 ## Scope and navigation
 
-The owner confirmed on September 11, 2026 that v1.0 is the completed and accepted Android APK
-with the working web app. Current hosted deployments are pre-release. Existing test records are
+The owner replaced the September 11 APK requirement on October 6, 2026: v1.0 is now the audited
+and accepted website release. Android APK work is not a release dependency. Code/security validation,
+matching Production schema/code, and authenticated customer/Admin operational acceptance remain
+required; the current candidate is not yet accepted. See the [release sequence](../operations/deployment.md).
+Current hosted deployments remain pre-release until those gates pass. Existing test records are
 disposable: prefer a clean database and readable current contracts over old-data compatibility.
 This does not remove authorization, atomicity, audit or payment-verification safeguards, and does
 not authorize resetting an unidentified hosted project or ignoring actual transferred funds.
@@ -76,7 +79,7 @@ Counter method; there is no untracked cash/walk-in order or delivery flow. Campu
 Launch locations are UCC Congress — 3rd Floor and Covered Court. Monday–Saturday, 7 AM–7 PM is
 the operating window, not automatic availability. Admin publishes every actual date/window/location.
 Seed defaults are one-day lead time, 5 PM cutoff, and hourly slots; Admin controls the current rules.
-The unused pickup grace setting is removed by the October 4 forward migration. There is no
+The unused pickup grace setting is removed in the October 5 consolidated Dev baseline. There is no
 automatic late/no-show grace enforcement; collect within the saved pickup window and contact support if late.
 
 Made to order uses published schedules/cutoffs without prepared inventory. Ready stock uses the
@@ -101,7 +104,9 @@ Signed verified events and exact SQL reference/amount matching determine paid st
 expiry is 15 minutes, configurable. Provider checkout must close before reserved stock is released.
 
 Order and payment status remain distinct; see [orders](../features/orders.md). Website cancellation
-is **pending unpaid only**, not “until preparation.” Paid settlement concerns are handled in person.
+for customers is **pending unpaid only**, not “until preparation.” Admin additionally has audited
+cancellation for eligible unpaid counter orders in Received, Preparing and Ready for pickup,
+including no-shows. Paid and under-review orders remain protected. Paid settlement concerns are handled in person.
 No new online refunds or destination collection. Prepared/no-show orders are non-refundable subject
 to non-waivable rights. The retired refund rows, states and reconciliation code are removed in the
 pre-v1 baseline. Hosted Dev and Production received the earlier shared baseline through separate,
@@ -131,12 +136,12 @@ approved final baseline activation on October 1, recorded in the database migrat
 On October 2, the owner cancelled current APK and analytics work in favor of a footer-only
 Install app link and `/install` browser tutorials. This is home-screen access to the existing website,
 not an APK release. The six guides cover Safari, Chrome, Brave, Firefox, DuckDuckGo and Opera;
-unavailable home-screen menus fall back to Chrome or Safari. The prior APK-based v1.0 definition needs a separate
-owner decision before a website shortcut can be treated as release acceptance.
+unavailable home-screen menus fall back to Chrome or Safari. On October 6 the owner adopted website-only
+v1.0 acceptance; the tutorial itself does not prove that the release checks passed.
 
 Admin Dashboard is a bounded read-only cross-feature summary; Catalog, Orders, Pickup, Inventory,
-Customers and Journal own their respective mutations. Customers includes Admin/customer profiles,
-role labels and zero-activity accounts. Fixed brand and provider secrets are not editable settings.
+Customers and Journal own their respective mutations. Customers includes customer-role profiles
+and zero-activity customer accounts; Admin identities are excluded. Fixed brand and provider secrets are not editable settings.
 
 Dev and Production remain isolated deployments/data/providers. SQL promotion is independent of Git.
 Ordinary work follows development → reviewed PR → main; feature branches are reserved for risky/large work.

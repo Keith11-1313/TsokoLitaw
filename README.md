@@ -18,6 +18,9 @@ complete. Phase 15B dashboard code and SQL are implemented; authenticated browse
 open. The owner cancelled current APK (Phase 15C) and analytics (Phase 16) work. `/install` provides
 browser home-screen tutorials, not an APK or offline ordering. See the [roadmap](docs/roadmap.md).
 
+On October 6, 2026 the owner adopted website-only v1.0 acceptance, removing the APK requirement.
+The current candidate is **not yet release-approved**. Follow the [release sequence](docs/operations/deployment.md).
+
 ## Quick start
 
 Use the `development` branch and obtain **Dev** configuration privately.

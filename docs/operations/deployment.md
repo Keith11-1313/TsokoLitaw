@@ -6,6 +6,12 @@ Agents do not perform those Git operations. Both branches are connected to **sep
 
 ## Release sequence
 
+Website-only v1.0 replaces the earlier APK requirement as of October 6, 2026. Do not mark v1.0
+accepted until the release checks below pass. This includes
+the existing pre-v1 schema-consolidation policy, security fixes, matching Production contracts,
+and authenticated desktop/mobile acceptance. Release naming does not authorize a hosted reset,
+provider charge, Git merge/tag, or deployment.
+
 1. Review the diff and run [validation](../maintenance/testing.md). Keep formatting, behavior,
    dependency upgrades, and database changes separately reviewable where practical.
 2. If SQL changed, test locally and apply reviewed migrations to hosted **Dev** first using the

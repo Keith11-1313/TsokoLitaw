@@ -21,9 +21,12 @@ Update the affected current guide when behavior changes; do not recreate duplica
 
 ## Current scope
 
-Owner decision (September 11, 2026): the entire application is pre-release until the required
-Android APK is completed and accepted as v1.0. A Vercel environment named Production is not a
-product-release milestone. Existing test records need not be retained. Prefer a clean database
+Owner decision (October 6, 2026): v1.0 is the audited and accepted website release; an Android APK
+is no longer required. Release acceptance still requires passing code/security checks, matching
+Production schema/code, and authenticated customer/Admin operational acceptance. The current
+candidate has unresolved audit gates; do not label it released merely because a build passes.
+A Vercel environment named Production is not a product-release milestone. Existing pre-release
+test records need not be retained. Prefer a clean database
 baseline over compatibility solely for disposable pre-release data. A coordinated rebaseline may
 replace migration history after dependency review and local validation; confirm the exact hosted
 project and destructive scope before resetting it. Never infer that provider funds are disposable.
