@@ -279,17 +279,17 @@ select is(
   (
     select was_created
     from public.create_checkout_order(
-      '91000000-0000-4000-8000-000000000003',
+      '91000000-0000-4000-8000-000000000001',
       '96000000-0000-4000-8000-000000000003',
       '94000000-0000-4000-8000-000000000001',
       '92000000-0000-4000-8000-000000000001',
-      'RLS Admin', null,
+      'RLS Owner', null,
       '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addons":[{"id":"13000000-0000-4000-8000-000000000001","name":"Extra sea salt cream","unit_price":18,"quantity":1,"line_total":0,"is_complimentary":true}]}]'::jsonb,
       40, 0, 40, 'rls-test-v1', null
     ,'paymongo','')
   ),
   true,
-  'active admin can place their own customer order'
+  'active customer can place another customer order'
 );
 select ok(
   (

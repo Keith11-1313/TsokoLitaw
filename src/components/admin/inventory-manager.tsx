@@ -301,8 +301,11 @@ export function InventoryManager({
   records: AdminInventoryRecord[];
 }) {
   const [selectedInventoryId, setSelectedInventoryId] = useState(records[0]?.id ?? "");
+  const [historyInventoryId, setHistoryInventoryId] = useState(records[0]?.id ?? "");
   const [showPublishModal, setShowPublishModal] = useState(false);
   const selectedRecord = records.find((record) => record.id === selectedInventoryId) ?? records[0];
+  const historyRecord =
+    records.find((record) => record.id === historyInventoryId) ?? selectedRecord;
   const selectedDate = selectedRecord
     ? dates.find((date) => date.pickupDate === selectedRecord.pickupDate)
     : undefined;
@@ -376,6 +379,65 @@ export function InventoryManager({
             <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
               <ConsumptionForm record={selectedRecord} />
             </div>
+            <section
+              aria-labelledby="stock-history-title"
+              className="rounded-card border border-border bg-surface p-5 sm:p-6"
+            >
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <h3 id="stock-history-title" className="font-display text-2xl">
+                  Stock history
+                </h3>
+                <CustomSelect
+                  className="w-full sm:w-72"
+                  label="Pickup date"
+                  hideLabel
+                  value={historyRecord.id}
+                  onChange={setHistoryInventoryId}
+                  options={records.map((item) => ({
+                    value: item.id,
+                    label: formatDate(item.pickupDate),
+                  }))}
+                />
+              </div>
+              {historyRecord.adjustments.length ? (
+                <ol className="mt-4 divide-y divide-border">
+                  {historyRecord.adjustments.map((entry) => (
+                    <li key={entry.id} className="py-4 first:pt-0">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                        <span className="font-bold">
+                          {entry.reason === "RESTOCK"
+                            ? "Stock published"
+                            : entry.reason === "CORRECTION"
+                              ? "Stock adjusted"
+                              : entry.reason === "WASTE"
+                                ? "Unusable pieces"
+                                : entry.reason}
+                          {" · "}
+                          {entry.quantityDelta > 0 ? "+" : ""}
+                          {entry.quantityDelta} pieces
+                        </span>
+                        <time dateTime={entry.createdAt} className="text-xs text-muted-foreground">
+                          Recorded:{" "}
+                          {new Intl.DateTimeFormat("en-PH", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                            timeZone: "Asia/Manila",
+                          }).format(new Date(entry.createdAt))}
+                        </time>
+                      </div>
+                      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-muted-foreground">
+                        <span className="font-bold">Note: </span>
+                        {entry.notes || "No note provided."}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  No stock adjustments recorded for this date.
+                </p>
+              )}
+            </section>
           </article>
         </section>
       ) : (

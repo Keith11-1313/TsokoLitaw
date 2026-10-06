@@ -3,12 +3,14 @@
 TsokoLitaw sells configurable dessert boxes for campus pickup. Customers sign in with Google,
 choose boxes, complete website checkout, and track their orders. Depending on the configured mode,
 payment uses PayMongo QR Ph, Manual GCash, or a tracked Pay at the Counter order. Admin publishes
-catalog/pickup options and manages fulfillment. The application is pre-release until the Android APK
-is accepted as v1.0. Hosted Production is an environment name, not a release milestone.
+catalog/pickup options and manages fulfillment. On October 6 the owner defined v1.0 as the audited
+and accepted website release; no Android APK is required. The current candidate remains pre-release
+until code/security, Production compatibility and authenticated acceptance gates pass. `/install`
+only adds browser home-screen access. Hosted Production is an environment name, not a release milestone.
 
 1. Read [environment isolation](environments.md) before obtaining credentials.
 2. Follow [local setup](local-setup.md); use hosted Dev for ordinary UI work, disposable local Supabase for SQL tests.
-3. Open Home, Our Creations, and Journal. With an authorized Dev identity, check Profile and My Orders.
+3. Open Home, Our Creations, and Journal. With a Dev customer identity, check Profile and My Orders.
    Admin access requires an approved active Admin profile; do not bypass it for testing.
 4. Pick a feature in the [project map](../architecture/project-map.md). Follow its page into the component,
    action, server module, and RPC rather than reading every file.

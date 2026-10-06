@@ -62,26 +62,21 @@ export default async function AdminOrdersPage({
   return (
     <AdminShell activePath="/admin/orders">
       <AdminContent>
-        <header>
-          <h1 className="font-display text-[2rem] leading-tight sm:text-[2.25rem]">Orders</h1>
-        </header>
-
-        <section
-          className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
-          aria-label="Order summary"
-        >
-          {orderStats.map((stat) => (
-            <AdminStatCard key={stat.label} compact {...stat} />
-          ))}
-        </section>
-
-        <div className="mt-8">
-          <OrderManagementTable
-            orders={orders}
-            initialQuery={initialQuery}
-            initialStatus={initialStatus}
-          />
-        </div>
+        <OrderManagementTable
+          orders={orders}
+          initialQuery={initialQuery}
+          initialStatus={initialStatus}
+          summary={
+            <section
+              className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
+              aria-label="Order summary"
+            >
+              {orderStats.map((stat) => (
+                <AdminStatCard key={stat.label} compact {...stat} />
+              ))}
+            </section>
+          }
+        />
       </AdminContent>
     </AdminShell>
   );

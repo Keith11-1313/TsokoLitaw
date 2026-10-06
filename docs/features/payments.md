@@ -17,6 +17,12 @@ the order through `PREPARING` and `READY_FOR_PICKUP` while unpaid, but SQL block
 an active Admin uses the audited `record_counter_payment` operation. Staff must receive the exact
 amount before confirming it. The action is idempotent and does not accept a browser-supplied amount.
 
+Pending counter payments display **Pay at pickup**, even though their online payment window is absent;
+they must not display **Time ended**. Paid/failed labels still take precedence. Admin can cancel an
+eligible unpaid counter order with a required audited reason, including after preparation or a no-show.
+This does not allow cancellation of paid orders or change counter-payment collection/completion rules.
+See [cancellation](orders.md#cancellation).
+
 ## Manual GCash
 
 `GCASH_BASE_QR_PAYLOAD` is the decoded original PHP GCash QR, not a URL or image filename.

@@ -69,9 +69,11 @@ and environment scope. Local server-variable changes require restarting the Next
 `manual` offers Manual GCash and Pay at the Counter. Manual mode requires server-only
 `GCASH_BASE_QR_PAYLOAD` (decoded recipient QR). Do not put the actual payload in Git. Keep PayMongo
 configuration/webhooks working for pre-existing PayMongo orders when switching modes. All methods
-require a compatible pre-v1 baseline. Hosted Dev and Production both have the clean
-`20260911010000` pre-v1 baseline after their separately approved resets; the October 1 Production
-rebaseline is recorded in the [migration runbook](../operations/database-migrations.md).
+require a compatible pre-v1 schema. The recorded Production activation is the October 1 baseline;
+Dev received the consolidated single-marker October 5 rebaseline for pickup-grace cleanup,
+review privacy, policy synchronization and Admin/customer separation. Production remains unchanged. Matching deployment
+and smoke checks remain required. Verify current hosted state before promotion using the
+[migration runbook](../operations/database-migrations.md); these records are not live verification.
 A Git deployment still does not apply SQL; verify the target schema and environment-specific
 configuration independently.
 

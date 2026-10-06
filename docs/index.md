@@ -19,6 +19,8 @@ Start with [onboarding](getting-started/onboarding.md). Read only the guides rel
 
 ## Feature paths
 
+For private recovery exports, see [Manual Production backups](operations/manual-backups.md).
+
 [Authentication](features/authentication.md) · [Catalog](features/catalog.md) ·
 [Checkout](features/checkout.md) · [Pickup and inventory](features/inventory.md) ·
 [Orders and reviews](features/orders.md) · [Payments](features/payments.md) ·
@@ -28,9 +30,12 @@ Start with [onboarding](getting-started/onboarding.md). Read only the guides rel
 
 - [Current product rules and decision rationale](product/decisions.md)
 - [Design and shared form contracts](ui/design.md)
-- [Roadmap: dashboard acceptance, APK readiness, and optional analytics](roadmap.md)
+- [Roadmap: website release, install guide, and cancelled APK/analytics scope](roadmap.md)
 
 These guides replace the former root specifications, onboarding document, and completed phase checklists.
 Historical versions remain in Git; they are not instructions to replay old migrations or reset hosted data.
 Applied SQL plus later migrations define the schema, not a copied Markdown table definition.
+The current candidate is one consolidated baseline, verified in Dev on October 6 and activated in
+Production on October 7. Matching Production application deployment and authenticated acceptance
+remain gates. See the migration runbook for the current activation and labeled history.
 Update the affected guide when behavior changes; do not duplicate the whole system specification in README.

@@ -47,10 +47,11 @@ tablet, with the photo gallery and sticky sidebar from the desktop breakpoint. S
 radio inputs styled as thumbnail options; Mixed uses thumbnail rows with 44px minus/plus controls.
 Both presentations share selection, allocation, and pricing state.
 Checkout puts its summary before the form on mobile and in a sticky right column on desktop.
-Order history/detail share receipt-style box counts, per-box contents, line totals and optional breakdowns.
-My Orders keeps its Build a box action beside the heading on wider screens; on phones it becomes
-a labeled floating action above the bottom safe area, with enough page padding that the last order
-remains reachable.
+Order history uses compact summary cards with full-width actions. Order details show receipt-style
+box counts, per-box contents, line totals and always-visible price breakdowns.
+My Orders uses the same All/Active/Past buttons on phones and desktop, not a mobile dropdown.
+My Orders keeps its Build a box action beside the heading on wider screens. Phones have no
+floating action; customers can build a box through Our Creations in the shared navigation.
 
 Home follows a mobile-first product story after the hero: the reason for TsokoLitaw, the live active
 coating selection, the three-step website-to-campus pickup journey, the signature sea-salt cream
@@ -81,14 +82,24 @@ Safari as a fallback; do not promise automatic installation or detect installati
 - `useFormGate` needs `formRef`, `formProps`, named inputs, and `extraValid` for asynchronous media
   checks. Its baseline is the initial mount: remount an editor when changing records; it does not
   automatically adopt a saved baseline.
-- `CustomSelect` uses a hidden native select for form values/constraint validity. Its change event
-  must reach the form gate. Preserve keyboard arrows, Enter/Space, Escape, outside close, disabled
+- `CustomSelect` uses a hidden native select for form values/constraint validity. Its change event must reach the form gate.
+  Menus are anchored below the trigger with a gap, or above the entire labeled control when viewport
+  space is limited; do not overlay the trigger/label. `hideLabel` is visual only and retains its accessible name.
+  Preserve keyboard arrows, Enter/Space, Escape, outside close, disabled
   options, labels and focus. Hidden native plumbing is not a duplicate visible dropdown.
 - The number stepper supports minus/input/plus, direct keyboard entry and arrows. Do not silently
   clamp invalid values into acceptance; maintain bounds/step feedback.
 - Inventory forms use one visible label per control. The unusable-piece quantity and note controls
   align at the top on wider screens, with the recording action beneath the field row and aligned to
   the form's left edge.
+- Pickup rules use one/two/four columns on phone/tablet/desktop. Admin Customers and Orders keep
+  filters in their page header and compact table pagination beneath the results. Rows per page
+  applies immediately; navigation is hidden for a single page. See the Admin guide for the different
+  server-paged customer directory and bounded loaded-order list.
+- Admin Customers keeps a 40px circular Google profile photo beside the name/email. The shared
+  row appearance is unchanged on desktop and mobile; missing or failed photos retain the existing
+  person icon. Use `CustomerAvatar`, a decorative image beside the already visible customer name,
+  with no-referrer behavior and no new upload control.
 - Toast notifications align their status icon, message, and dismissal control on one row, use the
   semantic success/error surface, and retain a 44px dismissal target plus automatic dismissal.
 - `useEditorDialog` handles focus, scroll locking, Escape and dirty-close confirmation. Route user

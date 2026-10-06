@@ -38,4 +38,3 @@ export const PICKUP_LOCATIONS = [
 ] as const;
 
 export const PICKUP_LEAD_DAYS = 1;
-export const PICKUP_GRACE_MINUTES = 15;

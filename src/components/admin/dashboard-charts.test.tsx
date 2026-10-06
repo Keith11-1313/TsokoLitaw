@@ -2,9 +2,25 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { FunnelChart, SalesTrendChart } from "@/components/admin/dashboard-charts";
+import {
+  DashboardMixCharts,
+  FunnelChart,
+  SalesTrendChart,
+} from "@/components/admin/dashboard-charts";
 
 describe("Admin dashboard charts", () => {
+  it("preserves exact category details alongside vertical columns", () => {
+    render(
+      <DashboardMixCharts
+        periodLabel="This month"
+        coatings={[{ label: "Cocoa", value: 12, detail: "12 pieces" }]}
+        extras={[{ label: "Sea salt cream", value: 3, detail: "3 sold · ₱45.00" }]}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Coatings purchased" })).toBeTruthy();
+    expect(screen.getByText("12 pieces · 100%")).toBeTruthy();
+    expect(screen.getByText("3 sold · ₱45.00 · 100%")).toBeTruthy();
+  });
   it("provides exact sales data without exposing a giant image label", () => {
     render(
       <SalesTrendChart

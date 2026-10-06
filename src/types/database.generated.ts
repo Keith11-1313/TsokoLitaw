@@ -1302,6 +1302,16 @@ export type Database = {
         Returns: boolean
       }
       cancel_account_deletion: { Args: never; Returns: undefined }
+      cancel_admin_unpaid_order: {
+        Args: {
+          expected_status: Database["public"]["Enums"]["order_status"]
+          expired_checkout_id?: string
+          reason_value: string
+          target_admin_id: string
+          target_order_id: string
+        }
+        Returns: boolean
+      }
       cancel_unpaid_order: {
         Args: {
           expired_checkout_id?: string
@@ -1434,9 +1444,9 @@ export type Database = {
           minimum_lead_days: number
           operating_end: string
           operating_start: string
-          pickup_grace_minutes: number
         }[]
       }
+      is_active_customer: { Args: never; Returns: boolean }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       list_due_paymongo_checkouts: {
@@ -1455,6 +1465,17 @@ export type Database = {
           visible_value: boolean
         }
         Returns: boolean
+      }
+      prepare_admin_order_cancellation: {
+        Args: {
+          expected_status: Database["public"]["Enums"]["order_status"]
+          target_admin_id: string
+          target_order_id: string
+        }
+        Returns: {
+          already_cancelled: boolean
+          checkout_id: string
+        }[]
       }
       prepare_order_cancellation: {
         Args: { target_order_id: string; target_user_id: string }
@@ -1601,7 +1622,6 @@ export type Database = {
       update_pickup_settings: {
         Args: {
           daily_cutoff_time_value: string
-          grace_minutes_value: number
           minimum_lead_days_value: number
           operating_end_value: string
           operating_start_value: string

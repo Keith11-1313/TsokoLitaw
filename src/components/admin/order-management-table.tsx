@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { ArrowRight, Search } from "lucide-react";
 import {
   recordCounterPaymentAction,
@@ -9,11 +9,17 @@ import {
 import type { OrderStatus } from "@/components/ui/status-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { Pagination } from "@/components/ui/pagination";
 import { OrderLineItems } from "@/components/orders/order-line-items";
 import { formatPhp } from "@/lib/commerce";
-import { fulfillmentActionLabels, getNextFulfillmentStatus } from "@/lib/order-status";
+import {
+  canAdminCancelOrder,
+  fulfillmentActionLabels,
+  getNextFulfillmentStatus,
+} from "@/lib/order-status";
 import type { AdminOrderSummary } from "@/lib/server-orders";
 import { ManualPaymentReview } from "@/components/admin/manual-payment-review";
+import { OrderCancellation } from "@/components/admin/order-cancellation";
 import { SecondaryButton } from "@/components/ui/button";
 import { getPaymentStatusLabel } from "@/lib/payment-status";
 
@@ -230,8 +236,9 @@ function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
       <div className="mt-5 border-t border-border pt-5">
         <OrderContents order={order} />
       </div>
-      <div className="mt-5">
+      <div className="mt-5 grid gap-2">
         <FulfillmentAction order={order} />
+        <OrderCancellation order={order} />
       </div>
     </article>
   );
@@ -245,7 +252,10 @@ function FulfillmentAction({ order }: { order: AdminOrderSummary }) {
   );
   const [pending, startTransition] = useTransition();
 
-  if (!nextStatus) return <span className="text-xs text-muted-foreground">No action</span>;
+  if (!nextStatus)
+    return canAdminCancelOrder(order) ? null : (
+      <span className="text-xs text-muted-foreground">No action</span>
+    );
 
   const targetStatus = nextStatus;
   const actionLabel = fulfillmentActionLabels[targetStatus];
@@ -343,13 +353,17 @@ export function OrderManagementTable({
   orders,
   initialQuery = "",
   initialStatus = "ALL",
+  summary,
 }: {
   orders: AdminOrderSummary[];
   initialQuery?: string;
   initialStatus?: "ALL" | OrderStatus;
+  summary?: ReactNode;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState<"ALL" | OrderStatus>(initialStatus);
+  const [pageSize, setPageSize] = useState(20);
+  const [requestedPage, setRequestedPage] = useState(1);
 
   const visibleOrders = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -365,39 +379,54 @@ export function OrderManagementTable({
       ].some((value) => value.toLowerCase().includes(normalizedQuery));
     });
   }, [orders, query, status]);
+  const totalPages = Math.max(1, Math.ceil(visibleOrders.length / pageSize));
+  const page = Math.min(requestedPage, totalPages);
+  const pageStart = (page - 1) * pageSize;
+  const pageOrders = visibleOrders.slice(pageStart, pageStart + pageSize);
 
   return (
     <section aria-label="Order management list">
-      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_14rem]">
-        <label className="block space-y-2">
-          <span className="block text-sm font-bold text-foreground">Search orders</span>
-          <span className="relative block">
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
-              size={17}
-            />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Order number, name, email, or item"
-              className="min-h-12 w-full rounded-control border border-border bg-surface pl-11 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20"
-            />
-          </span>
-        </label>
-        <CustomSelect
-          label="Status filter"
-          value={status}
-          onChange={(next) => setStatus(next as "ALL" | OrderStatus)}
-          options={statusOptions}
-        />
-      </div>
+      <header className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <h1 className="font-display text-[2rem] leading-tight sm:text-[2.25rem]">Orders</h1>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem] xl:w-[36rem]">
+          <label className="block space-y-2">
+            <span className="sr-only">Search orders</span>
+            <span className="relative block">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                size={17}
+              />
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setRequestedPage(1);
+                }}
+                placeholder="Search number, name, email, or item"
+                className="min-h-12 w-full rounded-control border border-border bg-surface pl-11 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20"
+              />
+            </span>
+          </label>
+          <CustomSelect
+            label="Status filter"
+            hideLabel
+            value={status}
+            onChange={(next) => {
+              setStatus(next as "ALL" | OrderStatus);
+              setRequestedPage(1);
+            }}
+            options={statusOptions}
+          />
+        </div>
+      </header>
+      {summary ? <div className="mt-7">{summary}</div> : null}
 
       <div className="mt-6 lg:hidden">
         {visibleOrders.length ? (
           <div className="space-y-4">
-            {visibleOrders.map((order) => (
+            {pageOrders.map((order) => (
               <MobileOrderCard key={order.id} order={order} />
             ))}
           </div>
@@ -428,7 +457,7 @@ export function OrderManagementTable({
                 </tr>
               </thead>
               <tbody>
-                {visibleOrders.map((order) => (
+                {pageOrders.map((order) => (
                   <tr key={order.id} className="border-b border-border align-top last:border-b-0">
                     <th className="px-4 py-5 font-bold text-foreground" scope="row">
                       {order.orderNumber}
@@ -486,7 +515,10 @@ export function OrderManagementTable({
                       {order.pickupLocation}
                     </td>
                     <td className="px-4 py-5 text-center">
-                      <FulfillmentAction order={order} />
+                      <div className="grid gap-2">
+                        <FulfillmentAction order={order} />
+                        <OrderCancellation order={order} />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -502,9 +534,38 @@ export function OrderManagementTable({
           </div>
         )}
       </div>
-      <p className="pt-5 text-xs text-muted-foreground">
-        Showing {visibleOrders.length} of {orders.length} recent orders
-      </p>
+      <div className="mt-3 flex flex-col gap-3 text-sm text-muted-foreground xl:flex-row xl:items-center xl:justify-between">
+        <p aria-live="polite">
+          Showing {visibleOrders.length ? pageStart + 1 : 0}–
+          {Math.min(pageStart + pageSize, visibleOrders.length)} of {visibleOrders.length} matching
+          loaded orders
+        </p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <div className="flex items-center gap-2">
+            <span>Rows per page</span>
+            <CustomSelect
+              label="Rows per page"
+              hideLabel
+              className="w-24"
+              value={String(pageSize)}
+              options={[10, 20, 50, 100].map((size) => ({
+                value: String(size),
+                label: String(size),
+              }))}
+              onChange={(size) => {
+                setPageSize(Number(size));
+                setRequestedPage(1);
+              }}
+            />
+          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setRequestedPage}
+            label="Order list pages"
+          />
+        </div>
+      </div>
     </section>
   );
 }

@@ -32,6 +32,9 @@ See the [database map](../architecture/database.md) for the latest coating write
 
 ## Common changes
 
+Admin coating cards use one column on phones, two from the medium breakpoint, and four on
+desktop from the extra-large breakpoint. The customer coating gallery is unchanged.
+
 - Normal product/coating/add-on information: authorized Admin Catalog, not source edits or reseeding.
 - Catalog UI: `product-configurator.tsx`, Admin `catalog-manager.tsx` named editors, shared controls.
 - Receipt presentation: checkout summary and shared `orders/order-line-items.tsx`.

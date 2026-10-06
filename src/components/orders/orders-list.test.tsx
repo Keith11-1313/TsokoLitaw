@@ -4,6 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { OrdersList } from "@/components/orders/orders-list";
+import { OrderLineItems } from "@/components/orders/order-line-items";
 import type { CustomerOrderSummary } from "@/lib/server-orders";
 
 afterEach(cleanup);
@@ -43,27 +44,17 @@ const order: CustomerOrderSummary = {
 };
 
 describe("OrdersList", () => {
-  it("shows structured item details instead of a flattened order paragraph", () => {
-    const { container } = render(
-      <OrdersList orders={[order]} nextCursor={null} showingOlderPage={false} />,
-    );
+  it("keeps list cards compact with a full-width order link", () => {
+    render(<OrdersList orders={[order]} nextCursor={null} showingOlderPage={false} />);
 
-    expect(screen.getByText("TsokoMini (4 pcs)")).toBeTruthy();
-    expect(
-      Array.from(container.querySelectorAll("p")).some(
-        (element) =>
-          element.textContent?.includes("2 boxes") &&
-          element.textContent.includes("₱60.00") &&
-          element.textContent.includes("each"),
-      ),
-    ).toBe(true);
-    expect(screen.getByText("In each box")).toBeTruthy();
-    expect(
-      screen.getByText("Milk × 1 · Palitaw × 1 · Crushed Nuts × 1 · Sesame Seeds × 1"),
-    ).toBeTruthy();
-    expect(screen.getByText("Complimentary extra")).toBeTruthy();
-    expect(screen.getByText("Sea salt cream × 2 — ₱0.00")).toBeTruthy();
-    expect(screen.getByText("View price per box")).toBeTruthy();
+    expect(screen.queryByText("TsokoMini (4 pcs)")).toBeNull();
+    expect(screen.queryByText("Order items")).toBeNull();
+    expect(screen.queryByRole("combobox")).toBeNull();
+    const filters = screen.getByRole("navigation", { name: "Filter order history" });
+    expect(filters.firstElementChild?.className).toBe("grid grid-cols-3 gap-2");
+    const link = screen.getByRole("link", { name: "View order" });
+    expect(link.className).toContain("w-full");
+    expect(link.className).not.toContain("sm:w-auto");
     expect(screen.queryByText(order.itemSummary)).toBeNull();
   });
 
@@ -72,12 +63,49 @@ describe("OrdersList", () => {
     render(<OrdersList orders={[order]} nextCursor={null} showingOlderPage={false} />);
 
     const allFilter = screen.getByRole("button", { name: /All/ });
-    const completedFilter = screen.getByRole("button", { name: /Completed/ });
+    const completedFilter = screen.getByRole("button", { name: /Past/ });
     expect(allFilter.getAttribute("aria-pressed")).toBe("true");
 
     await user.click(completedFilter);
 
     expect(completedFilter.getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByText("No orders in this category")).toBeTruthy();
+  });
+
+  it("groups fulfillment orders under Active and completed orders under Past", async () => {
+    const user = userEvent.setup();
+    const statuses: CustomerOrderSummary["status"][] = [
+      "PENDING_PAYMENT",
+      "PAID",
+      "CONFIRMED",
+      "PREPARING",
+      "READY_FOR_PICKUP",
+      "COMPLETED",
+      "CANCELLED",
+      "EXPIRED",
+    ];
+    render(
+      <OrdersList
+        orders={statuses.map((status) => ({ ...order, id: status, orderNumber: status, status }))}
+        nextCursor={null}
+        showingOlderPage={false}
+      />,
+    );
+    expect(screen.getAllByRole("link", { name: "View order" })).toHaveLength(8);
+    await user.click(screen.getByRole("button", { name: /Active/ }));
+    expect(screen.getAllByRole("link", { name: "View order" })).toHaveLength(4);
+    expect(screen.queryByRole("heading", { name: "PENDING_PAYMENT" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "CANCELLED" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: /Past/ }));
+    expect(screen.getAllByRole("link", { name: "View order" })).toHaveLength(1);
+    expect(screen.getByRole("heading", { name: "COMPLETED" })).toBeTruthy();
+  });
+
+  it("shows the order-detail price breakdown without a disclosure", () => {
+    const { container } = render(<OrderLineItems items={order.itemLines} showPriceBreakdown />);
+    expect(screen.getByText("Price per box")).toBeTruthy();
+    expect(screen.getByText("Base box")).toBeTruthy();
+    expect(screen.getByText("Coatings")).toBeTruthy();
+    expect(container.querySelector("details")).toBeNull();
   });
 });

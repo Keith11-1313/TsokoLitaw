@@ -29,13 +29,13 @@ describe("PickupManager", () => {
         settings={{
           minimumLeadDays: 1,
           dailyCutoffTime: "17:00",
-          graceMinutes: 15,
           operatingStart: "07:00",
           operatingEnd: "19:00",
         }}
       />,
     );
 
+    expect(screen.queryByText("Pickup grace (minutes)")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Add pickup date" }));
 
     expect(screen.getByText(/Schedule pickups between 7:00 AM and 7:00 PM/)).toBeTruthy();

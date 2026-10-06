@@ -14,6 +14,46 @@ and business state, and record audited mutations. Browser visibility is not acce
 | Customers | `/admin/customers`, `server-customers.ts`                                         | Support directory with roles, completed-order and loyalty aggregates |
 | Journal   | `/admin/journal`, `journal-manager.tsx`, `server-journal.ts`, `server-reviews.ts` | Published posts and moderated community highlights                   |
 
+## Customers directory
+
+Customer rows show the Google profile photo from existing Auth metadata, with the person icon
+when no supported photo exists, an Auth lookup fails, or the image cannot load. Only HTTPS photos
+from `lh3.googleusercontent.com` are accepted. Lookups happen server-side after the authorized
+directory query, for the current page only, with at most five concurrent requests. Auth metadata
+and privileged credentials are not sent to the browser; only the validated photo URL is rendered.
+No new stored column, migration or database reset is required.
+
+Only customer-role profiles are listed and counted; Admin identities are excluded. Dashboard
+purchasing/returning-customer counts also exclude Admins. Financial order totals still preserve
+historical paid transactions rather than discarding revenue when an account's role changes.
+
+Customers has a header search and a rows-per-page control (10, 20, 50, or 100; default 20).
+Search and pagination retain the selected size; changing the shared size selector automatically
+loads page one, retaining search, without an Apply button. The compact table footer groups
+the account range, size selector, and pagination. A single page has no navigation controls.
+Multiple pages show accessible icon First/Previous and Next/Last controls, numbered pages with
+ellipses, and Page X of Y. Boundary controls are disabled and the current page is marked accessibly;
+controls wrap on phones and retain 44px targets.
+The customer count is the matching total; returning-customer and reward cards summarize the current page.
+The directory heading, revenue subtitle, and card supporting captions are omitted. Page-only
+card labels say “shown” rather than presenting their values as directory-wide totals.
+
+## Order list pagination
+
+Eligible unpaid orders also show a separate **Cancel order** action on desktop and mobile, with
+compact, single-line red text beneath fulfillment rather than an oversized outlined pill, and
+confirmation and a required reason saved in the audit log. It includes unpaid counter orders in
+Received, Preparing and Ready for pickup. Paid and under-review orders cannot be cancelled through
+this action. See [order cancellation](orders.md#cancellation) for provider-expiry and atomic-release rules.
+
+Orders keeps search and status controls beside the page heading on desktop, before its summary cards.
+Controls stack beneath the heading on smaller screens and retain accessible labels.
+
+Admin Orders uses the same compact pagination styling, automatic 10/20/50/100 row sizes,
+and hidden single-page navigation as Customers, on both desktop tables and mobile cards.
+Search/status/size changes restart at page one. This paginates the existing bounded loaded
+recent-order and payment-review set, not the entire historical database; the range says loaded orders.
+
 ## Journal flow
 
 Orders also owns [Manual GCash verification](payments.md#manual-gcash): open the payment review
@@ -62,6 +102,11 @@ The fixed brand, credentials, and arbitrary global settings are not Admin-editab
 New capabilities require an operational purpose and approval, not just a new table/control.
 
 ## Dashboard reporting
+
+Coatings purchased and Extras purchased use vertical category bar charts with a zero-based
+count axis and exact counts above columns. Narrow screens scroll inside the chart, not the page;
+an optional purchase breakdown preserves names, totals/revenue and percentage shares for accessible reading.
+These are category comparisons, not statistical histogram bins. Reporting sources are unchanged.
 
 The Dashboard defaults to the last seven Manila calendar days through the current time and also
 supports 30 days, this month to date, and the complete previous month. Paid sales and paid-order

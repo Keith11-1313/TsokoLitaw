@@ -15,6 +15,10 @@ PayMongo endpoints to refunds; refund parsing and storage were retired in the pr
 must remain untouched until verification. Both handlers enforce bounded request bodies and durable
 deduplication. Resend delivery outcomes never mark orders paid.
 
+The shared body reader counts streamed bytes and cancels consumption once the 1 MiB limit is
+exceeded, including missing or misleading Content-Length headers. Streaming UTF-8 decoding preserves
+the raw signature text across chunk boundaries; no JSON parsing/reformatting precedes verification.
+
 ## Supabase Cron
 
 | Application endpoint (GET)      | Expected schedule in UTC | Work                                                                                 |

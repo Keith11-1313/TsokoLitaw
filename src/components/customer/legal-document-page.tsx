@@ -11,14 +11,14 @@ interface LegalDocumentPageProps {
   title: string;
   introduction?: string;
   sections: readonly LegalSection[];
-  documentNote?: string;
+  documentNote: string;
 }
 
 export function LegalDocumentPage({
   title,
   introduction,
   sections,
-  documentNote = "Updated on October 14, 2025",
+  documentNote,
 }: LegalDocumentPageProps) {
   return (
     <CustomerPageShell>

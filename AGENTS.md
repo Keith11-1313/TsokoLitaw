@@ -21,16 +21,21 @@ Update the affected current guide when behavior changes; do not recreate duplica
 
 ## Current scope
 
-Owner decision (September 11, 2026): the entire application is pre-release until the required
-Android APK is completed and accepted as v1.0. A Vercel environment named Production is not a
-product-release milestone. Existing test records need not be retained. Prefer a clean database
+Owner decision (October 6, 2026): v1.0 is the audited and accepted website release; an Android APK
+is no longer required. Release acceptance still requires passing code/security checks, matching
+Production schema/code, and authenticated customer/Admin operational acceptance. The current
+candidate has passed the recorded local code/SQL checks; Production parity and authenticated
+operational acceptance remain release gates. Do not label it released merely because a build passes.
+A Vercel environment named Production is not a product-release milestone. Existing pre-release
+test records need not be retained. Prefer a clean database
 baseline over compatibility solely for disposable pre-release data. A coordinated rebaseline may
 replace migration history after dependency review and local validation; confirm the exact hosted
 project and destructive scope before resetting it. Never infer that provider funds are disposable.
 
 Phase 13 production/security, Phase 14 UI stabilization, and Phase 15A final commerce/payment work
-are complete. Required Phase 15B Admin Dashboard decision support is active; Phase 15C, the thin TWA
-Android APK, follows. Optional Phase 16 is public-page aggregate Web Analytics after APK stability.
+are complete. Phase 15B dashboard code and SQL are implemented; authenticated browser acceptance
+remains open. On October 2 the owner cancelled current Phase 15C APK and Phase 16 analytics work
+in favor of the implemented `/install` browser tutorial. It is not an APK or release acceptance.
 See [roadmap](docs/roadmap.md); work listed there is not implemented until verified.
 
 Keep one Next.js application with Admin under `/admin`, suited to a campus business of roughly
@@ -50,13 +55,20 @@ or speculative abstractions. Readability cleanup must not redesign working archi
 - Verify PayMongo signatures over the raw body, match environment mode, provider references and
   exact PHP totals, and process events idempotently. Provider checkout expiry must precede
   release of a provider-bound unpaid reservation.
-- Keep payment and fulfillment state separate. Website cancellation is pending-unpaid only.
+- Keep payment and fulfillment state separate. Customer website cancellation is pending-unpaid only.
+  Admin may also cancel eligible unpaid counter orders in Received, Preparing or Ready for pickup,
+  with confirmation, a required audited reason and atomic stock/reward release. Paid and under-review
+  orders are not eligible; attached provider checkout must expire before cancellation.
   Paid concerns are settled in person; no new refund API or destination collection.
   The retired refund subsystem was removed in the pre-v1 baseline. Hosted Dev
   `mgkzphpznamjlgrpumjd` and Production `zkmlzktvjkjrbznvrsxb` were rebaselined through separate,
   explicitly approved resets with Auth/test-data/Storage disposal. Matching application code and
   exactly three app Cron jobs were activated and verified in each environment; follow the database
   migration runbook. Those completed approvals are not ongoing reset permission.
+  The latest October 6 Dev-only reset folded both October 6 forward migrations into the single
+  `20260911010000` baseline marker. Production received the matching final baseline through its
+  separately approved October 7 no-backup reset. Matching code deployment and authenticated acceptance
+  remain required; migration markers alone do not prove matching definitions. Verify before promotion.
 - Preserve bounded validation, distributed rate limiting, provider timeouts, notification claim/
   retry/idempotency rules, and audit records. Email delivery never changes payment state.
 - Dev and Production have separate Vercel projects, Supabase data/Auth/Storage, credentials,
@@ -84,6 +96,9 @@ Each date has an independent balance. Historical snapshots must not follow later
 
 Customer navigation is Home, Our Creations, Journal; Profile and Cart are actions.
 Customer contact is email-only; do not reintroduce unused mobile-number collection.
+Admin accounts are business-only, not customers: no personal checkout, customer payments/reviews,
+customer Profile/deletion, or loyalty earning/redemption. Public browsing is allowed. Customer
+directory and customer KPIs exclude Admin profiles; Admin management of customer orders stays intact.
 My Orders belongs inside Account. Reviews originate only from owned completed orders and require
 moderation for public visibility. Admin has one equal-permission role with at most ten approved identities.
 
@@ -102,6 +117,9 @@ moderation for public visibility. Admin has one equal-permission role with at mo
   `public/videos/home/`; coating photos in Supabase `catalog-media`. Use Lucide for missing icons.
   Do not embed reference PNGs as pages or add random remote/paid assets.
 - Generated schema types and Boneyard bones are not hand-edited. Use documented generators.
+- Admin customer photos use existing Auth metadata after the authorized directory read, only for
+  the current page, with bounded concurrency. Reuse the HTTPS Google-host allowlist and icon
+  fallback; never serialize full Auth metadata or privileged credentials to the browser.
 - Preserve unrelated working-tree edits. Explain the intended bounded change before implementing.
 
 ## External actions requiring separate explicit confirmation

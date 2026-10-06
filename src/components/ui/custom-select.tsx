@@ -1,7 +1,15 @@
 "use client";
 
 import { Check, ChevronDown } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { cn } from "@/lib/cn";
 
 export interface SelectOption {
@@ -12,6 +20,7 @@ export interface SelectOption {
 
 interface CustomSelectProps {
   label: string;
+  hideLabel?: boolean;
   options: readonly SelectOption[];
   name?: string;
   value?: string;
@@ -27,6 +36,7 @@ interface CustomSelectProps {
 
 export function CustomSelect({
   label,
+  hideLabel = false,
   options,
   name,
   value,
@@ -55,6 +65,7 @@ export function CustomSelect({
     [options],
   );
   const [open, setOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, maxHeight: 256, above: false });
   const [activeIndex, setActiveIndex] = useState(selectedIndex >= 0 ? selectedIndex : firstEnabled);
   const [touched, setTouched] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -64,6 +75,31 @@ export function CustomSelect({
   const typeaheadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shownError =
     error || (touched && required && !selectedValue ? `${label} is required.` : "");
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    function positionMenu() {
+      const root = rootRef.current?.getBoundingClientRect();
+      const button = buttonRef.current?.getBoundingClientRect();
+      if (!root || !button) return;
+      const below = Math.max(0, window.innerHeight - button.bottom - 12);
+      const above = Math.max(0, root.top - 12);
+      const desired = Math.min(256, options.length * 44 + 10);
+      const openAbove = below < desired && above > below;
+      setMenuPosition({
+        top: openAbove ? -4 : button.bottom - root.top + 4,
+        maxHeight: Math.min(256, openAbove ? above : below),
+        above: openAbove,
+      });
+    }
+    positionMenu();
+    window.addEventListener("resize", positionMenu);
+    window.addEventListener("scroll", positionMenu, true);
+    return () => {
+      window.removeEventListener("resize", positionMenu);
+      window.removeEventListener("scroll", positionMenu, true);
+    };
+  }, [open, options.length]);
 
   useEffect(() => {
     function closeOutside(event: PointerEvent) {
@@ -155,7 +191,10 @@ export function CustomSelect({
 
   return (
     <div ref={rootRef} className={cn("relative flex min-w-0 flex-col gap-2", className)}>
-      <label id={`${id}-label`} className="block text-sm font-bold text-foreground">
+      <label
+        id={`${id}-label`}
+        className={hideLabel ? "sr-only" : "block text-sm font-bold text-foreground"}
+      >
         {label}
       </label>
       <button
@@ -194,7 +233,12 @@ export function CustomSelect({
           id={listboxId}
           role="listbox"
           aria-labelledby={`${id}-label`}
-          className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-control border border-border-subtle bg-surface-raised p-1 shadow-lg"
+          style={{
+            top: menuPosition.top,
+            maxHeight: menuPosition.maxHeight,
+            transform: menuPosition.above ? "translateY(-100%)" : undefined,
+          }}
+          className="absolute z-50 w-full overflow-y-auto rounded-control border border-border-subtle bg-surface-raised p-1 shadow-lg"
         >
           {options.map((option, index) => (
             <li

@@ -5,9 +5,15 @@ import type { CustomerOrderItemSummary } from "@/lib/server-orders";
 interface OrderLineItemsProps {
   items: CustomerOrderItemSummary[];
   className?: string;
+  showPriceBreakdown?: boolean;
 }
 
-export function OrderLineItems({ items, className }: OrderLineItemsProps) {
+export function OrderLineItems({
+  items,
+  className,
+  showPriceBreakdown = false,
+}: OrderLineItemsProps) {
+  const Breakdown = showPriceBreakdown ? "div" : "details";
   if (!items.length) {
     return (
       <p className={cn("text-sm text-muted-foreground", className)}>Order items unavailable</p>
@@ -59,11 +65,15 @@ export function OrderLineItems({ items, className }: OrderLineItemsProps) {
                 </div>
               ))}
 
-              <details className="group mt-3 border-t border-border/70 pt-3">
-                <summary className="w-fit cursor-pointer rounded-sm font-bold text-foreground underline decoration-border underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2">
-                  <span className="group-open:hidden">View price per box</span>
-                  <span className="hidden group-open:inline">Hide price per box</span>
-                </summary>
+              <Breakdown className="group mt-3 border-t border-border/70 pt-3">
+                {showPriceBreakdown ? (
+                  <p className="font-bold text-foreground">Price per box</p>
+                ) : (
+                  <summary className="w-fit cursor-pointer rounded-sm font-bold text-foreground underline decoration-border underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2">
+                    <span className="group-open:hidden">View price per box</span>
+                    <span className="hidden group-open:inline">Hide price per box</span>
+                  </summary>
+                )}
                 <dl className="mt-1 space-y-1">
                   <div className="flex justify-between gap-4">
                     <dt>Base box</dt>
@@ -85,7 +95,7 @@ export function OrderLineItems({ items, className }: OrderLineItemsProps) {
                     </div>
                   ))}
                 </dl>
-              </details>
+              </Breakdown>
             </div>
           </li>
         );

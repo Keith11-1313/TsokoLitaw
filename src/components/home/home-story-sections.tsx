@@ -129,7 +129,7 @@ export async function HomeCoatingShowcase() {
                   <div className="flex flex-wrap items-baseline gap-x-1.5">
                     <h3 className="font-display text-lg text-brand sm:text-xl">{coating.name}</h3>
                     <span className="text-xs italic text-brand/60">
-                     {formatPhp(coating.pricePerPiece)} / piece
+                      +{formatPhp(coating.pricePerPiece)} / piece
                     </span>
                   </div>
                   <p className="mt-2 hidden text-sm leading-6 text-muted-foreground sm:block">

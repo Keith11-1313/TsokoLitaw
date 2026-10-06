@@ -37,6 +37,15 @@ afterEach(() => {
 });
 
 describe("HeaderActions", () => {
+  it.each([false, true])("hides all customer actions from Admins (mobile=%s)", (mobile) => {
+    render(<HeaderActions mobile={mobile} isSignedIn isAdmin />);
+    fireEvent.click(screen.getByRole("button", { name: "Account" }));
+    expect(screen.getByRole("menuitem", { name: "Admin dashboard" })).toBeTruthy();
+    expect(screen.queryByRole("menuitem", { name: "Profile" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "My Orders" })).toBeNull();
+    expect(screen.queryByRole("link", { name: /View cart/ })).toBeNull();
+    expect(screen.getByRole("menuitem", { name: "Log out" })).toBeTruthy();
+  });
   it("uses the singular accessible cart label for one item", () => {
     cartCount.value = 1;
     render(<HeaderActions isSignedIn />);

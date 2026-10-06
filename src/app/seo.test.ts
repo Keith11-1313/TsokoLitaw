@@ -8,7 +8,7 @@ describe("public search metadata", () => {
     expect(rules).toEqual(
       expect.objectContaining({
         allow: expect.arrayContaining(["/faq"]),
-        disallow: expect.arrayContaining(["/admin/", "/orders/", "/checkout"]),
+        disallow: expect.arrayContaining(["/admin", "/orders", "/checkout"]),
       }),
     );
   });

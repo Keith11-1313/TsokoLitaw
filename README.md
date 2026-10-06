@@ -14,9 +14,19 @@ Next.js App Router, React, strict TypeScript, Tailwind, Supabase PostgreSQL/Auth
 PayMongo Hosted Checkout, Resend and Vercel. One application; no separate native commerce backend.
 
 Production/security, Phase 14 UI stabilization, and the Phase 15A commerce/payment update are
-complete. Work is now active on the required Admin Dashboard improvements (Phase 15B), followed by
-the thin Android TWA APK (Phase 15C). Optional public-page analytics (Phase 16) remains planned
-and is not an installed feature. See the [roadmap](docs/roadmap.md).
+complete. Phase 15B dashboard code and SQL are implemented; authenticated browser acceptance remains
+open. The owner cancelled current APK (Phase 15C) and analytics (Phase 16) work. `/install` provides
+browser home-screen tutorials, not an APK or offline ordering. See the [roadmap](docs/roadmap.md).
+
+On October 6, 2026 the owner adopted website-only v1.0 acceptance, removing the APK requirement.
+The current candidate is **not yet release-approved**. Follow the [release sequence](docs/operations/deployment.md).
+
+The October 6 Dev rebaseline consolidated Admin unpaid cancellation and stock/payment-lock repairs
+into `20260911010000_pre_v1_baseline.sql`; the temporary forward files are removed. Production's
+matching final baseline was activated through the approved October 7 reset. Matching application
+deployment and authenticated acceptance remain required before release approval.
+Admin Customers also displays supported Google profile photos with an icon fallback, using existing
+Auth metadata without a new migration. See the [Admin guide](docs/features/admin.md).
 
 ## Quick start
 

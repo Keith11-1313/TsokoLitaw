@@ -18,7 +18,7 @@ select set_config(
    where pg_extension.extname = 'pgtap'),
   true
 );
-select plan(25);
+select plan(33);
 
 insert into auth.users (
   id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -99,6 +99,30 @@ select is(
   row('Re**** Ow***', 5, array[]::text[], 0)::text,
   'public projection returns moderated display data without a private image path'
 );
+select ok(not has_column_privilege('anon', 'public.reviews', 'display_name_snapshot', 'SELECT'), 'anonymous callers cannot select original review names');
+set local role anon;
+select throws_ok($$select display_name_snapshot from public.reviews$$, '42501', 'permission denied for table reviews', 'anonymous raw review access is denied');
+select is((select customer_name from public.get_public_featured_reviews()), 'Re**** Ow***', 'anonymous callers retain masked public access');
+set local role postgres;
+select set_config('request.jwt.claim.sub', 'd1000000-0000-4000-8000-000000000003', true);
+set local role authenticated;
+select is((select count(*)::integer from public.reviews), 0, 'another customer cannot read published raw review identifiers or paths');
+select is((select customer_name from public.get_public_featured_reviews()), 'Re**** Ow***', 'signed-in visitors retain masked public access');
+set local role postgres;
+select set_config('request.jwt.claim.sub', 'd1000000-0000-4000-8000-000000000002', true);
+set local role authenticated;
+select is((select count(*)::integer from public.reviews), 1, 'active owner retains raw review access');
+set local role postgres;
+select set_config('request.jwt.claim.sub', 'd1000000-0000-4000-8000-000000000001', true);
+set local role authenticated;
+select is((select count(*)::integer from public.reviews), 1, 'Admin retains moderation access');
+set local role postgres;
+update public.profiles set is_active = false, deactivated_at = now()
+where id = 'd1000000-0000-4000-8000-000000000002';
+select set_config('request.jwt.claim.sub', 'd1000000-0000-4000-8000-000000000002', true);
+set local role authenticated;
+select is((select count(*)::integer from public.reviews), 0, 'inactive owner cannot read raw review data');
+set local role postgres;
 select ok(public.moderate_order_review('d1000000-0000-4000-8000-000000000001',(select id from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'),false,false), 'admin can hide and unfeature a review');
 select ok((select not is_visible and not is_featured from public.reviews where order_id = 'd5000000-0000-4000-8000-000000000001'), 'hidden review is no longer featured');
 select is((select count(*)::integer from public.admin_audit_logs where action = 'review.moderated'), 2, 'successful moderation actions are audited');

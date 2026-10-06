@@ -30,6 +30,8 @@ Paths below are relative to the repository root. Use `@/` for imports from `src/
 - `inventory-manager.tsx`: `StockEditor`, `ConsumptionForm`, `PublishStockModal`.
 - `journal-manager.tsx`: `JournalEditor` plus the publication list.
 - `order-management-table.tsx`: `FulfillmentAction` plus mobile/desktop read presentations.
+- `server-customers.ts`: authorized directory pagination and page-only Google photo lookups;
+  `components/admin/customer-avatar.tsx`: fixed-size photo and image-error fallback.
 - `checkout-content.tsx`: submission/idempotency, customer and pickup state, reward selection.
   `checkout-order-summary.tsx` owns receipt presentation and cart-to-receipt mapping.
 
@@ -47,5 +49,6 @@ maintenance, not one wrapper per JSX fragment.
 - Lockfiles are tool-maintained; `.next/` and `node_modules/` are build/install output.
 
 Legacy `/vlog`, `/feedback`, and older Admin routes are intentional compatibility redirects, not
-dead pages. The pre-v1 baseline removes historical refund handlers. Do not restore compatibility solely for discarded test data.
-Do not remove them solely because no current UI creates that data.
+dead pages; do not remove these redirects solely because current navigation does not link to them.
+The pre-v1 baseline removes historical refund handlers. Do not restore compatibility solely for
+discarded test data.

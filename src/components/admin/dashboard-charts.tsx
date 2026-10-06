@@ -240,7 +240,8 @@ function RankedMix({
   points: readonly MixPoint[];
 }) {
   const total = points.reduce((sum, point) => sum + point.value, 0);
-  const maximum = Math.max(...points.map((point) => point.value), 1);
+  const tickStep = Math.max(1, Math.ceil(Math.max(...points.map((point) => point.value), 1) / 4));
+  const maximum = tickStep * 4;
   return (
     <article className="min-w-0 rounded-card border border-border bg-surface p-5 sm:p-6">
       <h2 className="font-display text-2xl">{title}</h2>
@@ -250,24 +251,71 @@ function RankedMix({
           No matching paid purchases in this period.
         </p>
       ) : (
-        <ul className="mt-5 space-y-4">
-          {points.map((point) => (
-            <li key={point.label}>
-              <div className="mb-1 flex items-end justify-between gap-3 text-sm">
-                <span className="font-bold text-foreground">{point.label}</span>
-                <span className="text-right text-xs text-muted-foreground">
-                  {point.detail} · {((point.value / total) * 100).toFixed(0)}%
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
+        <div className="mt-6">
+          <div className="flex gap-3" aria-hidden="true">
+            <div className="relative mt-6 h-52 w-8 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+              {[4, 3, 2, 1, 0].map((tick) => (
                 <span
-                  className="block h-full rounded-full bg-brand"
-                  style={{ width: `${(point.value / maximum) * 100}%` }}
-                />
+                  key={tick}
+                  className="absolute right-0 -translate-y-1/2"
+                  style={{ top: `${(1 - tick / 4) * 100}%` }}
+                >
+                  {tick * tickStep}
+                </span>
+              ))}
+            </div>
+            <div className="min-w-0 flex-1 overflow-x-auto pb-2 pt-6">
+              <div className="relative px-1" style={{ minWidth: points.length * 56 }}>
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-52">
+                  {[0, 1, 2, 3, 4].map((tick) => (
+                    <div
+                      key={tick}
+                      className="absolute inset-x-0 border-t border-border"
+                      style={{ top: `${tick * 25}%` }}
+                    />
+                  ))}
+                </div>
+                <div
+                  className="relative grid gap-2"
+                  style={{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}
+                >
+                  {points.map((point) => (
+                    <div key={point.label} className="min-w-0 text-center">
+                      <div className="flex h-52 items-end justify-center">
+                        <div
+                          className="relative w-full max-w-20 rounded-t-control bg-brand"
+                          style={{ height: `${(point.value / maximum) * 100}%` }}
+                        >
+                          <span className="absolute -top-6 inset-x-0 text-xs font-bold tabular-nums text-foreground">
+                            {point.value}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="mt-3 break-words text-xs font-bold leading-4">{point.label}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </li>
-          ))}
-        </ul>
+            </div>
+          </div>
+          <details className="mt-5 border-t border-border pt-3">
+            <summary className="min-h-11 cursor-pointer py-3 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+              View purchase breakdown
+            </summary>
+            <ul className="mt-2 space-y-3">
+              {points.map((point) => (
+                <li key={point.label}>
+                  <div className="mb-1 flex items-end justify-between gap-3 text-sm">
+                    <span className="font-bold text-foreground">{point.label}</span>
+                    <span className="text-right text-xs text-muted-foreground">
+                      {point.detail} · {((point.value / total) * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </div>
       )}
     </article>
   );
@@ -283,7 +331,10 @@ export function DashboardMixCharts({
   periodLabel: string;
 }) {
   return (
-    <section className="grid min-w-0 gap-5 lg:grid-cols-2" aria-label="Product mix charts">
+    <section
+      className="grid min-w-0 items-start gap-5 lg:grid-cols-2"
+      aria-label="Product mix charts"
+    >
       <RankedMix
         title="Coatings purchased"
         subtitle={`Paid-order pieces · ${periodLabel}`}

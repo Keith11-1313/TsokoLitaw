@@ -3,29 +3,24 @@
 import { useMemo, useState } from "react";
 import { CalendarDays, MapPin, PackageOpen } from "lucide-react";
 import Link from "next/link";
-import { OrderLineItems } from "@/components/orders/order-line-items";
-import { CustomSelect } from "@/components/ui/custom-select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/cn";
 import { formatPhp } from "@/lib/commerce";
 import type { CustomerOrderSummary } from "@/lib/server-orders";
 import { getOrderStatusLabelOverride } from "@/lib/payment-status";
 
-type OrderFilter = "all" | "received" | "preparing" | "pickup" | "completed";
+type OrderFilter = "all" | "active" | "past";
 
 const FILTERS: Array<{ id: OrderFilter; label: string }> = [
   { id: "all", label: "All" },
-  { id: "received", label: "Received" },
-  { id: "preparing", label: "Preparing" },
-  { id: "pickup", label: "Ready for pickup" },
-  { id: "completed", label: "Completed" },
+  { id: "active", label: "Active" },
+  { id: "past", label: "Past" },
 ];
 
 function matchesFilter(order: CustomerOrderSummary, filter: OrderFilter) {
   if (filter === "all") return true;
-  if (filter === "received") return ["PAID", "CONFIRMED"].includes(order.status);
-  if (filter === "preparing") return order.status === "PREPARING";
-  if (filter === "pickup") return order.status === "READY_FOR_PICKUP";
+  if (filter === "active")
+    return ["PAID", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP"].includes(order.status);
   return order.status === "COMPLETED";
 }
 
@@ -84,18 +79,7 @@ export function OrdersList({
   return (
     <section aria-label="Order history">
       <nav aria-label="Filter order history">
-        <div className="sm:hidden">
-          <CustomSelect
-            label="Show orders"
-            value={filter}
-            onChange={(value) => setFilter(value as OrderFilter)}
-            options={filtersWithCounts.map((item) => ({
-              value: item.id,
-              label: `${item.label} (${item.count})`,
-            }))}
-          />
-        </div>
-        <div className="hidden grid-cols-5 gap-2 sm:grid">
+        <div className="grid grid-cols-3 gap-2">
           {filtersWithCounts.map((item) => (
             <button
               key={item.id}
@@ -103,7 +87,7 @@ export function OrdersList({
               aria-pressed={filter === item.id}
               onClick={() => setFilter(item.id)}
               className={cn(
-                "min-h-11 shrink-0 whitespace-nowrap rounded-full border border-border px-4 py-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 sm:min-w-0",
+                "min-h-11 min-w-0 rounded-full border border-border px-2 py-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 sm:px-4",
                 filter === item.id
                   ? "border-brand bg-brand text-surface"
                   : "bg-surface text-foreground hover:bg-surface-muted",
@@ -151,12 +135,6 @@ export function OrdersList({
                   {order.pickupLocation}
                 </p>
               </div>
-              <div className="mt-5 border-t border-border pt-5">
-                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  Order items
-                </p>
-                <OrderLineItems items={order.itemLines} className="mt-3" />
-              </div>
               <div className="mt-5 flex justify-end">
                 <Link
                   href={`/orders/${order.id}`}
@@ -169,7 +147,7 @@ export function OrdersList({
                     }
                     setOpeningOrderId(order.id);
                   }}
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand transition-opacity aria-disabled:pointer-events-none aria-disabled:opacity-60 sm:w-auto sm:min-w-32"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-brand px-5 text-sm font-bold text-brand transition-opacity aria-disabled:pointer-events-none aria-disabled:opacity-60"
                 >
                   {openingOrderId === order.id ? "Opening…" : "View order"}
                 </Link>

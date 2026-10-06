@@ -11,9 +11,9 @@ export function getPaymentStatusLabel(
   if (status === "UNDER_REVIEW") return "Under review";
   if (status === "PAID") return "Paid";
   if (status === "FAILED") return "Not paid";
+  if (method === "pay_at_counter") return "Pay at pickup";
   if (!paymentWindowOpen) return "Time ended";
   if (method === "manual_gcash") return "Awaiting receipt";
-  if (method === "pay_at_counter") return "Pay at pickup";
   return "Pending";
 }
 

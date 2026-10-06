@@ -74,7 +74,7 @@ export function HeaderActions({
               Account
             </Link>
           )}
-          <CartAction itemCount={itemCount} />
+          {!isAdmin ? <CartAction itemCount={itemCount} /> : null}
         </div>
         {isSignedIn && open ? <AccountMenu id={menuId} isAdmin={isAdmin} mobile /> : null}
       </div>
@@ -102,7 +102,7 @@ export function HeaderActions({
           Account
         </Link>
       )}
-      <CartAction itemCount={itemCount} />
+      {!isAdmin ? <CartAction itemCount={itemCount} /> : null}
     </div>
   );
 }
@@ -173,22 +173,26 @@ function AccountMenu({
           Admin dashboard
         </Link>
       ) : null}
-      <Link
-        role="menuitem"
-        href="/profile"
-        className="flex min-h-11 items-center gap-3 rounded-control px-3 text-sm hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-      >
-        <UserRound aria-hidden="true" size={17} />
-        Profile
-      </Link>
-      <Link
-        role="menuitem"
-        href="/orders"
-        className="flex min-h-11 items-center gap-3 rounded-control px-3 text-sm hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-      >
-        <ShoppingBag aria-hidden="true" size={17} />
-        My Orders
-      </Link>
+      {!isAdmin ? (
+        <>
+          <Link
+            role="menuitem"
+            href="/profile"
+            className="flex min-h-11 items-center gap-3 rounded-control px-3 text-sm hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            <UserRound aria-hidden="true" size={17} />
+            Profile
+          </Link>
+          <Link
+            role="menuitem"
+            href="/orders"
+            className="flex min-h-11 items-center gap-3 rounded-control px-3 text-sm hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            <ShoppingBag aria-hidden="true" size={17} />
+            My Orders
+          </Link>
+        </>
+      ) : null}
       <LogoutButton
         menuItem
         iconSize={17}

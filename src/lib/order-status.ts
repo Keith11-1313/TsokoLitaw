@@ -1,4 +1,19 @@
 import type { OrderStatus } from "@/components/ui/status-badge";
+import type { PaymentMethod, PaymentStatus } from "@/lib/payment-status";
+
+// Presentation only. The cancellation RPC rechecks this under order/payment locks.
+export function canAdminCancelOrder(order: {
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod?: PaymentMethod;
+}) {
+  return (
+    order.paymentStatus === "PENDING" &&
+    (order.status === "PENDING_PAYMENT" ||
+      (order.paymentMethod === "pay_at_counter" &&
+        ["CONFIRMED", "PREPARING", "READY_FOR_PICKUP"].includes(order.status)))
+  );
+}
 
 export const fulfillmentTransitions = {
   CONFIRMED: "PREPARING",

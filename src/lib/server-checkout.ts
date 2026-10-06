@@ -6,6 +6,7 @@ import { priceCheckoutCart } from "@/lib/commerce";
 import type { CheckoutCartInput } from "@/types/commerce";
 import { resolveCheckoutPaymentMethod, type CheckoutPaymentMethod } from "@/lib/payment-method";
 import { createGcashQrPayload } from "@/lib/gcash-qr";
+import { getPolicyContent, POLICY_VERSION } from "@/lib/policy-content";
 
 export interface CreatePendingOrderInput {
   userId: string;
@@ -39,7 +40,7 @@ export async function createPendingOrder(
   const now = new Date().toISOString();
   const termsResult = await supabase
     .from("terms_versions")
-    .select("version")
+    .select("version, content")
     .eq("is_current", true)
     .lte("effective_at", now)
     .maybeSingle();
@@ -48,6 +49,12 @@ export async function createPendingOrder(
     throw new Error("The current Terms & Conditions version could not be loaded.", {
       cause: termsResult.error,
     });
+  }
+  if (
+    termsResult.data.version !== POLICY_VERSION ||
+    termsResult.data.content !== getPolicyContent()
+  ) {
+    throw new Error("Checkout policies are being updated. Please try again later.");
   }
   const rewardDiscount = input.loyaltyRewardId
     ? pricedCart.lines

@@ -1,5 +1,168 @@
 # Database changes and promotion
 
+## October 7 final website-v1 baseline — Production rebaseline activated
+
+The owner explicitly approved resetting Production `zkmlzktvjkjrbznvrsxb` without a backup and
+confirmed DB-first ordering before their matching-code merge/deployment. Fresh read-only inventory
+found 10 Auth users/profiles, zero orders/payments/reviews, three Journal posts and 15 Storage
+objects (three fonts plus 12 catalog/Journal files); there were no paid or pending provider obligations.
+Exactly the 12 inventoried non-font objects were removed through the Storage API. A guarded SQL
+transaction replaced public schema, deleted the 10 Auth users, installed the final baseline/seed,
+and replaced migration history with `20260911010000`. No backup was retained; Git does not recover
+the discarded accounts, posts or uploads. Dev was not reset or changed.
+
+Local SQL lint and all 573 assertions in 19 files passed again before activation. Production then
+had zero Auth/profile/order/payment/review/Journal records, one product, three variants, eight
+coatings and the matching `2026-10-05-admin-customer` policy. Its public function definitions and
+ACL fingerprint matches the locally validated final schema. Production SQL lint passed. All three
+fonts, three Vault entries and exactly the three Cron jobs survived; Vault and Cron definition
+fingerprints are unchanged. The CLI remains linked to Dev; Production commands used an explicit ref.
+All three retained fonts returned HTTP 200. One authenticated smoke request per Production Cron
+endpoint returned HTTP 200 with zero examined records and zero failures, without initiating payments.
+Home, Our Creations, FAQ, Terms and Privacy returned HTTP 200 after activation; these status checks
+do not establish authenticated acceptance or that the latest application commit is deployed.
+
+Matching application deployment and authenticated acceptance are still required. The previous
+`main` code sends the removed pickup-grace argument, so Admin pickup-rule saves can fail during
+the owner-approved DB-first gap. Merge/deploy the matching candidate promptly, then verify its
+commit, bootstrap approved Admin access after fresh sign-in, restore catalog media, publish pickup
+availability and retest customer/Admin/payment operations. This reset alone is not v1 acceptance.
+
+## October 6 final website-v1 consolidation — Dev rebaseline activated
+
+The owner approved a Dev-only reset of `mgkzphpznamjlgrpumjd`, without a data backup,
+after confirming disposable test records and no real-fund retention requirement. Production
+`zkmlzktvjkjrbznvrsxb` was not contacted or changed. The two October 6 forward migrations
+were folded into `20260911010000_pre_v1_baseline.sql`: five stock/payment function definitions
+were replaced in place, and the two private Admin cancellation RPCs were included once.
+The temporary forward files were removed only after hosted history returned to the single
+`20260911010000` marker. Earlier activation sections below describe historical states.
+
+The consolidated local baseline passed a clean reset, SQL lint, 573 assertions in 19 files,
+252 application tests, application lint, typecheck and the production build. Generated types
+are unchanged. All public function definitions and ACLs matched current Dev before replacement
+and matched again afterward. The displayed/stored policy synchronization check passed.
+
+The approved disposal removed 10 Auth users/profiles, 17 orders/payments (including five paid
+test payments and one receipt under review), two reviews, three Journal posts, and 13 non-font
+Storage files through the Storage API. No pending provider checkout was attached. No backup
+was retained; Git does not recover discarded data. The public-schema replacement, Auth deletion,
+seed and migration marker replacement committed atomically. The three licensed font objects,
+six Vault entries and all three Cron IDs, schedules, active flags and command hashes survived.
+
+Read-only verification found zero Auth/profile/order/payment/review/Journal records, one product,
+three variants, eight coatings, the matching `2026-10-05-admin-customer` policy, and one migration.
+Linked SQL lint and migration dry-run parity passed. All three retained fonts returned HTTP 200.
+One authenticated request to each Dev Cron endpoint returned HTTP 200 with zero examined records
+and zero failures. Fresh sign-in, approved Admin bootstrap, catalog-media restoration,
+pickup publication and customer/Admin retesting remain necessary. This Dev operation does not
+mark Production ready or authorize its reset; website-v1 acceptance still needs Production parity.
+
+## Historical October 6 stock-release activation — superseded by consolidation
+
+`20261006020000_stock_release_snapshots.sql` was applied additively to verified Dev
+`mgkzphpznamjlgrpumjd`, with no hosted reset or seed. It replaces customer/direct/provider
+release paths with placement-date and immutable-piece accounting, strict stock rollback, and payment
+rechecks. PayMongo expiry/replacement/paid-event writers now lock order before payment, consistent
+with cancellation and manual-payment writers. Existing signatures, private grants and provider
+verification remain intact. The applied baseline and Admin-cancellation migration were not edited.
+
+A verified-empty local Docker reset rehearsed all three migration files. Local SQL lint passed,
+and the final full suite passed 573 assertions in 19 files (97 new assertions). Schema types were
+regenerated without a semantic contract change. Linked Dev lint passed; before/after counts remained
+3 orders, 3 payments and 3 active Cron jobs, with current policy `2026-10-05-admin-customer`.
+Read-only function/grant checks confirmed placement-date/snapshot release, no browser EXECUTE grant,
+and service-role EXECUTE. Final dry run has no pending migrations. No hosted order was cancelled,
+no hosted regression fixtures were loaded, and Production was not modified.
+
+At this additive activation, matching application deployment and authenticated acceptance were still
+required. The forward migration was subsequently folded into the approved Dev rebaseline above;
+its file and hosted marker no longer remain. Do not replay this historical activation.
+
+## Historical October 6 Admin cancellation activation — superseded by consolidation
+
+Additive migration `20261006010000_admin_order_cancellation.sql` was applied to confirmed Dev
+`mgkzphpznamjlgrpumjd` only, without reset or seed. It adds two service-role-only RPCs for the
+approved Admin unpaid-order cancellation action; existing customer writers and fulfillment transitions
+are unchanged. Finalization atomically rechecks payment/status/provider expiry, releases prepared
+pieces using immutable item snapshots and placement-date eligibility, restores any bound reward,
+and audits the required reason. It reuses the existing cancellation notification event, not a new event.
+
+Local SQL lint and all 476 assertions passed. Linked Dev lint, private RPC grants and final migration
+dry-run parity passed. Before/after public counts remained 6 profiles, 2 orders, 2 payments, 1 review,
+3 Journal posts and 30 audit entries. Post-activation checks also found 6 Auth users, 15 Storage objects
+and exactly 3 active Cron jobs. No hosted order was cancelled during validation. Production was not
+contacted or changed. Matching application code still requires the owner's development push/deployment
+and authenticated desktop/mobile acceptance. Browser-control verification was unavailable locally.
+
+This migration was retained until the separately approved Dev consolidation above, then folded into
+the baseline and removed with its hosted marker. Ordinary applied history remains immutable;
+this completed disposal does not authorize another reset or a Production activation.
+
+## October 5 Admin/customer separation — Dev rebaseline activated
+
+The consolidated `20260911010000_pre_v1_baseline.sql` enforces customer-role checkout, payment,
+cancellation and review writers, customer-only profile/deletion cancellation, loyalty ownership,
+and customer-directory/dashboard counts. Matching application guards hide customer actions from
+Admins and redirect customer routes to `/admin`. Admin business operations remain unchanged.
+It archives policy version `2026-10-05-admin-customer`; displayed policy dates remain October 1.
+Shared policy checks target this baseline snapshot and the seed. The owner explicitly confirmed
+Dev-only disposal of accounts, commerce, reviews, Journal and uploaded media, including disposable
+paid test orders. The Pickup-grace, review-privacy and role-separation forward changes were folded
+into one locally rehearsed baseline; the temporary migration files were removed as part of this
+coordinated replacement. Production was not contacted or changed and still requires separate approval.
+Local validation passed: 218 application tests, 443 database assertions, SQL lint, generated types,
+typecheck, application lint, formatting checks and the production build. Authenticated browser
+acceptance remains pending. Read-only Dev inventory found 5 Auth users (4 Admins, 1 customer),
+18 Admin-owned orders, 18 payments, 2 reviews, 3 Journal posts, 47 Storage objects and 3 active Cron
+jobs. There were 11 paid test orders, 3 pending orders, no provider-bound pending checkout and no
+Manual GCash review queue. The approved reset deleted all 5 Auth users, 18 orders/payments,
+2 reviews, 3 Journal posts and 44 non-font Storage objects without retaining a data backup.
+The three licensed fonts were retained and verified by HTTP 200. Vault's six entries and exactly
+the three existing Cron jobs survived the transactional public-schema replacement.
+Final Dev state has zero Auth/profile/order/payment/review/Journal records, the controlled seed
+(one product, three variants, eight coatings), the current matching policy hash, no pickup grace,
+and only migration marker `20260911010000`. Linked lint and migration dry-run parity passed.
+An initial account-deletion smoke request returned HTTP 500 immediately after the schema switch;
+its underlying due-profile query passed on recheck. Repeated smoke checks returned HTTP 200
+from all three endpoints with zero examined records and zero failures.
+Matching application deployment, fresh approved Admin sign-in/bootstrap, catalog media upload,
+pickup publication and authenticated customer/Admin acceptance are still required.
+
+## October 5 review privacy and policy synchronization — Dev activated
+
+`20261005010000_review_privacy_and_policy.sql` removes public raw-review reads while retaining
+active-owner/Admin access and the existing masked public projection. It inserts policy version
+`2026-10-05`, containing the exact displayed Terms and Privacy, without modifying older versions
+or order acceptance snapshots. The display date remains October 1 at the owner's request.
+Deploy the migration and matching checkout guard together: mismatched version/content blocks
+new checkout rather than recording acceptance against unrelated text.
+Run `node scripts/check-policy-sync.mjs` to verify shared content against migration/seed;
+production prebuild also runs it. Future content changes require a new reviewed version and migration,
+not edits to an applied snapshot. On October 5, the owner approved Dev activation after Docker
+became available. A verified-empty local reset, schema lint, all 425 database assertions, generated
+type parity, and typecheck passed. The inactive-owner test fixture was corrected to include its
+required deactivation timestamp before the successful full rerun.
+Only this pending migration was applied to confirmed Dev `mgkzphpznamjlgrpumjd`; no hosted reset
+or seed ran. Before/after counts remained 5 Auth users, 18 orders, 2 reviews and 47 Storage objects.
+The old policy content hash is unchanged, version `2026-10-05` is current with the matching displayed
+text hash, anonymous raw-name grants are removed, owner/Admin-only RLS is active, and all three
+expected Cron jobs remain active. Linked schema lint passed, migration history matches local files,
+and the final dry-run reports no pending migrations. Matching application deployment and authenticated checkout/review
+smoke checks remain required. Production was not contacted or changed.
+
+## October 4 Pickup grace cleanup — Dev database activated
+
+`20261004010000_remove_pickup_grace.sql` removes the unused setting and replaces its reader/writer
+contracts without resetting records. The applied baseline is unchanged. The new writer takes five
+arguments, so coordinate matching Dev application deployment and migration activation; the old
+deployed Admin form cannot save against the replacement signature. Local lint and all 417 database
+assertions passed. At the owner's explicit request, migration `20261004010000` was applied to Dev
+`mgkzphpznamjlgrpumjd` before matching application deployment. Linked schema lint passed, migration
+history matches, and the subsequent dry-run has no pending migrations. Matching Dev code deployment
+and Admin save/checkout smoke checks remain required. Production `zkmlzktvjkjrbznvrsxb` was not
+changed. No hosted reset or seed was run.
+
 ## Pre-v1 rebaseline history and current activation state
 
 The owner approved discarding pre-release Dev records, Auth users and Storage files.
@@ -200,15 +363,19 @@ zero work and zero failures. Production was not contacted.
 
 ## Database changes before v1.0
 
-Until the Android APK is accepted as v1.0, the accepted release state must return to one clean baseline
+On October 6 the owner adopted website-only v1.0 acceptance; an APK is not required.
+The existing pre-v1 consolidation policy remains: the accepted release state must return to one clean baseline
 migration. Temporary forward migrations may be used during active development so a bounded change can
-be tested safely in Dev without rewriting an already-applied file. Before the final APK build, review
-and fold every such migration into the baseline, then perform one coordinated Dev and Production
-rebaseline with exact-target approval so both hosted migration markers return to `20260911010000`.
+be tested safely in Dev without rewriting an already-applied file. Before final website release acceptance, review
+and fold every such migration into the baseline. Dev completed the latest consolidation/reset on
+October 6; Production received the separately approved matching baseline on October 7. Matching
+application deployment and operational acceptance still require verification. Compare definitions
+as well as the `20260911010000` marker; these completed approvals do not authorize another reset.
 Do not delete a temporary migration while hosted history still records it, and do not accumulate
 compatibility layers for disposable pre-release data. Preserve RLS/grants, exact payment matching,
 and atomic inventory/reward transitions. Read the [function map](../architecture/database.md) and the
-required pre-APK freeze gate in the [roadmap](../roadmap.md).
+current website acceptance requirements in the [release sequence](deployment.md). Neither this policy nor a docs update
+authorizes a hosted reset; exact-target approval is still required.
 
 After v1.0, treat the accepted baseline as immutable and use reviewed forward migrations for every
 schema change.

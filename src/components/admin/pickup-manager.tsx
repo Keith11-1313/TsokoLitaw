@@ -377,7 +377,7 @@ function PickupRules({ settings }: { settings: AdminPickupSettings }) {
       className="rounded-card border border-border bg-surface p-6"
     >
       <h2 className="font-display text-2xl">Pickup rules</h2>
-      <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <NumberStepper
           label="Made-to-order lead days"
           error={state.fieldErrors?.minimumLeadDays}
@@ -391,6 +391,7 @@ function PickupRules({ settings }: { settings: AdminPickupSettings }) {
         <FormField
           id="cutoff-time"
           label="Daily order cutoff"
+          error={state.fieldErrors?.dailyCutoffTime}
           required
           inputProps={{
             name: "dailyCutoffTime",
@@ -398,18 +399,10 @@ function PickupRules({ settings }: { settings: AdminPickupSettings }) {
             defaultValue: settings.dailyCutoffTime,
           }}
         />
-        <NumberStepper
-          label="Pickup grace (minutes)"
-          error={state.fieldErrors?.graceMinutes}
-          name="graceMinutes"
-          required
-          min={0}
-          max={120}
-          defaultValue={settings.graceMinutes}
-        />
         <FormField
           id="operating-start"
           label="Operating start"
+          error={state.fieldErrors?.operatingStart}
           required
           inputProps={{
             name: "operatingStart",

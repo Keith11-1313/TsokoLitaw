@@ -43,8 +43,12 @@ const faqGroups: readonly FaqGroup[] = [
       },
       {
         question: "Is sea salt cream included with my box?",
+        answer: "Every box includes one complimentary extra.",
+      },
+      {
+        question: "How is my box price calculated?",
         answer:
-          "Yes. One portion of sea salt cream is included with every box at no extra charge. You can choose an additional extra in the builder if one is available; its price is shown before you add the box to your cart.",
+          "Your total is the box base price, plus the charge for each selected coated piece and any paid extras. Plain may have no added charge. The builder shows current prices, and checkout checks them again before creating your order.",
       },
       {
         question: "Can the price in my cart change?",
@@ -54,7 +58,7 @@ const faqGroups: readonly FaqGroup[] = [
       {
         question: "Do I need an account to order?",
         answer:
-          "You can browse without signing in, but checkout requires a TsokoLitaw account using Google sign-in. Your account keeps your orders, payment status, pickup details, loyalty progress, and eligible reviews together.",
+          "You can browse without signing in, but checkout requires a TsokoLitaw customer account using Google sign-in. Admin accounts manage the business and cannot order as customers. Your customer account keeps your orders, payment status, pickup details, loyalty progress, and eligible reviews together.",
       },
     ],
   },
@@ -79,6 +83,11 @@ const faqGroups: readonly FaqGroup[] = [
             is the source for its pickup date, time, location, items, and current status.
           </>
         ),
+      },
+      {
+        question: "What do All, Active, and Past mean in My Orders?",
+        answer:
+          "All includes every order on the current history page, including pending payment, cancelled, and expired orders. Active shows received, preparing, and ready-for-pickup orders. Past shows completed orders. Use Older orders to browse earlier history, then View order for the full receipt and price breakdown.",
       },
       {
         question: "What happens if I miss my pickup?",
@@ -143,7 +152,7 @@ const faqGroups: readonly FaqGroup[] = [
       {
         question: "Can I add photos to my review?",
         answer:
-          "Yes. You can add up to five photos when submitting a review. The form prepares supported phone photos before upload and will tell you if a photo cannot be used.",
+          "Yes. Add up to five HEIC, HEIF, JPG, JPEG, PNG, or WebP photos. The review form resizes or compresses them on your device before uploading the prepared copies. It will tell you if a photo or the full set cannot fit the upload limits.",
       },
       {
         question: "Can I edit or remove a review after submitting it?",
@@ -170,6 +179,17 @@ const faqGroups: readonly FaqGroup[] = [
   {
     title: "Account and support",
     items: [
+      {
+        question: "Can I add TsokoLitaw to my home screen?",
+        answer: (
+          <>
+            <Link href="/install">Open the Install app guide</Link> for Safari, Chrome, Opera,
+            Firefox, Brave, or DuckDuckGo instructions. Depending on your browser, this adds a
+            shortcut or web app. It is not an APK download, and you still need internet to browse
+            and order.
+          </>
+        ),
+      },
       {
         question: "Where can I update my account information?",
         answer: (
@@ -207,6 +227,9 @@ export default function FaqPage() {
           title="Frequently asked questions"
           description="Everything you need to know before ordering, paying, and picking up your TsokoLitaw."
         />
+        <p className="mt-3 text-sm text-muted-foreground">
+          Last updated: <time dateTime="2026-10-01">October 1, 2026</time>
+        </p>
 
         <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-16">
           <div className="space-y-10">
