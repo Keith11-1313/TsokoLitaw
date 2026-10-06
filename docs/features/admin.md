@@ -16,6 +16,13 @@ and business state, and record audited mutations. Browser visibility is not acce
 
 ## Customers directory
 
+Customer rows show the Google profile photo from existing Auth metadata, with the person icon
+when no supported photo exists, an Auth lookup fails, or the image cannot load. Only HTTPS photos
+from `lh3.googleusercontent.com` are accepted. Lookups happen server-side after the authorized
+directory query, for the current page only, with at most five concurrent requests. Auth metadata
+and privileged credentials are not sent to the browser; only the validated photo URL is rendered.
+No new stored column, migration or database reset is required.
+
 Only customer-role profiles are listed and counted; Admin identities are excluded. Dashboard
 purchasing/returning-customer counts also exclude Admins. Financial order totals still preserve
 historical paid transactions rather than discarding revenue when an account's role changes.

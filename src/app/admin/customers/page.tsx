@@ -5,7 +5,6 @@ import {
   Gift,
   Repeat2,
   Search,
-  UserRound,
   UsersRound,
   ChevronLeft,
   ChevronRight,
@@ -18,6 +17,7 @@ import { AdminPageLayout } from "@/components/admin/admin-page-layout";
 import { AdminDataTable, type AdminTableColumn } from "@/components/admin/admin-data-table";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { CustomerPageSize } from "@/components/admin/customer-page-size";
+import { CustomerAvatar } from "@/components/admin/customer-avatar";
 import { primaryButtonClassName, secondaryButtonClassName } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/auth";
 import { cn } from "@/lib/cn";
@@ -81,9 +81,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
   const rows: readonly Record<string, ReactNode>[] = customers.map((customer) => ({
     customer: (
       <div className="flex min-w-56 items-center gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-brand">
-          <UserRound aria-hidden="true" size={17} />
-        </span>
+        <CustomerAvatar avatarUrl={customer.avatarUrl} />
         <span className="min-w-0">
           <strong className="block truncate text-foreground">
             {customer.fullName || "Unnamed customer"}

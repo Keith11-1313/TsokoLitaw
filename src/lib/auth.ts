@@ -13,7 +13,7 @@ export interface AuthProfile {
   avatarUrl: string | null;
 }
 
-function getGoogleAvatarUrl(metadata: unknown) {
+export function getGoogleAvatarUrl(metadata: unknown) {
   if (!metadata || typeof metadata !== "object") return null;
   const values = metadata as Record<string, unknown>;
   const candidate = values.avatar_url ?? values.picture;
