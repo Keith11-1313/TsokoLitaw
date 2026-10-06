@@ -1,5 +1,26 @@
 # Database changes and promotion
 
+## October 6 stock-release and payment-lock repair — Dev activated
+
+`20261006020000_stock_release_snapshots.sql` was applied additively to verified Dev
+`mgkzphpznamjlgrpumjd`, with no hosted reset or seed. It replaces customer/direct/provider
+release paths with placement-date and immutable-piece accounting, strict stock rollback, and payment
+rechecks. PayMongo expiry/replacement/paid-event writers now lock order before payment, consistent
+with cancellation and manual-payment writers. Existing signatures, private grants and provider
+verification remain intact. The applied baseline and Admin-cancellation migration were not edited.
+
+A verified-empty local Docker reset rehearsed all three migration files. Local SQL lint passed,
+and the final full suite passed 573 assertions in 19 files (97 new assertions). Schema types were
+regenerated without a semantic contract change. Linked Dev lint passed; before/after counts remained
+3 orders, 3 payments and 3 active Cron jobs, with current policy `2026-10-05-admin-customer`.
+Read-only function/grant checks confirmed placement-date/snapshot release, no browser EXECUTE grant,
+and service-role EXECUTE. Final dry run has no pending migrations. No hosted order was cancelled,
+no hosted regression fixtures were loaded, and Production was not modified.
+
+Matching application dependency/webhook-body changes still require the owner's Dev deployment and
+authenticated customer/Admin acceptance. The temporary forward
+migrations must remain until separately approved final pre-v1 consolidation.
+
 ## October 6 Admin unpaid cancellation — Dev activated
 
 Additive migration `20261006010000_admin_order_cancellation.sql` was applied to confirmed Dev
@@ -283,16 +304,16 @@ zero work and zero failures. Production was not contacted.
 
 ## Database changes before v1.0
 
-The earlier APK-based acceptance definition has not been replaced, but APK work is cancelled from
-current scope. The pre-v1 consolidation policy remains: the accepted release state must return to one clean baseline
+On October 6 the owner adopted website-only v1.0 acceptance; an APK is not required.
+The existing pre-v1 consolidation policy remains: the accepted release state must return to one clean baseline
 migration. Temporary forward migrations may be used during active development so a bounded change can
-be tested safely in Dev without rewriting an already-applied file. Before final release acceptance (or an APK build if reapproved), review
+be tested safely in Dev without rewriting an already-applied file. Before final website release acceptance, review
 and fold every such migration into the baseline, then perform one coordinated Dev and Production
 rebaseline with exact-target approval so both hosted migration markers return to `20260911010000`.
 Do not delete a temporary migration while hosted history still records it, and do not accumulate
 compatibility layers for disposable pre-release data. Preserve RLS/grants, exact payment matching,
 and atomic inventory/reward transitions. Read the [function map](../architecture/database.md) and the
-historical pre-APK freeze gate in the [roadmap](../roadmap.md). Neither this policy nor a docs update
+current website acceptance requirements in the [release sequence](deployment.md). Neither this policy nor a docs update
 authorizes a hosted reset; exact-target approval is still required.
 
 After v1.0, treat the accepted baseline as immutable and use reviewed forward migrations for every
