@@ -1,5 +1,24 @@
 # Database changes and promotion
 
+## October 6 Admin unpaid cancellation — Dev activated
+
+Additive migration `20261006010000_admin_order_cancellation.sql` was applied to confirmed Dev
+`mgkzphpznamjlgrpumjd` only, without reset or seed. It adds two service-role-only RPCs for the
+approved Admin unpaid-order cancellation action; existing customer writers and fulfillment transitions
+are unchanged. Finalization atomically rechecks payment/status/provider expiry, releases prepared
+pieces using immutable item snapshots and placement-date eligibility, restores any bound reward,
+and audits the required reason. It reuses the existing cancellation notification event, not a new event.
+
+Local SQL lint and all 476 assertions passed. Linked Dev lint, private RPC grants and final migration
+dry-run parity passed. Before/after public counts remained 6 profiles, 2 orders, 2 payments, 1 review,
+3 Journal posts and 30 audit entries. Post-activation checks also found 6 Auth users, 15 Storage objects
+and exactly 3 active Cron jobs. No hosted order was cancelled during validation. Production was not
+contacted or changed. Matching application code still requires the owner's development push/deployment
+and authenticated desktop/mobile acceptance. Browser-control verification was unavailable locally.
+
+Keep this applied migration until a separately approved coordinated pre-v1 consolidation;
+do not remove its file or rewrite applied history as part of ordinary deployment.
+
 ## October 5 Admin/customer separation — Dev rebaseline activated
 
 The consolidated `20260911010000_pre_v1_baseline.sql` enforces customer-role checkout, payment,

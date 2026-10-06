@@ -69,6 +69,13 @@ RLS-limited customer profile-name update, and server-only `service_role` access 
 
 ## Rules not to reproduce as client-side writes
 
+`20261006010000_admin_order_cancellation.sql` adds service-role-only
+`prepare_admin_order_cancellation` and `cancel_admin_unpaid_order` for the separate Admin cancellation
+action. Both verify active Admin identity. Finalization locks order/payment, rechecks expected status
+and exact provider-expiry reference, releases snapshot-based prepared pieces, restores any bound reward
+through the existing trigger, and records the required reason in `admin_audit_logs`. The original
+customer cancellation RPCs and paid-order protections are unchanged.
+
 The consolidated pre-v1 baseline restricts raw `reviews` SELECT
 to the active owner or Admin and removes anonymous column grants. Public visitors use only
 `get_public_featured_reviews`; its projection cannot return account IDs or Storage paths.

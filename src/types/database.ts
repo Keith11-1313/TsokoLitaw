@@ -13,6 +13,7 @@ type NullableArguments = {
   upsert_pickup_location: "target_location_id";
   create_checkout_order: "loyalty_reward_id";
   get_admin_customer_summaries: "search_value";
+  cancel_admin_unpaid_order: "expired_checkout_id";
 };
 
 export type Database = Omit<GeneratedDatabase, "public"> & {

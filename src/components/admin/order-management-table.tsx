@@ -12,9 +12,14 @@ import { CustomSelect } from "@/components/ui/custom-select";
 import { Pagination } from "@/components/ui/pagination";
 import { OrderLineItems } from "@/components/orders/order-line-items";
 import { formatPhp } from "@/lib/commerce";
-import { fulfillmentActionLabels, getNextFulfillmentStatus } from "@/lib/order-status";
+import {
+  canAdminCancelOrder,
+  fulfillmentActionLabels,
+  getNextFulfillmentStatus,
+} from "@/lib/order-status";
 import type { AdminOrderSummary } from "@/lib/server-orders";
 import { ManualPaymentReview } from "@/components/admin/manual-payment-review";
+import { OrderCancellation } from "@/components/admin/order-cancellation";
 import { SecondaryButton } from "@/components/ui/button";
 import { getPaymentStatusLabel } from "@/lib/payment-status";
 
@@ -231,8 +236,9 @@ function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
       <div className="mt-5 border-t border-border pt-5">
         <OrderContents order={order} />
       </div>
-      <div className="mt-5">
+      <div className="mt-5 grid gap-2">
         <FulfillmentAction order={order} />
+        <OrderCancellation order={order} />
       </div>
     </article>
   );
@@ -246,7 +252,10 @@ function FulfillmentAction({ order }: { order: AdminOrderSummary }) {
   );
   const [pending, startTransition] = useTransition();
 
-  if (!nextStatus) return <span className="text-xs text-muted-foreground">No action</span>;
+  if (!nextStatus)
+    return canAdminCancelOrder(order) ? null : (
+      <span className="text-xs text-muted-foreground">No action</span>
+    );
 
   const targetStatus = nextStatus;
   const actionLabel = fulfillmentActionLabels[targetStatus];
@@ -506,7 +515,10 @@ export function OrderManagementTable({
                       {order.pickupLocation}
                     </td>
                     <td className="px-4 py-5 text-center">
-                      <FulfillmentAction order={order} />
+                      <div className="grid gap-2">
+                        <FulfillmentAction order={order} />
+                        <OrderCancellation order={order} />
+                      </div>
                     </td>
                   </tr>
                 ))}

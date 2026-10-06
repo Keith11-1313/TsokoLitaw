@@ -33,6 +33,11 @@ card labels say “shown” rather than presenting their values as directory-wid
 
 ## Order list pagination
 
+Eligible unpaid orders also show a separate **Cancel order** action on desktop and mobile, with
+confirmation and a required reason saved in the audit log. It includes unpaid counter orders in
+Received, Preparing and Ready for pickup. Paid and under-review orders cannot be cancelled through
+this action. See [order cancellation](orders.md#cancellation) for provider-expiry and atomic-release rules.
+
 Orders keeps search and status controls beside the page heading on desktop, before its summary cards.
 Controls stack beneath the heading on smaller screens and retain accessible labels.
 

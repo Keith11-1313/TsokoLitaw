@@ -42,9 +42,21 @@ with a still-pending order card. A provider-bound PayMongo order waits for verif
 
 `src/app/orders/[orderId]/actions.ts` → `server-cancellation.ts` → `prepare_order_cancellation`
 → expire exact provider checkout if attached → `cancel_unpaid_order` → notification attempt.
-Only pending unpaid orders are cancellable online. SQL rechecks state under locks; a paid webhook
+Customers can cancel only their own pending unpaid orders online. SQL rechecks state under locks; a paid webhook
 winning a race must prevent release. Paid concerns are settled in person, not through an online refund form.
 The pre-v1 baseline removes the retired online refund subsystem.
+
+Admin Orders separately offers **Cancel order** for pending unpaid orders, including counter orders
+in Received, Preparing or Ready for pickup (including no-shows). A confirmation dialog requires a
+3–500-character reason. Paid, under-review, completed, expired and already-cancelled orders have no
+new cancellation action. `cancelAdminOrderAction` authenticates and rate-limits the actor;
+`server-cancellation.ts` calls `prepare_admin_order_cancellation`, expires the exact attached provider
+checkout, then calls `cancel_admin_unpaid_order`. The additive October 6 migration locks and rechecks
+order/payment state and the provider reference before committing. It releases prepared pieces using
+item snapshots and the placement date (Hybrid only reserves same-day placement), restores a bound
+reward through the existing trigger, and records `order.admin_cancelled` with actor, reason and prior
+status. Retries do not repeat release, audit or the existing cancellation email event. Customer
+cancellation and paid-order/refund policy remain unchanged.
 
 ## Reviews
 
@@ -73,3 +85,8 @@ Tests: `order-status.test.ts`, `components/orders/orders-list.test.tsx`, local `
 `002_payments`, `003_cancellation`,
 `004_admin_orders`, `005_reviews`, and `011_loyalty`. Changes must preserve stored snapshots
 and cross-customer denial, including direct URL/action requests.
+
+Admin cancellation additionally has server-orchestration, action-auth/validation/rate-limit, dialog
+confirmation/error/dirty-close/pending/keyboard tests and `017_admin_cancellation.test.sql` covering
+private grants, actor/state/payment denial, exact provider reference, stock rollback/release, reward
+restoration, and idempotent audit/notification behavior.

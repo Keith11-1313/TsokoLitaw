@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { OrderStatus } from "@/components/ui/status-badge";
 import { requireAdmin } from "@/lib/auth";
+import { cancelAdminOrder } from "@/lib/server-cancellation";
 import { isUuid } from "@/lib/identifiers";
 import { isAllowedFulfillmentTransition } from "@/lib/order-status";
 import { recordAdminCounterPayment, transitionAdminOrderStatus } from "@/lib/server-orders";
@@ -16,6 +17,58 @@ export type AdminOrderActionResult = {
   status: "success" | "error";
   message: string;
 };
+
+export async function cancelAdminOrderAction(input: {
+  orderId: string;
+  expectedStatus: OrderStatus;
+  reason: string;
+}): Promise<AdminOrderActionResult> {
+  const admin = await requireAdmin("/admin/orders");
+  if (
+    !isUuid(input.orderId) ||
+    typeof input.reason !== "string" ||
+    input.reason.trim().length < 3 ||
+    input.reason.length > 500 ||
+    !["PENDING_PAYMENT", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP"].includes(
+      input.expectedStatus,
+    )
+  ) {
+    return {
+      status: "error",
+      message: "Choose an eligible unpaid order and enter a reason (3–500 characters).",
+    };
+  }
+  try {
+    await enforceMutationRateLimit({
+      scope: "admin-order-cancel",
+      userId: admin.id,
+      maximumRequests: 30,
+      windowSeconds: 300,
+    });
+    await cancelAdminOrder({ ...input, reason: input.reason.trim(), adminId: admin.id });
+    for (const path of [
+      "/admin",
+      "/admin/orders",
+      "/admin/inventory",
+      "/orders",
+      `/orders/${input.orderId}`,
+      "/checkout",
+    ])
+      revalidatePath(path);
+    return {
+      status: "success",
+      message: "Unpaid order cancelled. Reservations released and reason recorded.",
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      message:
+        error instanceof MutationRateLimitError
+          ? `Too many updates. Try again in about ${error.retryAfterSeconds} seconds.`
+          : "Cancellation could not be completed. Refresh and check the order before trying again.",
+    };
+  }
+}
 
 export async function loadManualPaymentAction(orderId: string) {
   await requireAdmin("/admin/orders");

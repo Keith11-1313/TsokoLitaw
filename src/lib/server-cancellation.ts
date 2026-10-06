@@ -1,4 +1,5 @@
 import "server-only";
+import type { OrderStatus } from "@/components/ui/status-badge";
 
 import { expirePayMongoCheckoutSession } from "@/lib/paymongo";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -12,6 +13,38 @@ async function dispatchCancellationNotifications(orderId: string) {
       errorType: error instanceof Error ? error.name : "UnknownError",
     });
   }
+}
+
+export async function cancelAdminOrder(input: {
+  adminId: string;
+  orderId: string;
+  expectedStatus: OrderStatus;
+  reason: string;
+}) {
+  const supabase = createAdminSupabaseClient();
+  const args = {
+    target_admin_id: input.adminId,
+    target_order_id: input.orderId,
+    expected_status: input.expectedStatus,
+  };
+  const preparationResult = await supabase.rpc("prepare_admin_order_cancellation", args);
+  const preparation = preparationResult.data?.[0];
+  if (preparationResult.error || !preparation) {
+    throw new Error(
+      "This order changed or is no longer eligible. Refresh and check its payment status.",
+    );
+  }
+  if (preparation.already_cancelled) return;
+  if (preparation.checkout_id) await expirePayMongoCheckoutSession(preparation.checkout_id);
+  const result = await supabase.rpc("cancel_admin_unpaid_order", {
+    ...args,
+    reason_value: input.reason,
+    expired_checkout_id: preparation.checkout_id,
+  });
+  if (result.error) {
+    throw new Error("Cancellation was not saved. Refresh and check the order before trying again.");
+  }
+  await dispatchCancellationNotifications(input.orderId);
 }
 
 export async function cancelCustomerOrder(orderId: string, userId: string) {

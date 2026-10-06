@@ -7,6 +7,9 @@ describe("getPaymentStatusLabel", () => {
     expect(getPaymentStatusLabel("PENDING", "paymongo")).toBe("Pending");
     expect(getPaymentStatusLabel("PENDING", "paymongo", false)).toBe("Time ended");
     expect(getPaymentStatusLabel("PENDING", "pay_at_counter")).toBe("Pay at pickup");
+    expect(getPaymentStatusLabel("PENDING", "pay_at_counter", false)).toBe("Pay at pickup");
+    expect(getPaymentStatusLabel("PAID", "pay_at_counter", false)).toBe("Paid");
+    expect(getPaymentStatusLabel("FAILED", "pay_at_counter", false)).toBe("Not paid");
   });
 
   it("uses clear labels for review and terminal payment states", () => {
