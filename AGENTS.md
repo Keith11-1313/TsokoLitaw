@@ -24,7 +24,8 @@ Update the affected current guide when behavior changes; do not recreate duplica
 Owner decision (October 6, 2026): v1.0 is the audited and accepted website release; an Android APK
 is no longer required. Release acceptance still requires passing code/security checks, matching
 Production schema/code, and authenticated customer/Admin operational acceptance. The current
-candidate has unresolved audit gates; do not label it released merely because a build passes.
+candidate has passed the recorded local code/SQL checks; Production parity and authenticated
+operational acceptance remain release gates. Do not label it released merely because a build passes.
 A Vercel environment named Production is not a product-release milestone. Existing pre-release
 test records need not be retained. Prefer a clean database
 baseline over compatibility solely for disposable pre-release data. A coordinated rebaseline may
@@ -54,13 +55,20 @@ or speculative abstractions. Readability cleanup must not redesign working archi
 - Verify PayMongo signatures over the raw body, match environment mode, provider references and
   exact PHP totals, and process events idempotently. Provider checkout expiry must precede
   release of a provider-bound unpaid reservation.
-- Keep payment and fulfillment state separate. Website cancellation is pending-unpaid only.
+- Keep payment and fulfillment state separate. Customer website cancellation is pending-unpaid only.
+  Admin may also cancel eligible unpaid counter orders in Received, Preparing or Ready for pickup,
+  with confirmation, a required audited reason and atomic stock/reward release. Paid and under-review
+  orders are not eligible; attached provider checkout must expire before cancellation.
   Paid concerns are settled in person; no new refund API or destination collection.
   The retired refund subsystem was removed in the pre-v1 baseline. Hosted Dev
   `mgkzphpznamjlgrpumjd` and Production `zkmlzktvjkjrbznvrsxb` were rebaselined through separate,
   explicitly approved resets with Auth/test-data/Storage disposal. Matching application code and
   exactly three app Cron jobs were activated and verified in each environment; follow the database
   migration runbook. Those completed approvals are not ongoing reset permission.
+  The latest October 6 Dev-only reset folded both October 6 forward migrations into the single
+  `20260911010000` baseline marker. Production received the matching final baseline through its
+  separately approved October 7 no-backup reset. Matching code deployment and authenticated acceptance
+  remain required; migration markers alone do not prove matching definitions. Verify before promotion.
 - Preserve bounded validation, distributed rate limiting, provider timeouts, notification claim/
   retry/idempotency rules, and audit records. Email delivery never changes payment state.
 - Dev and Production have separate Vercel projects, Supabase data/Auth/Storage, credentials,
@@ -109,6 +117,9 @@ moderation for public visibility. Admin has one equal-permission role with at mo
   `public/videos/home/`; coating photos in Supabase `catalog-media`. Use Lucide for missing icons.
   Do not embed reference PNGs as pages or add random remote/paid assets.
 - Generated schema types and Boneyard bones are not hand-edited. Use documented generators.
+- Admin customer photos use existing Auth metadata after the authorized directory read, only for
+  the current page, with bounded concurrency. Reuse the HTTPS Google-host allowlist and icon
+  fallback; never serialize full Auth metadata or privileged credentials to the browser.
 - Preserve unrelated working-tree edits. Explain the intended bounded change before implementing.
 
 ## External actions requiring separate explicit confirmation

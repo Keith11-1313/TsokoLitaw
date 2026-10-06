@@ -30,8 +30,11 @@ The Privacy Policy, Terms, and FAQ display “Last updated: October 1, 2026” a
 They explain actual account, payment, pickup, review, retention, and dispute operations in plain
 language without changing the underlying product state machine. Checkout records policy version
 `2026-10-05-admin-customer`, archiving displayed Terms and Privacy from `src/content/policies.json`.
-The consolidated baseline was activated in Dev through the approved October 5 reset; Production
-has not received these changes. Preparing/deploying application files alone never applies SQL.
+The October 5 policy/role changes remain in the latest baseline, reactivated through the approved
+October 6 Dev reset with Admin cancellation and stock/payment-lock repairs. The temporary forward
+files are removed. Production received the matching candidate baseline through the separately
+approved October 7 no-backup reset. Matching application deployment and authenticated acceptance
+remain required. Preparing/deploying application files alone never applies SQL.
 The October 1 display date is separate from the acceptance version. Later material policy changes require a new persisted version rather than silently
 rewriting the version previously accepted with an order.
 
@@ -44,6 +47,9 @@ rewriting the version previously accepted with an order.
   customer Profile or account deletion, or loyalty earning/redemption. Public browsing remains
   available. Only customer-role profiles appear in the Customers directory and customer KPIs.
 - Default environment-specific Supabase Auth domains are intentional; no paid custom Auth domain.
+- Admin Customers displays Google profile photos from existing Auth metadata, limited to the
+  authorized current page and supported HTTPS Google URLs, with an icon fallback. No separate
+  avatar upload, stored profile field or public customer directory is introduced.
 - Account deletion is a cancellable 90-day request followed by permanent profile deactivation,
   not deletion of Google, Supabase Auth identity, or relational history. Pending deletion blocks
   new checkout; active orders block scheduling. Inactive access is denied by server and RLS.

@@ -1,5 +1,33 @@
 # Database changes and promotion
 
+## October 7 final website-v1 baseline — Production rebaseline activated
+
+The owner explicitly approved resetting Production `zkmlzktvjkjrbznvrsxb` without a backup and
+confirmed DB-first ordering before their matching-code merge/deployment. Fresh read-only inventory
+found 10 Auth users/profiles, zero orders/payments/reviews, three Journal posts and 15 Storage
+objects (three fonts plus 12 catalog/Journal files); there were no paid or pending provider obligations.
+Exactly the 12 inventoried non-font objects were removed through the Storage API. A guarded SQL
+transaction replaced public schema, deleted the 10 Auth users, installed the final baseline/seed,
+and replaced migration history with `20260911010000`. No backup was retained; Git does not recover
+the discarded accounts, posts or uploads. Dev was not reset or changed.
+
+Local SQL lint and all 573 assertions in 19 files passed again before activation. Production then
+had zero Auth/profile/order/payment/review/Journal records, one product, three variants, eight
+coatings and the matching `2026-10-05-admin-customer` policy. Its public function definitions and
+ACL fingerprint matches the locally validated final schema. Production SQL lint passed. All three
+fonts, three Vault entries and exactly the three Cron jobs survived; Vault and Cron definition
+fingerprints are unchanged. The CLI remains linked to Dev; Production commands used an explicit ref.
+All three retained fonts returned HTTP 200. One authenticated smoke request per Production Cron
+endpoint returned HTTP 200 with zero examined records and zero failures, without initiating payments.
+Home, Our Creations, FAQ, Terms and Privacy returned HTTP 200 after activation; these status checks
+do not establish authenticated acceptance or that the latest application commit is deployed.
+
+Matching application deployment and authenticated acceptance are still required. The previous
+`main` code sends the removed pickup-grace argument, so Admin pickup-rule saves can fail during
+the owner-approved DB-first gap. Merge/deploy the matching candidate promptly, then verify its
+commit, bootstrap approved Admin access after fresh sign-in, restore catalog media, publish pickup
+availability and retest customer/Admin/payment operations. This reset alone is not v1 acceptance.
+
 ## October 6 final website-v1 consolidation — Dev rebaseline activated
 
 The owner approved a Dev-only reset of `mgkzphpznamjlgrpumjd`, without a data backup,
@@ -30,7 +58,7 @@ and zero failures. Fresh sign-in, approved Admin bootstrap, catalog-media restor
 pickup publication and customer/Admin retesting remain necessary. This Dev operation does not
 mark Production ready or authorize its reset; website-v1 acceptance still needs Production parity.
 
-## October 6 stock-release and payment-lock repair — Dev activated
+## Historical October 6 stock-release activation — superseded by consolidation
 
 `20261006020000_stock_release_snapshots.sql` was applied additively to verified Dev
 `mgkzphpznamjlgrpumjd`, with no hosted reset or seed. It replaces customer/direct/provider
@@ -47,11 +75,11 @@ Read-only function/grant checks confirmed placement-date/snapshot release, no br
 and service-role EXECUTE. Final dry run has no pending migrations. No hosted order was cancelled,
 no hosted regression fixtures were loaded, and Production was not modified.
 
-Matching application dependency/webhook-body changes still require the owner's Dev deployment and
-authenticated customer/Admin acceptance. The temporary forward
-migrations must remain until separately approved final pre-v1 consolidation.
+At this additive activation, matching application deployment and authenticated acceptance were still
+required. The forward migration was subsequently folded into the approved Dev rebaseline above;
+its file and hosted marker no longer remain. Do not replay this historical activation.
 
-## October 6 Admin unpaid cancellation — Dev activated
+## Historical October 6 Admin cancellation activation — superseded by consolidation
 
 Additive migration `20261006010000_admin_order_cancellation.sql` was applied to confirmed Dev
 `mgkzphpznamjlgrpumjd` only, without reset or seed. It adds two service-role-only RPCs for the
@@ -67,8 +95,9 @@ and exactly 3 active Cron jobs. No hosted order was cancelled during validation.
 contacted or changed. Matching application code still requires the owner's development push/deployment
 and authenticated desktop/mobile acceptance. Browser-control verification was unavailable locally.
 
-Keep this applied migration until a separately approved coordinated pre-v1 consolidation;
-do not remove its file or rewrite applied history as part of ordinary deployment.
+This migration was retained until the separately approved Dev consolidation above, then folded into
+the baseline and removed with its hosted marker. Ordinary applied history remains immutable;
+this completed disposal does not authorize another reset or a Production activation.
 
 ## October 5 Admin/customer separation — Dev rebaseline activated
 
@@ -338,8 +367,10 @@ On October 6 the owner adopted website-only v1.0 acceptance; an APK is not requi
 The existing pre-v1 consolidation policy remains: the accepted release state must return to one clean baseline
 migration. Temporary forward migrations may be used during active development so a bounded change can
 be tested safely in Dev without rewriting an already-applied file. Before final website release acceptance, review
-and fold every such migration into the baseline, then perform one coordinated Dev and Production
-rebaseline with exact-target approval so both hosted migration markers return to `20260911010000`.
+and fold every such migration into the baseline. Dev completed the latest consolidation/reset on
+October 6; Production received the separately approved matching baseline on October 7. Matching
+application deployment and operational acceptance still require verification. Compare definitions
+as well as the `20260911010000` marker; these completed approvals do not authorize another reset.
 Do not delete a temporary migration while hosted history still records it, and do not accumulate
 compatibility layers for disposable pre-release data. Preserve RLS/grants, exact payment matching,
 and atomic inventory/reward transitions. Read the [function map](../architecture/database.md) and the

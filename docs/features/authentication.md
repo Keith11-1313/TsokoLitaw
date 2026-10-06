@@ -7,6 +7,12 @@ Google → environment-specific Supabase Auth → `/auth/callback` → cookie-ba
 are redirected to `/admin`. `requireAdmin` requires the active Admin role.
 Signed-in non-Admins receive Not Found at Admin URLs. Hiding a link is not authorization.
 
+`getGoogleAvatarUrl` validates existing Auth metadata (`avatar_url` or `picture`) against HTTPS
+`lh3.googleusercontent.com`. The signed-in profile uses it, and Admin Customers uses it after
+the authorized directory query for current-page users only. Only the validated photo URL is sent
+to the avatar component; missing/failed lookups or images use the person icon. No Auth metadata
+dump, additional stored avatar field or database migration is needed. See the [Admin guide](admin.md).
+
 ## Database and external dependencies
 
 `profiles` references `auth.users`; the pre-v1 baseline's Auth trigger creates the profile.

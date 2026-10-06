@@ -1,6 +1,10 @@
 # Database: rules that intentionally live in SQL
 
 The source of truth is `supabase/migrations/` **in timestamp order**, not the bootstrap alone.
+The current candidate has one consolidated file, `20260911010000_pre_v1_baseline.sql`, activated
+through the October 6 Dev reset and the separately approved October 7 Production reset. Production's
+public functions/ACLs match the validated candidate; matching application deployment is still required.
+Compare definitions, not just filenames or migration versions, before future promotion.
 The generated public schema in `src/types/database.generated.ts` helps explore tables/RPC signatures;
 SQL is still required to understand grants, RLS, triggers, locks, and business invariants.
 
@@ -72,7 +76,7 @@ RLS-limited customer profile-name update, and server-only `service_role` access 
 The consolidated `20260911010000_pre_v1_baseline.sql` defines
 `cancel_unpaid_order`, `expire_paymongo_order` and `expire_pending_orders`. Prepared-stock release
 uses placement-date eligibility and immutable item piece counts, with strict rollback on inconsistent
-reservations. Direct expiry locks/rechecks the payment before release. It also replaces
+reservations. Direct expiry locks/rechecks the payment before release. The baseline also defines
 `replace_paymongo_checkout` and `process_paymongo_paid_event` to use order-before-payment locks,
 matching cancellation/manual writers and avoiding opposite-order deadlocks. Signatures, grants,
 provider reference/amount checks, paid-state protections and event deduplication are retained.
@@ -94,10 +98,11 @@ The same baseline requires customer-role actors in
 checkout, payment preparation, receipt submission, cancellation and review writers. It restricts
 self-profile/deletion cancellation to customers, prevents Admin loyalty earning, and excludes
 Admin profiles from customer-directory and customer KPI counts without deleting financial history.
-It archives the new matching `2026-10-05-admin-customer` policy snapshot. This later migration
-was activated by the explicitly approved October 5 Dev reset. Production remains unchanged.
+It retains the matching `2026-10-05-admin-customer` policy snapshot from the October 5 role/policy
+change, included again in the approved October 6 Dev and October 7 Production resets.
+No separate role/policy forward file remains; deployment and operational acceptance are separate gates.
 
-`create_checkout_order` is the single atomic writer for both payment methods and loyalty.
+`create_checkout_order` is the single atomic writer for all configured payment methods and loyalty.
 `submit_manual_payment` / `review_manual_payment` own manual transitions.
 `manual_payment_submissions` has owner/Admin read RLS. Its `reported_*` columns make the
 customer-entered receipt claims distinct from verified `payments` data, and approved reported

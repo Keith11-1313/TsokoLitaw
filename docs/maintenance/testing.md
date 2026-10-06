@@ -65,6 +65,11 @@ Use Dev and an authorized account for protected pages. Do not bypass production 
 For Customers/Orders pagination, check single-page navigation suppression, 10/20/50/100 row
 selection, first/last disabled controls, numbered pages/ellipses, reset after filtering, and no
 page-level overflow. Customer pagination queries the server; Admin Orders paginates its loaded set.
+For customer photos, `src/lib/server-customers.test.ts` covers authorized page-only lookups,
+Google-host validation, metadata minimization and lookup failures; `customer-avatar.test.tsx`
+covers missing images, image-error fallback and a changed photo URL. Check a real Google customer
+and a photo-less fixture account in the authorized Dev directory; synthetic accounts need not have
+Google photos. Verify the 40px circular image and unchanged alignment at each supported width.
 For public copy changes, `src/app/public-information.test.tsx` checks displayed dates and current
 FAQ/Terms/Privacy behavior. A display date is not a persisted checkout acceptance-version update.
 For critical behavior changes, test negative and duplicate/racing cases in addition to a happy path.

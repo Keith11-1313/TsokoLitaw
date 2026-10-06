@@ -51,7 +51,7 @@ in Received, Preparing or Ready for pickup (including no-shows). A confirmation 
 3–500-character reason. Paid, under-review, completed, expired and already-cancelled orders have no
 new cancellation action. `cancelAdminOrderAction` authenticates and rate-limits the actor;
 `server-cancellation.ts` calls `prepare_admin_order_cancellation`, expires the exact attached provider
-checkout, then calls `cancel_admin_unpaid_order`. The additive October 6 migration locks and rechecks
+checkout, then calls `cancel_admin_unpaid_order`. The consolidated baseline locks and rechecks
 order/payment state and the provider reference before committing. It releases prepared pieces using
 item snapshots and the placement date (Hybrid only reserves same-day placement), restores a bound
 reward through the existing trigger, and records `order.admin_cancelled` with actor, reason and prior

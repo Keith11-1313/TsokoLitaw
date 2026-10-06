@@ -21,6 +21,13 @@ browser home-screen tutorials, not an APK or offline ordering. See the [roadmap]
 On October 6, 2026 the owner adopted website-only v1.0 acceptance, removing the APK requirement.
 The current candidate is **not yet release-approved**. Follow the [release sequence](docs/operations/deployment.md).
 
+The October 6 Dev rebaseline consolidated Admin unpaid cancellation and stock/payment-lock repairs
+into `20260911010000_pre_v1_baseline.sql`; the temporary forward files are removed. Production's
+matching final baseline was activated through the approved October 7 reset. Matching application
+deployment and authenticated acceptance remain required before release approval.
+Admin Customers also displays supported Google profile photos with an icon fallback, using existing
+Auth metadata without a new migration. See the [Admin guide](docs/features/admin.md).
+
 ## Quick start
 
 Use the `development` branch and obtain **Dev** configuration privately.

@@ -20,6 +20,13 @@ is implemented, and UI/operational validation continues against current code.
 Completion of an earlier smoke test does not establish that every future deployment is healthy.
 Use the current [release checks](operations/deployment.md), not old checked-off implementation lists.
 
+Latest recorded candidate checks: the October 6 consolidated Dev baseline passed 573 local SQL
+assertions; the subsequent customer-photo update passed 257 application tests, typecheck, lint and
+the production build. Dev retains one baseline marker, fonts, Vault and three working Cron endpoints.
+These are point-in-time checks, not acceptance of a future deployment. The owner-approved October 7
+Production reset activated the matching final baseline; its SQL lint and function/ACL parity passed.
+Matching Production code deployment and authenticated responsive acceptance remain separate gates.
+
 ## Phase 14 — UI stabilization (complete)
 
 - Customer and Admin responsive behavior, accessibility, and loading/empty/error states were reviewed
@@ -151,7 +158,8 @@ second authentication/payment stack inside Android.
 
 ## Phase 16 — optional basic Web Analytics (cancelled from current work; not implemented)
 
-Begin only after the website and Phase 15C APK are stable.
+Historical sequencing only: this cancelled proposal originally followed the website and Phase 15C
+APK. It is not a current release dependency or authorization to add analytics.
 
 - Use `@vercel/analytics` for default aggregate page views only.
 - Strict `beforeSend` allowlist: `/`, `/our-creations`, `/journal`, `/terms`, `/privacy`.
@@ -170,8 +178,10 @@ Begin only after the website and Phase 15C APK are stable.
 - Resolve reported dependency advisories in a targeted, tested maintenance update; do not mix
   forced upgrades into this documentation/structure pass.
 - The earlier service-role grant and dashboard migrations were folded into the pre-v1 baseline.
-  Production's recorded October 1 activation uses the older baseline; Dev received the October 5
-  consolidated baseline and October 6 Admin-cancellation migration. Verify target compatibility before promotion; do not
+  Dev's approved October 6 reset folded Admin cancellation and stock/payment-lock repairs into the
+  single baseline, activated separately in Production on October 7. Matching application deployment
+  and authenticated acceptance still need verification. The two
+  temporary October 6 files are removed. Verify definitions and target compatibility before promotion; do not
   delete an applied migration or assume both environments still match. See the migration runbook. Each
   environment must have exactly three active application Cron jobs; verify them after every reset or
   relevant deployment using the database migration runbook.

@@ -96,6 +96,10 @@ Safari as a fallback; do not promise automatic installation or detect installati
   filters in their page header and compact table pagination beneath the results. Rows per page
   applies immediately; navigation is hidden for a single page. See the Admin guide for the different
   server-paged customer directory and bounded loaded-order list.
+- Admin Customers keeps a 40px circular Google profile photo beside the name/email. The shared
+  row appearance is unchanged on desktop and mobile; missing or failed photos retain the existing
+  person icon. Use `CustomerAvatar`, a decorative image beside the already visible customer name,
+  with no-referrer behavior and no new upload control.
 - Toast notifications align their status icon, message, and dismissal control on one row, use the
   semantic success/error surface, and retain a 44px dismissal target plus automatic dismissal.
 - `useEditorDialog` handles focus, scroll locking, Escape and dirty-close confirmation. Route user

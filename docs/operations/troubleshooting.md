@@ -3,6 +3,12 @@
 Start with the environment, affected route, timestamp, expected behavior, and exact error. Collect
 minimal redacted evidence. Do not dump secrets, cookies, full billing bodies, or customer records into logs.
 
+After a pre-v1 consolidation, identical migration markers can refer to different baseline contents.
+For schema errors, compare the actual function/table contract and deployed commit with the latest
+activation record; a dry run with no pending files does not prove Production matches Dev.
+Missing customer photos may be expected for synthetic accounts: check supported Google Auth
+metadata and image failures without exposing the metadata or replacing the icon fallback.
+
 | Symptom                                      | First checks                                                                                                               | Do not do                                                              |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | Missing column/function                      | Correct app Supabase URL, CLI target, migration list and reviewed pending files                                            | Reset hosted data or patch types with casts                            |

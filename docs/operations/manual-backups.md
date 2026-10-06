@@ -2,7 +2,9 @@
 
 This is a manual export procedure, not evidence that a backup already exists.
 It reads Production and writes private local files; it does not reset, restore, seed or deploy anything.
-The Dev reset remains a separate operation requiring its own confirmed disposal/backup decision.
+The approved October 6 Dev reset is complete and retained no data backup. This guide does not
+indicate that a Production backup has been taken. Any future reset remains a separate operation
+requiring its own exact-target disposal/backup decision.
 
 ## Before starting
 

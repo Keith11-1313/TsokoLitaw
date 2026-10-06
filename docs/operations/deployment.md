@@ -12,6 +12,14 @@ the existing pre-v1 schema-consolidation policy, security fixes, matching Produc
 and authenticated desktop/mobile acceptance. Release naming does not authorize a hosted reset,
 provider charge, Git merge/tag, or deployment.
 
+The latest Dev-only consolidation/reset completed on October 6. Its baseline includes Admin
+unpaid cancellation, snapshot-based stock release and consistent payment lock ordering; no forward
+files remain. Production received the matching baseline through the separately approved October 7
+no-backup reset, with owner-confirmed DB-first ordering. Matching application deployment still needs
+the owner's merge and Vercel verification; the older app's pickup-settings writer is incompatible.
+A dry run showing no pending files or matching markers alone does not prove schema parity. Future
+rebaselines require their own coordinated approval, never an ordinary push of an edited applied file.
+
 1. Review the diff and run [validation](../maintenance/testing.md). Keep formatting, behavior,
    dependency upgrades, and database changes separately reviewable where practical.
 2. If SQL changed, test locally and apply reviewed migrations to hosted **Dev** first using the
@@ -30,7 +38,9 @@ provider charge, Git merge/tag, or deployment.
 7. Inspect route/provider/Cron results, not just successful build output. Relink the CLI to Dev
    after any approved Production database session.
 
-No SQL changed? Skip migration commands entirely. There is no reset or reseed release step.
+No SQL changed? Skip migration commands entirely. Routine releases have no reset or reseed step.
+The separately approved pre-v1 consolidation is an exceptional coordinated operation, not routine
+deployment. After accepted v1, keep the baseline immutable and use reviewed forward migrations.
 
 ## Recovery
 
