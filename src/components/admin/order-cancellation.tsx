@@ -21,12 +21,13 @@ export function OrderCancellation({ order }: { order: AdminOrderSummary }) {
   if (!canAdminCancelOrder(order)) return null;
   return (
     <>
-      <SecondaryButton
-        className="w-full border-danger-foreground text-danger-foreground"
+      <button
+        type="button"
+        className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-control px-3 py-2 text-xs font-bold text-danger-foreground transition-colors hover:bg-danger-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         onClick={() => setOpen(true)}
       >
         Cancel order
-      </SecondaryButton>
+      </button>
       {open && (
         <CancellationDialog
           order={order}

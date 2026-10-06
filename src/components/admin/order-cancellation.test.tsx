@@ -18,6 +18,14 @@ const order = {
   paymentMethod: "pay_at_counter",
 } as AdminOrderSummary;
 describe("Admin cancellation confirmation", () => {
+  it("keeps the cancellation trigger compact and unwrapped", () => {
+    render(<OrderCancellation order={order} />);
+    const button = screen.getByRole("button", { name: "Cancel order" });
+    expect(button.className).toContain("whitespace-nowrap");
+    expect(button.className).toContain("rounded-control");
+    expect(button.className).not.toContain("rounded-full");
+    expect(button.className).not.toContain("border-danger-foreground");
+  });
   it("requires a reason before confirmation and passes the displayed state", async () => {
     const user = userEvent.setup();
     cancel.mockResolvedValueOnce({ status: "success", message: "Cancelled" });
