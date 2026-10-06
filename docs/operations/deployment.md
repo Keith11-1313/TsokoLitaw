@@ -38,6 +38,7 @@ A Vercel rollback changes code, not database state, credentials, provider events
 Confirm the previous build works with the current schema before reverting a deployment. Correct
 database defects with reviewed forward migrations; never delete migration history to imitate rollback.
 For destructive schema work, define and validate the backup/restoration procedure before applying it.
+Use the [manual backup guide](manual-backups.md); an untested export is not a proven recovery point.
 
 Keep secrets private; never copy Production variables to Dev/Preview. DNS, provider configuration,
 and Google callback changes are separate external operations, not consequences of a Git merge.

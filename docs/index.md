@@ -19,6 +19,8 @@ Start with [onboarding](getting-started/onboarding.md). Read only the guides rel
 
 ## Feature paths
 
+For private recovery exports, see [Manual Production backups](operations/manual-backups.md).
+
 [Authentication](features/authentication.md) · [Catalog](features/catalog.md) ·
 [Checkout](features/checkout.md) · [Pickup and inventory](features/inventory.md) ·
 [Orders and reviews](features/orders.md) · [Payments](features/payments.md) ·
