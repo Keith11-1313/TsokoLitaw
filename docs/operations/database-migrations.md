@@ -1,6 +1,15 @@
 # Database changes and promotion
 
-## October 20 Staff/Admin separation — candidate, hosted activation pending
+## October 20 Staff/Admin separation — Dev database activated
+
+The owner-approved Dev update applied all three forward migrations to `mgkzphpznamjlgrpumjd`.
+Post-application checks confirmed the current policy `2026-10-20-staff-rbac`, Staff actor guard on
+counter payment, no authenticated-browser grant on role assignment, and clean hosted SQL lint.
+Counts remained 34 Auth users, 24 orders, 24 payments, ten active Admins and three Cron jobs.
+No reset, seed, account deletion or automatic role assignment ran; Staff count remains zero.
+Production was not contacted. Matching Dev application deployment and authenticated acceptance are
+not established by these database checks. An approved Admin must assign a separate Staff identity
+before transaction operations can resume.
 
 Three additive migrations introduce `staff`, move transactional writers to Staff-only authorization,
 add audited Admin role assignment and a bounded Staff pickup projection, then archive policy

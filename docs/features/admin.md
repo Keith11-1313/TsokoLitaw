@@ -15,7 +15,7 @@ and business state, and record audited mutations. Browser visibility is not acce
 | Customers | `/admin/customers`, `server-customers.ts`                                         | Support directory with roles, completed-order and loyalty aggregates |
 | Journal   | `/admin/journal`, `journal-manager.tsx`, `server-journal.ts`, `server-reviews.ts` | Published posts and moderated community highlights                   |
 
-## Staff/Admin separation (candidate; hosted activation pending)
+## Staff/Admin separation (Dev SQL activated; application acceptance pending)
 
 Guest is unauthenticated browsing, not a persisted role. New Google identities become Customers.
 Both Staff and Admin are business-only: no checkout, customer profile/deletion, reviews or loyalty.
@@ -32,7 +32,12 @@ Only Customers appear in customer KPIs and the directory; financial history rema
 - Both dashboards reuse the current layout. Staff navigation shows only Dashboard and Orders;
   direct URLs and server actions remain protected independently of navigation.
 
-`/admin/accounts` lists accounts in bounded 20-row pages with exact-email lookup. Admin can assign
+`/admin/accounts` lists accounts in bounded 20-row pages with exact-email lookup in the page header.
+It reuses the Customers search styling and responsive table, with Google photo/name/email, status,
+current role and change-access columns. Avatars use the same allowlisted, bounded page-local Auth
+lookup and icon fallback as Customers; full Auth metadata never reaches the browser. Role changes
+open a custom confirmation dialog showing old/new roles and resulting access, with keyboard/focus
+handling and pending-close protection. No browser `confirm` is used. Admin can assign
 Customer/Staff/Admin to another active account without pending deletion or active personal orders.
 The SQL writer checks expected role, serializes role assignment, prevents self-role changes and
 last-active-Admin demotion, enforces the ten-Admin limit and audits `account.role_changed`.

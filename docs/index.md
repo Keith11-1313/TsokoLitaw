@@ -41,5 +41,6 @@ remain gates. See the migration runbook for the current activation and labeled h
 Update the affected guide when behavior changes; do not duplicate the whole system specification in README.
 
 The October 20 RBAC candidate adds three forward migrations for Staff, strict management/transaction
-separation, and a new policy snapshot. Hosted activation and authenticated Staff/Admin acceptance
-remain pending; see [Admin](features/admin.md) and the migration runbook. No reset is required.
+separation, and a new policy snapshot. Dev database activation is complete; matching application
+deployment, first Staff assignment and authenticated acceptance remain to be verified. Production
+activation remains pending; see [Admin](features/admin.md) and the migration runbook. No reset is required.

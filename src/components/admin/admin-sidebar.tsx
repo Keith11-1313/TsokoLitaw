@@ -11,6 +11,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ShoppingBag,
+  ShieldUser,
   Users,
   X,
   type LucideIcon,
@@ -34,7 +35,7 @@ const adminNavigation: AdminNavigationItem[] = [
   { href: "/admin/pickup", label: "Pickup", icon: CalendarDays },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/journal", label: "Journal", icon: Newspaper },
-  { href: "/admin/accounts", label: "Account roles", icon: Users },
+  { href: "/admin/accounts", label: "Account roles", icon: ShieldUser },
 ];
 
 export function AdminSidebar({

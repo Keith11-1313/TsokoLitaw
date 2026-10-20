@@ -33,7 +33,8 @@ Auth metadata without a new migration. See the [Admin guide](docs/features/admin
 The October 20 candidate introduces strict Staff/Admin separation: Staff processes orders and
 payments; Admin manages configuration/content/roles and views orders read-only. Their dashboards
 share `/admin`. Three additive SQL migrations and matching code are required; no reset or automatic
-role promotion is performed. Hosted activation is pending. See the [business role guide](docs/features/admin.md).
+role promotion is performed. Dev SQL is activated; matching deployment, first Staff assignment and
+authenticated acceptance remain to be verified. Production is unchanged. See the [business role guide](docs/features/admin.md).
 
 Use the `development` branch and obtain **Dev** configuration privately.
 

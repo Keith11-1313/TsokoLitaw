@@ -104,7 +104,9 @@ and cancels eligible unpaid orders. Admin manages catalog, stock, pickup configu
 customer reporting and roles; Orders is read-only and private payment receipts are unavailable.
 Never broaden `is_admin()` to include Staff. Role assignment is Admin-only, audited, blocks self-role
 changes/active personal orders/pending deletion, preserves the last active Admin and ten-Admin limit.
-The three October 20 forward migrations are a pending additive candidate, not a hosted activation.
+The three October 20 forward migrations are activated on Dev only. No roles were automatically
+assigned; first Staff assignment, matching application deployment and authenticated acceptance
+remain unverified. Production is unchanged. See the migration runbook for verification evidence.
 My Orders belongs inside Account. Reviews originate only from owned completed orders and require
 moderation for public visibility. Admin has one equal-permission role with at most ten approved identities.
 

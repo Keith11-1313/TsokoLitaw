@@ -72,28 +72,11 @@ export async function getAdminCustomerSummaries(
   }
 
   const rows = (listResult.data ?? []) as AdminCustomerSummaryRow[];
-  const avatars = new Map<string, string | null>();
-  // Fetch only the authorized page, never enumerate the Auth directory.
-  // Bound concurrency so a 100-row page does not flood the Auth service.
-  for (let offset = 0; offset < rows.length; offset += 5) {
-    await Promise.all(
-      rows.slice(offset, offset + 5).map(async (customer) => {
-        try {
-          const { data, error } = await supabase.auth.admin.getUserById(customer.user_id);
-          avatars.set(
-            customer.user_id,
-            error ? null : getGoogleAvatarUrl(data.user?.user_metadata),
-          );
-        } catch {
-          avatars.set(customer.user_id, null);
-        }
-      }),
-    );
-  }
+  const avatars = await getAdminAccountAvatars(rows.map((customer) => customer.user_id));
 
   return {
     totalCount: Number(countResult.data ?? 0),
-    customers: ((listResult.data ?? []) as AdminCustomerSummaryRow[]).map((customer) => ({
+    customers: rows.map((customer) => ({
       id: customer.user_id,
       fullName: customer.full_name,
       email: customer.email,
@@ -110,4 +93,27 @@ export async function getAdminCustomerSummaries(
       redeemedRewards: Number(customer.redeemed_rewards),
     })),
   };
+}
+
+// Call only after an authorized Admin page/directory read. Never enumerate Auth.
+export async function getAdminAccountAvatars(userIds: readonly string[]) {
+  const supabase = createAdminSupabaseClient();
+  const avatars = new Map<string, string | null>();
+  const ids = [...new Set(userIds)].slice(0, 100);
+  // Fetch only the authorized page, never enumerate the Auth directory.
+  // Bound concurrency so a 100-row page does not flood the Auth service.
+  for (let offset = 0; offset < ids.length; offset += 5) {
+    await Promise.all(
+      ids.slice(offset, offset + 5).map(async (id) => {
+        try {
+          const { data, error } = await supabase.auth.admin.getUserById(id);
+          avatars.set(id, error ? null : getGoogleAvatarUrl(data.user?.user_metadata));
+        } catch {
+          avatars.set(id, null);
+        }
+      }),
+    );
+  }
+
+  return avatars;
 }
