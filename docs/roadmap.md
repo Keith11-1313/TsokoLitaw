@@ -1,5 +1,10 @@
 # Current work and approved next phases
 
+October 20 candidate: Guest/Customer/Staff/Admin separation. Staff owns transactions and its
+operational dashboard; Admin owns management, reporting and role assignment. Code and three forward
+migrations are local implementation, not evidence of hosted activation. See [Admin](features/admin.md)
+and [deployment](operations/deployment.md) for activation and acceptance gates.
+
 Owner direction (October 2, 2026): cancel the current Phase 15C APK and Phase 16 analytics work.
 The active replacement is a footer-only Install app link to `/install`, with browser tutorials for
 adding the existing website to the home screen. This adds no Android wrapper, analytics, database

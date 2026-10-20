@@ -2,6 +2,19 @@ import { describe, expect, it } from "vitest";
 import { getRoleNextPath, getSafeNextPath } from "./auth-redirect";
 
 describe("authentication redirect safety", () => {
+  it("keeps Staff inside the operational workspace", () => {
+    expect(getRoleNextPath("staff", "/admin/orders?status=PREPARING")).toBe(
+      "/admin/orders?status=PREPARING",
+    );
+    for (const path of [
+      "/checkout",
+      "/profile",
+      "/admin/products",
+      "/admin/accounts",
+      "/admin/customers",
+    ])
+      expect(getRoleNextPath("staff", path)).toBe("/admin");
+  });
   it("keeps Admins in Admin and customer destinations outside Admin", () => {
     expect(getRoleNextPath("admin", "/checkout")).toBe("/admin");
     expect(getRoleNextPath("admin", "/profile")).toBe("/admin");

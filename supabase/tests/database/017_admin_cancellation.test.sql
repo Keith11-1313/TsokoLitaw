@@ -7,7 +7,7 @@ select plan(33);
 insert into auth.users(id,instance_id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values
 ('f1000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','cancel-admin@example.test','{"provider":"google","providers":["google"]}','{"name":"Admin"}',now(),now()),
 ('f1000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','cancel-owner@example.test','{"provider":"google","providers":["google"]}','{"name":"Owner"}',now(),now());
-update public.profiles set role='admin' where id='f1000000-0000-4000-8000-000000000001';
+update public.profiles set role='staff' where id='f1000000-0000-4000-8000-000000000001';
 insert into public.pickup_locations(id,name) values ('f2000000-0000-4000-8000-000000000001','Cancellation test');
 insert into public.pickup_dates(id,pickup_date,availability_mode) values ('f3000000-0000-4000-8000-000000000001','2099-05-01','HYBRID');
 insert into public.pickup_windows(id,pickup_date_id,start_time,end_time) values ('f4000000-0000-4000-8000-000000000001','f3000000-0000-4000-8000-000000000001','09:00','10:00');
@@ -30,7 +30,7 @@ insert into public.loyalty_rewards(user_id,reward_type,threshold,source_order_id
 select ok(not has_function_privilege('anon','public.prepare_admin_order_cancellation(uuid,uuid,public.order_status)','execute'),'anonymous preparation denied');
 select ok(not has_function_privilege('authenticated','public.cancel_admin_unpaid_order(uuid,uuid,public.order_status,text,text)','execute'),'browser finalization denied');
 select ok(has_function_privilege('service_role','public.cancel_admin_unpaid_order(uuid,uuid,public.order_status,text,text)','execute'),'service role explicit grant');
-select throws_ok($$select * from public.prepare_admin_order_cancellation('f1000000-0000-4000-8000-000000000002','f5000000-0000-4000-8000-000000000001','READY_FOR_PICKUP')$$,'P0001','Active administrator access is required','customer actor denied');
+select throws_ok($$select * from public.prepare_admin_order_cancellation('f1000000-0000-4000-8000-000000000002','f5000000-0000-4000-8000-000000000001','READY_FOR_PICKUP')$$,'P0001','Active staff access is required','customer actor denied');
 select throws_ok($$select public.cancel_admin_unpaid_order('f1000000-0000-4000-8000-000000000001','f5000000-0000-4000-8000-000000000001','READY_FOR_PICKUP','  ')$$,'P0001','Cancellation requires a reason between 3 and 500 characters','blank reason denied');
 select throws_ok($$select public.cancel_admin_unpaid_order('f1000000-0000-4000-8000-000000000001','f5000000-0000-4000-8000-000000000001','CONFIRMED','No show')$$,'P0001','Order status changed','stale fulfillment state denied');
 select throws_ok($$select public.cancel_admin_unpaid_order('f1000000-0000-4000-8000-000000000001','f5000000-0000-4000-8000-000000000004','COMPLETED','No show')$$,'P0001','Order is no longer eligible for unpaid cancellation','completed paid order protected');
@@ -57,7 +57,7 @@ update public.orders set payment_status='PENDING' where id='f5000000-0000-4000-8
 update public.payments set status='PAID' where order_id='f5000000-0000-4000-8000-000000000008';
 select throws_ok($$select public.cancel_admin_unpaid_order('f1000000-0000-4000-8000-000000000001','f5000000-0000-4000-8000-000000000008','READY_FOR_PICKUP','Requested')$$,'P0001','Payment is no longer pending','independent paid payment protected');
 update public.profiles set is_active=false, deactivated_at=now() where id='f1000000-0000-4000-8000-000000000001';
-select throws_ok($$select * from public.prepare_admin_order_cancellation('f1000000-0000-4000-8000-000000000001','f5000000-0000-4000-8000-000000000008','READY_FOR_PICKUP')$$,'P0001','Active administrator access is required','inactive admin denied');
+select throws_ok($$select * from public.prepare_admin_order_cancellation('f1000000-0000-4000-8000-000000000001','f5000000-0000-4000-8000-000000000008','READY_FOR_PICKUP')$$,'P0001','Active staff access is required','inactive staff denied');
 select is((select count(*)::integer from public.admin_audit_logs where action='order.admin_cancelled'),3,'only successful cancellations audited');
 update public.profiles set is_active=true, deactivated_at=null where id='f1000000-0000-4000-8000-000000000001';
 update public.payments set status='PENDING' where order_id='f5000000-0000-4000-8000-000000000008';

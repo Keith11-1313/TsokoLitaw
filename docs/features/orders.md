@@ -24,7 +24,7 @@ Terminal alternatives: CANCELLED, EXPIRED
 
 This describes the domain vocabulary; verified online payment normally commits payment `PAID` and
 order `CONFIRMED` together. Pay-at-counter orders start `CONFIRMED` / `PENDING`, may be prepared and
-made ready while unpaid, and cannot become `COMPLETED` until Admin records payment. Admin fulfillment uses `transition_order_status` for the forward-only
+made ready while unpaid, and cannot become `COMPLETED` until Staff records payment. Staff fulfillment uses `transition_order_status` for the forward-only
 `CONFIRMED → PREPARING → READY_FOR_PICKUP → COMPLETED` path. The action is under
 `src/app/admin/orders/actions.ts`, with server orchestration in `server-orders.ts` and an SQL audit record.
 
@@ -34,7 +34,7 @@ Under review keeps fulfillment at `PENDING_PAYMENT`; the customer label explains
 See [manual payment verification](payments.md#manual-gcash) for proof, approval and rejection.
 There is no payment `EXPIRED` value: expiration transitions unpaid payment to `FAILED` and order
 to `EXPIRED`. Manual/direct overdue orders are synchronized through the existing atomic expiration
-processor before customer or Admin order reads, preventing a closed payment page from disagreeing
+processor before customer reads and through Cron, preventing a closed payment page from disagreeing
 with a still-pending order card. A provider-bound PayMongo order waits for verified provider expiry.
 `src/lib/order-status.ts` presents state labels; it does not authorize transitions.
 
@@ -46,10 +46,11 @@ Customers can cancel only their own pending unpaid orders online. SQL rechecks s
 winning a race must prevent release. Paid concerns are settled in person, not through an online refund form.
 The pre-v1 baseline removes the retired online refund subsystem.
 
-Admin Orders separately offers **Cancel order** for pending unpaid orders, including counter orders
+Staff Orders separately offers **Cancel order** for pending unpaid orders, including counter orders
 in Received, Preparing or Ready for pickup (including no-shows). A confirmation dialog requires a
 3–500-character reason. Paid, under-review, completed, expired and already-cancelled orders have no
-new cancellation action. `cancelAdminOrderAction` authenticates and rate-limits the actor;
+new cancellation action. `cancelAdminOrderAction` retains its historical name but requires active
+Staff, not Admin, and rate-limits the actor. Admin sees order state read-only;
 `server-cancellation.ts` calls `prepare_admin_order_cancellation`, expires the exact attached provider
 checkout, then calls `cancel_admin_unpaid_order`. The consolidated baseline locks and rechecks
 order/payment state and the provider reference before committing. It releases prepared pieces using

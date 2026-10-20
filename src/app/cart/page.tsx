@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 export default async function CartPage() {
   const profile = await getAuthProfile();
-  if (profile?.role === "admin") redirect("/admin");
+  if (profile && profile.role !== "customer") redirect("/admin");
   return (
     <CustomerPageShell>
       <SiteContainer className="py-8 sm:py-12">

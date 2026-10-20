@@ -34,6 +34,7 @@ const adminNavigation: AdminNavigationItem[] = [
   { href: "/admin/pickup", label: "Pickup", icon: CalendarDays },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/journal", label: "Journal", icon: Newspaper },
+  { href: "/admin/accounts", label: "Account roles", icon: Users },
 ];
 
 export function AdminSidebar({
@@ -41,11 +42,13 @@ export function AdminSidebar({
   adminName = "Administrator",
   adminEmail = "Admin email to be configured",
   className,
+  role = "admin",
 }: {
   activePath?: string;
   adminName?: string;
   adminEmail?: string;
   className?: string;
+  role?: "admin" | "staff";
 }) {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -79,36 +82,38 @@ export function AdminSidebar({
     };
   }, [open]);
   const navigation = (
-    <nav className="mt-6 space-y-1" aria-label="Admin navigation">
-      {adminNavigation.map((item) => {
-        const Icon = item.icon;
-        const active = activePath === item.href;
-        return (
-          <Link
-            title={collapsed ? item.label : undefined}
-            onClick={() => setOpen(false)}
-            key={item.href}
-            href={item.href}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              "relative flex min-h-11 items-center gap-3 rounded-control px-4 text-sm text-muted-foreground hover:bg-surface-muted hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
-              collapsed && "justify-center px-2",
-              active && "bg-surface-muted font-bold text-brand",
-            )}
-          >
-            <Icon size={18} />
-            <span className={cn(collapsed && "sr-only")}>{item.label}</span>
-            {active ? (
-              <span
-                className={cn(
-                  "absolute right-4 h-5 w-1 rounded-full bg-brand",
-                  collapsed && "right-1",
-                )}
-              />
-            ) : null}
-          </Link>
-        );
-      })}
+    <nav className="mt-6 space-y-1" aria-label="Business navigation">
+      {adminNavigation
+        .filter((item) => role === "admin" || ["/admin", "/admin/orders"].includes(item.href))
+        .map((item) => {
+          const Icon = item.icon;
+          const active = activePath === item.href;
+          return (
+            <Link
+              title={collapsed ? item.label : undefined}
+              onClick={() => setOpen(false)}
+              key={item.href}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "relative flex min-h-11 items-center gap-3 rounded-control px-4 text-sm text-muted-foreground hover:bg-surface-muted hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
+                collapsed && "justify-center px-2",
+                active && "bg-surface-muted font-bold text-brand",
+              )}
+            >
+              <Icon size={18} />
+              <span className={cn(collapsed && "sr-only")}>{item.label}</span>
+              {active ? (
+                <span
+                  className={cn(
+                    "absolute right-4 h-5 w-1 rounded-full bg-brand",
+                    collapsed && "right-1",
+                  )}
+                />
+              ) : null}
+            </Link>
+          );
+        })}
     </nav>
   );
   return (
@@ -118,7 +123,10 @@ export function AdminSidebar({
           href="/admin"
           className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
         >
-          <BrandLockup context="admin" />
+          <BrandLockup
+            context="admin"
+            subtitle={role === "staff" ? "Staff panel" : "Admin panel"}
+          />
         </Link>
         <button
           ref={menuButtonRef}
@@ -138,12 +146,15 @@ export function AdminSidebar({
         >
           <aside
             ref={drawerRef}
-            aria-label="Admin menu"
+            aria-label="Business menu"
             className="flex h-full w-[min(20rem,86vw)] flex-col overflow-y-auto bg-surface p-5 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <BrandLockup context="admin" />
+              <BrandLockup
+                context="admin"
+                subtitle={role === "staff" ? "Staff panel" : "Admin panel"}
+              />
               <button
                 type="button"
                 aria-label="Close admin menu"
@@ -180,10 +191,15 @@ export function AdminSidebar({
         <div className={cn("flex items-center gap-3", collapsed ? "flex-col" : "justify-between")}>
           <Link
             href="/admin"
-            aria-label="Admin dashboard"
+            aria-label="Business dashboard"
             className={cn(collapsed && "flex w-full justify-center")}
           >
-            <BrandLockup context="admin" showTitle={!collapsed} showSubtitle={!collapsed} />
+            <BrandLockup
+              context="admin"
+              subtitle={role === "staff" ? "Staff panel" : "Admin panel"}
+              showTitle={!collapsed}
+              showSubtitle={!collapsed}
+            />
           </Link>
           <button
             type="button"

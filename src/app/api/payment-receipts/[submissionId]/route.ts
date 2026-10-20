@@ -11,8 +11,9 @@ export async function GET(
   const profile = await getAuthProfile();
   const headers = { "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer" };
   if (!profile || !isUuid(submissionId)) return new Response("Not found", { status: 404, headers });
+  if (profile.role === "admin") return new Response("Not found", { status: 404, headers });
   const client = await createServerSupabaseClient();
-  // Submission RLS grants the active owner or Admin only.
+  // Submission RLS grants the active customer owner or Staff only.
   const { data, error } = await client
     .from("manual_payment_submissions")
     .select("receipt_path")

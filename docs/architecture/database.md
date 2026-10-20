@@ -1,12 +1,21 @@
 # Database: rules that intentionally live in SQL
 
 The source of truth is `supabase/migrations/` **in timestamp order**, not the bootstrap alone.
-The current candidate has one consolidated file, `20260911010000_pre_v1_baseline.sql`, activated
+The previously activated schema has one consolidated file, `20260911010000_pre_v1_baseline.sql`, activated
 through the October 6 Dev reset and the separately approved October 7 Production reset. Production's
 public functions/ACLs match the validated candidate; matching application deployment is still required.
 Compare definitions, not just filenames or migration versions, before future promotion.
 The generated public schema in `src/types/database.generated.ts` helps explore tables/RPC signatures;
 SQL is still required to understand grants, RLS, triggers, locks, and business invariants.
+
+The October 20 candidate adds three forward migrations, leaving that applied baseline immutable.
+`is_staff()` is separate from `is_admin()`. Transaction RPCs require Staff and share-lock the active
+actor profile against concurrent role changes; management RPCs remain Admin-only. The Admin-only
+`assign_account_role` writer serializes role assignment, checks expected role, active-order/deletion
+eligibility, self-change and Admin limits, then updates/audits atomically. `get_staff_pickup_overview`
+returns only the next 14 published dates/windows/locations and prepared-stock balances.
+Private receipt RLS permits active owner/Staff, not Admin. Existing roles remain unchanged until an
+approved role assignment. The policy version is archived separately as `2026-10-20-staff-rbac`.
 
 ## Data families
 

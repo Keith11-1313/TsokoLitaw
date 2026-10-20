@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { requireAdmin, requireCustomer } from "./auth";
+import { requireAdmin, requireCustomer, requireStaff, requireBusiness } from "./auth";
 
 const mocks = vi.hoisted(() => ({
   profile: {
@@ -38,6 +38,17 @@ beforeEach(() => {
   mocks.profile.is_active = true;
 });
 describe("role boundaries", () => {
+  it("strictly separates Staff operations and Admin management", async () => {
+    mocks.profile.role = "staff";
+    await expect(requireStaff()).resolves.toMatchObject({ role: "staff" });
+    await expect(requireAdmin()).rejects.toThrow("not-found");
+    await expect(requireCustomer("/checkout")).rejects.toThrow("redirect:/admin");
+    mocks.profile.role = "admin";
+    await expect(requireStaff()).rejects.toThrow("not-found");
+    await expect(requireBusiness()).resolves.toMatchObject({ role: "admin" });
+    mocks.profile.role = "customer";
+    await expect(requireStaff()).rejects.toThrow("not-found");
+  });
   it("allows customers in customer routes", async () => {
     await expect(requireCustomer("/checkout")).resolves.toMatchObject({ role: "customer" });
   });

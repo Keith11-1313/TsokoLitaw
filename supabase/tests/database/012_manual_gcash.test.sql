@@ -30,7 +30,7 @@ select ('b1000000-0000-4000-8000-' || lpad(n::text,12,'0'))::uuid,
   '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
   'manual-' || n || '@example.test', '{"provider":"google","providers":["google"]}', '{"name":"Manual Test"}', now(), now()
 from generate_series(1,3) n;
-update public.profiles set role = 'admin' where id = 'b1000000-0000-4000-8000-000000000003';
+update public.profiles set role = 'staff' where id = 'b1000000-0000-4000-8000-000000000003';
 insert into public.pickup_locations(id,name) values ('b2000000-0000-4000-8000-000000000001','Manual test');
 insert into public.pickup_dates(id,pickup_date) values ('b3000000-0000-4000-8000-000000000001','2099-03-01');
 insert into public.pickup_windows(id,pickup_date_id,start_time,end_time) values ('b4000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001','09:00','10:00');
@@ -60,7 +60,7 @@ update public.orders set payment_expires_at=now()-interval '1 minute' where orde
 select public.expire_pending_orders();
 select is((select status::text from public.orders where order_number='TL-MANUAL-1'),'PENDING_PAYMENT','review never expires even with stale deadline');
 select throws_ok($$select public.cancel_unpaid_order('b5000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001')$$, 'P0001', 'Order is no longer eligible for unpaid cancellation', 'review blocks customer cancellation');
-select throws_ok($$select public.review_manual_payment('b1000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-000000000001',true,'')$$,'P0001','Active Admin required','customer approval denied');
+select throws_ok($$select public.review_manual_payment('b1000000-0000-4000-8000-000000000001','b6000000-0000-4000-8000-000000000001',true,'')$$,'P0001','Active staff access is required','customer approval denied');
 select lives_ok($$select public.review_manual_payment('b1000000-0000-4000-8000-000000000003','b6000000-0000-4000-8000-000000000001',true,'')$$,'Admin approves');
 select is((select status::text from public.orders where order_number='TL-MANUAL-1'),'CONFIRMED','approval confirms order');
 select is((select payment_status::text from public.orders where order_number='TL-MANUAL-1'),'PAID','approval marks payment paid');

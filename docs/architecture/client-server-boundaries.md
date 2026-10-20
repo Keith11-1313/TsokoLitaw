@@ -15,7 +15,9 @@
 Use **type-only** imports when a component needs a DTO from a server module; do not import a
 runtime server operation into browser code. Avoid returning unnecessary row fields or secrets as props.
 
-`requireCustomer()` and `requireAdmin()` in `auth.ts` load verified claims and an active profile.
+`requireCustomer()`, `requireAdmin()`, `requireStaff()` and `requireBusiness()` in `auth.ts` load
+verified claims and an active profile. Business admission alone never authorizes management or
+transaction writes: require the specific Admin or Staff role for each action.
 Every action must check authorization independently of the page that renders its button. The
 privileged client bypasses RLS, so server checks and service RPC actor/state checks both matter.
 

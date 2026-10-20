@@ -180,7 +180,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[or
               {order.paymentMethod === "pay_at_counter" && order.paymentStatus !== "PAID" ? (
                 <p className="mt-4 rounded-control bg-warning-background p-4 text-sm leading-6 text-warning-foreground">
                   Pay the exact total at campus pickup. Your order can be prepared now, but it will
-                  not be released as completed until an administrator records the payment.
+                  not be released as completed until Staff records the payment.
                 </p>
               ) : null}
               {canOrderAgain ? (

@@ -32,6 +32,21 @@ const orders: AdminOrderSummary[] = Array.from({ length: 45 }, (_, index) => ({
 }));
 
 describe("Admin order pagination", () => {
+  it("keeps management read-only and exposes transaction controls only to Staff", () => {
+    const transactionOrder: AdminOrderSummary = {
+      ...orders[0],
+      status: "CONFIRMED",
+      paymentStatus: "PENDING",
+      paymentMethod: "pay_at_counter",
+    };
+    const view = render(<OrderManagementTable orders={[transactionOrder]} canTransact={false} />);
+    expect(
+      screen.queryAllByRole("button", { name: /Record payment|Start preparing|Cancel order/i }),
+    ).toHaveLength(0);
+    expect(screen.getAllByText("Read-only").length).toBeGreaterThan(0);
+    view.rerender(<OrderManagementTable orders={[transactionOrder]} canTransact />);
+    expect(screen.getAllByRole("button", { name: /Record payment/i }).length).toBeGreaterThan(0);
+  });
   it("places accessible filters in the page header before summary cards", () => {
     const { container } = render(
       <OrderManagementTable

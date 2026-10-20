@@ -56,7 +56,7 @@ or speculative abstractions. Readability cleanup must not redesign working archi
   exact PHP totals, and process events idempotently. Provider checkout expiry must precede
   release of a provider-bound unpaid reservation.
 - Keep payment and fulfillment state separate. Customer website cancellation is pending-unpaid only.
-  Admin may also cancel eligible unpaid counter orders in Received, Preparing or Ready for pickup,
+  Staff may also cancel eligible unpaid counter orders in Received, Preparing or Ready for pickup,
   with confirmation, a required audited reason and atomic stock/reward release. Paid and under-review
   orders are not eligible; attached provider checkout must expire before cancellation.
   Paid concerns are settled in person; no new refund API or destination collection.
@@ -96,9 +96,15 @@ Each date has an independent balance. Historical snapshots must not follow later
 
 Customer navigation is Home, Our Creations, Journal; Profile and Cart are actions.
 Customer contact is email-only; do not reintroduce unused mobile-number collection.
-Admin accounts are business-only, not customers: no personal checkout, customer payments/reviews,
+Staff and Admin accounts are business-only, not customers: no personal checkout, customer payments/reviews,
 customer Profile/deletion, or loyalty earning/redemption. Public browsing is allowed. Customer
-directory and customer KPIs exclude Admin profiles; Admin management of customer orders stays intact.
+directory and customer KPIs exclude Staff/Admin profiles. Owner decision (October 20): strict
+separation of duties. Staff alone fulfills orders, verifies Manual GCash, records counter payments
+and cancels eligible unpaid orders. Admin manages catalog, stock, pickup configuration, content,
+customer reporting and roles; Orders is read-only and private payment receipts are unavailable.
+Never broaden `is_admin()` to include Staff. Role assignment is Admin-only, audited, blocks self-role
+changes/active personal orders/pending deletion, preserves the last active Admin and ten-Admin limit.
+The three October 20 forward migrations are a pending additive candidate, not a hosted activation.
 My Orders belongs inside Account. Reviews originate only from owned completed orders and require
 moderation for public visibility. Admin has one equal-permission role with at most ten approved identities.
 

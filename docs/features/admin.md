@@ -1,7 +1,8 @@
-# Admin and Journal
+# Business workspace and Journal
 
-Admin remains under `/admin`. Server page guards and each action independently require an active
-Admin. `server-<feature>.ts` prepares reads/writes; service-only RPCs validate the actor, input,
+The business workspace remains under `/admin`. Admin handles management; Staff alone handles
+transactions. Server pages and actions independently check their required role.
+`server-<feature>.ts` prepares reads/writes; service-only RPCs validate the actor, input,
 and business state, and record audited mutations. Browser visibility is not access control.
 
 | Area      | Entry and implementation                                                          | Customer effect                                                      |
@@ -14,6 +15,32 @@ and business state, and record audited mutations. Browser visibility is not acce
 | Customers | `/admin/customers`, `server-customers.ts`                                         | Support directory with roles, completed-order and loyalty aggregates |
 | Journal   | `/admin/journal`, `journal-manager.tsx`, `server-journal.ts`, `server-reviews.ts` | Published posts and moderated community highlights                   |
 
+## Staff/Admin separation (candidate; hosted activation pending)
+
+Guest is unauthenticated browsing, not a persisted role. New Google identities become Customers.
+Both Staff and Admin are business-only: no checkout, customer profile/deletion, reviews or loyalty.
+Only Customers appear in customer KPIs and the directory; financial history remains intact.
+
+- Admin: existing reporting dashboard; read-only Orders; catalog/pricing, pickup configuration,
+  stock adjustment, customer directory, Journal/review moderation and account roles.
+- Staff: `/admin` renders `StaffDashboard`, with loaded-queue counts for preparation, Manual GCash
+  reviews, unpaid counter orders and ready pickups, plus a read-only next-14-date pickup/stock
+  projection. `/admin/orders` provides fulfillment, counter payment, Manual GCash review and eligible
+  unpaid cancellation. No revenue dashboard, customer directory or management editors.
+- Admin cannot call transaction actions/RPCs or access private payment receipts. Staff cannot call
+  management actions/RPCs. Automated provider/Cron processors retain their system responsibilities.
+- Both dashboards reuse the current layout. Staff navigation shows only Dashboard and Orders;
+  direct URLs and server actions remain protected independently of navigation.
+
+`/admin/accounts` lists accounts in bounded 20-row pages with exact-email lookup. Admin can assign
+Customer/Staff/Admin to another active account without pending deletion or active personal orders.
+The SQL writer checks expected role, serializes role assignment, prevents self-role changes and
+last-active-Admin demotion, enforces the ten-Admin limit and audits `account.role_changed`.
+Existing identities are never automatically promoted. Sign in an approved identity as a Customer,
+then assign Staff before expecting someone to process orders. At least one Staff operator is needed.
+Legacy transaction RPC/action names containing `admin` are retained to avoid changing argument
+contracts, but their actor must now be Staff. Do not broaden `is_admin()` to include Staff.
+
 ## Customers directory
 
 Customer rows show the Google profile photo from existing Auth metadata, with the person icon
@@ -23,8 +50,8 @@ directory query, for the current page only, with at most five concurrent request
 and privileged credentials are not sent to the browser; only the validated photo URL is rendered.
 No new stored column, migration or database reset is required.
 
-Only customer-role profiles are listed and counted; Admin identities are excluded. Dashboard
-purchasing/returning-customer counts also exclude Admins. Financial order totals still preserve
+Only customer-role profiles are listed and counted; Admin and Staff identities are excluded. Dashboard
+purchasing/returning-customer counts also exclude business accounts. Financial order totals still preserve
 historical paid transactions rather than discarding revenue when an account's role changes.
 
 Customers has a header search and a rows-per-page control (10, 20, 50, or 100; default 20).
@@ -40,11 +67,11 @@ card labels say “shown” rather than presenting their values as directory-wid
 
 ## Order list pagination
 
-Eligible unpaid orders also show a separate **Cancel order** action on desktop and mobile, with
+For Staff, eligible unpaid orders also show a separate **Cancel order** action on desktop and mobile, with
 compact, single-line red text beneath fulfillment rather than an oversized outlined pill, and
 confirmation and a required reason saved in the audit log. It includes unpaid counter orders in
 Received, Preparing and Ready for pickup. Paid and under-review orders cannot be cancelled through
-this action. See [order cancellation](orders.md#cancellation) for provider-expiry and atomic-release rules.
+this action. Admin sees Orders read-only. See [order cancellation](orders.md#cancellation) for provider-expiry and atomic-release rules.
 
 Orders keeps search and status controls beside the page heading on desktop, before its summary cards.
 Controls stack beneath the heading on smaller screens and retain accessible labels.
@@ -59,7 +86,7 @@ recent-order and payment-review set, not the entire historical database; the ran
 Orders also owns [Manual GCash verification](payments.md#manual-gcash): open the payment review
 from the order's payment status, inspect the receipt in the focused review dialog and compare it
 with the actual receiving account, then approve or reject with a reason.
-This is an audited active-Admin operation; it is not a separate Payments page. Review items remain
+This is an audited active-Staff operation; Admin cannot perform it. It is not a separate Payments page. Review items remain
 reserved until a decision. The list includes a bounded review queue as well as recent orders.
 
 `src/app/admin/journal/actions.ts` → `server-journal.ts` → `upsert_journal_post`.

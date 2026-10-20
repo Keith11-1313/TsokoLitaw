@@ -24,7 +24,10 @@ insert into public.pickup_dates (id, pickup_date) values ('ac200000-0000-4000-80
 insert into public.pickup_windows (id, pickup_date_id, start_time, end_time) values ('ac300000-0000-4000-8000-000000000001', 'ac200000-0000-4000-8000-000000000001', '10:00', '11:00');
 insert into public.orders (id, order_number, user_id, status, payment_status, customer_name, customer_email, pickup_date, pickup_window_id, pickup_location_id, pickup_window_snapshot, pickup_location_snapshot, subtotal, total, terms_version, terms_accepted_at)
 values ('ac400000-0000-4000-8000-000000000001', 'ROLE-LEGACY', 'ac000000-0000-4000-8000-000000000001', 'READY_FOR_PICKUP', 'PAID', 'Role Admin', 'role-admin@example.test', '2099-06-01', 'ac300000-0000-4000-8000-000000000001', 'ac100000-0000-4000-8000-000000000001', '10:00–11:00', 'Role test location', 40, 40, 'test', now());
-select public.transition_order_status('ac000000-0000-4000-8000-000000000001', 'ac400000-0000-4000-8000-000000000001', 'READY_FOR_PICKUP', 'COMPLETED');
+insert into auth.users(id,instance_id,aud,role,email,raw_user_meta_data)
+values('ac000000-0000-4000-8000-000000000003','00000000-0000-0000-0000-000000000000','authenticated','authenticated','role-staff@example.test','{"name":"Staff"}');
+update public.profiles set role='staff' where id='ac000000-0000-4000-8000-000000000003';
+select public.transition_order_status('ac000000-0000-4000-8000-000000000003', 'ac400000-0000-4000-8000-000000000001', 'READY_FOR_PICKUP', 'COMPLETED');
 select is((select completed_order_count from public.loyalty_accounts where user_id = 'ac000000-0000-4000-8000-000000000001'), 0, 'historical Admin completion earns no loyalty progress');
 select is((select count(*) from public.loyalty_rewards where user_id = 'ac000000-0000-4000-8000-000000000001'), 0::bigint, 'Admin completion earns no reward');
 select is((public.get_admin_dashboard_summary('ac000000-0000-4000-8000-000000000001', now() - interval '1 day', now() + interval '1 day', now() - interval '3 days', now() - interval '1 day')->'current'->>'purchasingCustomers')::integer, 0, 'historical Admin buyer is not counted as a customer');

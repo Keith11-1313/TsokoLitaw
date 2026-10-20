@@ -58,7 +58,7 @@ const faqGroups: readonly FaqGroup[] = [
       {
         question: "Do I need an account to order?",
         answer:
-          "You can browse without signing in, but checkout requires a TsokoLitaw customer account using Google sign-in. Admin accounts manage the business and cannot order as customers. Your customer account keeps your orders, payment status, pickup details, loyalty progress, and eligible reviews together.",
+          "You can browse without signing in, but checkout requires a TsokoLitaw customer account using Google sign-in. Staff handles transactions and Admin manages the business; neither can order as customers. Your customer account keeps your orders, payment status, pickup details, loyalty progress, and eligible reviews together.",
       },
     ],
   },
@@ -112,12 +112,12 @@ const faqGroups: readonly FaqGroup[] = [
       {
         question: "How does Manual GCash verification work?",
         answer:
-          "Send the exact order total to the recipient shown on your order, then submit the requested receipt and transaction details. An Admin verifies the actual incoming transaction. A screenshot, receipt image, or extracted text alone is not proof of payment.",
+          "Send the exact order total to the recipient shown on your order, then submit the requested receipt and transaction details. Staff verifies the actual incoming transaction. A screenshot, receipt image, or extracted text alone is not proof of payment.",
       },
       {
         question: "How does Pay at the Counter work?",
         answer:
-          "Place the order through the website first, then pay at campus pickup. The order remains payment-pending until an Admin records the payment, and it must be confirmed before the order can be completed.",
+          "Place the order through the website first, then pay at campus pickup. The order remains payment-pending until Staff records the payment, and it must be confirmed before the order can be completed.",
       },
       {
         question: "What should I do if payment fails or expires?",

@@ -40,7 +40,7 @@ describe("HeaderActions", () => {
   it.each([false, true])("hides all customer actions from Admins (mobile=%s)", (mobile) => {
     render(<HeaderActions mobile={mobile} isSignedIn isAdmin />);
     fireEvent.click(screen.getByRole("button", { name: "Account" }));
-    expect(screen.getByRole("menuitem", { name: "Admin dashboard" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "Business dashboard" })).toBeTruthy();
     expect(screen.queryByRole("menuitem", { name: "Profile" })).toBeNull();
     expect(screen.queryByRole("menuitem", { name: "My Orders" })).toBeNull();
     expect(screen.queryByRole("link", { name: /View cart/ })).toBeNull();
@@ -63,7 +63,7 @@ describe("HeaderActions", () => {
     expect(menu.className).toContain("border-t");
     expect(menu.className).not.toContain("absolute");
     expect(trigger.parentElement?.parentElement?.contains(menu)).toBe(true);
-    expect(screen.getByRole("menuitem", { name: "Admin dashboard" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "Business dashboard" })).toBeTruthy();
   });
 
   it("closes the mobile account menu with Escape and returns focus", () => {

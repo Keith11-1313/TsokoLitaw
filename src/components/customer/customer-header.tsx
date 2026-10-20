@@ -54,7 +54,10 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
         </nav>
 
         <div className="hidden h-14 shrink-0 items-center rounded-full border border-border bg-surface/95 p-1.5 shadow-sm backdrop-blur md:flex">
-          <HeaderActions isSignedIn={Boolean(profile)} isAdmin={profile?.role === "admin"} />
+          <HeaderActions
+            isSignedIn={Boolean(profile)}
+            isAdmin={Boolean(profile && profile.role !== "customer")}
+          />
         </div>
 
         <details className="group relative md:hidden">
@@ -86,7 +89,7 @@ export async function CustomerHeader({ activePath }: CustomerHeaderProps) {
               <HeaderActions
                 mobile
                 isSignedIn={Boolean(profile)}
-                isAdmin={profile?.role === "admin"}
+                isAdmin={Boolean(profile && profile.role !== "customer")}
               />
             </div>
           </div>

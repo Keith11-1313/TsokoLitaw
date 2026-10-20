@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { OrderStatus } from "@/components/ui/status-badge";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { cancelAdminOrder } from "@/lib/server-cancellation";
 import { isUuid } from "@/lib/identifiers";
 import { isAllowedFulfillmentTransition } from "@/lib/order-status";
@@ -23,7 +23,7 @@ export async function cancelAdminOrderAction(input: {
   expectedStatus: OrderStatus;
   reason: string;
 }): Promise<AdminOrderActionResult> {
-  const admin = await requireAdmin("/admin/orders");
+  const admin = await requireStaff("/admin/orders");
   if (
     !isUuid(input.orderId) ||
     typeof input.reason !== "string" ||
@@ -71,7 +71,7 @@ export async function cancelAdminOrderAction(input: {
 }
 
 export async function loadManualPaymentAction(orderId: string) {
-  await requireAdmin("/admin/orders");
+  await requireStaff("/admin/orders");
   if (!isUuid(orderId)) throw new Error("Invalid order.");
   const payment = await getManualPayment(orderId);
   const proof = payment?.submissions.find((submission) => submission.status === "UNDER_REVIEW");
@@ -111,7 +111,7 @@ export async function reviewManualPaymentAction(input: {
   reason: string;
   verified: boolean;
 }): Promise<AdminOrderActionResult> {
-  const admin = await requireAdmin("/admin/orders");
+  const admin = await requireStaff("/admin/orders");
   if (
     !isUuid(input.submissionId) ||
     typeof input.approve !== "boolean" ||
@@ -205,7 +205,7 @@ export async function transitionOrderStatusAction(input: {
   expectedStatus: OrderStatus;
   nextStatus: OrderStatus;
 }): Promise<AdminOrderActionResult> {
-  const admin = await requireAdmin("/admin/orders");
+  const admin = await requireStaff("/admin/orders");
 
   if (
     !isUuid(input.orderId) ||
@@ -253,7 +253,7 @@ export async function transitionOrderStatusAction(input: {
 }
 
 export async function recordCounterPaymentAction(orderId: string): Promise<AdminOrderActionResult> {
-  const admin = await requireAdmin("/admin/orders");
+  const admin = await requireStaff("/admin/orders");
   if (!isUuid(orderId)) return { status: "error", message: "That order is invalid." };
 
   try {

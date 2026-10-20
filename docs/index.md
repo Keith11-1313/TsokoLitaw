@@ -35,7 +35,11 @@ For private recovery exports, see [Manual Production backups](operations/manual-
 These guides replace the former root specifications, onboarding document, and completed phase checklists.
 Historical versions remain in Git; they are not instructions to replay old migrations or reset hosted data.
 Applied SQL plus later migrations define the schema, not a copied Markdown table definition.
-The current candidate is one consolidated baseline, verified in Dev on October 6 and activated in
+The previously activated schema is one consolidated baseline, verified in Dev on October 6 and activated in
 Production on October 7. Matching Production application deployment and authenticated acceptance
 remain gates. See the migration runbook for the current activation and labeled history.
 Update the affected guide when behavior changes; do not duplicate the whole system specification in README.
+
+The October 20 RBAC candidate adds three forward migrations for Staff, strict management/transaction
+separation, and a new policy snapshot. Hosted activation and authenticated Staff/Admin acceptance
+remain pending; see [Admin](features/admin.md) and the migration runbook. No reset is required.

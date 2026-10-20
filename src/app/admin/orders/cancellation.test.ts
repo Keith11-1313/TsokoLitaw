@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   revalidate: vi.fn(),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
-vi.mock("@/lib/auth", () => ({ requireAdmin: mocks.auth }));
+vi.mock("@/lib/auth", () => ({ requireStaff: mocks.auth }));
 vi.mock("@/lib/server-cancellation", () => ({ cancelAdminOrder: mocks.cancel }));
 vi.mock("@/lib/server-orders", () => ({
   recordAdminCounterPayment: vi.fn(),

@@ -18,7 +18,7 @@ export default async function OurCreationsPage() {
     <CustomerPageShell activePath="/our-creations">
       <SiteContainer className="py-8 sm:py-12 lg:py-16">
         <h1 className="sr-only">Build your TsokoLitaw box</h1>
-        <ProductConfigurator catalog={catalog} canOrder={profile?.role !== "admin"} />
+        <ProductConfigurator catalog={catalog} canOrder={!profile || profile.role === "customer"} />
       </SiteContainer>
     </CustomerPageShell>
   );

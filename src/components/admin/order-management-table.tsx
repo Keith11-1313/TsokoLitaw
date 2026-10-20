@@ -181,7 +181,13 @@ function CounterPaymentAction({ order }: { order: AdminOrderSummary }) {
   );
 }
 
-function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
+function MobileOrderCard({
+  order,
+  canTransact,
+}: {
+  order: AdminOrderSummary;
+  canTransact: boolean;
+}) {
   return (
     <article className="rounded-card border border-border bg-surface p-5">
       <div className="flex items-start justify-between gap-4">
@@ -201,7 +207,7 @@ function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
           paymentWindowOpen={order.paymentWindowOpen}
         />
       </div>
-      {order.paymentMethod === "manual_gcash" ? (
+      {canTransact && order.paymentMethod === "manual_gcash" ? (
         <ManualPaymentReview
           orderId={order.id}
           orderNumber={order.orderNumber}
@@ -210,7 +216,7 @@ function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
           className="mt-4"
         />
       ) : null}
-      {order.paymentMethod === "pay_at_counter" ? (
+      {canTransact && order.paymentMethod === "pay_at_counter" ? (
         <div className="mt-4">
           <CounterPaymentAction order={order} />
         </div>
@@ -237,8 +243,14 @@ function MobileOrderCard({ order }: { order: AdminOrderSummary }) {
         <OrderContents order={order} />
       </div>
       <div className="mt-5 grid gap-2">
-        <FulfillmentAction order={order} />
-        <OrderCancellation order={order} />
+        {canTransact ? (
+          <>
+            <FulfillmentAction order={order} />
+            <OrderCancellation order={order} />
+          </>
+        ) : (
+          <span className="text-xs text-muted-foreground">Read-only</span>
+        )}
       </div>
     </article>
   );
@@ -354,11 +366,13 @@ export function OrderManagementTable({
   initialQuery = "",
   initialStatus = "ALL",
   summary,
+  canTransact = false,
 }: {
   orders: AdminOrderSummary[];
   initialQuery?: string;
   initialStatus?: "ALL" | OrderStatus;
   summary?: ReactNode;
+  canTransact?: boolean;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState<"ALL" | OrderStatus>(initialStatus);
@@ -427,7 +441,7 @@ export function OrderManagementTable({
         {visibleOrders.length ? (
           <div className="space-y-4">
             {pageOrders.map((order) => (
-              <MobileOrderCard key={order.id} order={order} />
+              <MobileOrderCard key={order.id} order={order} canTransact={canTransact} />
             ))}
           </div>
         ) : (
@@ -492,7 +506,7 @@ export function OrderManagementTable({
                           method={order.paymentMethod}
                           paymentWindowOpen={order.paymentWindowOpen}
                         />
-                        {order.paymentMethod === "manual_gcash" ? (
+                        {canTransact && order.paymentMethod === "manual_gcash" ? (
                           <ManualPaymentReview
                             orderId={order.id}
                             orderNumber={order.orderNumber}
@@ -501,7 +515,7 @@ export function OrderManagementTable({
                             className="text-sm"
                           />
                         ) : null}
-                        <CounterPaymentAction order={order} />
+                        {canTransact ? <CounterPaymentAction order={order} /> : null}
                       </div>
                     </td>
                     <td className="px-4 py-5">
@@ -516,8 +530,14 @@ export function OrderManagementTable({
                     </td>
                     <td className="px-4 py-5 text-center">
                       <div className="grid gap-2">
-                        <FulfillmentAction order={order} />
-                        <OrderCancellation order={order} />
+                        {canTransact ? (
+                          <>
+                            <FulfillmentAction order={order} />
+                            <OrderCancellation order={order} />
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Read-only</span>
+                        )}
                       </div>
                     </td>
                   </tr>

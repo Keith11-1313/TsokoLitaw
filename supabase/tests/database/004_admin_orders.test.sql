@@ -39,7 +39,7 @@ insert into auth.users (
     now(), now()
   );
 
-update public.profiles set role = 'admin'
+update public.profiles set role = 'staff'
 where id = 'c1000000-0000-4000-8000-000000000001';
 
 insert into public.pickup_locations (id, name)
@@ -154,7 +154,7 @@ select throws_ok(
     'c5000000-0000-4000-8000-000000000001',
     'COMPLETED', 'PREPARING'
   )$$,
-  'P0001', 'Active administrator access is required',
+  'P0001', 'Active staff access is required',
   'customers cannot be supplied as fulfillment administrators'
 );
 select is(

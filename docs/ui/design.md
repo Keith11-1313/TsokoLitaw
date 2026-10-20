@@ -4,6 +4,12 @@ Use the implemented shared components/tokens and latest approved behavior. `refe
 rough historical drafts; do not embed them as pages or restore their obsolete navigation/data.
 Inspect the relevant page and assets before editing UI.
 
+The business shell is role-aware: Staff sees Dashboard and Orders, while Admin sees management
+navigation including Accounts. Admin Orders is explicitly read-only; transaction controls are
+Staff-only and SQL independently enforces that distinction. Role editors reuse CustomSelect,
+require explicit confirmation, and show pending/result states. Staff dashboard uses existing cards
+and tokens with read-only upcoming pickup/stock context, not management forms.
+
 ## Sources and assets
 
 - Tokens: `src/app/globals.css`. Warm cream background/surfaces, chocolate text/actions, soft borders.

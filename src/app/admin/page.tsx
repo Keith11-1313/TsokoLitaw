@@ -26,13 +26,13 @@ import { DashboardRangeFilter } from "@/components/admin/dashboard-range-filter"
 import { QuickOperations } from "@/components/admin/quick-operations";
 import { RecentOrdersTable } from "@/components/admin/recent-orders-table";
 import { AdminContent } from "@/components/layout/admin-content";
-import { requireAdmin } from "@/lib/auth";
+import { requireBusiness } from "@/lib/auth";
+import { StaffDashboard } from "@/components/admin/staff-dashboard";
 import { formatPhp } from "@/lib/commerce";
 import { getAdminDashboardSummary, resolveDashboardDateRange } from "@/lib/server-dashboard";
-import { expireDueDirectPayments } from "@/lib/server-payment";
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard | TsokoLitaw",
+  title: "Business Dashboard | TsokoLitaw",
   description: "TsokoLitaw order and operations dashboard.",
 };
 
@@ -119,14 +119,14 @@ export default async function AdminDashboardPage({
     to?: string | string[];
   }>;
 }) {
-  const admin = await requireAdmin("/admin");
+  const admin = await requireBusiness("/admin");
+  if (admin.role === "staff") return <StaffDashboard />;
   const params = await searchParams;
   const rangeValue = typeof params.range === "string" ? params.range : undefined;
   const fromValue = typeof params.from === "string" ? params.from : undefined;
   const toValue = typeof params.to === "string" ? params.to : undefined;
   const range = resolveDashboardDateRange(rangeValue, fromValue, toValue);
-  // Expire due direct payments before loading the dashboard's read-only summaries.
-  await expireDueDirectPayments();
+  // Management reporting is read-only; expiration belongs to automated processors.
   const dashboard = await getAdminDashboardSummary(admin.id, range);
   const dailyRevenuePoints: DailyRevenuePoint[] = dashboard.dailySales.map((point) => {
     const date = new Date(`${point.date}T12:00:00+08:00`);

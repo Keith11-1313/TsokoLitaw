@@ -25,7 +25,7 @@ insert into auth.users (
   ('da000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'loyalty-admin@example.test', '{"provider":"google","providers":["google"]}', '{"name":"Loyalty Admin"}', now(), now()),
   ('da000000-0000-4000-8000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'loyalty-customer@example.test', '{"provider":"google","providers":["google"]}', '{"name":"Loyalty Customer"}', now(), now());
 
-update public.profiles set role = 'admin' where id = 'da000000-0000-4000-8000-000000000001';
+update public.profiles set role = 'staff' where id = 'da000000-0000-4000-8000-000000000001';
 insert into public.pickup_locations (id, name) values ('da100000-0000-4000-8000-000000000001', 'Loyalty test location');
 insert into public.pickup_dates (id, pickup_date, availability_mode) values ('da200000-0000-4000-8000-000000000001', '2099-06-01', 'MADE_TO_ORDER');
 insert into public.pickup_windows (id, pickup_date_id, start_time, end_time) values ('da300000-0000-4000-8000-000000000001', 'da200000-0000-4000-8000-000000000001', '10:00', '11:00');

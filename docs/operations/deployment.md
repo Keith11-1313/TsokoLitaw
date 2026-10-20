@@ -6,6 +6,17 @@ Agents do not perform those Git operations. Both branches are connected to **sep
 
 ## Release sequence
 
+### October 20 RBAC candidate
+
+Apply the three October 20 forward migrations in order, not a reset. Deploy matching code in a
+coordinated window: SQL removes Admin transaction permissions, so older Admin transaction controls
+will stop working. Existing roles are not automatically converted. After explicit Dev activation
+approval, an active Admin must assign a separate eligible account to Staff through Accounts.
+Verify Staff fulfillment, payment review, counter collection and cancellation, plus negative Admin
+transaction checks and negative Staff management checks. Validate the new policy snapshot and both
+dashboards before considering a separately approved Production promotion. Local checks do not prove
+hosted activation or authenticated browser acceptance.
+
 Website-only v1.0 replaces the earlier APK requirement as of October 6, 2026. Do not mark v1.0
 accepted until the release checks below pass. This includes
 the existing pre-v1 schema-consolidation policy, security fixes, matching Production contracts,

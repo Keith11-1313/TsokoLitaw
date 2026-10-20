@@ -1,5 +1,25 @@
 # Database changes and promotion
 
+## October 20 Staff/Admin separation — candidate, hosted activation pending
+
+Three additive migrations introduce `staff`, move transactional writers to Staff-only authorization,
+add audited Admin role assignment and a bounded Staff pickup projection, then archive policy
+`2026-10-20-staff-rbac`. The enum addition commits before the role is used. Applied baseline history
+is unchanged; no data reset is required. Admin remains management-only, with read-only Orders and
+no private receipt access. Existing Staff/Admin names in older RPC signatures are retained, but
+authorization follows the new role. Existing atomic payment/stock/reward logic remains intact.
+
+The updated policy snapshot is a new version, not an edit to accepted policy history; the owner-requested
+October 1 display date is retained. The checker now verifies current text against its migration and
+clean seed rather than requiring the baseline to contain every later policy. Local preparation does
+not apply SQL to hosted projects. Do not run the clean-data suite against populated Dev/Production.
+
+Coordinate the three migrations with matching code: applying Staff-only writers first makes the
+old Admin transaction UI unable to operate; deploying new code first cannot assign Staff or read the
+new projection/policy. Arrange the Dev activation explicitly, then have an approved Admin assign a
+separate active Staff identity before transaction acceptance. No automatic promotions, hosted resets,
+Production writes or provider charges are authorized by preparing these files.
+
 ## October 7 final website-v1 baseline — Production rebaseline activated
 
 The owner explicitly approved resetting Production `zkmlzktvjkjrbznvrsxb` without a backup and

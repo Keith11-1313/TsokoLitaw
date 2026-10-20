@@ -22,6 +22,12 @@ report that blocker honestly rather than claiming a pass. Tests do not prove dep
 
 ## Match tests to risk
 
+October 20 RBAC local verification: 264 application tests and 605 database assertions passed;
+clean local reset, database lint, generated schema refresh, application lint/typecheck, edited-file
+formatting, policy snapshot sync and production build passed. Hosted activation, authenticated
+Staff/Admin browser operations and responsive visual acceptance remain pending. These checks did
+not modify hosted Dev or Production.
+
 | Change                   | Minimum additional checks                                                                                                    |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | Documentation            | Relative links/anchors, source paths/RPC names, removed-document references, command safety                                  |
@@ -34,6 +40,14 @@ report that blocker honestly rather than claiming a pass. Tests do not prove dep
 | SQL                      | Disposable local reset, lint and full pgTAP suite, regenerate types, then Dev apply/verification                             |
 
 ## Database test boundary
+
+For Staff/Admin separation, run local `019_staff_rbac.test.sql` plus the full SQL suite: Admin
+transaction denial, Staff management denial, receipt RLS, customer restrictions, inactive identities,
+audited role changes, stale/self-role changes and active-order guards. Existing fulfillment,
+counter-payment, manual-review and cancellation fixtures now use Staff. Application tests cover
+role guards/redirects, role-assignment authorization and management Orders with no transaction UI.
+Authenticated browser acceptance must use separate Customer, Staff and Admin identities; verify
+direct URLs/actions, receipt access, dashboard contents, role changes on refresh and phone layouts.
 
 Start Docker and `npm run supabase:start`. `npm run db:reset` deletes/recreates **local** data;
 run only when it is disposable. Then `npm run db:lint` and `npm run db:test`.

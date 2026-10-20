@@ -3,13 +3,14 @@ import "server-only";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { measureServerOperation } from "@/lib/server-observability";
 import { getGoogleAvatarUrl } from "@/lib/auth";
+import type { AccountRole } from "@/lib/roles";
 
 export interface AdminCustomerSummary {
   id: string;
   fullName: string;
   email: string;
   avatarUrl: string | null;
-  accountRole: "customer" | "admin";
+  accountRole: AccountRole;
   isActive: boolean;
   joinedAt: string;
   completedOrders: number;
@@ -25,7 +26,7 @@ interface AdminCustomerSummaryRow {
   user_id: string;
   full_name: string;
   email: string;
-  account_role: "customer" | "admin";
+  account_role: AccountRole;
   is_active: boolean;
   joined_at: string;
   completed_orders: number | string;

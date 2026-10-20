@@ -23,7 +23,7 @@ insert into auth.users(id,instance_id,aud,role,email,raw_app_meta_data,raw_user_
 values
   ('e1000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','counter-admin@example.test','{"provider":"google","providers":["google"]}','{"name":"Counter Admin"}',now(),now()),
   ('e1000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','counter-customer@example.test','{"provider":"google","providers":["google"]}','{"name":"Counter Customer"}',now(),now());
-update public.profiles set role='admin' where id='e1000000-0000-4000-8000-000000000001';
+update public.profiles set role='staff' where id='e1000000-0000-4000-8000-000000000001';
 insert into public.pickup_locations(id,name) values ('e2000000-0000-4000-8000-000000000001','Counter test');
 insert into public.pickup_dates(id,pickup_date) values ('e3000000-0000-4000-8000-000000000001','2099-05-01');
 insert into public.pickup_windows(id,pickup_date_id,start_time,end_time)
@@ -46,7 +46,7 @@ select ok(has_function_privilege('service_role','public.record_counter_payment(u
 select is(public.transition_order_status('e1000000-0000-4000-8000-000000000001','e5000000-0000-4000-8000-000000000001','CONFIRMED','PREPARING'),'PREPARING'::public.order_status,'unpaid counter order can enter preparation');
 select is(public.transition_order_status('e1000000-0000-4000-8000-000000000001','e5000000-0000-4000-8000-000000000001','PREPARING','READY_FOR_PICKUP'),'READY_FOR_PICKUP'::public.order_status,'unpaid counter order can become ready');
 select throws_ok($$select public.transition_order_status('e1000000-0000-4000-8000-000000000001','e5000000-0000-4000-8000-000000000001','READY_FOR_PICKUP','COMPLETED')$$,'P0001','Only paid orders can enter fulfillment','unpaid counter order cannot complete');
-select throws_ok($$select public.record_counter_payment('e1000000-0000-4000-8000-000000000002','e5000000-0000-4000-8000-000000000001')$$,'P0001','Active administrator access is required','customer identity cannot confirm payment');
+select throws_ok($$select public.record_counter_payment('e1000000-0000-4000-8000-000000000002','e5000000-0000-4000-8000-000000000001')$$,'P0001','Active staff access is required','customer identity cannot confirm payment');
 select is(public.record_counter_payment('e1000000-0000-4000-8000-000000000001','e5000000-0000-4000-8000-000000000001'),true,'admin records exact counter payment');
 select is((select payment_status::text from public.orders where id='e5000000-0000-4000-8000-000000000001'),'PAID','order payment becomes paid');
 select is((select status::text from public.payments where order_id='e5000000-0000-4000-8000-000000000001'),'PAID','payment row becomes paid');

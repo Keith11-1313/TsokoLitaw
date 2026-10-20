@@ -29,7 +29,8 @@ discovery.
 The Privacy Policy, Terms, and FAQ display “Last updated: October 1, 2026” at the owner's request.
 They explain actual account, payment, pickup, review, retention, and dispute operations in plain
 language without changing the underlying product state machine. Checkout records policy version
-`2026-10-05-admin-customer`, archiving displayed Terms and Privacy from `src/content/policies.json`.
+`2026-10-20-staff-rbac` in the new candidate, archiving displayed Terms and Privacy from `src/content/policies.json`.
+The previous `2026-10-05-admin-customer` version remains archived with existing orders.
 The October 5 policy/role changes remain in the latest baseline, reactivated through the approved
 October 6 Dev reset with Admin cancellation and stock/payment-lock repairs. The temporary forward
 files are removed. Production received the matching candidate baseline through the separately
@@ -40,10 +41,18 @@ rewriting the version previously accepted with an order.
 
 ## Identity and contact
 
+October 20 supersedes the earlier equal-access Admin transaction model: Guest browses; Customer
+shops; Staff alone handles fulfillment, counter payment, Manual GCash review and unpaid cancellation;
+Admin manages configuration/content, reports, customer records and roles. Each business role has
+its own `/admin` dashboard. Admin Orders is read-only; private payment receipts are Staff/owner only.
+Role assignment is audited and cannot change the actor's own role. Staff/Admin cannot shop or earn
+customer loyalty. The code and additive migrations are a candidate; no hosted activation is implied.
+Current policy version for this candidate is `2026-10-20-staff-rbac`; prior accepted versions remain.
+
 - Google OAuth through Supabase; no guest checkout. Same sign-in flow for new/returning users.
 - Customer contact is email-only; no phone number is collected or forwarded to providers. Logout requires confirmation and returns Home.
-- Up to ten approved Google identities share one equal-permission Admin role, checked server-side.
-  Admin accounts operate the business only: no personal checkout, customer payments/reviews,
+- Up to ten approved Google identities share one management-only Admin role, checked server-side.
+  Admin and Staff accounts operate the business only: no personal checkout, customer payments/reviews,
   customer Profile or account deletion, or loyalty earning/redemption. Public browsing remains
   available. Only customer-role profiles appear in the Customers directory and customer KPIs.
 - Default environment-specific Supabase Auth domains are intentional; no paid custom Auth domain.
@@ -103,7 +112,7 @@ No separate Inventory “available online” switch or window-box capacity is re
 Required `PAYMENT_MODE` is server-selected: `automatic` offers PayMongo only, while `manual` lets
 customers choose Manual GCash or Pay at the Counter. The selected method and manual QR are pinned
 per order; environment changes affect new orders only. Browser success, receipt images and OCR are
-not payment proof. Counter orders remain tracked website orders and require audited Admin payment
+not payment proof. Counter orders remain tracked website orders and require audited Staff payment
 confirmation before completion. See [payment workflows](../features/payments.md).
 For PayMongo:
 Signed verified events and exact SQL reference/amount matching determine paid state. Default payment

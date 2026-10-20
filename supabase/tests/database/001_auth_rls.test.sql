@@ -369,7 +369,7 @@ select is(
 select throws_ok(
   $$select public.request_account_deletion()$$,
   'P0001',
-  'Admin accounts require controlled removal',
+  'Business accounts require controlled removal',
   'admin cannot self-schedule destructive account deletion'
 );
 

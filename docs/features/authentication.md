@@ -4,8 +4,9 @@ Entry: `/login`, `src/app/auth/actions.ts`, and `src/app/auth/callback/route.ts`
 Google → environment-specific Supabase Auth → `/auth/callback` → cookie-backed app session.
 `src/proxy.ts` refreshes cookies; `src/lib/auth.ts` verifies claims and loads an active profile.
 `requireCustomer` requires the active customer role on checkout/account/order routes; Admins
-are redirected to `/admin`. `requireAdmin` requires the active Admin role.
-Signed-in non-Admins receive Not Found at Admin URLs. Hiding a link is not authorization.
+and Staff are redirected to `/admin`. `requireBusiness` admits active Staff/Admin to the shared
+workspace; `requireAdmin` permits management only and `requireStaff` permits transactions only.
+Wrong-role pages/actions are denied, regardless of whether their links are visible.
 
 `getGoogleAvatarUrl` validates existing Auth metadata (`avatar_url` or `picture`) against HTTPS
 `lh3.googleusercontent.com`. The signed-in profile uses it, and Admin Customers uses it after
@@ -21,7 +22,13 @@ to customers. Role/active fields are not customer-editable. Customer SQL writers
 reject Admin actors for checkout, provider payment preparation, receipts, cancellations and reviews.
 Login and callback redirects are role-aware. Admins can browse public pages, but customer cart,
 Profile, My Orders and purchase controls are unavailable; business management remains available.
-Admin completion of customer orders still awards the owning customer's loyalty, never the Admin's.
+Staff completion of customer orders awards the owning customer's loyalty, never the operator's.
+Staff/Admin have no personal shopping/profile/deletion flow. New identities are Customers;
+Admin assigns roles to other eligible accounts through the audited `/admin/accounts` action.
+Self-role changes, stale roles, active personal orders and pending deletion block assignment.
+The new `staff` enum, Staff-only transaction guards and current policy need the three October 20
+forward migrations and matching code before hosted use. Existing sessions read the current profile
+role server-side; transaction SQL holds the Staff actor row stable against concurrent demotion.
 The service-only bootstrap (`scripts/bootstrap-admin.mjs`, `promote_admin_by_email`) requires an
 approved existing Google identity and enforces the ten-Admin limit. See [setup](../getting-started/local-setup.md).
 

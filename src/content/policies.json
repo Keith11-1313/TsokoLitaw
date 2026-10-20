@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-05-admin-customer",
+  "version": "2026-10-20-staff-rbac",
   "lastUpdated": "October 1, 2026",
-  "effectiveAt": "2026-10-05 00:00:00+08",
+  "effectiveAt": "2026-10-20 00:00:00+08",
   "terms": [
     {
       "heading": "Scope of the service",
@@ -13,7 +13,7 @@
     {
       "heading": "Accounts and customer responsibility",
       "paragraphs": [
-        "Checkout requires a TsokoLitaw customer account authenticated through Google. Admin accounts are for business operations only and cannot place personal orders, submit customer reviews, or earn or redeem customer loyalty rewards. Customers must use their own account, keep it reasonably secure, provide accurate information, and promptly report suspected unauthorized activity. The external Google account remains governed by Google's terms and is not deleted by closing TsokoLitaw access.",
+        "Checkout requires a TsokoLitaw customer account authenticated through Google. Staff accounts handle customer transactions; Admin accounts manage the business, content, and role assignments. Neither Staff nor Admin accounts can place personal orders, submit customer reviews, or earn or redeem customer loyalty rewards. Customers must use their own account, keep it reasonably secure, provide accurate information, and promptly report suspected unauthorized activity. The external Google account remains governed by Google's terms and is not deleted by closing TsokoLitaw access.",
         "The person placing an order confirms that they have legal capacity to do so or have appropriate parent or guardian authorization. Customers are responsible for reviewing the product, quantity, price, allergen notice, payment method, pickup schedule, and policy version displayed before confirming an order."
       ]
     },
@@ -36,7 +36,7 @@
       "heading": "Payments and verification",
       "paragraphs": [
         "The methods available at checkout depend on the configured operating mode. An order may use PayMongo QR Ph, Manual GCash, or tracked Pay at the Counter. The method selected for the order cannot be replaced merely by sending money through a different channel.",
-        "PayMongo payment is recognized only after verified provider confirmation matching the stored order, reference, environment, and exact amount. Manual GCash requires the exact order total, a submitted receipt, and Admin verification against the actual incoming transaction. Pay-at-counter orders must still be placed through the website and must be recorded as paid by an Admin before release or completion. Sandbox transactions have no monetary value.",
+        "PayMongo payment is recognized only after verified provider confirmation matching the stored order, reference, environment, and exact amount. Manual GCash requires the exact order total, a submitted receipt, and Staff verification against the actual incoming transaction. Pay-at-counter orders must still be placed through the website and must be recorded as paid by Staff before release or completion. Admin accounts cannot perform those transaction actions. Sandbox transactions have no monetary value.",
         "A redirect, screenshot, receipt image, email, or browser message by itself is not proof of payment. Do not pay twice. If a payment is late, duplicated, sent to the wrong recipient, or does not match the order, contact tsokolitaw@gmail.com with the order number and relevant transaction reference."
       ]
     },
@@ -147,7 +147,7 @@
       "heading": "Providers and disclosures",
       "paragraphs": [
         "TsokoLitaw uses Google for sign-in, Supabase for authentication, database and file storage, Vercel for application hosting, PayMongo for supported online payment processing, and Resend for transactional email delivery. These providers receive the information needed to perform their roles and may process it in locations outside the Philippines under their own terms, safeguards, and privacy commitments.",
-        "Authorized TsokoLitaw administrators may access information only for fulfillment, payment review, customer support, moderation, security, and operational administration. Information may also be disclosed when reasonably necessary to comply with law, respond to a lawful request, investigate fraud or security incidents, enforce these policies, or protect customers and legal rights."
+        "Authorized TsokoLitaw Staff may access operational orders and private payment receipts for payment verification, preparation, and pickup. Admins may access management reports, customer records, audit history, and content for business administration, support, moderation, and security, but cannot review private payment receipts or process customer transactions. Role assignments are restricted and audited. Information may also be disclosed when reasonably necessary to comply with law, respond to a lawful request, investigate fraud or security incidents, enforce these policies, or protect customers and legal rights."
       ]
     },
     {

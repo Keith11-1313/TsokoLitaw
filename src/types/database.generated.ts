@@ -1293,6 +1293,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_account_role: {
+        Args: {
+          expected_role: Database["public"]["Enums"]["profile_role"]
+          next_role: Database["public"]["Enums"]["profile_role"]
+          target_admin_id: string
+          target_user_id: string
+        }
+        Returns: boolean
+      }
       attach_paymongo_checkout: {
         Args: {
           checkout_id: string
@@ -1446,9 +1455,21 @@ export type Database = {
           operating_start: string
         }[]
       }
+      get_staff_pickup_overview: {
+        Args: { actor_id: string }
+        Returns: {
+          availability_mode: Database["public"]["Enums"]["pickup_availability_mode"]
+          pickup_date: string
+          prepared: number
+          reserved: number
+          sold: number
+          windows: Json
+        }[]
+      }
       is_active_customer: { Args: never; Returns: boolean }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      is_staff: { Args: never; Returns: boolean }
       list_due_paymongo_checkouts: {
         Args: { batch_limit?: number }
         Returns: {
@@ -1550,6 +1571,7 @@ export type Database = {
         Returns: boolean
       }
       request_account_deletion: { Args: never; Returns: string }
+      require_staff_actor: { Args: { actor_id: string }; Returns: undefined }
       review_manual_payment: {
         Args: {
           approve: boolean
@@ -1715,7 +1737,7 @@ export type Database = {
         | "EXPIRED"
       payment_status: "PENDING" | "PAID" | "FAILED" | "UNDER_REVIEW"
       pickup_availability_mode: "MADE_TO_ORDER" | "READY_STOCK" | "HYBRID"
-      profile_role: "customer" | "admin"
+      profile_role: "customer" | "admin" | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1857,7 +1879,7 @@ export const Constants = {
       ],
       payment_status: ["PENDING", "PAID", "FAILED", "UNDER_REVIEW"],
       pickup_availability_mode: ["MADE_TO_ORDER", "READY_STOCK", "HYBRID"],
-      profile_role: ["customer", "admin"],
+      profile_role: ["customer", "admin", "staff"],
     },
   },
 } as const

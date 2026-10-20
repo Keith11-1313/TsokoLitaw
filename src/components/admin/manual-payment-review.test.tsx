@@ -90,6 +90,12 @@ describe("ManualPaymentReview", () => {
     expect(await screen.findByRole("dialog")).toBeTruthy();
     expect(await screen.findByText("No receipt has been submitted for this order.")).toBeTruthy();
 
+    await waitFor(() =>
+      expect(
+        (screen.getByRole("button", { name: "Close payment review" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(false),
+    );
     fireEvent.click(screen.getByRole("button", { name: "Close payment review" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 3000 });
   });

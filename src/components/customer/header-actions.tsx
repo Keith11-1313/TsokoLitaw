@@ -170,7 +170,7 @@ function AccountMenu({
           className="flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-bold text-brand hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
         >
           <LayoutDashboard aria-hidden="true" size={17} />
-          Admin dashboard
+          Business dashboard
         </Link>
       ) : null}
       {!isAdmin ? (

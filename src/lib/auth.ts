@@ -3,12 +3,13 @@ import "server-only";
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { AccountRole } from "@/lib/roles";
 
 export interface AuthProfile {
   id: string;
   fullName: string;
   email: string;
-  role: "customer" | "admin";
+  role: AccountRole;
   deletionScheduledFor: string | null;
   avatarUrl: string | null;
 }
@@ -70,5 +71,18 @@ export async function requireAdmin(nextPath = "/admin") {
   const profile = await getAuthProfile();
   if (!profile) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   if (profile.role !== "admin") notFound();
+  return profile;
+}
+
+export async function requireBusiness(nextPath = "/admin") {
+  const profile = await getAuthProfile();
+  if (!profile) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  if (profile.role !== "admin" && profile.role !== "staff") notFound();
+  return profile;
+}
+
+export async function requireStaff(nextPath = "/admin/orders") {
+  const profile = await requireBusiness(nextPath);
+  if (profile.role !== "staff") notFound();
   return profile;
 }

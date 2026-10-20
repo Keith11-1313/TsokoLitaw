@@ -12,13 +12,13 @@ orders. Zero-total loyalty still settles without an external payment.
 
 This remains a website order, never an untracked walk-in sale. The atomic checkout reserves the
 chosen inventory/reward, inserts a `pay_at_counter` payment row for the exact server-priced total,
-and starts the order at `CONFIRMED` with payment `PENDING` and no countdown expiry. Admin may move
+and starts the order at `CONFIRMED` with payment `PENDING` and no countdown expiry. Staff may move
 the order through `PREPARING` and `READY_FOR_PICKUP` while unpaid, but SQL blocks `COMPLETED` until
-an active Admin uses the audited `record_counter_payment` operation. Staff must receive the exact
+active Staff uses the audited `record_counter_payment` operation. Staff must receive the exact
 amount before confirming it. The action is idempotent and does not accept a browser-supplied amount.
 
 Pending counter payments display **Pay at pickup**, even though their online payment window is absent;
-they must not display **Time ended**. Paid/failed labels still take precedence. Admin can cancel an
+they must not display **Time ended**. Paid/failed labels still take precedence. Staff can cancel an
 eligible unpaid counter order with a required audited reason, including after preparation or a no-show.
 This does not allow cancellation of paid orders or change counter-payment collection/completion rules.
 See [cancellation](orders.md#cancellation).
@@ -52,8 +52,8 @@ Manual correction remains required because wallet layouts and OCR output can cha
 
 Server validation accepts only decoded JPG/PNG/WebP up to 3 MiB. Originals are in private
 `payment-receipts` Storage; `manual_payment_submissions` retains attempts and decisions with
-owner/Admin read RLS. Receipt URLs authenticate each request; no public Storage URL is returned.
-The customer payment page and Admin review dialog show the authorized receipt inline, with an
+owner/Staff read RLS. Receipt URLs authenticate each request; no public Storage URL is returned.
+The customer payment page and Staff review dialog show the authorized receipt inline, with an
 optional full-size link. Under-review status is already authoritative on the page, so the customer
 does not receive a redundant manual status-check control.
 Customer-entered receipt details use `reported_reference`, `reported_amount`, `reported_paid_at`,
@@ -66,25 +66,25 @@ reconcile orphan uploads against submissions before any deliberate cleanup.
 `submit_manual_payment` locks the owned pending order and payment, checks the deadline, records
 the proof, and sets payment `UNDER_REVIEW`. It does not confirm fulfillment or send confirmation.
 Under-review orders cannot expire or be cancelled online, and keep inventory/reward reservations.
-Admins must check this queue promptly, especially before pickup; there is no automatic approval or
-timeout that discards a possible payment. Admin Orders includes up to 100 review orders alongside
+Staff must check this queue promptly, especially before pickup; there is no automatic approval or
+timeout that discards a possible payment. Staff Orders includes up to 100 review orders alongside
 the 100 most recent orders, so older reviews remain visible within that bounded queue.
 
-Admin opens the existing order details and compares the receipt against the **actual incoming
+Staff opens the existing order details and compares the receipt against the **actual incoming
 GCash transaction**, including recipient, amount, reference and time. `review_manual_payment`
-rechecks active Admin/state under a lock. Approval requires the exact total and atomically sets
+rechecks active Staff/state under a lock. Approval requires the exact total and atomically sets
 payment `PAID` / order `CONFIRMED`, records an audit entry and queues the existing confirmation
-event. Known reused references are detected before the review mutation, and Admin sees the order
+event. Known reused references are detected before the review mutation, and Staff sees the order
 that already used the reference before approval. The partial unique index remains the final
 concurrency safeguard so one normalized reference cannot pay multiple orders.
-Screenshots/OCR/customer corrections are untrusted; the Admin checkbox is an acknowledgment,
+Screenshots/OCR/customer corrections are untrusted; the Staff checkbox is an acknowledgment,
 not independent verification by an API. The decision controls appear only for an under-review
 submission. Choosing rejection progressively reveals the required reason field; approved and
 rejected submissions use read-only outcome panels. Refresh and decision results use accessible,
 auto-dismissing toast feedback while actionable errors remain visible in the dialog.
 
 Reject requires a reason, retains the old receipt and opens a 15-minute correction window.
-Admin rejection uses editable text with optional suggestions; the final written reason is stored
+Staff rejection uses editable text with optional suggestions; the final written reason is stored
 verbatim and shown on the customer's payment page.
 An uncorrected pending order can then expire/release normally. Do not reject an unresolved real
 transfer merely to clear the queue; resolve discrepancies with the customer first. Rejection and
@@ -97,7 +97,8 @@ and application behavior on Dev before deliberately coordinating the Production 
 
 Local acceptance (September 11, 2026): production-build browser checks at 390, 768 and 1440 px
 covered QR display, on-device OCR of a synthetic receipt, submission, owner/anonymous receipt
-access, Admin approval and confirmed customer status. Checkout recalculated tampered browser
+access, then-Admin approval and confirmed customer status. Those historical checks predate Staff RBAC;
+authenticated Staff review acceptance remains required for the October 20 candidate. Checkout recalculated tampered browser
 prices, retries retained the original method, and checkout removal preserved newer cart items.
 The cart's hydration snapshot also stays empty until each streamed consumer hydrates.
 Real wallet receipt extraction and actual received-funds reconciliation still require Dev acceptance;
@@ -137,7 +138,7 @@ Query parameters and a PayMongo browser return are never proof of payment.
 `/api/cron/payment-expirations` → `expireDuePayMongoCheckouts` → `list_due_paymongo_checkouts`
 → PayMongo expiry → `expire_paymongo_order`. Failed provider expiry leaves the reservation pending
 for retry; SQL rechecks races with payment. `expire_pending_orders` directly expires only eligible
-overdue orders without an attached provider checkout. Customer/Admin order reads also invoke that
+overdue orders without an attached provider checkout. Customer order reads also invoke that
 same idempotent direct-payment processor so a Manual GCash deadline is reflected immediately if
 the scheduled job is delayed. Provider-bound PayMongo orders still require the provider-safe Cron
 path and are never released by a page read. See [orders](orders.md) for state labels.

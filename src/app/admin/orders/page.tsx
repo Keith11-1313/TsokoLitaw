@@ -3,7 +3,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { OrderManagementTable } from "@/components/admin/order-management-table";
 import { AdminContent } from "@/components/layout/admin-content";
-import { requireAdmin } from "@/lib/auth";
+import { requireBusiness } from "@/lib/auth";
 import { getAdminOrders } from "@/lib/server-orders";
 import type { OrderStatus } from "@/components/ui/status-badge";
 
@@ -28,14 +28,14 @@ export default async function AdminOrdersPage({
 }: {
   searchParams: Promise<{ query?: string | string[]; status?: string | string[] }>;
 }) {
-  await requireAdmin("/admin/orders");
+  const actor = await requireBusiness("/admin/orders");
   const params = await searchParams;
   const initialQuery = typeof params.query === "string" ? params.query.slice(0, 80) : "";
   const requestedStatus = typeof params.status === "string" ? params.status : "";
   const initialStatus = orderStatuses.has(requestedStatus as OrderStatus)
     ? (requestedStatus as OrderStatus)
     : "ALL";
-  const orders = await getAdminOrders();
+  const orders = await getAdminOrders({ expirePayments: false });
   const orderStats = [
     { label: "Loaded Orders", value: String(orders.length) },
     {
@@ -64,6 +64,7 @@ export default async function AdminOrdersPage({
       <AdminContent>
         <OrderManagementTable
           orders={orders}
+          canTransact={actor.role === "staff"}
           initialQuery={initialQuery}
           initialStatus={initialStatus}
           summary={
