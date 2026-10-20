@@ -46,6 +46,8 @@ handling and pending-close protection. No browser `confirm` is used. Admin can a
 Customer/Staff/Admin to another active account without pending deletion or active personal orders.
 The SQL writer checks expected role, serializes role assignment, prevents self-role changes and
 last-active-Admin demotion, enforces the ten-Admin limit and audits `account.role_changed`.
+Role-change records are stored in `public.admin_audit_logs`; there is currently no in-app audit-log
+viewer. Recording an audit event must not be confused with providing a navigable history page.
 Existing identities are never automatically promoted. Sign in an approved identity as a Customer,
 then assign Staff before expecting someone to process orders. At least one Staff operator is needed.
 Legacy transaction RPC/action names containing `admin` are retained to avoid changing argument

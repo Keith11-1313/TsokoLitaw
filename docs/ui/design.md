@@ -9,8 +9,10 @@ navigation including Accounts. Admin Orders is explicitly read-only; transaction
 Staff-only and SQL independently enforces that distinction. Role editors reuse CustomSelect,
 require a themed confirmation dialog, and show pending/result states. The dialog uses
 `useEditorDialog` for focus restoration, keyboard trapping, scroll locking and pending-close guards;
-there is no native browser confirm. Account roles uses the shared responsive table, Google avatars
-and a header search matching Customers. Its sidebar icon is ShieldUser, distinct from Customers.
+there is no native browser confirm. The role confirmation heading and close button share one compact
+row, without a decorative shield or a separate empty icon header. Account roles uses the shared
+responsive table, Google avatars and a header search matching Customers. Its sidebar icon is
+ShieldUser, distinct from Customers.
 Staff dashboard stat cards link to matching fulfillment/payment queues; no redundant header Orders
 button is shown. The dashboard includes the shared five most recent orders table. Admin Orders
 omits the entire Next action column and mobile action block, not repeated Read-only labels.

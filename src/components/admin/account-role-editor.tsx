@@ -2,7 +2,7 @@
 
 import { useId, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { assignAccountRole } from "@/app/admin/accounts/actions";
 import type { AccountRole } from "@/lib/roles";
@@ -115,22 +115,19 @@ function RoleConfirmation({
         className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-card border border-border bg-surface p-6 shadow-2xl sm:p-8"
       >
         <div className="flex items-start justify-between gap-4">
-          <span className="flex size-11 items-center justify-center rounded-full bg-surface-muted text-brand">
-            <ShieldCheck aria-hidden="true" size={22} />
-          </span>
+          <h2 id={titleId} className="pt-1 font-display text-2xl">
+            Change account role?
+          </h2>
           <button
             type="button"
             disabled={pending}
             aria-label="Close role confirmation"
             onClick={requestClose}
-            className="flex size-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            className="-mr-2 flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           >
             <X aria-hidden="true" size={18} />
           </button>
         </div>
-        <h2 id={titleId} className="mt-4 font-display text-2xl">
-          Change account role?
-        </h2>
         <p id={descriptionId} className="mt-2 break-words text-sm leading-6 text-muted-foreground">
           Change access for <strong className="text-foreground">{name}</strong>. This takes effect
           on their next request and is recorded in the audit log.

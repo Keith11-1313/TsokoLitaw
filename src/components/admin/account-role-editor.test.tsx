@@ -25,6 +25,12 @@ async function openConfirmation() {
 it("requires a custom confirmation and restores focus on Escape without assigning", async () => {
   const trigger = await openConfirmation();
   expect(screen.getByRole("dialog", { name: "Change account role?" })).toBeTruthy();
+  expect(screen.getByRole("dialog").querySelector(".lucide-shield-check")).toBeNull();
+  expect(
+    screen
+      .getByRole("heading", { name: "Change account role?" })
+      .parentElement?.contains(screen.getByRole("button", { name: "Close role confirmation" })),
+  ).toBe(true);
   expect(document.body.style.overflow).toBe("hidden");
   expect(mocks.assign).not.toHaveBeenCalled();
   fireEvent.keyDown(document, { key: "Escape" });
