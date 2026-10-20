@@ -12,6 +12,7 @@ import {
   PanelLeftOpen,
   ShoppingBag,
   ShieldUser,
+  ScrollText,
   Users,
   X,
   type LucideIcon,
@@ -36,6 +37,7 @@ const adminNavigation: AdminNavigationItem[] = [
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/journal", label: "Journal", icon: Newspaper },
   { href: "/admin/accounts", label: "Account roles", icon: ShieldUser },
+  { href: "/admin/audit", label: "Audit log", icon: ScrollText },
 ];
 
 export function AdminSidebar({

@@ -46,12 +46,24 @@ handling and pending-close protection. No browser `confirm` is used. Admin can a
 Customer/Staff/Admin to another active account without pending deletion or active personal orders.
 The SQL writer checks expected role, serializes role assignment, prevents self-role changes and
 last-active-Admin demotion, enforces the ten-Admin limit and audits `account.role_changed`.
-Role-change records are stored in `public.admin_audit_logs`; there is currently no in-app audit-log
-viewer. Recording an audit event must not be confused with providing a navigable history page.
+Role-change records are stored in `public.admin_audit_logs` and can be viewed in Admin Audit log.
 Existing identities are never automatically promoted. Sign in an approved identity as a Customer,
 then assign Staff before expecting someone to process orders. At least one Staff operator is needed.
 Legacy transaction RPC/action names containing `admin` are retained to avoid changing argument
 contracts, but their actor must now be Staff. Do not broaden `is_admin()` to include Staff.
+
+## Audit log
+
+`/admin/audit` is Admin-only and read-only, using the existing audit table and authenticated RLS
+client, not service-role reads. Staff, customers and inactive accounts are blocked. No new table,
+migration, edit/delete control or audit writer is added. Server-side filters cover actor name/email,
+action/record identifiers, action area and inclusive Philippine calendar dates. Paging is newest
+first with an ID tie-breaker, 10/20/50/100 rows (default 20), numbered navigation and preserved filters.
+Each row shows the recorded timestamp, current actor name/email, action, affected account/order
+when available and an allowlisted change summary. Actor/target names are current lookups, not claimed
+immutable name snapshots. Unknown metadata is not dumped: private receipt paths, provider references,
+credentials and free-text reasons are excluded. Historical events without safe field-level data say
+Recorded event. This viewer cannot reconstruct changes that the original writer never recorded.
 
 ## Customers directory
 

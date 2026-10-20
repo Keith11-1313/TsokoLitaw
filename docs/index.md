@@ -4,6 +4,8 @@ October 21 follow-up: Staff inventory management/Admin read-only inventory SQL i
 only. Production is unchanged; authenticated acceptance remains required. See the migration runbook.
 
 One campus-pickup storefront, one Next.js application, and two isolated environments.
+Admin Audit log (`/admin/audit`) is an implemented read-only viewer over existing audit records;
+matching deployment and authenticated acceptance are separate from local verification.
 Start with [onboarding](getting-started/onboarding.md). Read only the guides relevant to your change.
 
 ## Find your task

@@ -22,6 +22,10 @@ guide, not as an explanatory banner above the dashboard.
 
 ## Sources and assets
 
+Audit log reuses the responsive Admin table and numbered pagination. Search/action and date filters
+are submitted together, resetting to page one. Dates/timestamps are explicitly Philippine time;
+there are no edit, delete, receipt-image or raw-metadata controls.
+
 - Tokens: `src/app/globals.css`. Warm cream background/surfaces, chocolate text/actions, soft borders.
   The typography system uses Neco Regular for reading, true Italic for semantic
   notes, Medium for navigation, and Bold for actions and emphasis. Pally uses Regular for display
