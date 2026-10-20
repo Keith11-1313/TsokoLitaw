@@ -4,7 +4,8 @@ type Functions = GeneratedDatabase["public"]["Functions"];
 
 // PostgreSQL does not expose function-argument nullability to the generator.
 // These specific arguments accept null in our migrations: null IDs create new
-// records, null reward means no redemption, and null search means no filter.
+// records, null reward means no redemption, null search means no filter,
+// and null public-review limit enables PostgREST paging without a total ceiling.
 type NullableArguments = {
   upsert_catalog_coating: "target_coating_id";
   upsert_catalog_addon: "target_addon_id";
@@ -14,6 +15,7 @@ type NullableArguments = {
   create_checkout_order: "loyalty_reward_id";
   get_admin_customer_summaries: "search_value";
   cancel_admin_unpaid_order: "expired_checkout_id";
+  get_public_featured_reviews: "result_limit";
 };
 
 export type Database = Omit<GeneratedDatabase, "public"> & {

@@ -134,8 +134,14 @@ Existing drafts can be permanently deleted from their Admin card after an explic
 The service-only `delete_journal_draft` RPC rechecks active-Admin access, locks the record, refuses
 published posts, and writes the deletion audit entry before the application removes its cover object.
 Stable slugs, publication timestamps, and audit entries are handled by SQL. Public `/journal`
-loads published content plus visible featured order reviews. Reviews remain in `reviews`, not
-duplicated Journal posts; moderation actions are under `src/app/admin/reviews/actions.ts`.
+loads published content plus visible featured order reviews.
+Journal review paging has no six/twelve-review total ceiling. The public reader requests NULL for
+the legacy limit and applies a bounded 12-row PostgREST range with an exact count. Pagination keeps
+all published reviews accessible, newest first with an ID tie-breaker. Masking, publication checks
+and private-image protections remain unchanged. Migration `20261021020000_journal_review_paging.sql`
+is locally implemented and must be applied with matching code; hosted activation is still pending.
+Reviews remain in `reviews`, not duplicated Journal posts; moderation actions are under
+`src/app/admin/reviews/actions.ts`.
 Home's `Featured at TsokoLitaw` section independently loads the newest three published posts and links
 to the full Journal; drafts never appear there. The review queue intentionally exposes one publication
 action: `Publish in Journal` sets the required visible and

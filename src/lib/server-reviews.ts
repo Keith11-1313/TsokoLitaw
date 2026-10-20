@@ -240,26 +240,44 @@ export async function getAdminReviews(): Promise<AdminReviewSummary[]> {
   });
 }
 
-export async function getPublicFeaturedReviews(): Promise<PublicFeaturedReview[]> {
+export async function getPublicFeaturedReviews(page = 1): Promise<{
+  reviews: PublicFeaturedReview[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}> {
+  const pageSize = 12;
+  const currentPage = Number.isSafeInteger(page) ? Math.min(1000000, Math.max(1, page)) : 1;
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.rpc("get_public_featured_reviews", {
-    result_limit: 6,
-  });
+  const { data, error, count } = await supabase
+    .rpc(
+      "get_public_featured_reviews",
+      {
+        result_limit: null,
+      },
+      { count: "exact" },
+    )
+    .range((currentPage - 1) * pageSize, currentPage * pageSize - 1);
 
   if (error) throw new Error("Featured reviews could not be loaded.", { cause: error });
 
-  return (data ?? []).map((review) => ({
-    id: review.review_id,
-    customerName: review.customer_name,
-    rating: review.rating_value,
-    comment: review.comment_value,
-    highlights: review.highlight_values,
-    imageCount: review.image_count,
-    reviewedAt: review.reviewed_at,
-    orderedItems: Array.isArray(review.ordered_items)
-      ? (review.ordered_items as Array<{ name: string; quantity: number; pieceCount: number }>)
-      : [],
-  }));
+  return {
+    page: currentPage,
+    pageSize,
+    totalCount: count ?? 0,
+    reviews: (data ?? []).map((review) => ({
+      id: review.review_id,
+      customerName: review.customer_name,
+      rating: review.rating_value,
+      comment: review.comment_value,
+      highlights: review.highlight_values,
+      imageCount: review.image_count,
+      reviewedAt: review.reviewed_at,
+      orderedItems: Array.isArray(review.ordered_items)
+        ? (review.ordered_items as Array<{ name: string; quantity: number; pieceCount: number }>)
+        : [],
+    })),
+  };
 }
 
 export async function moderateAdminReview(input: {

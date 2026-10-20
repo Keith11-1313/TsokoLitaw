@@ -8,9 +8,11 @@ import { createPortal } from "react-dom";
 export function ReviewImageGallery({
   reviewId,
   imageCount,
+  compact = false,
 }: {
   reviewId: string;
   imageCount: number;
+  compact?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const [failed, setFailed] = useState<number[]>([]);
@@ -26,7 +28,7 @@ export function ReviewImageGallery({
   const unavailable = failed.includes(index);
   const imageSrc = `/api/review-images/${reviewId}?index=${index}`;
   return (
-    <div className="mt-4">
+    <div className={compact ? "mt-3 max-w-44" : "mt-4"}>
       <div className="relative aspect-[4/3] overflow-hidden rounded-control bg-surface-muted">
         {unavailable ? (
           <div className="grid size-full place-items-center text-center text-sm text-muted-foreground">

@@ -22,6 +22,12 @@ guide, not as an explanatory banner above the dashboard.
 
 ## Sources and assets
 
+Journal Community highlights uses compact, text-first review cards: name/date on one row, small
+stars, comment and a plain ordered-item line. There is no nested Ordered panel or large highlight
+chips. Cards use 16px padding, natural heights and one/two/three columns across phone/tablet/desktop.
+Review photos start as compact previews with the existing full-screen viewer. Twelve reviews load
+per page, with every published review reachable through pagination; this is not a total-review cap.
+
 Audit log reuses the responsive Admin table and numbered pagination. Search/action and date filters
 are submitted together, resetting to page one. Dates/timestamps are explicitly Philippine time;
 there are no edit, delete, receipt-image or raw-metadata controls.

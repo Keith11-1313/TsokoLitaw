@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, FileText, Sparkles, Star } from "lucide-react";
+import { ArrowRight, FileText, Sparkles } from "lucide-react";
+import { redirect } from "next/navigation";
 import { CustomerPageShell } from "@/components/customer/customer-page-shell";
-import { ReviewImageGallery } from "@/components/feedback/review-image-gallery";
+import { CommunityReviews } from "@/components/journal/community-reviews";
 import { JournalPostCard } from "@/components/journal/journal-post-card";
 import { JournalPostMedia } from "@/components/journal/journal-post-media";
 import { SiteContainer } from "@/components/layout/site-container";
@@ -95,11 +96,19 @@ function JournalEmptyState() {
   );
 }
 
-export default async function JournalPage() {
-  const [posts, reviews] = await Promise.all([
+export default async function JournalPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reviewsPage?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const requestedPage = typeof params.reviewsPage === "string" ? Number(params.reviewsPage) : 1;
+  const [posts, reviewPage] = await Promise.all([
     getPublishedJournalPosts(),
-    getPublicFeaturedReviews(),
+    getPublicFeaturedReviews(requestedPage),
   ]);
+  const lastPage = Math.max(1, Math.ceil(reviewPage.totalCount / reviewPage.pageSize));
+  if (reviewPage.page > lastPage) redirect(`/journal?reviewsPage=${lastPage}#community-reviews`);
   const latestAnnouncement = posts.find((post) => post.contentType === "announcement") ?? null;
   const remainingPosts = posts.filter((post) => post.id !== latestAnnouncement?.id);
   const latestAnnouncementHasMedia = Boolean(latestAnnouncement?.coverImageUrl);
@@ -175,75 +184,7 @@ export default async function JournalPage() {
           </section>
         ) : null}
 
-        {reviews.length ? (
-          <section className="mt-14" aria-labelledby="reviews-heading">
-            <h2 id="reviews-heading" className="font-display text-3xl">
-              Community highlights
-            </h2>
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
-              {reviews.map((review) => (
-                <blockquote
-                  key={review.id}
-                  className="rounded-card border border-border bg-surface p-6"
-                >
-                  <div className="flex gap-1" aria-label={`${review.rating} out of 5 stars`}>
-                    {Array.from({ length: 5 }, (_, index) => (
-                      <Star
-                        key={index}
-                        aria-hidden="true"
-                        className={
-                          index < review.rating
-                            ? "fill-warning-foreground text-warning-foreground"
-                            : "text-border"
-                        }
-                        size={17}
-                      />
-                    ))}
-                  </div>
-                  <ReviewImageGallery reviewId={review.id} imageCount={review.imageCount} />
-                  {review.orderedItems.length ? (
-                    <div className="mt-4 rounded-control bg-surface-muted p-4 text-sm">
-                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                        Ordered
-                      </p>
-                      {review.orderedItems.map((item, index) => (
-                        <p key={`${item.name}-${index}`} className="mt-2 break-words font-bold">
-                          {item.name} × {item.quantity}
-                        </p>
-                      ))}
-                    </div>
-                  ) : null}
-                  {review.highlights.length ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {review.highlights.map((highlight) => (
-                        <span
-                          key={highlight}
-                          className="rounded-full bg-surface-muted px-3 py-1 text-xs font-bold text-brand"
-                        >
-                          {highlight}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-                  {review.comment ? (
-                    <p className="mt-4 break-words leading-7 [overflow-wrap:anywhere]">
-                      “{review.comment}”
-                    </p>
-                  ) : null}
-                  <footer className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm font-bold text-muted-foreground">
-                    <span>{review.customerName}</span>
-                    <time dateTime={review.reviewedAt}>
-                      {new Intl.DateTimeFormat("en-PH", {
-                        dateStyle: "medium",
-                        timeZone: "Asia/Manila",
-                      }).format(new Date(review.reviewedAt))}
-                    </time>
-                  </footer>
-                </blockquote>
-              ))}
-            </div>
-          </section>
-        ) : null}
+        {reviewPage.totalCount ? <CommunityReviews {...reviewPage} /> : null}
       </SiteContainer>
     </CustomerPageShell>
   );
