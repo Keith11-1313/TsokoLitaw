@@ -26,7 +26,11 @@ export const metadata: Metadata = {
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ query?: string | string[]; status?: string | string[] }>;
+  searchParams: Promise<{
+    query?: string | string[];
+    status?: string | string[];
+    payment?: string | string[];
+  }>;
 }) {
   const actor = await requireBusiness("/admin/orders");
   const params = await searchParams;
@@ -36,6 +40,10 @@ export default async function AdminOrdersPage({
     ? (requestedStatus as OrderStatus)
     : "ALL";
   const orders = await getAdminOrders({ expirePayments: false });
+  const paymentFilter =
+    params.payment === "UNDER_REVIEW" || params.payment === "UNPAID_COUNTER"
+      ? params.payment
+      : "ALL";
   const orderStats = [
     { label: "Loaded Orders", value: String(orders.length) },
     {
@@ -63,10 +71,12 @@ export default async function AdminOrdersPage({
     <AdminShell activePath="/admin/orders">
       <AdminContent>
         <OrderManagementTable
+          key={`${initialQuery}:${initialStatus}:${paymentFilter}`}
           orders={orders}
           canTransact={actor.role === "staff"}
           initialQuery={initialQuery}
           initialStatus={initialStatus}
+          initialPaymentFilter={paymentFilter}
           summary={
             <section
               className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"

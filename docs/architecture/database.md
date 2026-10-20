@@ -1,5 +1,10 @@
 # Database: rules that intentionally live in SQL
 
+October 21 local candidate: `20261021010000_staff_inventory.sql` moves the two prepared-stock
+writers to active Staff with actor-row locking. Admin retains inventory/history SELECT, Staff gains
+inventory reader access via RLS, and service-only grants and stock/audit behavior are preserved.
+This new migration has not been applied to hosted Dev or Production.
+
 The source of truth is `supabase/migrations/` **in timestamp order**, not the bootstrap alone.
 The previously activated schema has one consolidated file, `20260911010000_pre_v1_baseline.sql`, activated
 through the October 6 Dev reset and the separately approved October 7 Production reset. Production's

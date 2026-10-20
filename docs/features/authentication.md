@@ -6,6 +6,9 @@ Google → environment-specific Supabase Auth → `/auth/callback` → cookie-ba
 `requireCustomer` requires the active customer role on checkout/account/order routes; Admins
 and Staff are redirected to `/admin`. `requireBusiness` admits active Staff/Admin to the shared
 workspace; `requireAdmin` permits management only and `requireStaff` permits transactions only.
+The October 21 local candidate also makes prepared-stock operations Staff-only; Inventory admits
+both business roles for reading, while its mutation actions/RPCs require Staff. Staff login redirects
+may target Dashboard, Orders or Inventory, never Admin configuration or role-management routes.
 Wrong-role pages/actions are denied, regardless of whether their links are visible.
 
 `getGoogleAvatarUrl` validates existing Auth metadata (`avatar_url` or `picture`) against HTTPS

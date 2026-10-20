@@ -295,10 +295,12 @@ export function InventoryManager({
   product,
   dates,
   records,
+  canManage = false,
 }: {
   product: { id: string; name: string };
   dates: AdminInventoryDate[];
   records: AdminInventoryRecord[];
+  canManage?: boolean;
 }) {
   const [selectedInventoryId, setSelectedInventoryId] = useState(records[0]?.id ?? "");
   const [historyInventoryId, setHistoryInventoryId] = useState(records[0]?.id ?? "");
@@ -345,7 +347,7 @@ export function InventoryManager({
                   }))}
                 />
               ) : null}
-              {unconfiguredDates.length > 0 ? (
+              {canManage && unconfiguredDates.length > 0 ? (
                 <PrimaryButton onClick={() => setShowPublishModal(true)}>
                   <Plus size={17} />
                   Publish stock for another date
@@ -375,10 +377,14 @@ export function InventoryManager({
           </div>
 
           <article key={`${selectedRecord.id}-${selectedRecord.updatedAt}`} className="space-y-5">
-            <StockEditor product={product} dates={dates} record={selectedRecord} />
-            <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
-              <ConsumptionForm record={selectedRecord} />
-            </div>
+            {canManage ? (
+              <>
+                <StockEditor product={product} dates={dates} record={selectedRecord} />
+                <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
+                  <ConsumptionForm record={selectedRecord} />
+                </div>
+              </>
+            ) : null}
             <section
               aria-labelledby="stock-history-title"
               className="rounded-card border border-border bg-surface p-5 sm:p-6"
@@ -449,24 +455,26 @@ export function InventoryManager({
             No stock published yet
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            {unconfiguredDates.length > 0
-              ? "Choose an upcoming Ready stock or Hybrid pickup date and publish the number of prepared pieces."
-              : "Create an upcoming Ready stock or Hybrid date in Pickup before publishing prepared pieces."}
+            {canManage
+              ? unconfiguredDates.length > 0
+                ? "Choose an upcoming Ready stock or Hybrid pickup date and publish the number of prepared pieces."
+                : "Ask Admin to publish an upcoming Ready stock or Hybrid pickup date before adding prepared pieces."
+              : "Prepared stock will appear here after Staff publishes it for an eligible pickup date."}
           </p>
-          {unconfiguredDates.length > 0 ? (
+          {canManage && unconfiguredDates.length > 0 ? (
             <PrimaryButton className="mt-5" onClick={() => setShowPublishModal(true)}>
               <Plus size={17} />
               Publish stock
             </PrimaryButton>
-          ) : (
+          ) : !canManage ? (
             <Link href="/admin/pickup" className={`${secondaryButtonClassName} mt-5`}>
               Go to Pickup
             </Link>
-          )}
+          ) : null}
         </section>
       )}
 
-      {showPublishModal ? (
+      {canManage && showPublishModal ? (
         <PublishStockModal
           product={product}
           dates={unconfiguredDates}

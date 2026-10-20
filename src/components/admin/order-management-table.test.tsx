@@ -32,6 +32,35 @@ const orders: AdminOrderSummary[] = Array.from({ length: 45 }, (_, index) => ({
 }));
 
 describe("Admin order pagination", () => {
+  it("opens the exact unpaid-counter queue from a dashboard card", () => {
+    render(
+      <OrderManagementTable
+        orders={[
+          {
+            ...orders[0],
+            id: "counter",
+            orderNumber: "COUNTER-ONLY",
+            status: "CONFIRMED",
+            paymentMethod: "pay_at_counter",
+            paymentStatus: "PENDING",
+          },
+          {
+            ...orders[1],
+            id: "gcash",
+            orderNumber: "GCASH-ONLY",
+            status: "PENDING_PAYMENT",
+            paymentMethod: "manual_gcash",
+            paymentStatus: "UNDER_REVIEW",
+          },
+        ]}
+        initialPaymentFilter="UNPAID_COUNTER"
+      />,
+    );
+    expect(screen.getAllByText("COUNTER-ONLY").length).toBeGreaterThan(0);
+    expect(screen.queryByText("GCASH-ONLY")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Clear payment filter" }));
+    expect(screen.getAllByText("GCASH-ONLY").length).toBeGreaterThan(0);
+  });
   it("keeps management read-only and exposes transaction controls only to Staff", () => {
     const transactionOrder: AdminOrderSummary = {
       ...orders[0],
@@ -43,9 +72,11 @@ describe("Admin order pagination", () => {
     expect(
       screen.queryAllByRole("button", { name: /Record payment|Start preparing|Cancel order/i }),
     ).toHaveLength(0);
-    expect(screen.getAllByText("Read-only").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Read-only")).toBeNull();
+    expect(screen.queryByRole("columnheader", { name: "Next action" })).toBeNull();
     view.rerender(<OrderManagementTable orders={[transactionOrder]} canTransact />);
     expect(screen.getAllByRole("button", { name: /Record payment/i }).length).toBeGreaterThan(0);
+    expect(screen.getByRole("columnheader", { name: "Next action" })).toBeTruthy();
   });
   it("places accessible filters in the page header before summary cards", () => {
     const { container } = render(

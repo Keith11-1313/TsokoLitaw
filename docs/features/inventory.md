@@ -1,6 +1,9 @@
 # Pickup and inventory
 
-These are separate Admin responsibilities, feeding the same checkout.
+Pickup publication/configuration is Admin-only. Prepared-stock publication, corrections and unusable
+pieces are Staff-only (October 21 owner decision); Admin retains read-only inventory/history.
+The new `20261021010000_staff_inventory.sql` migration is locally implemented, not hosted activation.
+These responsibilities feed the same checkout.
 
 | Mode            | Publication                                           | Prepared stock requirement                                                     |
 | --------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------ |
@@ -41,7 +44,7 @@ submission. PostgreSQL remains authoritative and rejects any window outside thos
 
 The always-visible Stock history section has its own pickup-date selector (independent of the stock editor), showing its latest 50 inventory
 adjustments, newest first: signed piece changes, reason, optional note and Manila timestamp.
-The reader uses the authenticated Admin RLS policy; no extra database permissions are granted.
+The reader uses authenticated Staff/Admin SELECT policies. Private notes remain unavailable to customers.
 Customer order reservations are not adjustment entries. Blank notes display “No note provided.”
 
 `daily_inventory` is per **product and pickup date**. All 4/6/8-piece boxes share the balance.
@@ -50,7 +53,7 @@ Requested demand is `quantity × piece count`. Available pieces are
 Do not reinterpret stored counter names as separate box inventories.
 
 The exact prepared total cannot fall below accounted-for pieces. A new date starts an independent
-balance; it is not a reset of the previous day's row. Admin writes are audited and SQL enforces
+balance; it is not a reset of the previous day's row. Staff writes are audited and SQL enforces
 nonnegative remaining pieces. Expiry/cancellation releases pieces atomically with state changes;
 provider-bound orders require PayMongo expiry first.
 

@@ -85,7 +85,10 @@ export function AdminSidebar({
   const navigation = (
     <nav className="mt-6 space-y-1" aria-label="Business navigation">
       {adminNavigation
-        .filter((item) => role === "admin" || ["/admin", "/admin/orders"].includes(item.href))
+        .filter(
+          (item) =>
+            role === "admin" || ["/admin", "/admin/orders", "/admin/inventory"].includes(item.href),
+        )
         .map((item) => {
           const Icon = item.icon;
           const active = activePath === item.href;

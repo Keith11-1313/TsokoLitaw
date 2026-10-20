@@ -1,5 +1,8 @@
 # TsokoLitaw maintainer guide
 
+October 21 follow-up: Staff inventory management/Admin read-only inventory is implemented locally
+with one new forward migration, not yet applied to hosted Dev or Production. See the migration runbook.
+
 One campus-pickup storefront, one Next.js application, and two isolated environments.
 Start with [onboarding](getting-started/onboarding.md). Read only the guides relevant to your change.
 

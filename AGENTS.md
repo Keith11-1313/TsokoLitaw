@@ -44,7 +44,7 @@ or speculative abstractions. Readability cleanup must not redesign working archi
 
 ## Critical invariants — never weaken these
 
-- Verify active authenticated identity and ownership on the server. Check Admin authorization on
+- Verify active authenticated identity and ownership on the server. Check the required role authorization on
   every protected page and mutation. UI visibility is not authorization.
 - Preserve Supabase RLS and explicit grants. Never expose privileged Supabase, PayMongo, Resend,
   webhook or Cron secrets to browser code, logs or Git.
@@ -100,13 +100,15 @@ Staff and Admin accounts are business-only, not customers: no personal checkout,
 customer Profile/deletion, or loyalty earning/redemption. Public browsing is allowed. Customer
 directory and customer KPIs exclude Staff/Admin profiles. Owner decision (October 20): strict
 separation of duties. Staff alone fulfills orders, verifies Manual GCash, records counter payments
-and cancels eligible unpaid orders. Admin manages catalog, stock, pickup configuration, content,
+and cancels eligible unpaid orders. October 21 owner decision: Staff also manages prepared stock
+and unusable pieces; Admin views inventory/history only. Admin manages catalog, pickup configuration, content,
 customer reporting and roles; Orders is read-only and private payment receipts are unavailable.
 Never broaden `is_admin()` to include Staff. Role assignment is Admin-only, audited, blocks self-role
 changes/active personal orders/pending deletion, preserves the last active Admin and ten-Admin limit.
 The three October 20 forward migrations are activated on Dev only. No roles were automatically
 assigned; first Staff assignment, matching application deployment and authenticated acceptance
 remain unverified. Production is unchanged. See the migration runbook for verification evidence.
+The October 21 Staff inventory migration is a local candidate; hosted activation is not implied.
 My Orders belongs inside Account. Reviews originate only from owned completed orders and require
 moderation for public visibility. Admin has one equal-permission role with at most ten approved identities.
 

@@ -148,8 +148,11 @@ select is(
   'a Ready Stock date is not customer-sellable before pieces are published'
 );
 
+insert into auth.users(id,instance_id,aud,role,email,raw_user_meta_data)
+values ('9a000000-0000-4000-8000-000000000099','00000000-0000-0000-0000-000000000000','authenticated','authenticated','pickup-stock-staff@example.test','{"name":"Stock Staff"}');
+update public.profiles set role='staff' where id='9a000000-0000-4000-8000-000000000099';
 select public.upsert_daily_inventory(
-  '9a000000-0000-4000-8000-000000000001', '2099-03-01',
+  '9a000000-0000-4000-8000-000000000099', '2099-03-01',
   '10000000-0000-4000-8000-000000000001', 20, 'lock schedule'
 );
 select public.set_pickup_date_open(

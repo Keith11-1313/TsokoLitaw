@@ -4,14 +4,16 @@ Use the implemented shared components/tokens and latest approved behavior. `refe
 rough historical drafts; do not embed them as pages or restore their obsolete navigation/data.
 Inspect the relevant page and assets before editing UI.
 
-The business shell is role-aware: Staff sees Dashboard and Orders, while Admin sees management
+The business shell is role-aware: Staff sees Dashboard, Orders and Inventory, while Admin sees management
 navigation including Accounts. Admin Orders is explicitly read-only; transaction controls are
 Staff-only and SQL independently enforces that distinction. Role editors reuse CustomSelect,
 require a themed confirmation dialog, and show pending/result states. The dialog uses
 `useEditorDialog` for focus restoration, keyboard trapping, scroll locking and pending-close guards;
 there is no native browser confirm. Account roles uses the shared responsive table, Google avatars
 and a header search matching Customers. Its sidebar icon is ShieldUser, distinct from Customers.
-Staff dashboard uses existing stat cards with distinct operational icons and a header Orders action.
+Staff dashboard stat cards link to matching fulfillment/payment queues; no redundant header Orders
+button is shown. The dashboard includes the shared five most recent orders table. Admin Orders
+omits the entire Next action column and mobile action block, not repeated Read-only labels.
 Upcoming pickup cards show readable Manila dates, 12-hour windows, locations and stock metrics;
 they remain read-only rather than management forms. Queue bounds remain documented in the feature
 guide, not as an explanatory banner above the dashboard.

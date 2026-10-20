@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { isUuid } from "@/lib/identifiers";
 import { recordInventoryConsumption, saveDailyInventory } from "@/lib/server-inventory";
 import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
@@ -43,7 +43,7 @@ export async function saveInventoryAction(
   _state: InventoryActionState,
   formData: FormData,
 ): Promise<InventoryActionState> {
-  const admin = await requireAdmin("/admin/inventory");
+  const admin = await requireStaff("/admin/inventory");
   const pickupDate = String(formData.get("pickupDate") ?? "");
   const productId = String(formData.get("productId") ?? "");
   const stockTotalValue = String(formData.get("stockTotal") ?? "").trim();
@@ -97,7 +97,7 @@ export async function consumeInventoryAction(
   _state: InventoryActionState,
   formData: FormData,
 ): Promise<InventoryActionState> {
-  const admin = await requireAdmin("/admin/inventory");
+  const admin = await requireStaff("/admin/inventory");
   const inventoryId = String(formData.get("inventoryId") ?? "");
   const quantityValue = String(formData.get("quantity") ?? "").trim();
   const quantity = Number(quantityValue);

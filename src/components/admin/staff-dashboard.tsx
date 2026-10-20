@@ -1,6 +1,4 @@
-import Link from "next/link";
 import {
-  ArrowRight,
   CalendarDays,
   ChefHat,
   Clock3,
@@ -14,7 +12,7 @@ import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { requireStaff } from "@/lib/auth";
 import { getAdminOrders } from "@/lib/server-orders";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { primaryButtonClassName } from "@/components/ui/button";
+import { RecentOrdersTable } from "@/components/admin/recent-orders-table";
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("en-PH", {
@@ -63,18 +61,24 @@ export async function StaffDashboard() {
     ],
   ] as const;
   return (
-    <AdminPageLayout
-      activePath="/admin"
-      title="Staff dashboard"
-      actions={
-        <Link className={primaryButtonClassName} href="/admin/orders">
-          View orders <ArrowRight aria-hidden="true" size={17} />
-        </Link>
-      }
-    >
+    <AdminPageLayout activePath="/admin" title="Staff dashboard">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        {counts.map(([label, value, icon]) => (
-          <AdminStatCard key={label} compact icon={icon} label={label} value={String(value)} />
+        {counts.map(([label, value, icon], index) => (
+          <AdminStatCard
+            key={label}
+            compact
+            icon={icon}
+            label={label}
+            value={String(value)}
+            href={
+              [
+                "/admin/orders?status=CONFIRMED",
+                "/admin/orders?payment=UNDER_REVIEW",
+                "/admin/orders?payment=UNPAID_COUNTER",
+                "/admin/orders?status=READY_FOR_PICKUP",
+              ][index]
+            }
+          />
         ))}
       </div>
       <section className="mt-7" aria-labelledby="staff-pickup-heading">
@@ -82,7 +86,6 @@ export async function StaffDashboard() {
           <h2 id="staff-pickup-heading" className="font-display text-2xl">
             Upcoming pickups
           </h2>
-          <span className="text-xs text-muted-foreground">Next 14 published dates</span>
         </div>
         <div className="grid gap-4 xl:grid-cols-2">
           {overview.data?.map((date) => (
@@ -155,6 +158,18 @@ export async function StaffDashboard() {
           </div>
         ) : null}
       </section>
+      <div className="mt-7">
+        <RecentOrdersTable
+          orders={[...orders]
+            .sort((a, b) => b.orderedAt.localeCompare(a.orderedAt))
+            .slice(0, 5)
+            .map((order) => ({
+              ...order,
+              paymentMethod: order.paymentMethod ?? "paymongo",
+              createdAt: order.orderedAt,
+            }))}
+        />
+      </div>
     </AdminPageLayout>
   );
 }

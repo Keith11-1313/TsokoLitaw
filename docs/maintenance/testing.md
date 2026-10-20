@@ -22,6 +22,12 @@ report that blocker honestly rather than claiming a pass. Tests do not prove dep
 
 ## Match tests to risk
 
+October 21 follow-up local verification: 278 application tests, 617 database assertions, SQL lint,
+application lint/typecheck, edited-file formatting and production build passed. Tests cover Staff-only
+stock writers, Admin read-only stock/history, role-directory filters/pagination, removed Admin order
+actions and Staff queue links. The inventory migration was applied only to local Docker. Hosted
+activation and authenticated responsive browser acceptance remain unverified.
+
 October 20 RBAC local verification: 264 application tests and 605 database assertions passed;
 clean local reset, database lint, generated schema refresh, application lint/typecheck, edited-file
 formatting, policy snapshot sync and production build passed. Hosted activation, authenticated

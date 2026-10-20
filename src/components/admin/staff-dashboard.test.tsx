@@ -36,8 +36,17 @@ it("renders readable pickup cards and stock figures without the removed banners"
   expect(screen.getByText("94")).toBeTruthy();
   expect(screen.getByText("UCC Congress, 3rd Floor")).toBeTruthy();
   expect(screen.queryByText(/Operational counts/)).toBeNull();
-  expect(screen.getByRole("link", { name: "View orders" }).getAttribute("href")).toBe(
-    "/admin/orders",
+  expect(screen.queryByRole("link", { name: "View orders" })).toBeNull();
+  expect(screen.queryByText("Next 14 published dates")).toBeNull();
+  expect(screen.getByRole("heading", { name: "Recent orders" })).toBeTruthy();
+  expect(screen.getByRole("link", { name: /Awaiting preparation/ }).getAttribute("href")).toBe(
+    "/admin/orders?status=CONFIRMED",
+  );
+  expect(screen.getByRole("link", { name: /Manual GCash reviews/ }).getAttribute("href")).toBe(
+    "/admin/orders?payment=UNDER_REVIEW",
+  );
+  expect(screen.getByRole("link", { name: /Unpaid counter orders/ }).getAttribute("href")).toBe(
+    "/admin/orders?payment=UNPAID_COUNTER",
   );
 });
 it("has an explicit empty state", async () => {

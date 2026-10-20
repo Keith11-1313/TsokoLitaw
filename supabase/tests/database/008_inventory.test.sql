@@ -35,7 +35,7 @@ values
   ('99000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inventory-admin@example.test', '{"provider":"google","providers":["google"]}', '{"name":"Inventory Admin"}', now(), now()),
   ('99000000-0000-4000-8000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inventory-customer@example.test', '{"provider":"google","providers":["google"]}', '{"name":"Inventory Customer"}', now(), now());
 
-update public.profiles set role = 'admin'
+update public.profiles set role = 'staff'
 where id = '99000000-0000-4000-8000-000000000001';
 
 insert into public.pickup_dates (id, pickup_date, availability_mode, is_open)
@@ -47,7 +47,7 @@ select throws_ok(
     '10000000-0000-4000-8000-000000000001', 10, 'unauthorized'
   ) $$,
   'P0001',
-  'Active administrator access is required',
+  'Active staff access is required',
   'a customer identity cannot publish inventory'
 );
 
@@ -56,7 +56,7 @@ select lives_ok(
     '99000000-0000-4000-8000-000000000001', '2099-02-01',
     '10000000-0000-4000-8000-000000000001', 10, 'opening stock'
   ) $$,
-  'an active Admin can publish piece stock'
+  'active Staff can publish piece stock'
 );
 
 select is(
@@ -77,7 +77,7 @@ select lives_ok(
     (select id from public.daily_inventory where pickup_date = '2099-02-01'),
     2, 'WASTE', 'damaged pieces'
   ) $$,
-  'an active Admin can record unusable pieces'
+  'active Staff can record unusable pieces'
 );
 
 select is(

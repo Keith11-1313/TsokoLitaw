@@ -22,17 +22,22 @@ Both Staff and Admin are business-only: no checkout, customer profile/deletion, 
 Only Customers appear in customer KPIs and the directory; financial history remains intact.
 
 - Admin: existing reporting dashboard; read-only Orders; catalog/pricing, pickup configuration,
-  stock adjustment, customer directory, Journal/review moderation and account roles.
+  read-only inventory/history, customer directory, Journal/review moderation and account roles.
 - Staff: `/admin` renders `StaffDashboard`, with loaded-queue counts for preparation, Manual GCash
   reviews, unpaid counter orders and ready pickups, plus a read-only next-14-date pickup/stock
   projection. `/admin/orders` provides fulfillment, counter payment, Manual GCash review and eligible
-  unpaid cancellation. No revenue dashboard, customer directory or management editors.
+  unpaid cancellation. Staff alone publishes/adjusts prepared stock and records unusable pieces in
+  Inventory. Admin retains read access only. No Staff revenue dashboard, customer directory or role editors.
 - Admin cannot call transaction actions/RPCs or access private payment receipts. Staff cannot call
   management actions/RPCs. Automated provider/Cron processors retain their system responsibilities.
-- Both dashboards reuse the current layout. Staff navigation shows only Dashboard and Orders;
+- Both dashboards reuse the current layout. Staff navigation shows Dashboard, Orders and Inventory;
   direct URLs and server actions remain protected independently of navigation.
 
-`/admin/accounts` lists accounts in bounded 20-row pages with exact-email lookup in the page header.
+`/admin/accounts` has debounced name/email search and a role filter in the page header, without a
+separate Search button. Server paging uses 10/20/50/100 rows (default 20), preserving filters and
+resetting to page one when filters/size change. Shared pagination has First/Previous, page
+numbers/ellipses and Next/Last controls; single-page navigation is hidden. The signed-in Admin remains
+visible for reference, but their own role controls are disabled and SQL rejects self-role changes.
 It reuses the Customers search styling and responsive table, with Google photo/name/email, status,
 current role and change-access columns. Avatars use the same allowlisted, bounded page-local Auth
 lookup and icon fallback as Customers; full Auth metadata never reaches the browser. Role changes

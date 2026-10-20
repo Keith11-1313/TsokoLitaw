@@ -43,9 +43,24 @@ it("shows saved notes and signed piece changes in date-specific stock history", 
   expect(screen.getByRole("heading", { name: "Stock history" }).closest("details")).toBeNull();
   expect(screen.getByText("Damaged during preparation")).toBeTruthy();
   expect(screen.getByText("Unusable pieces · -3 pieces")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Save stock settings" })).toBeNull();
+  expect(screen.queryByRole("heading", { name: "Record unusable pieces" })).toBeNull();
   expect(document.querySelector("time")?.getAttribute("datetime")).toBe(
     record.adjustments[0].createdAt,
   );
+});
+
+it("shows inventory mutation forms only for Staff", () => {
+  render(
+    <InventoryManager
+      product={{ id: "product-1", name: "TsokoLitaw" }}
+      dates={[]}
+      records={[record]}
+      canManage
+    />,
+  );
+  expect(screen.getByRole("heading", { name: "Record unusable pieces" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Save stock settings" })).toBeTruthy();
 });
 
 it("shows an honest empty history", () => {

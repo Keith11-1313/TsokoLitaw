@@ -242,16 +242,14 @@ function MobileOrderCard({
       <div className="mt-5 border-t border-border pt-5">
         <OrderContents order={order} />
       </div>
-      <div className="mt-5 grid gap-2">
-        {canTransact ? (
+      {canTransact ? (
+        <div className="mt-5 grid gap-2">
           <>
             <FulfillmentAction order={order} />
             <OrderCancellation order={order} />
           </>
-        ) : (
-          <span className="text-xs text-muted-foreground">Read-only</span>
-        )}
-      </div>
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -365,17 +363,20 @@ export function OrderManagementTable({
   orders,
   initialQuery = "",
   initialStatus = "ALL",
+  initialPaymentFilter = "ALL",
   summary,
   canTransact = false,
 }: {
   orders: AdminOrderSummary[];
   initialQuery?: string;
   initialStatus?: "ALL" | OrderStatus;
+  initialPaymentFilter?: "ALL" | "UNDER_REVIEW" | "UNPAID_COUNTER";
   summary?: ReactNode;
   canTransact?: boolean;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState<"ALL" | OrderStatus>(initialStatus);
+  const [paymentFilter, setPaymentFilter] = useState(initialPaymentFilter);
   const [pageSize, setPageSize] = useState(20);
   const [requestedPage, setRequestedPage] = useState(1);
 
@@ -383,6 +384,16 @@ export function OrderManagementTable({
     const normalizedQuery = query.trim().toLowerCase();
     return orders.filter((order) => {
       if (status !== "ALL" && order.status !== status) return false;
+      if (paymentFilter === "UNDER_REVIEW" && order.paymentStatus !== "UNDER_REVIEW") return false;
+      if (
+        paymentFilter === "UNPAID_COUNTER" &&
+        !(
+          order.paymentMethod === "pay_at_counter" &&
+          order.paymentStatus === "PENDING" &&
+          !["CANCELLED", "EXPIRED", "COMPLETED"].includes(order.status)
+        )
+      )
+        return false;
       if (!normalizedQuery) return true;
       return [
         order.orderNumber,
@@ -392,7 +403,7 @@ export function OrderManagementTable({
         order.notes ?? "",
       ].some((value) => value.toLowerCase().includes(normalizedQuery));
     });
-  }, [orders, query, status]);
+  }, [orders, query, status, paymentFilter]);
   const totalPages = Math.max(1, Math.ceil(visibleOrders.length / pageSize));
   const page = Math.min(requestedPage, totalPages);
   const pageStart = (page - 1) * pageSize;
@@ -435,6 +446,23 @@ export function OrderManagementTable({
           />
         </div>
       </header>
+      {paymentFilter !== "ALL" ? (
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+          <span>
+            {paymentFilter === "UNDER_REVIEW" ? "Manual GCash reviews" : "Unpaid counter orders"}
+          </span>
+          <button
+            type="button"
+            className="min-h-11 px-3 font-bold text-brand underline"
+            onClick={() => {
+              setPaymentFilter("ALL");
+              setRequestedPage(1);
+            }}
+          >
+            Clear payment filter
+          </button>
+        </div>
+      ) : null}
       {summary ? <div className="mt-7">{summary}</div> : null}
 
       <div className="mt-6 lg:hidden">
@@ -457,7 +485,9 @@ export function OrderManagementTable({
       <div className="mt-6 hidden rounded-card border border-border bg-surface p-4 lg:block lg:p-6">
         {visibleOrders.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[72rem] border-collapse text-left text-sm">
+            <table
+              className={`w-full ${canTransact ? "min-w-[72rem]" : "min-w-[64rem]"} border-collapse text-left text-sm`}
+            >
               <thead>
                 <tr className="h-[3.75rem] bg-surface-muted text-xs text-foreground">
                   <th className="rounded-l-control px-4 font-bold">Order</th>
@@ -466,8 +496,12 @@ export function OrderManagementTable({
                   <th className="px-4 font-bold">Total</th>
                   <th className="px-4 font-bold">Payment</th>
                   <th className="px-4 font-bold">Fulfillment</th>
-                  <th className="px-4 font-bold">Pickup</th>
-                  <th className="rounded-r-control px-4 text-center font-bold">Next action</th>
+                  <th className={`${canTransact ? "" : "rounded-r-control "}px-4 font-bold`}>
+                    Pickup
+                  </th>
+                  {canTransact ? (
+                    <th className="rounded-r-control px-4 text-center font-bold">Next action</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -528,18 +562,16 @@ export function OrderManagementTable({
                       <br />
                       {order.pickupLocation}
                     </td>
-                    <td className="px-4 py-5 text-center">
-                      <div className="grid gap-2">
-                        {canTransact ? (
+                    {canTransact ? (
+                      <td className="px-4 py-5 text-center">
+                        <div className="grid gap-2">
                           <>
                             <FulfillmentAction order={order} />
                             <OrderCancellation order={order} />
                           </>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Read-only</span>
-                        )}
-                      </div>
-                    </td>
+                        </div>
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>

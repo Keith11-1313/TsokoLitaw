@@ -30,6 +30,10 @@ Auth metadata without a new migration. See the [Admin guide](docs/features/admin
 
 ## Quick start
 
+October 21 follow-up: Staff now owns inventory operations, with Admin read-only. Apply the new
+`20261021010000_staff_inventory.sql` with matching code before testing that permission change on
+hosted Dev. This follow-up is locally validated only; no hosted update or reset has run for it.
+
 The October 20 candidate introduces strict Staff/Admin separation: Staff processes orders and
 payments; Admin manages configuration/content/roles and views orders read-only. Their dashboards
 share `/admin`. Three additive SQL migrations and matching code are required; no reset or automatic
