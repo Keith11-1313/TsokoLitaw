@@ -108,7 +108,8 @@ changes/active personal orders/pending deletion, preserves the last active Admin
 The three October 20 forward migrations are activated on Dev only. No roles were automatically
 assigned; first Staff assignment, matching application deployment and authenticated acceptance
 remain unverified. Production is unchanged. See the migration runbook for verification evidence.
-The October 21 Staff inventory migration is a local candidate; hosted activation is not implied.
+The October 21 Staff inventory migration is activated on Dev only, preserving existing stock.
+Hosted SQL lint passed; authenticated browser acceptance remains required. Production is unchanged.
 My Orders belongs inside Account. Reviews originate only from owned completed orders and require
 moderation for public visibility. Admin has one equal-permission role with at most ten approved identities.
 

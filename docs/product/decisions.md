@@ -45,7 +45,7 @@ October 20 supersedes the earlier equal-access Admin transaction model: Guest br
 shops; Staff alone handles fulfillment, counter payment, Manual GCash review and unpaid cancellation;
 October 21 adds prepared-stock publication/adjustments and unusable-piece recording to Staff alone.
 Admin views inventory/history only; pickup scheduling remains Admin-managed. The new inventory
-migration is a local candidate pending coordinated hosted activation.
+migration is activated on Dev only; Production and authenticated browser acceptance remain pending.
 Admin manages configuration/content, reports, customer records and roles. Each business role has
 its own `/admin` dashboard. Admin Orders is read-only; private payment receipts are Staff/owner only.
 Role assignment is audited and cannot change the actor's own role. Staff/Admin cannot shop or earn

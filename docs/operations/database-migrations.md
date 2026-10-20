@@ -1,6 +1,12 @@
 # Database changes and promotion
 
-## October 21 Staff inventory — local candidate, hosted application pending
+## October 21 Staff inventory — Dev database activated
+
+Owner-approved activation applied the single forward migration to Dev `mgkzphpznamjlgrpumjd`.
+All four Staff SELECT policies are present and hosted SQL lint is clean. Existing stock is unchanged:
+October 21 has 100 prepared, zero reserved, one sold/removed and 99 available; October 8/10 rows remain.
+No reset, reseed or role assignment ran. Production was not touched. Authenticated browser acceptance
+remains required after refresh; these SQL checks are not a browser test.
 
 `20261021010000_staff_inventory.sql` moves only the two inventory writer guards to active Staff,
 holding the actor role stable with the existing shared profile lock. Atomic stock constraints,
@@ -9,7 +15,7 @@ Staff gets SELECT policies for stock, adjustments, closed pickup dates and produ
 inventory reader; Admin keeps SELECT but cannot publish/consume stock. No customer access is added.
 Apply this additive migration with matching Inventory page/actions; old Admin stock forms become
 unauthorized after SQL activation. No reset, policy-history rewrite, seed or automatic role change
-is needed. Hosted Dev and Production have not received this new migration.
+is needed. Dev has received this migration; Production has not.
 
 ## October 20 Staff/Admin separation — Dev database activated
 

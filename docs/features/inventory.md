@@ -2,7 +2,7 @@
 
 Pickup publication/configuration is Admin-only. Prepared-stock publication, corrections and unusable
 pieces are Staff-only (October 21 owner decision); Admin retains read-only inventory/history.
-The new `20261021010000_staff_inventory.sql` migration is locally implemented, not hosted activation.
+Migration `20261021010000_staff_inventory.sql` is activated on Dev only; Production is unchanged.
 These responsibilities feed the same checkout.
 
 | Mode            | Publication                                           | Prepared stock requirement                                                     |
