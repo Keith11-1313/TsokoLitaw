@@ -62,7 +62,7 @@ it("returns safe DTOs and applies inclusive Philippine date boundaries", async (
   expect(mocks.gte).toHaveBeenCalledWith("created_at", "2026-10-01T00:00:00+08:00");
   expect(mocks.lt).toHaveBeenCalledWith("created_at", "2026-10-22T00:00:00+08:00");
   expect(mocks.range).toHaveBeenCalledWith(50, 99);
-  expect(result.entries[0].change).toBe("customer → staff");
+  expect(result.entries[0].change).toBe("Role: customer → staff");
   expect(JSON.stringify(result)).not.toContain("private");
   expect(result.entries[0]).not.toHaveProperty("metadata");
 });

@@ -63,7 +63,10 @@ Each row shows the recorded timestamp, current actor name/email, action, affecte
 when available and an allowlisted change summary. Actor/target names are current lookups, not claimed
 immutable name snapshots. Unknown metadata is not dumped: private receipt paths, provider references,
 credentials and free-text reasons are excluded. Historical events without safe field-level data say
-Recorded event. This viewer cannot reconstruct changes that the original writer never recorded.
+that no additional displayable details were recorded. Details use one labeled fact per line,
+peso-formatted prices and recorded before → after stock/price values; unchanged totals/prices are
+explicitly labeled unchanged. Saved values without an old snapshot are not presented as a diff.
+This viewer cannot reconstruct changes that the original writer never recorded.
 
 ## Customers directory
 

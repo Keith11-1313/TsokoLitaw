@@ -1,4 +1,5 @@
 import type { Json } from "@/types/database.generated";
+import { formatPhp } from "@/lib/commerce";
 
 export const auditAreas = [
   "account",
@@ -58,7 +59,8 @@ export function auditActionLabel(value: string) {
 // Only known, bounded operational values. Never serialize arbitrary metadata,
 // receipt paths, free-text reasons, credentials or provider references.
 export function summarizeAuditChange(action: string, metadata: Json): string {
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return "Recorded event";
+  const unavailable = "No additional details were recorded for display.";
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return unavailable;
   const roles = ["customer", "staff", "admin"];
   if (
     action === "account.role_changed" &&
@@ -67,7 +69,7 @@ export function summarizeAuditChange(action: string, metadata: Json): string {
     roles.includes(metadata.previous_role) &&
     roles.includes(metadata.next_role)
   )
-    return `${metadata.previous_role} → ${metadata.next_role}`;
+    return `Role: ${metadata.previous_role} → ${metadata.next_role}`;
   const states = [
     "PENDING_PAYMENT",
     "PAID",
@@ -84,30 +86,54 @@ export function summarizeAuditChange(action: string, metadata: Json): string {
     states.includes(metadata.from_status) &&
     states.includes(metadata.to_status)
   )
-    return `${metadata.from_status.replaceAll("_", " ")} → ${metadata.to_status.replaceAll("_", " ")}`;
+    return `Order status: ${metadata.from_status.replaceAll("_", " ")} → ${metadata.to_status.replaceAll("_", " ")}`;
   if (action.startsWith("inventory.")) {
-    const pairs = Object.entries(metadata).filter(
-      ([key, value]) =>
-        [
-          "quantity",
-          "stock_total",
-          "previous_total",
-          "remaining_pieces",
-          "inventory_delta",
-        ].includes(key) &&
-        typeof value === "number" &&
-        Number.isFinite(value),
-    );
-    if (pairs.length)
-      return pairs.map(([key, value]) => `${key.replaceAll("_", " ")}: ${value}`).join(" · ");
+    const lines: string[] = [];
+    const number = (key: string) =>
+      typeof metadata[key] === "number" && Number.isFinite(metadata[key])
+        ? (metadata[key] as number)
+        : undefined;
+    const total = number("stock_total"),
+      previous = number("previous_total");
+    if (total !== undefined)
+      lines.push(
+        previous === total
+          ? `Prepared stock unchanged: ${total} pieces`
+          : `Prepared stock: ${previous === undefined ? "" : `${previous} → `}${total} pieces`,
+      );
+    const quantity = number("quantity"),
+      remaining = number("remaining_pieces");
+    if (quantity !== undefined) lines.push(`Unusable pieces recorded: ${quantity}`);
+    if (remaining !== undefined)
+      lines.push(`Available stock after adjustment: ${remaining} pieces`);
+    if (day(metadata.pickup_date)) lines.push(`Pickup date: ${metadata.pickup_date}`);
+    if (lines.length) return lines.join("\n");
   }
+  if (action === "manual_payment.approved") return "Manual GCash payment approved.";
+  if (action === "manual_payment.rejected") return "Manual GCash payment rejected.";
+  if (action === "payment.counter_recorded")
+    return typeof metadata.amount === "number" && Number.isFinite(metadata.amount)
+      ? `Counter payment recorded: ${formatPhp(metadata.amount)}`
+      : "Counter payment recorded.";
+  if (action === "order.admin_cancelled") return "Order cancelled.";
   const fields = Object.entries(metadata).flatMap(([key, value]) => {
     if (
-      ["previous_price", "price", "price_per_piece", "minimum_lead_days"].includes(key) &&
+      ["price", "price_per_piece", "minimum_lead_days"].includes(key) &&
       typeof value === "number" &&
       Number.isFinite(value)
-    )
-      return [`${key.replaceAll("_", " ")}: ${value}`];
+    ) {
+      if (key === "minimum_lead_days")
+        return [`Made-to-order lead time: ${value} ${value === 1 ? "day" : "days"}`];
+      const label = key === "price_per_piece" ? "Price per piece" : "Price";
+      const previous = metadata.previous_price;
+      return [
+        typeof previous === "number" && Number.isFinite(previous)
+          ? previous === value
+            ? `${label} unchanged: ${formatPhp(value)}`
+            : `${label}: ${formatPhp(previous)} → ${formatPhp(value)}`
+          : `${label}: ${formatPhp(value)}`,
+      ];
+    }
     if (
       [
         "active",
@@ -115,16 +141,38 @@ export function summarizeAuditChange(action: string, metadata: Json): string {
         "is_active",
         "is_visible",
         "is_featured",
-        "previous_open",
         "is_open",
+        "visible",
+        "featured",
       ].includes(key) &&
       typeof value === "boolean"
-    )
-      return [`${key.replaceAll("_", " ")}: ${value ? "yes" : "no"}`];
+    ) {
+      if (key === "is_open") return [`Ordering: ${value ? "Open" : "Closed"}`];
+      if (["visible", "is_visible"].includes(key))
+        return [`Public review: ${value ? "Visible" : "Hidden"}`];
+      if (["featured", "is_featured"].includes(key))
+        return [`Community highlight: ${value ? "Featured" : "Not featured"}`];
+      if (key === "default") return [`Default choice: ${value ? "Yes" : "No"}`];
+      return [`Availability: ${value ? "Active" : "Inactive"}`];
+    }
+    if (
+      ["daily_cutoff_time", "operating_start", "operating_end"].includes(key) &&
+      typeof value === "string" &&
+      /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(value)
+    ) {
+      const hour = Number(value.slice(0, 2));
+      const label = {
+        daily_cutoff_time: "Daily order cutoff",
+        operating_start: "Operating start",
+        operating_end: "Operating end",
+      }[key];
+      return [`${label}: ${hour % 12 || 12}:${value.slice(3, 5)} ${hour < 12 ? "AM" : "PM"} (PH)`];
+    }
+    if (key === "pickup_date" && day(value)) return [`Pickup date: ${value}`];
     if (key === "status" && typeof value === "string" && ["draft", "published"].includes(value))
-      return [`status: ${value}`];
+      return [`Post status: ${value === "draft" ? "Draft" : "Published"}`];
     return [];
   });
-  if (fields.length) return fields.join(" · ");
-  return "Recorded event";
+  if (fields.length) return fields.join("\n");
+  return unavailable;
 }

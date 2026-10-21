@@ -31,6 +31,8 @@ per page, with every published review reachable through pagination; this is not 
 Audit log reuses the responsive Admin table and numbered pagination. Search/action and date filters
 are submitted together, resetting to page one. Dates/timestamps are explicitly Philippine time;
 there are no edit, delete, receipt-image or raw-metadata controls.
+Audit details are readable labeled lines, not raw metadata keys or a dot-separated dump. Prices
+include PHP currency, quantities state their meaning, and recorded changes show before → after.
 
 - Tokens: `src/app/globals.css`. Warm cream background/surfaces, chocolate text/actions, soft borders.
   The typography system uses Neco Regular for reading, true Italic for semantic

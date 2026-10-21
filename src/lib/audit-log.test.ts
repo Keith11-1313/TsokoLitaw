@@ -29,13 +29,13 @@ it("retains all filters in pagination URLs and computes an exclusive end date", 
 it("summarizes roles and actual stored fulfillment status fields", () => {
   expect(
     summarizeAuditChange("account.role_changed", { previous_role: "admin", next_role: "staff" }),
-  ).toBe("admin → staff");
+  ).toBe("Role: admin → staff");
   expect(
     summarizeAuditChange("order.status_changed", {
       from_status: "CONFIRMED",
       to_status: "PREPARING",
     }),
-  ).toBe("CONFIRMED → PREPARING");
+  ).toBe("Order status: CONFIRMED → PREPARING");
 });
 it("never returns arbitrary metadata, paths, provider references or reasons", () => {
   const metadata = {
@@ -45,11 +45,15 @@ it("never returns arbitrary metadata, paths, provider references or reasons", ()
     provider_reference: "sensitive",
     quantity: 3,
   };
-  expect(summarizeAuditChange("unknown.action", metadata)).toBe("Recorded event");
-  expect(summarizeAuditChange("inventory.waste_recorded", metadata)).toBe("quantity: 3");
+  expect(summarizeAuditChange("unknown.action", metadata)).toBe(
+    "No additional details were recorded for display.",
+  );
+  expect(summarizeAuditChange("inventory.waste_recorded", metadata)).toBe(
+    "Unusable pieces recorded: 3",
+  );
   expect(
     summarizeAuditChange("account.role_changed", { previous_role: "secret", next_role: "staff" }),
-  ).toBe("Recorded event");
+  ).toBe("No additional details were recorded for display.");
 });
 
 it("shows only safe saved catalog and publication values", () => {
@@ -60,8 +64,46 @@ it("shows only safe saved catalog and publication values", () => {
       active: true,
       receipt_path: "private",
     }),
-  ).toBe("price per piece: 5 · active: yes");
+  ).toBe("Price per piece: ₱5.00\nAvailability: Active");
   expect(
     summarizeAuditChange("journal.updated", { status: "published", content: "not serialized" }),
-  ).toBe("status: published");
+  ).toBe("Post status: Published");
+});
+
+it("shows stock and currency transitions without claiming unchanged saves changed", () => {
+  expect(summarizeAuditChange("inventory.updated", { previous_total: 0, stock_total: 100 })).toBe(
+    "Prepared stock: 0 → 100 pieces",
+  );
+  expect(summarizeAuditChange("inventory.updated", { previous_total: 0, stock_total: 0 })).toBe(
+    "Prepared stock unchanged: 0 pieces",
+  );
+  expect(
+    summarizeAuditChange("catalog.variant_updated", {
+      previous_price: 40.01,
+      price: 40,
+      active: false,
+    }),
+  ).toBe("Price: ₱40.01 → ₱40.00\nAvailability: Inactive");
+  expect(summarizeAuditChange("catalog.variant_updated", { previous_price: 40, price: 40 })).toBe(
+    "Price unchanged: ₱40.00",
+  );
+});
+
+it("explains payments, moderation, ordering and saved operating times", () => {
+  expect(summarizeAuditChange("manual_payment.approved", {})).toBe(
+    "Manual GCash payment approved.",
+  );
+  expect(summarizeAuditChange("payment.counter_recorded", { amount: 40 })).toBe(
+    "Counter payment recorded: ₱40.00",
+  );
+  expect(summarizeAuditChange("review.moderated", { visible: false, featured: false })).toBe(
+    "Public review: Hidden\nCommunity highlight: Not featured",
+  );
+  expect(summarizeAuditChange("pickup.closed", { is_open: false })).toBe("Ordering: Closed");
+  expect(
+    summarizeAuditChange("pickup.settings_updated", {
+      minimum_lead_days: 0,
+      daily_cutoff_time: "17:00:00",
+    }),
+  ).toBe("Made-to-order lead time: 0 days\nDaily order cutoff: 5:00 PM (PH)");
 });

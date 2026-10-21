@@ -44,7 +44,23 @@ export default async function AuditLogPage({
         <span className="mt-1 block break-all text-xs">{entry.entityId}</span>
       </div>
     ),
-    change: <p className="min-w-40 max-w-xs break-words text-sm">{entry.change}</p>,
+    change: (
+      <div className="min-w-56 max-w-sm space-y-2 break-words text-base leading-relaxed text-foreground sm:text-sm">
+        {entry.change.split("\n").map((detail, index) => {
+          const separator = detail.indexOf(": ");
+          return separator < 0 ? (
+            <p key={index}>{detail}</p>
+          ) : (
+            <p key={index}>
+              <span className="block text-xs font-bold text-muted-foreground">
+                {detail.slice(0, separator)}
+              </span>
+              <span className="tabular-nums">{detail.slice(separator + 2)}</span>
+            </p>
+          );
+        })}
+      </div>
+    ),
   }));
   return (
     <AdminPageLayout activePath="/admin/audit" title="Audit log">
@@ -127,7 +143,7 @@ export default async function AuditLogPage({
           { key: "actor", label: "Performed by" },
           { key: "action", label: "Action" },
           { key: "target", label: "Affected record" },
-          { key: "change", label: "Change" },
+          { key: "change", label: "Details" },
         ]}
         rows={rows}
         minimumWidth="60rem"
