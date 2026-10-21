@@ -1,6 +1,6 @@
 # Database changes and promotion
 
-## October 21 compact Journal reviews — local candidate
+## October 21 compact Journal reviews — Dev database activated
 
 `20261021020000_journal_review_paging.sql` enables uncapped total public-review paging when the
 existing `get_public_featured_reviews(integer)` receives NULL. Explicit legacy integer limits remain
@@ -8,7 +8,12 @@ compatible. Masked names, visible+featured checks, item snapshots, return fields
 are preserved; no raw review-table access or private paths are added. The app requests 12 rows per
 page and an exact count, not all rows in one response. SQL-first activation is compatible with old
 code, but new code needs this migration to avoid retaining the old six-review result. No reset is
-required. This migration has not been applied to hosted Dev or Production.
+required. Owner-approved activation applied this migration to Dev `mgkzphpznamjlgrpumjd` only.
+The five local feature SQL assertions passed before activation. Hosted migration history matches
+all six local files, the final dry run has no pending migrations, and hosted schema lint is clean.
+An anonymous Dev RPC check returned all 12 currently published highlights with NULL and retained
+the explicit six-row legacy limit. No reset, seed, data cleanup or role assignment ran. Production
+is unchanged. Matching application deployment and browser acceptance remain separate checks.
 
 ## October 21 Staff inventory — Dev database activated
 
