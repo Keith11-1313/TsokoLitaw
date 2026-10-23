@@ -1,5 +1,66 @@
 # Database changes and promotion
 
+## October 23 Dev base-price snapshot correction
+
+After the quantity correction below, fourteen older synthetic items still stored the configured
+box total as their base-price snapshot. An owner-approved, guarded Dev-only transaction corrected
+only those base snapshots, deriving PHP40/PHP55 from the original item, coating and add-on components.
+All 27 item breakdowns now reconcile. Quantities, line/order/payment totals, stock, receipts, reviews,
+loyalty, existing audit rows and other public tables were unchanged; total sales remain PHP2,335.
+Fourteen timestamped correction audit rows preserve the original item snapshots. A private recovery
+export was saved outside Git; a targeted rollback rehearsal and independent post-commit read-back
+passed. Docker was unavailable, so no local SQL-suite run is claimed. Production was not contacted.
+This data correction is not a schema migration and does not deploy the separate shared receipt fix.
+
+## October 23 Dev preview quantity correction — current dataset
+
+The owner requested changing the eight synthetic TsokoMuch counter-paid orders from two boxes
+to one. A guarded transaction updated their quantities, line/order/payment totals and corrected
+their base-price snapshots to PHP75, derived from the existing per-box price components rather
+than current catalog values. All 27 orders remain; the current Dev total is PHP2,335, not PHP3,300.
+Prepared and sold pieces were reduced together to retain the preview's sold-out balances:
+October 8 has 70/70 prepared/sold pieces and October 10 has 86/86, both with zero reserved.
+Two negative stock-correction history entries document the revised prepared totals; they are not waste.
+
+The 34 affected deterministic demonstration audit rows were reconciled and explicitly marked as
+simulated. Ten new correction records use the actual execution timestamp and preserve before-images,
+including the previous demo audit metadata. Other audit entries were retained. A private recovery
+export and post-change verification export are stored outside Git. The three imported GCash orders
+and receipt submissions, other orders, coatings/add-ons, reviews, loyalty, counters and notifications
+were unchanged. No emails, provider calls, schema changes, role changes or Production writes ran.
+
+Two targeted Dev rollback rehearsals passed, followed by commit and independent read-back checks.
+The transaction verified 23 out-of-scope public tables and unrelated rows in the affected tables.
+Local Docker was unavailable; no local database suite or authenticated browser acceptance is claimed.
+The October 21 totals below describe those operations at that time, not the current preview dataset.
+
+## October 21 Dev audit demonstration — active preview dataset
+
+The owner-approved audit-display cleanup replaced the 127 active Dev audit rows with 120 explicitly
+simulated scenario rows. The complete originals, including import and numbering-correction provenance,
+are preserved in a private JSON archive outside Git, with a separately prepared restore SQL script.
+Local rollback rehearsals verified both replacement and exact recovery of all 127 original records.
+The active rows have `demo_` affected-record types and simulated/scenario metadata; they are not
+genuine historical operator actions. The scenario covers Journal setup on October 5, pickup/stock
+setup on October 7, October 8 orders including the three GCash examples, October 9 prepaid counter
+orders, and October 10 fulfillment. Actual order/payment/post/stock timestamps were not changed.
+The transaction verified all non-audit business tables remained unchanged: 27 orders total PHP3,300,
+with three receipt submissions. No role assignment, schema migration or application change ran.
+Production was not contacted. New real Dev actions will append normally alongside the demo rows.
+
+## October 21 Dev historical numbering correction — completed
+
+The owner-approved data-only correction resequenced the 27 completed Dev preview orders by Manila
+creation date, then creation timestamp/UUID: October 8 has 001–013, October 9 has 001–004 and
+October 10 has 001–010. Exactly 23 references changed; their previous/new values were retained in
+current-time `order.number_corrected` audit entries, now preserved in the private archive above.
+The three corresponding daily counters match
+those ranges. No migration or checkout-generator change was made. Local rollback rehearsal passed;
+the hosted transaction verified that all other order fields and the related payment, receipt,
+inventory, customer, review and notification tables remained unchanged. Sales remain PHP3,300 and
+all three receipt submissions remain. Production was not touched. This disposable-Dev fixture
+correction is not permission to resequence real Production order references.
+
 ## October 21 compact Journal reviews — Dev database activated
 
 `20261021020000_journal_review_paging.sql` enables uncapped total public-review paging when the

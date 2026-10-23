@@ -36,6 +36,8 @@ then render `src/components/checkout/checkout-content.tsx`.
 
 - Pickup/customer state, validation feedback, submit/retry orchestration: `checkout-content.tsx`.
 - Receipt mapping/layout: `checkout-order-summary.tsx`; shared item rendering: `orders/order-line-items.tsx`.
+  Add-on DTO line totals cover all boxes; the shared "Price per box" breakdown divides those totals
+  by the box quantity. Base/coating snapshots already describe one box and are not divided again.
 - Cart persistence/selected lines: `cart-provider.tsx`. After the atomic writer returns a saved order,
   the browser removes only those checked-out lines immediately. The order then lives in My Orders;
   cancellation or expiry does not copy old lines back into the cart. Other cart lines remain untouched.

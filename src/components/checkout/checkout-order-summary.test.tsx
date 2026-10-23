@@ -49,6 +49,11 @@ describe("CheckoutOrderSummary", () => {
     expect(details?.open).toBe(false);
     await user.click(screen.getByText("View price per box"));
     expect(details?.open).toBe(true);
+    const extraRow = screen.getByText("Additional extra").closest("div");
+    expect(extraRow?.querySelector("dd")?.textContent).toBe("₱18.00");
+    expect(screen.getByText("Base box").closest("div")?.querySelector("dd")?.textContent).toBe(
+      "₱40.00",
+    );
   });
 
   it("shows the supplied reward discount without recalculating authoritative pricing", () => {

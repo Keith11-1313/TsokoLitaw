@@ -91,7 +91,9 @@ export function OrderLineItems({
                       <dt>
                         {addon.isComplimentary ? `Complimentary ${addon.name}` : "Additional extra"}
                       </dt>
-                      <dd className="shrink-0 tabular-nums">{formatPhp(addon.lineTotal)}</dd>
+                      <dd className="shrink-0 tabular-nums">
+                        {formatPhp(item.quantity > 0 ? addon.lineTotal / item.quantity : 0)}
+                      </dd>
                     </div>
                   ))}
                 </dl>
