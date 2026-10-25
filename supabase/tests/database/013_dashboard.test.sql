@@ -1,4 +1,6 @@
 begin;
+create temporary sequence fixture_ids start 10000000000;
+create function pg_temp.fixture_id(legacy text) returns bigint language sql immutable as 'select (''x''||left(legacy,8))::bit(32)::bigint*1000000+right(legacy,12)::bigint';
 
 create extension if not exists pgtap with schema extensions;
 set local role postgres;
@@ -39,14 +41,14 @@ insert into auth.users (
   );
 
 update public.profiles set role = 'admin'
-where id = 'da000000-0000-4000-8000-000000000001';
+where id = (select id from public.profiles where auth_user_id='da000000-0000-4000-8000-000000000001');
 
 insert into public.pickup_locations (id, name)
-values ('da100000-0000-4000-8000-000000000001', 'Dashboard location');
+values ('3658481664000001', 'Dashboard location');
 insert into public.pickup_dates (id, pickup_date)
-values ('da200000-0000-4000-8000-000000000001', '2099-06-10');
+values ('3659530240000001', '2099-06-10');
 insert into public.pickup_windows (id, pickup_date_id, start_time, end_time)
-values ('da300000-0000-4000-8000-000000000001', 'da200000-0000-4000-8000-000000000001', '10:00', '11:00');
+values ('3660578816000001', '3659530240000001', '10:00', '11:00');
 
 insert into public.orders (
   id, order_number, user_id, status, payment_status, customer_name, customer_email,
@@ -55,70 +57,70 @@ insert into public.orders (
   terms_accepted_at, created_at, completed_at
 ) values
   (
-    'da400000-0000-4000-8000-000000000001', 'TL-9401',
-    'da000000-0000-4000-8000-000000000002', 'COMPLETED', 'PAID',
+    '3661627392000001', 'TL-9401',
+    (select id from public.profiles where auth_user_id='da000000-0000-4000-8000-000000000002'), 'COMPLETED', 'PAID',
     'Dashboard Buyer', 'dashboard-buyer@example.test', '2099-06-10',
-    'da300000-0000-4000-8000-000000000001', 'da100000-0000-4000-8000-000000000001',
+    '3660578816000001', '3658481664000001',
     '10:00 AM–11:00 AM', 'Dashboard location', 50, 0, 50, 'dashboard-test',
     '2099-05-01 09:00+08', '2099-05-01 09:00+08', '2099-05-01 11:00+08'
   ),
   (
-    'da400000-0000-4000-8000-000000000002', 'TL-9402',
-    'da000000-0000-4000-8000-000000000002', 'PAID', 'PAID',
+    '3661627392000002', 'TL-9402',
+    (select id from public.profiles where auth_user_id='da000000-0000-4000-8000-000000000002'), 'PAID', 'PAID',
     'Dashboard Buyer', 'dashboard-buyer@example.test', '2099-06-10',
-    'da300000-0000-4000-8000-000000000001', 'da100000-0000-4000-8000-000000000001',
+    '3660578816000001', '3658481664000001',
     '10:00 AM–11:00 AM', 'Dashboard location', 100, 0, 100, 'dashboard-test',
     '2099-06-02 09:00+08', '2099-06-02 09:00+08', null
   ),
   (
-    'da400000-0000-4000-8000-000000000003', 'TL-9403',
-    'da000000-0000-4000-8000-000000000002', 'PAID', 'PAID',
+    '3661627392000003', 'TL-9403',
+    (select id from public.profiles where auth_user_id='da000000-0000-4000-8000-000000000002'), 'PAID', 'PAID',
     'Dashboard Buyer', 'dashboard-buyer@example.test', '2099-06-10',
-    'da300000-0000-4000-8000-000000000001', 'da100000-0000-4000-8000-000000000001',
+    '3660578816000001', '3658481664000001',
     '10:00 AM–11:00 AM', 'Dashboard location', 40, 40, 0, 'dashboard-test',
     '2099-06-03 09:00+08', '2099-06-03 09:00+08', null
   );
 
 insert into public.payments (order_id, provider, amount, status, paid_at) values
-  ('da400000-0000-4000-8000-000000000001', 'paymongo', 50, 'PAID', '2099-05-01 10:00+08'),
-  ('da400000-0000-4000-8000-000000000002', 'paymongo', 100, 'PAID', '2099-06-02 10:00+08'),
-  ('da400000-0000-4000-8000-000000000003', 'loyalty', 0, 'PAID', '2099-06-03 10:00+08');
+  ('3661627392000001', 'paymongo', 50, 'PAID', '2099-05-01 10:00+08'),
+  ('3661627392000002', 'paymongo', 100, 'PAID', '2099-06-02 10:00+08'),
+  ('3661627392000003', 'loyalty', 0, 'PAID', '2099-06-03 10:00+08');
 
 insert into public.order_items (
   id, order_id, product_id, variant_id, product_name_snapshot, variant_name_snapshot,
   piece_count_snapshot, unit_price_snapshot, quantity, line_subtotal
 ) values
-  ('da500000-0000-4000-8000-000000000001', 'da400000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '11000000-0000-4000-8000-000000000004', 'Chocolate-Filled Litaw', 'TsokoMini (4 pcs)', 4, 50, 1, 50),
-  ('da500000-0000-4000-8000-000000000002', 'da400000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', '11000000-0000-4000-8000-000000000004', 'Chocolate-Filled Litaw', 'TsokoMini (4 pcs)', 4, 50, 2, 100),
-  ('da500000-0000-4000-8000-000000000003', 'da400000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000001', '11000000-0000-4000-8000-000000000008', 'Chocolate-Filled Litaw', 'TsokoMuch (8 pcs)', 8, 40, 1, 40);
+  ('3662675968000001', '3661627392000001', '1', '1', 'Chocolate-Filled Litaw', 'TsokoMini (4 pcs)', 4, 50, 1, 50),
+  ('3662675968000002', '3661627392000002', '1', '1', 'Chocolate-Filled Litaw', 'TsokoMini (4 pcs)', 4, 50, 2, 100),
+  ('3662675968000003', '3661627392000003', '1', '3', 'Chocolate-Filled Litaw', 'TsokoMuch (8 pcs)', 8, 40, 1, 40);
 
 insert into public.order_item_addons (
   order_item_id, addon_id, addon_name_snapshot, unit_price_snapshot, quantity, line_total, is_complimentary
 ) values (
-  'da500000-0000-4000-8000-000000000002', '13000000-0000-4000-8000-000000000001',
+  '3662675968000002', '1',
   'Sea salt cream', 18, 1, 18, false
 );
 
 insert into public.order_item_coatings (
   order_item_id, coating_id, coating_name_snapshot, piece_count, additional_price_snapshot
 ) values
-  ('da500000-0000-4000-8000-000000000002', '12000000-0000-4000-8000-000000000001', 'Cocoa', 4, 5),
-  ('da500000-0000-4000-8000-000000000003', '12000000-0000-4000-8000-000000000002', 'Milk', 8, 5);
+  ('3662675968000002', '1', 'Cocoa', 4, 5),
+  ('3662675968000003', '2', 'Milk', 8, 5);
 
 update public.orders
 set status = 'COMPLETED', completed_at = '2099-06-02 12:00+08'
-where id = 'da400000-0000-4000-8000-000000000002';
+where id = '3661627392000002';
 
 insert into public.reviews (
   user_id, order_id, display_name_snapshot, rating, comment, is_visible, created_at
 ) values (
-  'da000000-0000-4000-8000-000000000002', 'da400000-0000-4000-8000-000000000002',
+  (select id from public.profiles where auth_user_id='da000000-0000-4000-8000-000000000002'), '3661627392000002',
   'Dashboard Buyer', 5, 'Dashboard test review', true, '2099-06-04 10:00+08'
 );
 
 create temporary table dashboard_result as
 select public.get_admin_dashboard_summary(
-  'da000000-0000-4000-8000-000000000001',
+  (select id from public.profiles where auth_user_id='da000000-0000-4000-8000-000000000001'),
   '2099-06-01 00:00+08', '2099-06-08 00:00+08',
   '2099-05-25 00:00+08', '2099-06-01 00:00+08'
 ) as summary;
@@ -139,7 +141,7 @@ select is((select sum((point->>'paidOrders')::integer) from dashboard_result, js
 select is((select sum((point->>'count')::integer) from dashboard_result, jsonb_array_elements(summary->'orderOutcomes') point), 2::bigint, 'order outcomes cover the full creation cohort') from dashboard_result;
 select throws_ok(
   $$ select public.get_admin_dashboard_summary(
-    'da000000-0000-4000-8000-000000000002',
+    (select id from public.profiles where auth_user_id='da000000-0000-4000-8000-000000000002'),
     '2099-06-01 00:00+08', '2099-06-08 00:00+08',
     '2099-05-25 00:00+08', '2099-06-01 00:00+08'
   ) $$,
@@ -149,7 +151,7 @@ select throws_ok(
 
 create temporary table dashboard_decisions as
 select public.get_admin_dashboard_decisions(
-  'da000000-0000-4000-8000-000000000001',
+  (select id from public.profiles where auth_user_id='da000000-0000-4000-8000-000000000001'),
   '2099-06-01 00:00+08', '2099-06-08 00:00+08',
   '2099-05-25 00:00+08', '2099-06-01 00:00+08'
 ) as summary;
@@ -176,11 +178,11 @@ insert into public.orders (
   pickup_window_snapshot, pickup_location_snapshot, subtotal, discount_total, total,
   terms_version, terms_accepted_at, created_at
 ) values
-  ('da600000-0000-4000-8000-000000000001', 'TL-9998', 'da000000-0000-4000-8000-000000000002', 'da700000-0000-4000-8000-000000000001', 'PENDING_PAYMENT', 'PENDING', 'Dashboard Buyer', 'dashboard-buyer@example.test', '2099-06-10', 'da300000-0000-4000-8000-000000000001', 'da100000-0000-4000-8000-000000000001', '10:00 AM–11:00 AM', 'Dashboard location', 50, 0, 50, 'dashboard-test', '2099-06-04 09:00+08', '2099-06-04 09:00+08'),
-  ('da600000-0000-4000-8000-000000000002', 'TL-9999', 'da000000-0000-4000-8000-000000000002', 'da700000-0000-4000-8000-000000000002', 'PENDING_PAYMENT', 'PENDING', 'Dashboard Buyer', 'dashboard-buyer@example.test', '2099-06-10', 'da300000-0000-4000-8000-000000000001', 'da100000-0000-4000-8000-000000000001', '10:00 AM–11:00 AM', 'Dashboard location', 50, 0, 50, 'dashboard-test', '2099-06-04 09:00+08', '2099-06-04 09:01+08');
+  ('3663724544000001', 'TL-9998', (select id from public.profiles where auth_user_id='da000000-0000-4000-8000-000000000002'), 'da700000-0000-4000-8000-000000000001', 'PENDING_PAYMENT', 'PENDING', 'Dashboard Buyer', 'dashboard-buyer@example.test', '2099-06-10', '3660578816000001', '3658481664000001', '10:00 AM–11:00 AM', 'Dashboard location', 50, 0, 50, 'dashboard-test', '2099-06-04 09:00+08', '2099-06-04 09:00+08'),
+  ('3663724544000002', 'TL-9999', (select id from public.profiles where auth_user_id='da000000-0000-4000-8000-000000000002'), 'da700000-0000-4000-8000-000000000002', 'PENDING_PAYMENT', 'PENDING', 'Dashboard Buyer', 'dashboard-buyer@example.test', '2099-06-10', '3660578816000001', '3658481664000001', '10:00 AM–11:00 AM', 'Dashboard location', 50, 0, 50, 'dashboard-test', '2099-06-04 09:00+08', '2099-06-04 09:01+08');
 
-select is((select order_number from public.orders where id = 'da600000-0000-4000-8000-000000000001'), 'TL040699001', 'first checkout receives the first daily order number');
-select is((select order_number from public.orders where id = 'da600000-0000-4000-8000-000000000002'), 'TL040699002', 'daily order numbers increment atomically');
+select is((select order_number from public.orders where id = '3663724544000001'), 'TL040699001', 'first checkout receives the first daily order number');
+select is((select order_number from public.orders where id = '3663724544000002'), 'TL040699002', 'daily order numbers increment atomically');
 select is((select last_value from public.daily_order_counters where order_date = '2099-06-04'), 2, 'daily order counter records the allocated suffix');
 
 select * from finish();

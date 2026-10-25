@@ -3,6 +3,7 @@ import type { Database } from "@/types/database";
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { entityIdFetch } from "./entity-id-fetch";
 import { getSupabasePublicEnvironment } from "@/lib/supabase/env";
 
 export async function createServerSupabaseClient() {
@@ -10,6 +11,7 @@ export async function createServerSupabaseClient() {
   const { url, publishableKey } = getSupabasePublicEnvironment();
 
   return createServerClient<Database>(url, publishableKey, {
+    global: { fetch: entityIdFetch },
     cookies: {
       getAll() {
         return cookieStore.getAll();

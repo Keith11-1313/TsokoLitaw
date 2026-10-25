@@ -100,13 +100,25 @@ export async function getAdminAccountAvatars(userIds: readonly string[]) {
   const supabase = createAdminSupabaseClient();
   const avatars = new Map<string, string | null>();
   const ids = [...new Set(userIds)].slice(0, 100);
+  if (!ids.length) return avatars;
+  const { data: profiles, error: profileError } = await supabase
+    .from("profiles")
+    .select("id,auth_user_id")
+    .in("id", ids);
+  if (profileError) return avatars;
+  const authIds = new Map((profiles ?? []).map((profile) => [profile.id, profile.auth_user_id]));
   // Fetch only the authorized page, never enumerate the Auth directory.
   // Bound concurrency so a 100-row page does not flood the Auth service.
   for (let offset = 0; offset < ids.length; offset += 5) {
     await Promise.all(
       ids.slice(offset, offset + 5).map(async (id) => {
         try {
-          const { data, error } = await supabase.auth.admin.getUserById(id);
+          const authId = authIds.get(id);
+          if (!authId) {
+            avatars.set(id, null);
+            return;
+          }
+          const { data, error } = await supabase.auth.admin.getUserById(authId);
           avatars.set(id, error ? null : getGoogleAvatarUrl(data.user?.user_metadata));
         } catch {
           avatars.set(id, null);

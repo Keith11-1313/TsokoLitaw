@@ -1,11 +1,11 @@
 import { getAuthProfile } from "@/lib/auth";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 export async function GET(request: Request, { params }: { params: Promise<{ reviewId: string }> }) {
   const { reviewId } = await params;
   const headers = { "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer" };
-  if (!isUuid(reviewId)) return new Response("Not found", { status: 404, headers });
+  if (!isEntityId(reviewId)) return new Response("Not found", { status: 404, headers });
 
   const admin = createAdminSupabaseClient();
   const { data: review, error } = await admin

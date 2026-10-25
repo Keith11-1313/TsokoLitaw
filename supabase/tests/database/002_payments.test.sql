@@ -1,4 +1,6 @@
 begin;
+create temporary sequence fixture_ids start 10000000000;
+create function pg_temp.fixture_id(legacy text) returns bigint language sql immutable as 'select (''x''||left(legacy,8))::bit(32)::bigint*1000000+right(legacy,12)::bigint';
 
 create extension if not exists pgtap with schema extensions;
 set local role postgres;
@@ -39,13 +41,13 @@ values (
 );
 
 insert into public.pickup_locations (id, name)
-values ('a2000000-0000-4000-8000-000000000001', 'Payment test location');
+values ('2717908992000001', 'Payment test location');
 insert into public.pickup_dates (id, pickup_date)
-values ('a3000000-0000-4000-8000-000000000001', '2099-02-01');
+values ('2734686208000001', '2099-02-01');
 insert into public.pickup_windows (id, pickup_date_id, start_time, end_time)
 values (
-  'a4000000-0000-4000-8000-000000000001',
-  'a3000000-0000-4000-8000-000000000001', '09:00', '10:00'
+  '2751463424000001',
+  '2734686208000001', '09:00', '10:00'
 );
 
 insert into public.orders (
@@ -55,26 +57,26 @@ insert into public.orders (
   payment_expires_at
 )
 values (
-  'a5000000-0000-4000-8000-000000000001', 'TL-9001',
-  'a1000000-0000-4000-8000-000000000001', 'Payment Owner',
+  '2768240640000001', 'TL-9001',
+  (select id from public.profiles where auth_user_id='a1000000-0000-4000-8000-000000000001'), 'Payment Owner',
   'payment-owner@example.test', '2099-02-01',
-  'a4000000-0000-4000-8000-000000000001',
-  'a2000000-0000-4000-8000-000000000001', '9:00 AM–10:00 AM',
+  '2751463424000001',
+  '2717908992000001', '9:00 AM–10:00 AM',
   'Payment test location', 40, 40, 'payment-test', now(), now() + interval '15 minutes'
 );
 
 select ok(
-  not has_function_privilege('authenticated', 'public.prepare_paymongo_checkout(uuid,uuid)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.prepare_paymongo_checkout(bigint,bigint)', 'EXECUTE'),
   'authenticated users cannot initialize provider payments'
 );
 select ok(
-  has_function_privilege('service_role', 'public.prepare_paymongo_checkout(uuid,uuid)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.prepare_paymongo_checkout(bigint,bigint)', 'EXECUTE'),
   'service role can initialize provider payments'
 );
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.replace_paymongo_checkout(uuid,text,text,text)',
+    'public.replace_paymongo_checkout(bigint,text,text,text)',
     'EXECUTE'
   ),
   'authenticated users cannot replace provider checkouts'
@@ -82,7 +84,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.replace_paymongo_checkout(uuid,text,text,text)',
+    'public.replace_paymongo_checkout(bigint,text,text,text)',
     'EXECUTE'
   ),
   'service role can replace provider checkouts'
@@ -90,7 +92,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.process_paymongo_paid_event(text,uuid,text,text,text,numeric,jsonb)',
+    'public.process_paymongo_paid_event(text,bigint,text,text,text,numeric,jsonb)',
     'EXECUTE'
   ),
   'authenticated users cannot process provider webhooks'
@@ -98,7 +100,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.process_paymongo_paid_event(text,uuid,text,text,text,numeric,jsonb)',
+    'public.process_paymongo_paid_event(text,bigint,text,text,text,numeric,jsonb)',
     'EXECUTE'
   ),
   'service role can process provider webhooks'
@@ -112,11 +114,11 @@ select ok(
   'service role can list overdue provider checkouts'
 );
 select ok(
-  not has_function_privilege('authenticated', 'public.expire_paymongo_order(uuid,text)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.expire_paymongo_order(bigint,text)', 'EXECUTE'),
   'authenticated users cannot finalize provider checkout expiry'
 );
 select ok(
-  has_function_privilege('service_role', 'public.expire_paymongo_order(uuid,text)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.expire_paymongo_order(bigint,text)', 'EXECUTE'),
   'service role can finalize provider checkout expiry'
 );
 
@@ -124,33 +126,33 @@ select is(
   (
     select prepared_order_number
     from public.prepare_paymongo_checkout(
-      'a5000000-0000-4000-8000-000000000001',
-      'a1000000-0000-4000-8000-000000000001'
+      '2768240640000001',
+      (select id from public.profiles where auth_user_id='a1000000-0000-4000-8000-000000000001')
     )
   ),
   'TL-9001',
   'payment initialization returns the trusted order snapshot'
 );
 select is(
-  (select count(*) from public.payments where order_id = 'a5000000-0000-4000-8000-000000000001'),
+  (select count(*) from public.payments where order_id = '2768240640000001'),
   1::bigint,
   'payment initialization creates one payment row'
 );
 select lives_ok(
   $$select public.prepare_paymongo_checkout(
-    'a5000000-0000-4000-8000-000000000001',
-    'a1000000-0000-4000-8000-000000000001'
+    '2768240640000001',
+    (select id from public.profiles where auth_user_id='a1000000-0000-4000-8000-000000000001')
   )$$,
   'payment initialization can be retried safely'
 );
 select is(
-  (select count(*) from public.payments where order_id = 'a5000000-0000-4000-8000-000000000001'),
+  (select count(*) from public.payments where order_id = '2768240640000001'),
   1::bigint,
   'a retry does not create a duplicate payment row'
 );
 select ok(
   public.attach_paymongo_checkout(
-    (select id from public.payments where order_id = 'a5000000-0000-4000-8000-000000000001'),
+    (select id from public.payments where order_id = '2768240640000001'),
     'cs_test_9001',
     'https://checkout.paymongo.com/cs_test_9001'
   ),
@@ -158,7 +160,7 @@ select ok(
 );
 select is(
   public.attach_paymongo_checkout(
-    (select id from public.payments where order_id = 'a5000000-0000-4000-8000-000000000001'),
+    (select id from public.payments where order_id = '2768240640000001'),
     'cs_test_9001',
     'https://checkout.paymongo.com/cs_test_9001'
   ),
@@ -167,7 +169,7 @@ select is(
 );
 select throws_ok(
   $$select public.attach_paymongo_checkout(
-    (select id from public.payments where order_id = 'a5000000-0000-4000-8000-000000000001'),
+    (select id from public.payments where order_id = '2768240640000001'),
     'cs_test_other',
     'https://checkout.paymongo.com/cs_test_other'
   )$$,
@@ -177,7 +179,7 @@ select throws_ok(
 );
 select ok(
   public.replace_paymongo_checkout(
-    (select id from public.payments where order_id = 'a5000000-0000-4000-8000-000000000001'),
+    (select id from public.payments where order_id = '2768240640000001'),
     'cs_test_9001',
     'cs_test_9001_fresh',
     'https://checkout.paymongo.com/cs_test_9001_fresh'
@@ -188,31 +190,31 @@ select ok(
 select ok(
   public.process_paymongo_paid_event(
     'checkout_session.payment.paid:cs_test_9001_fresh:pay_test_9001',
-    'a5000000-0000-4000-8000-000000000001', 'TL-9001',
+    '2768240640000001', 'TL-9001',
     'cs_test_9001_fresh', 'pay_test_9001', 40,
     '{"livemode":false,"checkout_id":"cs_test_9001_fresh","payment_id":"pay_test_9001"}'::jsonb
   ),
   'a matching verified payment event is processed'
 );
 select is(
-  (select payment_status from public.orders where id = 'a5000000-0000-4000-8000-000000000001'),
+  (select payment_status from public.orders where id = '2768240640000001'),
   'PAID'::public.payment_status,
   'the order payment status becomes paid'
 );
 select is(
-  (select status from public.orders where id = 'a5000000-0000-4000-8000-000000000001'),
+  (select status from public.orders where id = '2768240640000001'),
   'CONFIRMED'::public.order_status,
   'the paid order becomes confirmed'
 );
 select is(
-  (select provider_payment_id from public.payments where order_id = 'a5000000-0000-4000-8000-000000000001'),
+  (select provider_payment_id from public.payments where order_id = '2768240640000001'),
   'pay_test_9001',
   'the provider payment reference is retained'
 );
 select is(
   public.process_paymongo_paid_event(
     'checkout_session.payment.paid:cs_test_9001_fresh:pay_test_9001',
-    'a5000000-0000-4000-8000-000000000001', 'TL-9001',
+    '2768240640000001', 'TL-9001',
     'cs_test_9001_fresh', 'pay_test_9001', 40,
     '{"livemode":false,"checkout_id":"cs_test_9001_fresh","payment_id":"pay_test_9001"}'::jsonb
   ),
@@ -232,19 +234,19 @@ insert into public.orders (
   payment_expires_at
 )
 values (
-  'a5000000-0000-4000-8000-000000000002', 'TL-9002',
-  'a1000000-0000-4000-8000-000000000001', 'Payment Owner',
+  '2768240640000002', 'TL-9002',
+  (select id from public.profiles where auth_user_id='a1000000-0000-4000-8000-000000000001'), 'Payment Owner',
   'payment-owner@example.test', '2099-02-01',
-  'a4000000-0000-4000-8000-000000000001',
-  'a2000000-0000-4000-8000-000000000001', '9:00 AM–10:00 AM',
+  '2751463424000001',
+  '2717908992000001', '9:00 AM–10:00 AM',
   'Payment test location', 40, 40, 'payment-test', now(), now() - interval '1 minute'
 );
 insert into public.payments (
   id, order_id, provider_checkout_id, provider_checkout_url, amount
 )
 values (
-  'a6000000-0000-4000-8000-000000000002',
-  'a5000000-0000-4000-8000-000000000002',
+  '2785017856000002',
+  '2768240640000002',
   'cs_test_9002', 'https://checkout.paymongo.com/cs_test_9002', 40
 );
 
@@ -257,36 +259,36 @@ select is(
   (
     select count(*)
     from public.list_due_paymongo_checkouts(100)
-    where due_payment_id = 'a6000000-0000-4000-8000-000000000002'
+    where due_payment_id = '2785017856000002'
   ),
   1::bigint,
   'the provider-bound overdue order is listed for coordinated expiry'
 );
 select ok(
   public.expire_paymongo_order(
-    'a6000000-0000-4000-8000-000000000002',
+    '2785017856000002',
     'cs_test_9002'
   ),
   'provider-confirmed expiry finalizes the overdue order'
 );
 select is(
-  (select status from public.orders where id = 'a5000000-0000-4000-8000-000000000002'),
+  (select status from public.orders where id = '2768240640000002'),
   'EXPIRED'::public.order_status,
   'the coordinated expiry marks the order expired'
 );
 select is(
-  (select payment_status from public.orders where id = 'a5000000-0000-4000-8000-000000000002'),
+  (select payment_status from public.orders where id = '2768240640000002'),
   'FAILED'::public.payment_status,
   'the coordinated expiry marks the order payment snapshot failed'
 );
 select is(
-  (select status from public.payments where id = 'a6000000-0000-4000-8000-000000000002'),
+  (select status from public.payments where id = '2785017856000002'),
   'FAILED'::public.payment_status,
   'the coordinated expiry marks the unpaid payment failed'
 );
 select is(
   public.expire_paymongo_order(
-    'a6000000-0000-4000-8000-000000000002',
+    '2785017856000002',
     'cs_test_9002'
   ),
   false,

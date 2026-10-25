@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 import type { AccountRole } from "@/lib/roles";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { enforceMutationRateLimit } from "@/lib/server-rate-limit";
@@ -15,7 +15,7 @@ export async function assignAccountRole(input: {
   const actor = await requireAdmin("/admin/accounts");
   const roles = ["customer", "staff", "admin"];
   if (
-    !isUuid(input.userId) ||
+    !isEntityId(input.userId) ||
     !roles.includes(input.expectedRole) ||
     !roles.includes(input.nextRole) ||
     input.userId === actor.id

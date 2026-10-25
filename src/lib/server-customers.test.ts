@@ -1,11 +1,12 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { getAdminCustomerSummaries } from "./server-customers";
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), getUserById: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), getUserById: vi.fn(), profileIds: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminSupabaseClient: () => ({
     rpc: mocks.rpc,
+    from: () => ({ select: () => ({ in: mocks.profileIds }) }),
     auth: { admin: { getUserById: mocks.getUserById } },
   }),
 }));
@@ -14,6 +15,10 @@ vi.mock("@/lib/server-observability", () => ({
 }));
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.profileIds.mockResolvedValue({
+    data: [{ id: "customer", auth_user_id: "auth-uuid" }],
+    error: null,
+  });
   mocks.rpc.mockImplementation(async (name: string) => ({
     data: name === "count_admin_customers" ? 1 : [{ user_id: "customer" }],
     error: null,
@@ -34,7 +39,7 @@ it("returns only the supported Google avatar from page-local Auth metadata", asy
   const result = await getAdminCustomerSummaries("admin");
   expect(result.customers[0].avatarUrl).toBe("https://lh3.googleusercontent.com/photo");
   expect(JSON.stringify(result)).not.toContain("not serialized");
-  expect(mocks.getUserById).toHaveBeenCalledExactlyOnceWith("customer");
+  expect(mocks.getUserById).toHaveBeenCalledExactlyOnceWith("auth-uuid");
 });
 it("does not fetch Auth metadata when the authorized directory query fails", async () => {
   mocks.rpc.mockResolvedValue({ data: null, error: new Error("Denied") });

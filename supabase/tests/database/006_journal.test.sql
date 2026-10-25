@@ -1,4 +1,6 @@
 begin;
+create temporary sequence fixture_ids start 10000000000;
+create function pg_temp.fixture_id(legacy text) returns bigint language sql immutable as 'select (''x''||left(legacy,8))::bit(32)::bigint*1000000+right(legacy,12)::bigint';
 
 create extension if not exists pgtap with schema extensions;
 set local role postgres;
@@ -28,50 +30,50 @@ insert into auth.users (
   ('e1000000-0000-4000-8000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'journal-customer@example.test', '{"provider":"google","providers":["google"]}', '{"name":"Journal Customer"}', now(), now());
 
 update public.profiles set role = 'admin'
-where id = 'e1000000-0000-4000-8000-000000000001';
+where id = (select id from public.profiles where auth_user_id='e1000000-0000-4000-8000-000000000001');
 
-create temporary table journal_test_post (id uuid not null);
+create temporary table journal_test_post (id bigint not null);
 
 select ok(
-  not has_function_privilege('authenticated', 'public.upsert_journal_post(uuid,uuid,text,text,text,text,date,text,text,journal_status)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.upsert_journal_post(bigint,bigint,text,text,text,text,date,text,text,journal_status)', 'EXECUTE'),
   'customers cannot call the Journal writer directly'
 );
 select ok(
-  has_function_privilege('service_role', 'public.upsert_journal_post(uuid,uuid,text,text,text,text,date,text,text,journal_status)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.upsert_journal_post(bigint,bigint,text,text,text,text,date,text,text,journal_status)', 'EXECUTE'),
   'service role can invoke the Journal writer'
 );
 select ok(
-  not has_function_privilege('authenticated', 'public.delete_journal_draft(uuid,uuid)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.delete_journal_draft(bigint,bigint)', 'EXECUTE'),
   'customers cannot call the Journal draft deleter directly'
 );
 select ok(
-  has_function_privilege('service_role', 'public.delete_journal_draft(uuid,uuid)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.delete_journal_draft(bigint,bigint)', 'EXECUTE'),
   'service role can invoke the Journal draft deleter'
 );
 select hasnt_column('public', 'journal_posts', 'video_url', 'Journal posts are image-only');
 select has_column('public', 'journal_posts', 'cover_format', 'Journal posts persist their cover format');
 select throws_ok(
-  $$select public.upsert_journal_post('e1000000-0000-4000-8000-000000000002',null,'Customer post','Summary','Customers cannot publish Journal content.','story','2099-06-01','','landscape','draft')$$,
+  $$select public.upsert_journal_post((select id from public.profiles where auth_user_id='e1000000-0000-4000-8000-000000000002'),null,'Customer post','Summary','Customers cannot publish Journal content.','story','2099-06-01','','landscape','draft')$$,
   'P0001', 'Active administrator access is required', 'customers cannot create Journal posts'
 );
 select throws_ok(
-  $$select public.upsert_journal_post('e1000000-0000-4000-8000-000000000001',null,'Video post','Summary','Video content is no longer supported.','video','2099-06-01','','landscape','draft')$$,
+  $$select public.upsert_journal_post((select id from public.profiles where auth_user_id='e1000000-0000-4000-8000-000000000001'),null,'Video post','Summary','Video content is no longer supported.','video','2099-06-01','','landscape','draft')$$,
   'P0001', 'Journal content type is invalid', 'video is not an accepted Journal content type'
 );
 select throws_ok(
-  $$select public.upsert_journal_post('e1000000-0000-4000-8000-000000000001',null,'Invalid cover','Summary','This cover format must be rejected.','story','2099-06-01','','banner','draft')$$,
+  $$select public.upsert_journal_post((select id from public.profiles where auth_user_id='e1000000-0000-4000-8000-000000000001'),null,'Invalid cover','Summary','This cover format must be rejected.','story','2099-06-01','','banner','draft')$$,
   'P0001', 'Journal cover format is invalid', 'unsupported cover formats are rejected'
 );
 
 select lives_ok(
-  $$insert into journal_test_post select public.upsert_journal_post('e1000000-0000-4000-8000-000000000001',null,'Campus update','Pickup schedule','Campus pickup is available during the announced schedule.','announcement','2099-06-02','','landscape','draft')$$,
+  $$insert into journal_test_post select public.upsert_journal_post((select id from public.profiles where auth_user_id='e1000000-0000-4000-8000-000000000001'),null,'Campus update','Pickup schedule','Campus pickup is available during the announced schedule.','announcement','2099-06-02','','landscape','draft')$$,
   'admin can create a Journal draft'
 );
 select is((select title from public.journal_posts where id = (select id from journal_test_post)), 'Campus update', 'Journal content is persisted');
 select ok((select published_at is null from public.journal_posts where id = (select id from journal_test_post)), 'draft is not publicly dated as published');
 
 select lives_ok(
-  $$select public.upsert_journal_post('e1000000-0000-4000-8000-000000000001',(select id from journal_test_post),'Campus update published','Updated schedule','The final campus pickup schedule is now available.','announcement','2099-06-03','https://example.test/cover.webp','portrait','published')$$,
+  $$select public.upsert_journal_post((select id from public.profiles where auth_user_id='e1000000-0000-4000-8000-000000000001'),(select id from journal_test_post),'Campus update published','Updated schedule','The final campus pickup schedule is now available.','announcement','2099-06-03','https://example.test/cover.webp','portrait','published')$$,
   'admin can edit and publish a Journal post'
 );
 select ok((select status = 'published' and published_at is not null from public.journal_posts where id = (select id from journal_test_post)), 'publication state and timestamp are persisted');
@@ -80,29 +82,29 @@ select is((select count(*)::integer from public.admin_audit_logs where action in
 select ok((select public and file_size_limit = 3145728 from storage.buckets where id = 'journal-media'), 'Journal media bucket has the approved public-read and size configuration');
 
 select throws_ok(
-  $$select public.delete_journal_draft('e1000000-0000-4000-8000-000000000002',(select id from journal_test_post))$$,
+  $$select public.delete_journal_draft((select id from public.profiles where auth_user_id='e1000000-0000-4000-8000-000000000002'),(select id from journal_test_post))$$,
   'P0001', 'Active administrator access is required', 'customers cannot delete Journal drafts'
 );
 select throws_ok(
-  $$select public.delete_journal_draft('e1000000-0000-4000-8000-000000000001',(select id from journal_test_post))$$,
+  $$select public.delete_journal_draft((select id from public.profiles where auth_user_id='e1000000-0000-4000-8000-000000000001'),(select id from journal_test_post))$$,
   'P0001', 'Only Journal drafts can be deleted', 'published Journal posts cannot be deleted'
 );
 select ok((select exists(select 1 from public.journal_posts where id = (select id from journal_test_post))), 'a rejected published-post deletion preserves the post');
 
-create temporary table journal_delete_test_post (id uuid not null);
+create temporary table journal_delete_test_post (id bigint not null);
 select lives_ok(
-  $$insert into journal_delete_test_post select public.upsert_journal_post('e1000000-0000-4000-8000-000000000001',null,'Temporary draft','Delete me','This temporary Journal draft can be deleted safely.','story','2099-06-04','https://example.test/draft-cover.webp','square','draft')$$,
+  $$insert into journal_delete_test_post select public.upsert_journal_post((select id from public.profiles where auth_user_id='e1000000-0000-4000-8000-000000000001'),null,'Temporary draft','Delete me','This temporary Journal draft can be deleted safely.','story','2099-06-04','https://example.test/draft-cover.webp','square','draft')$$,
   'admin can create a draft for deletion'
 );
 select is(
-  public.delete_journal_draft('e1000000-0000-4000-8000-000000000001',(select id from journal_delete_test_post)),
+  public.delete_journal_draft((select id from public.profiles where auth_user_id='e1000000-0000-4000-8000-000000000001'),(select id from journal_delete_test_post)),
   'https://example.test/draft-cover.webp',
   'draft deletion returns its cover URL for storage cleanup'
 );
 select ok((select not exists(select 1 from public.journal_posts where id = (select id from journal_delete_test_post))), 'the Journal draft is deleted');
 select is((select count(*)::integer from public.admin_audit_logs where action = 'journal.deleted'), 1, 'Journal draft deletion is audited');
 select throws_ok(
-  $$select public.delete_journal_draft('e1000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000099')$$,
+  $$select public.delete_journal_draft((select id from public.profiles where auth_user_id='e1000000-0000-4000-8000-000000000001'),'3774873600000099')$$,
   'P0001', 'Journal draft was not found', 'missing Journal drafts are rejected'
 );
 

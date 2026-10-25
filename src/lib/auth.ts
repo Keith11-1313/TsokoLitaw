@@ -7,6 +7,7 @@ import type { AccountRole } from "@/lib/roles";
 
 export interface AuthProfile {
   id: string;
+  authUserId: string;
   fullName: string;
   email: string;
   role: AccountRole;
@@ -38,8 +39,8 @@ export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, full_name, email, role, is_active, deletion_scheduled_for")
-    .eq("id", userId)
+    .select("id, auth_user_id, full_name, email, role, is_active, deletion_scheduled_for")
+    .eq("auth_user_id", userId)
     .maybeSingle();
 
   if (profileError) {
@@ -52,6 +53,7 @@ export const getAuthProfile = cache(async (): Promise<AuthProfile | null> => {
 
   return {
     id: profile.id,
+    authUserId: profile.auth_user_id,
     fullName: profile.full_name,
     email: profile.email,
     role: profile.role,

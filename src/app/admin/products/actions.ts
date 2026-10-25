@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 import {
   saveCatalogAddon,
   saveCatalogCoating,
@@ -54,7 +54,7 @@ export async function saveVariantAction(input: {
   basePrice: number;
 }): Promise<CatalogActionState> {
   const admin = await requireAdmin("/admin/products");
-  if (!isUuid(input.variantId))
+  if (!isEntityId(input.variantId))
     return { status: "error", message: "That box size is unavailable." };
   if (numberError(input.basePrice, "Base box price", 0, 10000, 0.01))
     return { status: "error", message: "Enter a valid base box price in pesos and centavos." };
@@ -91,7 +91,7 @@ export async function saveCoatingAction(
     fieldErrors.description = "Use a description between 10 and 300 characters.";
   if (!priceValue || numberError(price, "Price per piece", 0, 10000, 0.01))
     fieldErrors.pricePerPiece = "Enter a PHP price from 0 to 10,000 using cents.";
-  if ((coatingIdValue && !isUuid(coatingIdValue)) || Object.keys(fieldErrors).length)
+  if ((coatingIdValue && !isEntityId(coatingIdValue)) || Object.keys(fieldErrors).length)
     return { status: "error", message: "Check the highlighted coating details.", fieldErrors };
   if (
     image instanceof File &&
@@ -153,7 +153,7 @@ export async function saveAddonAction(
   const priceValue = String(formData.get("price") ?? "").trim();
   const price = Number(priceValue);
   if (
-    (addonIdValue && !isUuid(addonIdValue)) ||
+    (addonIdValue && !isEntityId(addonIdValue)) ||
     name.length < 2 ||
     name.length > 80 ||
     !priceValue ||

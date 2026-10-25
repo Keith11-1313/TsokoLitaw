@@ -1,4 +1,6 @@
 begin;
+create temporary sequence fixture_ids start 10000000000;
+create function pg_temp.fixture_id(legacy text) returns bigint language sql immutable as 'select (''x''||left(legacy,8))::bit(32)::bigint*1000000+right(legacy,12)::bigint';
 
 create extension if not exists pgtap with schema extensions;
 set local role postgres;
@@ -38,23 +40,23 @@ values
 
 update public.profiles
 set role = 'admin'
-where id = '91000000-0000-4000-8000-000000000003';
+where id = (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000003');
 
 insert into public.pickup_locations (id, name)
-values ('92000000-0000-4000-8000-000000000001', 'RLS test location');
+values ('2449473536000001', 'RLS test location');
 
 insert into public.pickup_dates (id, pickup_date)
-values ('93000000-0000-4000-8000-000000000001', '2099-01-01');
+values ('2466250752000001', '2099-01-01');
 
 update public.pickup_dates
 set availability_mode = 'READY_STOCK'
-where id = '93000000-0000-4000-8000-000000000001';
+where id = '2466250752000001';
 
 insert into public.pickup_windows (id, pickup_date_id, start_time, end_time)
-values ('94000000-0000-4000-8000-000000000001', '93000000-0000-4000-8000-000000000001', '09:00', '10:00');
+values ('2483027968000001', '2466250752000001', '09:00', '10:00');
 
 insert into public.pickup_window_locations (pickup_window_id, pickup_location_id)
-values ('94000000-0000-4000-8000-000000000001', '92000000-0000-4000-8000-000000000001');
+values ('2483027968000001', '2449473536000001');
 
 update public.terms_versions
 set is_current = false
@@ -72,7 +74,7 @@ insert into public.daily_inventory (
 )
 values (
   '2099-01-01',
-  '10000000-0000-4000-8000-000000000001',
+  '1',
   40,
   0,
   0
@@ -84,20 +86,20 @@ insert into public.orders (
   pickup_location_snapshot, subtotal, total, terms_version, terms_accepted_at
 )
 values
-  ('95000000-0000-4000-8000-000000000001', 'RLS-OWNER', '91000000-0000-4000-8000-000000000001', 'RLS Owner', 'rls-owner@example.test', '2099-01-01', '94000000-0000-4000-8000-000000000001', '92000000-0000-4000-8000-000000000001', '9:00 AM–10:00 AM', 'RLS test location', 40, 40, 'rls-test', now()),
-  ('95000000-0000-4000-8000-000000000002', 'RLS-OTHER', '91000000-0000-4000-8000-000000000002', 'RLS Other', 'rls-other@example.test', '2099-01-01', '94000000-0000-4000-8000-000000000001', '92000000-0000-4000-8000-000000000001', '9:00 AM–10:00 AM', 'RLS test location', 40, 40, 'rls-test', now());
+  ('2499805184000001', 'RLS-OWNER', (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000001'), 'RLS Owner', 'rls-owner@example.test', '2099-01-01', '2483027968000001', '2449473536000001', '9:00 AM–10:00 AM', 'RLS test location', 40, 40, 'rls-test', now()),
+  ('2499805184000002', 'RLS-OTHER', (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000002'), 'RLS Other', 'rls-other@example.test', '2099-01-01', '2483027968000001', '2449473536000001', '9:00 AM–10:00 AM', 'RLS test location', 40, 40, 'rls-test', now());
 
 select set_config('request.jwt.claim.sub', '91000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 set local role authenticated;
 
 select is((select count(*) from public.profiles), 1::bigint, 'customer reads only their own profile');
-select is((select count(*) from public.profiles where id = '91000000-0000-4000-8000-000000000002'), 0::bigint, 'customer cannot read another profile');
+select is((select count(*) from public.profiles where id = (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000002')), 0::bigint, 'customer cannot read another profile');
 select is((select count(*) from public.orders), 1::bigint, 'customer reads only their own order');
-select is((select count(*) from public.orders where user_id = '91000000-0000-4000-8000-000000000002'), 0::bigint, 'customer cannot read another order');
+select is((select count(*) from public.orders where user_id = (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000002')), 0::bigint, 'customer cannot read another order');
 select ok(not public.is_admin(), 'customer does not satisfy the admin role check');
 select throws_ok(
-  $$update public.profiles set role = 'admin' where id = '91000000-0000-4000-8000-000000000001'$$,
+  $$update public.profiles set role = 'admin' where id = (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000001')$$,
   '42501',
   null,
   'customer cannot promote their own profile'
@@ -122,7 +124,7 @@ select ok(
   (
     select deletion_scheduled_for = deletion_requested_at + interval '90 days'
     from public.profiles
-    where id = '91000000-0000-4000-8000-000000000004'
+    where id = (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000004')
   ),
   'account deletion uses an exact 90-day grace period'
 );
@@ -130,7 +132,7 @@ select is(
   (
     select count(*)
     from public.profiles
-    where id = '91000000-0000-4000-8000-000000000002'
+    where id = (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000002')
       and deletion_scheduled_for is not null
   ),
   0::bigint,
@@ -144,7 +146,7 @@ select is(
   (
     select deletion_scheduled_for
     from public.profiles
-    where id = '91000000-0000-4000-8000-000000000004'
+    where id = (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000004')
   ),
   null::timestamptz,
   'cancelling clears the deletion schedule'
@@ -155,13 +157,13 @@ select is(
   (
     select was_created
     from public.create_checkout_order(
-      '91000000-0000-4000-8000-000000000001',
+      (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000001'),
       '96000000-0000-4000-8000-000000000001',
-      '94000000-0000-4000-8000-000000000001',
-      '92000000-0000-4000-8000-000000000001',
+      '2483027968000001',
+      '2449473536000001',
       'RLS Owner',
       null,
-      '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addons":[{"id":"13000000-0000-4000-8000-000000000001","name":"Extra sea salt cream","unit_price":18,"quantity":1,"line_total":0,"is_complimentary":true}]}]'::jsonb,
+      '[{"product_id":"1","product_name":"Chocolate-Filled Litaw","variant_id":"1","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"1","name":"Cocoa","piece_count":4,"additional_price":0}],"addons":[{"id":"1","name":"Extra sea salt cream","unit_price":18,"quantity":1,"line_total":0,"is_complimentary":true}]}]'::jsonb,
       40,
       0,
       40,
@@ -184,12 +186,12 @@ select is(
   (
     select was_created
     from public.create_checkout_order(
-      '91000000-0000-4000-8000-000000000001',
+      (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000001'),
       '96000000-0000-4000-8000-000000000001',
-      '94000000-0000-4000-8000-000000000001',
-      '92000000-0000-4000-8000-000000000001',
+      '2483027968000001',
+      '2449473536000001',
       'RLS Owner', null,
-      '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addons":[{"id":"13000000-0000-4000-8000-000000000001","name":"Extra sea salt cream","unit_price":18,"quantity":1,"line_total":0,"is_complimentary":true}]}]'::jsonb,
+      '[{"product_id":"1","product_name":"Chocolate-Filled Litaw","variant_id":"1","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"1","name":"Cocoa","piece_count":4,"additional_price":0}],"addons":[{"id":"1","name":"Extra sea salt cream","unit_price":18,"quantity":1,"line_total":0,"is_complimentary":true}]}]'::jsonb,
       40, 0, 40, 'rls-test-v1', null
     ,'paymongo','')
   ),
@@ -210,7 +212,7 @@ select is(
     select stock_reserved
     from public.daily_inventory
     where pickup_date = '2099-01-01'
-      and product_id = '10000000-0000-4000-8000-000000000001'
+      and product_id = '1'
   ),
   4,
   'pending ready-stock checkout reserves individual pieces'
@@ -239,7 +241,7 @@ select is(
     select stock_reserved
     from public.daily_inventory
     where pickup_date = '2099-01-01'
-      and product_id = '10000000-0000-4000-8000-000000000001'
+      and product_id = '1'
   ),
   0,
   'expiration releases ready-stock inventory'
@@ -249,12 +251,12 @@ select is(
   (
     select was_created
     from public.create_checkout_order(
-      '91000000-0000-4000-8000-000000000001',
+      (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000001'),
       '96000000-0000-4000-8000-000000000004',
-      '94000000-0000-4000-8000-000000000001',
-      '92000000-0000-4000-8000-000000000001',
+      '2483027968000001',
+      '2449473536000001',
       'RLS Owner', null,
-      '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addons":[{"id":"13000000-0000-4000-8000-000000000001","name":"Extra sea salt cream","unit_price":18,"quantity":1,"line_total":0,"is_complimentary":true}]}]'::jsonb,
+      '[{"product_id":"1","product_name":"Chocolate-Filled Litaw","variant_id":"1","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"1","name":"Cocoa","piece_count":4,"additional_price":0}],"addons":[{"id":"1","name":"Extra sea salt cream","unit_price":18,"quantity":1,"line_total":0,"is_complimentary":true}]}]'::jsonb,
       40, 0, 40, 'rls-test-v1', null,
       'manual_gcash', repeat('Q', 50)
     )
@@ -279,12 +281,12 @@ select is(
   (
     select was_created
     from public.create_checkout_order(
-      '91000000-0000-4000-8000-000000000001',
+      (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000001'),
       '96000000-0000-4000-8000-000000000003',
-      '94000000-0000-4000-8000-000000000001',
-      '92000000-0000-4000-8000-000000000001',
+      '2483027968000001',
+      '2449473536000001',
       'RLS Owner', null,
-      '[{"product_id":"10000000-0000-4000-8000-000000000001","product_name":"Chocolate-Filled Litaw","variant_id":"11000000-0000-4000-8000-000000000004","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"12000000-0000-4000-8000-000000000001","name":"Cocoa","piece_count":4,"additional_price":0}],"addons":[{"id":"13000000-0000-4000-8000-000000000001","name":"Extra sea salt cream","unit_price":18,"quantity":1,"line_total":0,"is_complimentary":true}]}]'::jsonb,
+      '[{"product_id":"1","product_name":"Chocolate-Filled Litaw","variant_id":"1","variant_name":"Box of 4","piece_count":4,"base_unit_price":40,"coating_total":0,"quantity":1,"line_subtotal":40,"coatings":[{"id":"1","name":"Cocoa","piece_count":4,"additional_price":0}],"addons":[{"id":"1","name":"Extra sea salt cream","unit_price":18,"quantity":1,"line_total":0,"is_complimentary":true}]}]'::jsonb,
       40, 0, 40, 'rls-test-v1', null
     ,'paymongo','')
   ),
@@ -307,35 +309,35 @@ insert into public.orders (
   terms_version, terms_accepted_at, completed_at
 )
 values (
-  '95000000-0000-4000-8000-000000000003', 'RLS-DEACTIVATED',
-  '91000000-0000-4000-8000-000000000004', 'COMPLETED', 'PAID',
+  '2499805184000003', 'RLS-DEACTIVATED',
+  (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000004'), 'COMPLETED', 'PAID',
   'RLS Deletion', 'rls-deletion@example.test', '2099-01-01',
-  '94000000-0000-4000-8000-000000000001',
-  '92000000-0000-4000-8000-000000000001', '9:00 AM–10:00 AM',
+  '2483027968000001',
+  '2449473536000001', '9:00 AM–10:00 AM',
   'RLS test location', 40, 40, 'rls-test', now(), now()
 );
 
 update public.profiles
 set deletion_requested_at = now() - interval '91 days',
     deletion_scheduled_for = now() - interval '1 day'
-where id = '91000000-0000-4000-8000-000000000004';
+where id = (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000004');
 
 select ok(
-  public.deactivate_due_account('91000000-0000-4000-8000-000000000004'),
+  public.deactivate_due_account((select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000004')),
   'due eligible customer account is deactivated'
 );
 select is(
-  (select is_active from public.profiles where id = '91000000-0000-4000-8000-000000000004'),
+  (select is_active from public.profiles where id = (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000004')),
   false,
   'deactivation marks the profile inactive'
 );
 select ok(
-  (select deactivated_at is not null from public.profiles where id = '91000000-0000-4000-8000-000000000004'),
+  (select deactivated_at is not null from public.profiles where id = (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000004')),
   'deactivation records its timestamp'
 );
 select is(
   (select user_id from public.orders where order_number = 'RLS-DEACTIVATED'),
-  '91000000-0000-4000-8000-000000000004'::uuid,
+  (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000004')::bigint,
   'deactivation preserves the order-to-profile relationship'
 );
 
@@ -357,10 +359,10 @@ select is(
     select count(*)
     from public.orders
     where user_id in (
-      '91000000-0000-4000-8000-000000000001',
-      '91000000-0000-4000-8000-000000000002',
-      '91000000-0000-4000-8000-000000000003',
-      '91000000-0000-4000-8000-000000000004'
+      (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000001'),
+      (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000002'),
+      (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000003'),
+      (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000004')
     )
   ),
   6::bigint,
@@ -396,8 +398,8 @@ select lives_ok(
     update public.profiles
     set role = 'admin'
     where id between
-      '91000000-0000-4000-8000-000000000010'::uuid and
-      '91000000-0000-4000-8000-000000000018'::uuid
+      (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000010')::bigint and
+      (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000018')::bigint
   $$,
   'the tenth approved administrator is allowed'
 );
@@ -405,7 +407,7 @@ select throws_ok(
   $$
     update public.profiles
     set role = 'admin'
-    where id = '91000000-0000-4000-8000-000000000019'
+    where id = (select id from public.profiles where auth_user_id='91000000-0000-4000-8000-000000000019')
   $$,
   'P0001',
   'TsokoLitaw supports at most ten administrators',

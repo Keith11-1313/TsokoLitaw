@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireStaff } from "@/lib/auth";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 import { recordInventoryConsumption, saveDailyInventory } from "@/lib/server-inventory";
 import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
 
@@ -52,7 +52,7 @@ export async function saveInventoryAction(
 
   if (
     !/^\d{4}-\d{2}-\d{2}$/.test(pickupDate) ||
-    !isUuid(productId) ||
+    !isEntityId(productId) ||
     !stockTotalValue ||
     !Number.isInteger(stockTotal) ||
     stockTotal < 0 ||
@@ -105,7 +105,7 @@ export async function consumeInventoryAction(
   const notes = String(formData.get("notes") ?? "").trim();
 
   if (
-    !isUuid(inventoryId) ||
+    !isEntityId(inventoryId) ||
     !quantityValue ||
     !Number.isInteger(quantity) ||
     quantity < 1 ||

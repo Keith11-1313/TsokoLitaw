@@ -1,3 +1,4 @@
+import { isEntityId } from "@/lib/identifiers";
 import "server-only";
 
 import type { OrderStatus } from "@/components/ui/status-badge";
@@ -127,8 +128,6 @@ interface OrdersCursor {
   id: string;
 }
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function decodeCursor(value: string | undefined): OrdersCursor | null {
   if (!value || value.length > 300) return null;
 
@@ -137,7 +136,7 @@ function decodeCursor(value: string | undefined): OrdersCursor | null {
       Buffer.from(value, "base64url").toString("utf8"),
     ) as Partial<OrdersCursor>;
     if (typeof parsed.createdAt !== "string" || typeof parsed.id !== "string") return null;
-    if (!UUID_PATTERN.test(parsed.id)) return null;
+    if (!isEntityId(parsed.id)) return null;
     const createdAt = new Date(parsed.createdAt);
     if (Number.isNaN(createdAt.getTime())) return null;
     return { createdAt: createdAt.toISOString(), id: parsed.id };

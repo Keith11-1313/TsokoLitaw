@@ -1,4 +1,6 @@
 begin;
+create temporary sequence fixture_ids start 10000000000;
+create function pg_temp.fixture_id(legacy text) returns bigint language sql immutable as 'select (''x''||left(legacy,8))::bit(32)::bigint*1000000+right(legacy,12)::bigint';
 
 create extension if not exists pgtap with schema extensions;
 set local role postgres;
@@ -47,14 +49,14 @@ insert into auth.users (
   );
 
 update public.profiles set role = 'admin'
-where id = 'ca000000-0000-4000-8000-000000000001';
+where id = (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001');
 
 insert into public.pickup_locations (id, name)
-values ('ca100000-0000-4000-8000-000000000001', 'Customer summary test location');
+values ('3390046208000001', 'Customer summary test location');
 insert into public.pickup_dates (id, pickup_date)
-values ('ca200000-0000-4000-8000-000000000001', '2099-05-01');
+values ('3391094784000001', '2099-05-01');
 insert into public.pickup_windows (id, pickup_date_id, start_time, end_time)
-values ('ca300000-0000-4000-8000-000000000001', 'ca200000-0000-4000-8000-000000000001', '10:00', '11:00');
+values ('3392143360000001', '3391094784000001', '10:00', '11:00');
 
 insert into public.orders (
   id, order_number, user_id, status, payment_status, customer_name, customer_email,
@@ -62,11 +64,11 @@ insert into public.orders (
   pickup_location_snapshot, subtotal, total, terms_version, terms_accepted_at,
   completed_at
 ) values (
-  'ca400000-0000-4000-8000-000000000001', 'TL-9301',
-  'ca000000-0000-4000-8000-000000000002', 'COMPLETED', 'PAID',
+  '3393191936000001', 'TL-9301',
+  (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000002'), 'COMPLETED', 'PAID',
   'Summary Customer', 'customer-summary@example.test', '2099-05-01',
-  'ca300000-0000-4000-8000-000000000001',
-  'ca100000-0000-4000-8000-000000000001',
+  '3392143360000001',
+  '3390046208000001',
   '10:00 AM–11:00 AM', 'Customer summary test location', 40, 40,
   'customers-test', now(), now()
 );
@@ -76,106 +78,106 @@ insert into public.orders (
   pickup_date, pickup_window_id, pickup_location_id, pickup_window_snapshot,
   pickup_location_snapshot, subtotal, total, terms_version, terms_accepted_at
 ) values (
-  'ca400000-0000-4000-8000-000000000002', 'TL-9302',
-  'ca000000-0000-4000-8000-000000000002', 'CANCELLED', 'PAID',
+  '3393191936000002', 'TL-9302',
+  (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000002'), 'CANCELLED', 'PAID',
   'Summary Customer', 'customer-summary@example.test', '2099-05-01',
-  'ca300000-0000-4000-8000-000000000001',
-  'ca100000-0000-4000-8000-000000000001',
+  '3392143360000001',
+  '3390046208000001',
   '10:00 AM–11:00 AM', 'Customer summary test location', 40, 40,
   'customers-test', now()
 );
 
 update public.loyalty_accounts
 set completed_order_count = 1
-where user_id = 'ca000000-0000-4000-8000-000000000002';
+where user_id = (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000002');
 insert into public.loyalty_rewards (user_id, reward_type, threshold, source_order_id)
-values ('ca000000-0000-4000-8000-000000000002', 'FREE_4_PIECE', 7, 'ca400000-0000-4000-8000-000000000001');
+values ((select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000002'), 'FREE_4_PIECE', 7, '3393191936000001');
 insert into public.loyalty_rewards (
   user_id, reward_type, threshold, status, redeemed_at, source_order_id, redeemed_order_id
 ) values (
-  'ca000000-0000-4000-8000-000000000002', 'FREE_4_PIECE', 7, 'redeemed', now(),
-  'ca400000-0000-4000-8000-000000000002', 'ca400000-0000-4000-8000-000000000002'
+  (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000002'), 'FREE_4_PIECE', 7, 'redeemed', now(),
+  '3393191936000002', '3393191936000002'
 );
 
 select lives_ok(
   $$ select * from public.get_admin_customer_summaries(
-    'ca000000-0000-4000-8000-000000000001', null, 100
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001'), null, 100
   ) $$,
   'an active Admin can read bounded customer summaries'
 );
 select is(
   (select count(*) from public.get_admin_customer_summaries(
-    'ca000000-0000-4000-8000-000000000001', 'summary', 100
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001'), 'summary', 100
   )),
   1::bigint,
   'customer search matches name or email'
 );
 select is(
   public.count_admin_customers(
-    'ca000000-0000-4000-8000-000000000001', 'summary'
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001'), 'summary'
   ),
   1::bigint,
   'customer count uses the same search rules'
 );
 select is(
   (select count(*) from public.get_admin_customer_summaries(
-    'ca000000-0000-4000-8000-000000000001', null, 1, 1
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001'), null, 1, 1
   )),
   1::bigint,
   'customer summaries support bounded page offsets'
 );
 select is(
   (select completed_orders from public.get_admin_customer_summaries(
-    'ca000000-0000-4000-8000-000000000001', 'summary', 100
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001'), 'summary', 100
   )),
   1::bigint,
   'the summary counts completed orders'
 );
 select is(
   (select completed_spend from public.get_admin_customer_summaries(
-    'ca000000-0000-4000-8000-000000000001', 'summary', 100
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001'), 'summary', 100
   )),
   40::numeric,
   'the summary totals completed paid value'
 );
 select is(
   (select loyalty_completed_orders from public.get_admin_customer_summaries(
-    'ca000000-0000-4000-8000-000000000001', 'summary', 100
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001'), 'summary', 100
   )),
   1,
   'the summary includes loyalty completion progress'
 );
 select is(
   (select available_rewards from public.get_admin_customer_summaries(
-    'ca000000-0000-4000-8000-000000000001', 'summary', 100
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001'), 'summary', 100
   )),
   1::bigint,
   'the summary includes available loyalty rewards'
 );
 select is(
   (select loyalty_threshold from public.get_admin_customer_summaries(
-    'ca000000-0000-4000-8000-000000000001', 'summary', 100
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001'), 'summary', 100
   )),
   7,
   'the summary includes the configured loyalty threshold'
 );
 select is(
   (select redeemed_rewards from public.get_admin_customer_summaries(
-    'ca000000-0000-4000-8000-000000000001', 'summary', 100
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001'), 'summary', 100
   )),
   1::bigint,
   'the summary includes redeemed loyalty rewards'
 );
 select is(
   (select count(*) from public.get_admin_customer_summaries(
-    'ca000000-0000-4000-8000-000000000001', 'customers admin', 100
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000001'), 'customers admin', 100
   )),
   0::bigint,
   'Admin accounts are excluded from the customer directory'
 );
 select throws_ok(
   $$ select * from public.get_admin_customer_summaries(
-    'ca000000-0000-4000-8000-000000000002', null, 100
+    (select id from public.profiles where auth_user_id='ca000000-0000-4000-8000-000000000002'), null, 100
   ) $$,
   'P0001',
   'Active Admin access required',

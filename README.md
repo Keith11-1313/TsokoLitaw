@@ -1,5 +1,9 @@
 # TsokoLitaw
 
+October 26 candidate: sequential application IDs are implemented and verified locally with a
+populated Dev export. Hosted Dev and Production still use the previous schema. See the
+[coordinated cutover instructions](docs/operations/database-migrations.md#october-26-sequential-id-candidate--not-activated).
+
 Mobile-first storefront and Admin interface for a student-operated chocolate-filled Litaw business.
 Customers configure 4-, 6-, or 8-piece boxes, complete website checkout, and collect at published
 campus pickups. Depending on the configured mode, payment uses PayMongo QR Ph, Manual GCash, or a

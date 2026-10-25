@@ -1,5 +1,24 @@
 # Database: rules that intentionally live in SQL
 
+## Sequential identifiers — October 26 candidate
+
+The forward migration `20261026010000_sequential_application_ids.sql` converts 25 application
+entity keys and their foreign keys in place to bigint identities. It is verified locally but
+not activated on hosted Dev or Production. Date and composite keys keep their existing meaning.
+Sequences allocate increasing values independently per table; gaps after rollback/deletion are
+normal. They are identifiers, not counts or authorization secrets.
+
+`profiles.id` becomes an application account key; `profiles.auth_user_id` keeps the unique UUID
+foreign key to Supabase Auth. `current_profile_id()` resolves the authenticated UUID for SQL
+authorization. Auth/Storage managed IDs, checkout retry tokens and receipt upload tokens stay UUID.
+Existing order numbers, payment references, receipt paths and historical snapshots are preserved.
+
+The generated database types expose numeric IDs. `src/types/database.ts` and the shared
+`entityIdFetch` REST codec preserve decimal-string IDs in application DTOs, URLs and forms;
+prices and counts remain numbers. Identity values are constrained to the JavaScript safe integer
+range. UUID validation remains only for Auth and opaque tokens. The private `migration_support`
+mapping is inaccessible to browser roles and retained for recovery. See the migration runbook.
+
 October 21: `20261021010000_staff_inventory.sql` moves the two prepared-stock
 writers to active Staff with actor-row locking. Admin retains inventory/history SELECT, Staff gains
 inventory reader access via RLS, and service-only grants and stock/audit behavior are preserved.

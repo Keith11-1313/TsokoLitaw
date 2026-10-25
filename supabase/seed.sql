@@ -10,7 +10,7 @@ insert into public.products (
   is_active
 )
 values (
-  '10000000-0000-4000-8000-000000000001',
+  1,
   'Chocolate-Filled Litaw',
   'chocolate-filled-litaw',
   'Soft Litaw pieces with a chocolate center and a customer-selected coating.',
@@ -34,9 +34,9 @@ insert into public.product_variants (
   sort_order
 )
 values
-  ('11000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000001', 'TsokoMini (4 pcs)', 4, 40.00, true, 1),
-  ('11000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000001', 'TsokoMore (6 pcs)', 6, 55.00, true, 2),
-  ('11000000-0000-4000-8000-000000000008', '10000000-0000-4000-8000-000000000001', 'TsokoMuch (8 pcs)', 8, 75.00, true, 3)
+  (1, 1, 'TsokoMini (4 pcs)', 4, 40.00, true, 1),
+  (2, 1, 'TsokoMore (6 pcs)', 6, 55.00, true, 2),
+  (3, 1, 'TsokoMuch (8 pcs)', 8, 75.00, true, 3)
 on conflict (id) do update set
   name = excluded.name,
   piece_count = excluded.piece_count,
@@ -56,14 +56,14 @@ insert into public.coatings (
   sort_order
 )
 values
-  ('12000000-0000-4000-8000-000000000001', 'Cocoa', 'cocoa', 'A rich cocoa coating over the chocolate-filled base.', null, 5.00, true, false, 1),
-  ('12000000-0000-4000-8000-000000000002', 'Milk', 'milk', 'A creamy milk coating with a soft, mellow finish.', null, 5.00, true, false, 2),
-  ('12000000-0000-4000-8000-000000000003', 'Palitaw', 'palitaw', 'A combination of sugar, niyog, and sesame seeds.', null, 5.00, true, false, 3),
-  ('12000000-0000-4000-8000-000000000004', 'Crushed Nuts', 'crushed-nuts', 'A crunchy crushed-nut coating for added texture.', null, 5.00, true, false, 4),
-  ('12000000-0000-4000-8000-000000000005', 'Plain', 'plain', 'The soft Litaw exterior with no additional coating.', null, 0.00, true, true, 5),
-  ('12000000-0000-4000-8000-000000000006', 'Sesame Seeds', 'sesame-seeds', 'A toasted sesame seed coating with a nutty aroma.', null, 5.00, true, false, 6),
-  ('12000000-0000-4000-8000-000000000007', 'Cookies and Cream', 'cookies-and-cream', 'Crushed chocolate cookies blended with a creamy coating.', null, 5.00, true, false, 7),
-  ('12000000-0000-4000-8000-000000000008', 'Chocolate Sprinkles', 'chocolate-sprinkles', 'Chocolate sprinkles with a crisp finish.', null, 5.00, true, false, 8)
+  (1, 'Cocoa', 'cocoa', 'A rich cocoa coating over the chocolate-filled base.', null, 5.00, true, false, 1),
+  (2, 'Milk', 'milk', 'A creamy milk coating with a soft, mellow finish.', null, 5.00, true, false, 2),
+  (3, 'Palitaw', 'palitaw', 'A combination of sugar, niyog, and sesame seeds.', null, 5.00, true, false, 3),
+  (4, 'Crushed Nuts', 'crushed-nuts', 'A crunchy crushed-nut coating for added texture.', null, 5.00, true, false, 4),
+  (5, 'Plain', 'plain', 'The soft Litaw exterior with no additional coating.', null, 0.00, true, true, 5),
+  (6, 'Sesame Seeds', 'sesame-seeds', 'A toasted sesame seed coating with a nutty aroma.', null, 5.00, true, false, 6),
+  (7, 'Cookies and Cream', 'cookies-and-cream', 'Crushed chocolate cookies blended with a creamy coating.', null, 5.00, true, false, 7),
+  (8, 'Chocolate Sprinkles', 'chocolate-sprinkles', 'Chocolate sprinkles with a crisp finish.', null, 5.00, true, false, 8)
 on conflict (id) do update set
   name = excluded.name,
   slug = excluded.slug,
@@ -76,7 +76,7 @@ on conflict (id) do update set
 
 insert into public.addons (id, name, slug, price, is_active, is_default)
 values (
-  '13000000-0000-4000-8000-000000000001',
+  1,
   'Sea salt cream',
   'extra-sea-salt-cream',
   15.00,
@@ -92,8 +92,8 @@ on conflict (id) do update set
 
 insert into public.pickup_locations (id, name, description, is_active, sort_order)
 values
-  ('14000000-0000-4000-8000-000000000001', 'UCC Congress — 3rd Floor', 'Campus pickup at the third floor.', true, 1),
-  ('14000000-0000-4000-8000-000000000002', 'UCC Congress — Covered Court', 'Campus pickup at the covered court.', true, 2)
+  (1, 'UCC Congress — 3rd Floor', 'Campus pickup at the third floor.', true, 1),
+  (2, 'UCC Congress — Covered Court', 'Campus pickup at the covered court.', true, 2)
 on conflict (id) do update set
   name = excluded.name,
   description = excluded.description,
@@ -462,3 +462,11 @@ Supported profile information can be edited in your account. Other requests may 
 Changes to this policy
 
 This policy may be updated when the service, providers, operating model, or legal requirements change. The revised date will appear on this page. Material changes will receive additional notice when appropriate or legally required, and a new checkout policy version may require acceptance before another order is placed.$policy$,'2026-10-20 00:00:00+08'::timestamptz,true) on conflict(version) do update set is_current=true;
+
+-- Explicit controlled IDs must not collide with later identity inserts.
+DO $$ DECLARE target text; maximum_id bigint; BEGIN
+ FOREACH target IN ARRAY ARRAY['products','product_variants','coatings','addons','pickup_locations'] LOOP
+ EXECUTE format('SELECT max(id) FROM public.%I',target) INTO maximum_id;
+ PERFORM setval(pg_get_serial_sequence('public.'||target,'id'),coalesce(maximum_id,1),maximum_id IS NOT NULL);
+ END LOOP;
+END $$;

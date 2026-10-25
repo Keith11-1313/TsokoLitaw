@@ -1,8 +1,8 @@
+import { isEntityId } from "@/lib/identifiers";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { PayMongoMode } from "@/lib/paymongo-mode";
 
 const SIGNATURE_TOLERANCE_SECONDS = 5 * 60;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 interface PayMongoWebhookEnvelope {
   event_type?: unknown;
@@ -114,7 +114,7 @@ export function parsePayMongoPaidEvent(
   if (typeof checkoutId !== "string" || !/^cs_[A-Za-z0-9_-]+$/.test(checkoutId)) {
     throw new Error("PayMongo checkout ID is invalid.");
   }
-  if (typeof orderId !== "string" || !UUID_PATTERN.test(orderId)) {
+  if (typeof orderId !== "string" || !isEntityId(orderId)) {
     throw new Error("PayMongo order metadata is invalid.");
   }
   if (typeof orderNumber !== "string" || !/^TL(?:-\d{4,}|\d{9})$/.test(orderNumber)) {

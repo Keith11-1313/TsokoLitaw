@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { OrderStatus } from "@/components/ui/status-badge";
 import { requireStaff } from "@/lib/auth";
 import { cancelAdminOrder } from "@/lib/server-cancellation";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 import { isAllowedFulfillmentTransition } from "@/lib/order-status";
 import { recordAdminCounterPayment, transitionAdminOrderStatus } from "@/lib/server-orders";
 import { dispatchReadyForPickup } from "@/lib/server-notifications";
@@ -25,7 +25,7 @@ export async function cancelAdminOrderAction(input: {
 }): Promise<AdminOrderActionResult> {
   const admin = await requireStaff("/admin/orders");
   if (
-    !isUuid(input.orderId) ||
+    !isEntityId(input.orderId) ||
     typeof input.reason !== "string" ||
     input.reason.trim().length < 3 ||
     input.reason.length > 500 ||
@@ -72,7 +72,7 @@ export async function cancelAdminOrderAction(input: {
 
 export async function loadManualPaymentAction(orderId: string) {
   await requireStaff("/admin/orders");
-  if (!isUuid(orderId)) throw new Error("Invalid order.");
+  if (!isEntityId(orderId)) throw new Error("Invalid order.");
   const payment = await getManualPayment(orderId);
   const proof = payment?.submissions.find((submission) => submission.status === "UNDER_REVIEW");
   if (!payment || !proof) return payment ? { ...payment, approvedReferenceConflict: null } : null;
@@ -113,7 +113,7 @@ export async function reviewManualPaymentAction(input: {
 }): Promise<AdminOrderActionResult> {
   const admin = await requireStaff("/admin/orders");
   if (
-    !isUuid(input.submissionId) ||
+    !isEntityId(input.submissionId) ||
     typeof input.approve !== "boolean" ||
     !input.verified ||
     typeof input.reason !== "string" ||
@@ -208,7 +208,7 @@ export async function transitionOrderStatusAction(input: {
   const admin = await requireStaff("/admin/orders");
 
   if (
-    !isUuid(input.orderId) ||
+    !isEntityId(input.orderId) ||
     !isAllowedFulfillmentTransition(input.expectedStatus, input.nextStatus)
   ) {
     return { status: "error", message: "That fulfillment update is invalid." };
@@ -254,7 +254,7 @@ export async function transitionOrderStatusAction(input: {
 
 export async function recordCounterPaymentAction(orderId: string): Promise<AdminOrderActionResult> {
   const admin = await requireStaff("/admin/orders");
-  if (!isUuid(orderId)) return { status: "error", message: "That order is invalid." };
+  if (!isEntityId(orderId)) return { status: "error", message: "That order is invalid." };
 
   try {
     await enforceMutationRateLimit({

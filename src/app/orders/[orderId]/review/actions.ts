@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireCustomer } from "@/lib/auth";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 import { removeReviewImages, submitCustomerReview, uploadReviewImages } from "@/lib/server-reviews";
 import { MAX_REVIEW_SUBMISSION_IMAGE_BYTES, REVIEW_HIGHLIGHTS } from "@/lib/reviews";
 import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
@@ -26,7 +26,7 @@ export async function submitReviewAction(
     .getAll("images")
     .filter((image): image is File => image instanceof File && image.size > 0);
 
-  if (!isUuid(orderId)) {
+  if (!isEntityId(orderId)) {
     return { status: "error", message: "That completed order is unavailable." };
   }
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {

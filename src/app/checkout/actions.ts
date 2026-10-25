@@ -1,4 +1,5 @@
 "use server";
+import { isEntityId } from "@/lib/identifiers";
 
 import { requireCustomer } from "@/lib/auth";
 import { createPendingOrder } from "@/lib/server-checkout";
@@ -37,7 +38,7 @@ export type CheckoutSubmissionResult =
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function isValidCartItem(item: CheckoutCartInput) {
-  if (!UUID_PATTERN.test(item.variantId)) return false;
+  if (!isEntityId(item.variantId)) return false;
   if (
     !Number.isInteger(item.quantity) ||
     item.quantity < 1 ||
@@ -50,7 +51,7 @@ function isValidCartItem(item: CheckoutCartInput) {
     item.addonQuantity > MAX_ADDON_QUANTITY
   )
     return false;
-  if (item.addonId !== null && !UUID_PATTERN.test(item.addonId)) return false;
+  if (item.addonId !== null && !isEntityId(item.addonId)) return false;
   if (!item.coatingCounts || typeof item.coatingCounts !== "object") return false;
 
   const allocations = Object.entries(item.coatingCounts);
@@ -58,7 +59,7 @@ function isValidCartItem(item: CheckoutCartInput) {
     allocations.length > 0 &&
     allocations.every(
       ([coatingId, count]) =>
-        UUID_PATTERN.test(coatingId) && Number.isInteger(count) && count >= 0 && count <= 8,
+        isEntityId(coatingId) && Number.isInteger(count) && count >= 0 && count <= 8,
     )
   );
 }
@@ -68,7 +69,7 @@ function getValidationFailure(
 ): { message: string; fieldErrors?: Record<string, string> } | null {
   if (!UUID_PATTERN.test(input.checkoutKey))
     return { message: "Start a new checkout attempt and try again." };
-  if (!UUID_PATTERN.test(input.pickupWindowId) || !UUID_PATTERN.test(input.pickupLocationId)) {
+  if (!isEntityId(input.pickupWindowId) || !isEntityId(input.pickupLocationId)) {
     return {
       message: "Choose an available pickup date, time, and location.",
       fieldErrors: { pickup: "Choose an available pickup option." },
@@ -91,7 +92,7 @@ function getValidationFailure(
       message: "Accept the Terms & Conditions before continuing.",
       fieldErrors: { termsAccepted: "Acceptance is required." },
     };
-  if (input.loyaltyRewardId !== null && !UUID_PATTERN.test(input.loyaltyRewardId)) {
+  if (input.loyaltyRewardId !== null && !isEntityId(input.loyaltyRewardId)) {
     return { message: "Choose a valid loyalty reward." };
   }
   if (!(["paymongo", "manual_gcash", "pay_at_counter"] as const).includes(input.paymentMethod)) {
@@ -204,7 +205,7 @@ export async function resumePendingPaymentAction(
   orderId: string,
 ): Promise<CheckoutSubmissionResult> {
   const profile = await requireCustomer("/checkout");
-  if (!UUID_PATTERN.test(orderId)) {
+  if (!isEntityId(orderId)) {
     return { status: "error", message: "That pending order could not be reopened." };
   }
 

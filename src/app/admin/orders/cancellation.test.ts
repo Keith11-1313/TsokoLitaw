@@ -24,7 +24,7 @@ vi.mock("@/lib/server-rate-limit", () => ({
 }));
 import { cancelAdminOrderAction } from "./actions";
 const input = {
-  orderId: "f5000000-0000-4000-8000-000000000001",
+  orderId: "1",
   expectedStatus: "READY_FOR_PICKUP" as const,
   reason: " No show ",
 };

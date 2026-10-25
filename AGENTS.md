@@ -115,6 +115,12 @@ moderation for public visibility. Admin has one equal-permission role with at mo
 
 ## Implementation
 
+- October 26 candidate (not activated on either hosted project): application entity IDs are
+  PostgreSQL bigint identities. Supabase Auth retains UUIDs via `profiles.auth_user_id`;
+  `profiles.id` is the application account key. At the REST boundary IDs become canonical decimal
+  strings for existing DTOs/forms/URLs. UUID checkout/upload tokens are not entity IDs.
+  Coordinate matching code and SQL before any hosted cutover; see the migration runbook.
+
 - Next.js App Router, strict TypeScript, existing Tailwind tokens. Prefer Server Components unless
   interaction requires a client. Use type-only imports across DTO boundaries, not runtime server imports.
 - Inspect existing shared components before adding variants. Keep mobile/tablet/desktop and

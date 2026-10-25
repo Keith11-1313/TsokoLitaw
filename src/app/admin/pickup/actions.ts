@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 import {
   savePickupLocation,
   savePickupSchedule,
@@ -74,7 +74,7 @@ export async function savePickupScheduleAction(
 
   const validTime = (value: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
   if (
-    (idValue && !isUuid(idValue)) ||
+    (idValue && !isEntityId(idValue)) ||
     !/^\d{4}-\d{2}-\d{2}$/.test(pickupDate) ||
     !modes.has(mode) ||
     notes.length > 500 ||
@@ -88,7 +88,7 @@ export async function savePickupScheduleAction(
         window.endTime <= window.startTime ||
         !Array.isArray(window.locationIds) ||
         window.locationIds.length < 1 ||
-        window.locationIds.some((id) => !isUuid(id)),
+        window.locationIds.some((id) => !isEntityId(id)),
     )
   ) {
     return {
@@ -126,7 +126,7 @@ export async function setPickupDateOpenAction(input: {
   isOpen: boolean;
 }): Promise<PickupActionState> {
   const admin = await requireAdmin("/admin/pickup");
-  if (!isUuid(input.pickupDateId))
+  if (!isEntityId(input.pickupDateId))
     return { status: "error", message: "That pickup date is invalid." };
   try {
     await guard(admin.id);
@@ -214,7 +214,7 @@ export async function savePickupLocationAction(
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   if (
-    (idValue && !isUuid(idValue)) ||
+    (idValue && !isEntityId(idValue)) ||
     name.length < 2 ||
     name.length > 100 ||
     description.length > 300

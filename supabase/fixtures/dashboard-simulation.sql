@@ -16,6 +16,16 @@
 
 begin;
 
+-- Transaction-local map allocates real identity values, preserving linked rows.
+create temporary table _fixture_entity_ids(entity text, key text, id bigint, primary key(entity,key)) on commit drop;
+create function pg_temp.fixture_entity_id(entity text, key text) returns bigint language plpgsql as $$
+declare result bigint; begin
+ select m.id into result from _fixture_entity_ids m where m.entity=$1 and m.key=$2;
+ if result is null then
+  result := nextval(pg_get_serial_sequence('public.'||entity,'id'));
+  insert into _fixture_entity_ids values(entity,key,result);
+ end if; return result; end $$;
+
 do $$
 declare
   fixture_scope text := current_setting('app.dashboard_fixture_scope', true);
@@ -54,11 +64,7 @@ $$;
 
 -- A rerun refreshes only records owned by this fixture.
 delete from public.journal_posts
-where id in (
-  'd15a0000-0000-4000-8000-000000000002',
-  'd15a0000-0000-4000-8000-000000000003',
-  'd15a0000-0000-4000-8000-000000000004'
-);
+where slug in ('dashboard-loyalty-reward','dashboard-tsokolitaw-selection','dashboard-reheating-guide');
 
 create temporary table _dashboard_fixture_order_ids on commit drop as
 select id
@@ -66,8 +72,8 @@ from public.orders
 where customer_notes = '[dashboard-fixture:v1]';
 
 create temporary table _dashboard_fixture_user_ids on commit drop as
-select id
-from auth.users
+select id, auth_user_id
+from public.profiles
 where email like '%@dashboard-fixture.invalid';
 
 delete from public.manual_payment_submissions
@@ -108,23 +114,26 @@ where order_id in (select id from _dashboard_fixture_order_ids);
 delete from public.orders
 where id in (select id from _dashboard_fixture_order_ids);
 
-delete from auth.users
+delete from public.profiles
 where id in (select id from _dashboard_fixture_user_ids);
 
+delete from auth.users
+where id in (select auth_user_id from _dashboard_fixture_user_ids);
+
 delete from public.daily_inventory
-where id::text like 'd15f%';
+where pickup_date in (select pickup_date from public.pickup_dates where notes='[dashboard-fixture:v1]');
 
 delete from public.pickup_window_locations
 where pickup_window_id in (
   select id from public.pickup_windows
-  where id::text like 'd15e%'
+  where sort_order=90 and pickup_date_id in (select id from public.pickup_dates where notes='[dashboard-fixture:v1]')
 );
 
 delete from public.pickup_windows
-where id::text like 'd15e%';
+where sort_order=90 and pickup_date_id in (select id from public.pickup_dates where notes='[dashboard-fixture:v1]');
 
 delete from public.pickup_dates
-where id::text like 'd15d%';
+where notes='[dashboard-fixture:v1]';
 
 -- Synthetic Auth identities exercise identified and repeat-customer metrics.
 insert into auth.users (
@@ -208,7 +217,7 @@ from (
     md5('dashboard-fixture-user-' || customer_number::text)::uuid as id
   from generate_series(1, 96) as customers(customer_number)
 ) fixture
-where profile.id = fixture.id;
+where profile.auth_user_id = fixture.id;
 
 -- One historical/future pickup schedule per Manila date. Existing dates are
 -- preserved; the fixture adds its own 10:00-11:00 window to whichever row owns
@@ -221,7 +230,7 @@ insert into public.pickup_dates (
   notes
 )
 select
-  ('d15d' || substr(md5(day_value::text), 5))::uuid,
+  pg_temp.fixture_entity_id('pickup_dates',day_value::text),
   day_value,
   case
     when day_value >= timezone('Asia/Manila', now())::date
@@ -246,7 +255,7 @@ insert into public.pickup_windows (
   sort_order
 )
 select
-  ('d15e' || substr(md5(date_row.pickup_date::text), 5))::uuid,
+  pg_temp.fixture_entity_id('pickup_windows',date_row.pickup_date::text),
   date_row.id,
   '10:00'::time,
   '11:00'::time,
@@ -264,10 +273,10 @@ insert into public.pickup_window_locations (
 )
 select
   window_row.id,
-  '14000000-0000-4000-8000-000000000001'::uuid,
+  1::bigint,
   true
 from public.pickup_windows window_row
-where window_row.id::text like 'd15e%'
+where window_row.sort_order=90 and window_row.pickup_date_id in (select id from public.pickup_dates where notes='[dashboard-fixture:v1]')
 on conflict (pickup_window_id, pickup_location_id) do update
 set is_open = excluded.is_open;
 
@@ -359,9 +368,9 @@ with calendar as (
   select
     generated.*,
     case variant_number
-      when 1 then '11000000-0000-4000-8000-000000000004'::uuid
-      when 2 then '11000000-0000-4000-8000-000000000006'::uuid
-      else '11000000-0000-4000-8000-000000000008'::uuid
+      when 1 then 1::bigint
+      when 2 then 2::bigint
+      else 3::bigint
     end as variant_id,
     case variant_number when 1 then 4 when 2 then 6 else 8 end as piece_count,
     case variant_number when 1 then 40::numeric when 2 then 55::numeric else 75::numeric end as base_price,
@@ -412,8 +421,8 @@ with calendar as (
 )
 select
   order_number,
-  md5('dashboard-fixture-order-' || order_number::text)::uuid as id,
-  md5('dashboard-fixture-user-' || customer_number::text)::uuid as user_id,
+  pg_temp.fixture_entity_id('orders',order_number::text) as id,
+  (select id from public.profiles where auth_user_id=md5('dashboard-fixture-user-' || customer_number::text)::uuid) as user_id,
   customer_number,
   variant_id,
   variant_number,
@@ -466,8 +475,8 @@ select
   format('Dashboard Customer %s', fixture.customer_number),
   format('dashboard.customer.%s@dashboard-fixture.invalid', fixture.customer_number),
   fixture.pickup_day,
-  ('d15e' || substr(md5(fixture.pickup_day::text), 5))::uuid,
-  '14000000-0000-4000-8000-000000000001'::uuid,
+  (select w.id from public.pickup_windows w join public.pickup_dates d on d.id=w.pickup_date_id where d.pickup_date=fixture.pickup_day and w.sort_order=90 limit 1),
+  1::bigint,
   '10:00 AM-11:00 AM',
   'UCC Congress - 3rd Floor',
   '[dashboard-fixture:v1]',
@@ -504,7 +513,7 @@ insert into public.payments (
   manual_qr_payload
 )
 select
-  md5('dashboard-fixture-payment-' || fixture.order_number::text)::uuid,
+  pg_temp.fixture_entity_id('payments',fixture.order_number::text),
   fixture.id,
   fixture.payment_method,
   case
@@ -534,9 +543,9 @@ insert into public.order_items (
   created_at
 )
 select
-  md5('dashboard-fixture-item-' || fixture.order_number::text)::uuid,
+  pg_temp.fixture_entity_id('order_items',fixture.order_number::text),
   fixture.id,
-  '10000000-0000-4000-8000-000000000001'::uuid,
+  1::bigint,
   fixture.variant_id,
   'Chocolate-Filled Litaw',
   case fixture.variant_number
@@ -545,7 +554,7 @@ select
     else 'TsokoMuch (8 pcs)'
   end,
   fixture.piece_count,
-  fixture.base_price + fixture.coating_price + fixture.addon_price,
+  fixture.base_price,
   fixture.coating_price,
   fixture.box_quantity,
   fixture.subtotal,
@@ -561,8 +570,8 @@ insert into public.order_item_coatings (
   created_at
 )
 select
-  md5('dashboard-fixture-item-' || fixture.order_number::text)::uuid,
-  ('12000000-0000-4000-8000-' || lpad(fixture.coating_number::text, 12, '0'))::uuid,
+  pg_temp.fixture_entity_id('order_items',fixture.order_number::text),
+  fixture.coating_number::bigint,
   case fixture.coating_number
     when 1 then 'Cocoa'
     when 2 then 'Milk'
@@ -589,8 +598,8 @@ insert into public.order_item_addons (
   created_at
 )
 select
-  md5('dashboard-fixture-item-' || fixture.order_number::text)::uuid,
-  '13000000-0000-4000-8000-000000000001'::uuid,
+  pg_temp.fixture_entity_id('order_items',fixture.order_number::text),
+  1::bigint,
   'Sea salt cream',
   case when fixture.addon_price > 0 then 15 else 0 end,
   1,
@@ -611,7 +620,7 @@ insert into public.manual_payment_submissions (
   submitted_at
 )
 select
-  md5('dashboard-fixture-receipt-' || fixture.order_number::text)::uuid,
+  pg_temp.fixture_entity_id('manual_payment_submissions',fixture.order_number::text),
   fixture.id,
   format('dashboard-fixture/missing-receipt-%s.webp', fixture.order_number),
   'SIM' || lpad(fixture.order_number::text, 9, '0'),
@@ -637,7 +646,7 @@ insert into public.reviews (
   updated_at
 )
 select
-  md5('dashboard-fixture-review-' || fixture.order_number::text)::uuid,
+  pg_temp.fixture_entity_id('reviews',fixture.order_number::text),
   fixture.user_id,
   fixture.id,
   format('Dashboard Customer %s', fixture.customer_number),
@@ -704,7 +713,7 @@ select
 from (
   values
     (
-      'd15a0000-0000-4000-8000-000000000002'::uuid,
+      pg_temp.fixture_entity_id('journal_posts','2'),
       'A Free Box for Loyal TsokoLitaw Customers',
       'dashboard-loyalty-reward',
       'Every seventh completed purchase earns a complimentary four-piece box.',
@@ -720,7 +729,7 @@ from (
       now() - interval '2 days'
     ),
     (
-      'd15a0000-0000-4000-8000-000000000003'::uuid,
+      pg_temp.fixture_entity_id('journal_posts','3'),
       'Meet the TsokoLitaw Selection',
       'dashboard-tsokolitaw-selection',
       'Eight coatings give every box its own mix of familiar and chocolatey finishes.',
@@ -736,7 +745,7 @@ from (
       now() - interval '5 days'
     ),
     (
-      'd15a0000-0000-4000-8000-000000000004'::uuid,
+      pg_temp.fixture_entity_id('journal_posts','4'),
       'How to Bring Back the Soft, Chewy Texture',
       'dashboard-reheating-guide',
       'Steam or briefly heat TsokoLitaw when you want to enjoy it warm again.',
@@ -783,9 +792,9 @@ insert into public.daily_inventory (
   stock_sold
 )
 select
-  ('d15f' || substr(md5(day_value::text), 5))::uuid,
+  pg_temp.fixture_entity_id('daily_inventory',day_value::text),
   day_value,
-  '10000000-0000-4000-8000-000000000001'::uuid,
+  1::bigint,
   120 + ((day_value::date - timezone('Asia/Manila', now())::date) * 8),
   12 + ((day_value::date - timezone('Asia/Manila', now())::date) % 5),
   8 + ((day_value::date - timezone('Asia/Manila', now())::date) % 4)
@@ -870,11 +879,7 @@ select
   (
     select count(*)
     from public.journal_posts
-    where id in (
-      'd15a0000-0000-4000-8000-000000000002',
-      'd15a0000-0000-4000-8000-000000000003',
-      'd15a0000-0000-4000-8000-000000000004'
-    )
+    where slug in ('dashboard-loyalty-reward','dashboard-tsokolitaw-selection','dashboard-reheating-guide')
   ) as journal_posts;
 
 do $$

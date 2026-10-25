@@ -23,7 +23,7 @@ function paidPayload(amount = 4000) {
         id: "cs_test_checkout",
         attributes: {
           reference_number: "TL-0003",
-          metadata: { order_id: "550e8400-e29b-41d4-a716-446655440000" },
+          metadata: { order_id: "1" },
           payments: [
             {
               id: "pay_test_payment",
@@ -90,7 +90,7 @@ describe("PayMongo webhook verification", () => {
   it("extracts only the trusted payment identifiers and amount", () => {
     const expected = {
       eventKey: "checkout_session.payment.paid:cs_test_checkout:pay_test_payment",
-      orderId: "550e8400-e29b-41d4-a716-446655440000",
+      orderId: "1",
       orderNumber: "TL-0003",
       checkoutId: "cs_test_checkout",
       paymentId: "pay_test_payment",

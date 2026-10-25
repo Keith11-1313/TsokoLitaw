@@ -3,18 +3,19 @@
 import { revalidatePath } from "next/cache";
 import { requireCustomer } from "@/lib/auth";
 import { cancelCustomerOrder } from "@/lib/server-cancellation";
-import {
-  enforceMutationRateLimit,
-  MutationRateLimitError,
-} from "@/lib/server-rate-limit";
+import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import { isEntityId } from "@/lib/identifiers";
 
-export type OrderActionResult = { status: "idle" | "success" | "error"; message: string; fieldErrors?: Record<string, string> };
+export type OrderActionResult = {
+  status: "idle" | "success" | "error";
+  message: string;
+  fieldErrors?: Record<string, string>;
+};
 
 export async function cancelOrderAction(orderId: string): Promise<OrderActionResult> {
   const profile = await requireCustomer(`/orders/${orderId}`);
-  if (!UUID_PATTERN.test(orderId)) {
+  if (!isEntityId(orderId)) {
     return { status: "error", message: "That order could not be cancelled." };
   }
   try {
@@ -31,9 +32,12 @@ export async function cancelOrderAction(orderId: string): Promise<OrderActionRes
   } catch (error) {
     return {
       status: "error",
-      message: error instanceof MutationRateLimitError
-        ? `Too many cancellation attempts. Try again in about ${error.retryAfterSeconds} seconds.`
-        : error instanceof Error ? error.message : "That order could not be cancelled.",
+      message:
+        error instanceof MutationRateLimitError
+          ? `Too many cancellation attempts. Try again in about ${error.retryAfterSeconds} seconds.`
+          : error instanceof Error
+            ? error.message
+            : "That order could not be cancelled.",
     };
   }
 }

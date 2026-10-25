@@ -1,4 +1,6 @@
 begin;
+create temporary sequence fixture_ids start 10000000000;
+create function pg_temp.fixture_id(legacy text) returns bigint language sql immutable as 'select (''x''||left(legacy,8))::bit(32)::bigint*1000000+right(legacy,12)::bigint';
 
 create extension if not exists pgtap with schema extensions;
 set local role postgres;
@@ -224,11 +226,11 @@ select ok(
   'service role can invoke controlled admin bootstrap'
 );
 select ok(
-  not has_function_privilege('authenticated', 'public.deactivate_due_account(uuid)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.deactivate_due_account(bigint)', 'EXECUTE'),
   'authenticated users cannot invoke due-account deactivation'
 );
 select ok(
-  has_function_privilege('service_role', 'public.deactivate_due_account(uuid)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.deactivate_due_account(bigint)', 'EXECUTE'),
   'service role can invoke due-account deactivation'
 );
 select ok(
@@ -289,7 +291,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.create_checkout_order(uuid,uuid,uuid,uuid,text,text,jsonb,numeric,numeric,numeric,text,uuid,text,text)',
+    'public.create_checkout_order(bigint,uuid,bigint,bigint,text,text,jsonb,numeric,numeric,numeric,text,bigint,text,text)',
     'EXECUTE'
   ),
   'authenticated users cannot invoke the atomic order writer directly'
@@ -297,7 +299,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.create_checkout_order(uuid,uuid,uuid,uuid,text,text,jsonb,numeric,numeric,numeric,text,uuid,text,text)',
+    'public.create_checkout_order(bigint,uuid,bigint,bigint,text,text,jsonb,numeric,numeric,numeric,text,bigint,text,text)',
     'EXECUTE'
   ),
   'service role can invoke the atomic order writer'
@@ -305,7 +307,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.upsert_daily_inventory(uuid,date,uuid,integer,text)',
+    'public.upsert_daily_inventory(bigint,date,bigint,integer,text)',
     'EXECUTE'
   ),
   'authenticated users cannot write inventory directly'
@@ -313,7 +315,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.upsert_daily_inventory(uuid,date,uuid,integer,text)',
+    'public.upsert_daily_inventory(bigint,date,bigint,integer,text)',
     'EXECUTE'
   ),
   'service role can invoke controlled inventory updates'
@@ -327,41 +329,41 @@ select ok(
   'anonymous checkout can read customer-safe remaining pieces by Pickup date'
 );
 select ok(
-  not has_function_privilege('authenticated', 'public.get_admin_customer_summaries(uuid,text,integer,integer)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.get_admin_customer_summaries(bigint,text,integer,integer)', 'EXECUTE'),
   'authenticated clients cannot invoke Admin customer aggregates directly'
 );
 select ok(
-  has_function_privilege('service_role', 'public.get_admin_customer_summaries(uuid,text,integer,integer)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.get_admin_customer_summaries(bigint,text,integer,integer)', 'EXECUTE'),
   'service role can invoke bounded Admin customer aggregates'
 );
 select ok(
-  not has_function_privilege('authenticated', 'public.count_admin_customers(uuid,text)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.count_admin_customers(bigint,text)', 'EXECUTE'),
   'authenticated clients cannot count Admin customers'
 );
 select ok(
-  has_function_privilege('service_role', 'public.count_admin_customers(uuid,text)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.count_admin_customers(bigint,text)', 'EXECUTE'),
   'service role can count Admin customers'
 );
 select ok(
-  not has_function_privilege('authenticated', 'public.get_admin_dashboard_summary(uuid,timestamp with time zone,timestamp with time zone,timestamp with time zone,timestamp with time zone)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.get_admin_dashboard_summary(bigint,timestamp with time zone,timestamp with time zone,timestamp with time zone,timestamp with time zone)', 'EXECUTE'),
   'authenticated clients cannot invoke Admin dashboard aggregates directly'
 );
 select ok(
-  has_function_privilege('service_role', 'public.get_admin_dashboard_summary(uuid,timestamp with time zone,timestamp with time zone,timestamp with time zone,timestamp with time zone)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.get_admin_dashboard_summary(bigint,timestamp with time zone,timestamp with time zone,timestamp with time zone,timestamp with time zone)', 'EXECUTE'),
   'service role can invoke Admin dashboard aggregates'
 );
 select ok(
-  not has_function_privilege('authenticated', 'public.replace_paymongo_checkout(uuid,text,text,text)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.replace_paymongo_checkout(bigint,text,text,text)', 'EXECUTE'),
   'authenticated clients cannot replace provider checkouts'
 );
 select ok(
-  has_function_privilege('service_role', 'public.replace_paymongo_checkout(uuid,text,text,text)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.replace_paymongo_checkout(bigint,text,text,text)', 'EXECUTE'),
   'service role can replace provider checkouts'
 );
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.upsert_pickup_schedule(uuid,uuid,date,public.pickup_availability_mode,boolean,text,jsonb)',
+    'public.upsert_pickup_schedule(bigint,bigint,date,public.pickup_availability_mode,boolean,text,jsonb)',
     'EXECUTE'
   ),
   'authenticated clients cannot write Pickup schedules directly'
@@ -369,36 +371,36 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.upsert_pickup_schedule(uuid,uuid,date,public.pickup_availability_mode,boolean,text,jsonb)',
+    'public.upsert_pickup_schedule(bigint,bigint,date,public.pickup_availability_mode,boolean,text,jsonb)',
     'EXECUTE'
   ),
   'service role can invoke controlled Pickup schedule writes'
 );
 select ok(
-  not has_function_privilege('authenticated', 'public.upsert_pickup_location(uuid,uuid,text,text,boolean)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.upsert_pickup_location(bigint,bigint,text,text,boolean)', 'EXECUTE'),
   'authenticated clients cannot write Pickup locations directly'
 );
 select ok(
-  has_function_privilege('service_role', 'public.upsert_pickup_location(uuid,uuid,text,text,boolean)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.upsert_pickup_location(bigint,bigint,text,text,boolean)', 'EXECUTE'),
   'service role can invoke controlled Pickup location writes'
 );
 select ok(
-  not has_function_privilege('authenticated', 'public.set_pickup_date_open(uuid,uuid,boolean)', 'EXECUTE'),
+  not has_function_privilege('authenticated', 'public.set_pickup_date_open(bigint,bigint,boolean)', 'EXECUTE'),
   'authenticated clients cannot publish Pickup dates directly'
 );
 select ok(
-  has_function_privilege('service_role', 'public.set_pickup_date_open(uuid,uuid,boolean)', 'EXECUTE'),
+  has_function_privilege('service_role', 'public.set_pickup_date_open(bigint,bigint,boolean)', 'EXECUTE'),
   'service role can invoke controlled Pickup publication changes'
 );
 select ok(
   not has_function_privilege(
-    'authenticated', 'public.update_pickup_settings(uuid,integer,time,time,time)', 'EXECUTE'
+    'authenticated', 'public.update_pickup_settings(bigint,integer,time,time,time)', 'EXECUTE'
   ),
   'authenticated clients cannot update Pickup rules directly'
 );
 select ok(
   has_function_privilege(
-    'service_role', 'public.update_pickup_settings(uuid,integer,time,time,time)', 'EXECUTE'
+    'service_role', 'public.update_pickup_settings(bigint,integer,time,time,time)', 'EXECUTE'
   ),
   'service role can invoke controlled Pickup rule updates'
 );

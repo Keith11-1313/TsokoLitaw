@@ -1,4 +1,6 @@
 begin;
+create temporary sequence fixture_ids start 10000000000;
+create function pg_temp.fixture_id(legacy text) returns bigint language sql immutable as 'select (''x''||left(legacy,8))::bit(32)::bigint*1000000+right(legacy,12)::bigint';
 
 create extension if not exists pgtap with schema extensions;
 set local role postgres;
@@ -35,11 +37,11 @@ values
   ('9a000000-0000-4000-8000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'pickup-customer@example.test', '{"provider":"google","providers":["google"]}', '{"name":"Pickup Customer"}', now(), now());
 
 update public.profiles set role = 'admin'
-where id = '9a000000-0000-4000-8000-000000000001';
+where id = (select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000001');
 
 select throws_ok(
   $$ select public.upsert_pickup_location(
-    '9a000000-0000-4000-8000-000000000002', null,
+    (select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000002'), null,
     'Unauthorized location', 'Should fail', true
   ) $$,
   'P0001',
@@ -48,7 +50,7 @@ select throws_ok(
 );
 select lives_ok(
   $$ select public.upsert_pickup_location(
-    '9a000000-0000-4000-8000-000000000001', null,
+    (select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000001'), null,
     'UCC Test Lobby', 'Testing entrance', true
   ) $$,
   'an active Admin can create a Pickup location'
@@ -61,9 +63,9 @@ select is(
 
 select throws_ok(
   $$ select public.upsert_pickup_schedule(
-    '9a000000-0000-4000-8000-000000000002', null, '2099-03-01',
+    (select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000002'), null, '2099-03-01',
     'READY_STOCK', true, null,
-    '[{"start_time":"08:00","end_time":"09:00","location_ids":["14000000-0000-4000-8000-000000000001"]}]'
+    '[{"start_time":"08:00","end_time":"09:00","location_ids":["1"]}]'
   ) $$,
   'P0001',
   'Active administrator access is required',
@@ -72,9 +74,9 @@ select throws_ok(
 
 select lives_ok(
   $$ select public.upsert_pickup_schedule(
-    '9a000000-0000-4000-8000-000000000001', null, '2099-03-01',
+    (select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000001'), null, '2099-03-01',
     'READY_STOCK', true, 'school batch',
-    '[{"start_time":"08:00","end_time":"09:00","location_ids":["14000000-0000-4000-8000-000000000001","14000000-0000-4000-8000-000000000002"]}]'
+    '[{"start_time":"08:00","end_time":"09:00","location_ids":["1","2"]}]'
   ) $$,
   'an active Admin can publish a pickup schedule'
 );
@@ -104,7 +106,7 @@ select is(
 
 select throws_ok(
   $$ select public.set_pickup_date_open(
-    '9a000000-0000-4000-8000-000000000002',
+    (select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000002'),
     (select id from public.pickup_dates where pickup_date = '2099-03-01'), false
   ) $$,
   'P0001',
@@ -113,7 +115,7 @@ select throws_ok(
 );
 select lives_ok(
   $$ select public.set_pickup_date_open(
-    '9a000000-0000-4000-8000-000000000001',
+    (select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000001'),
     (select id from public.pickup_dates where pickup_date = '2099-03-01'), false
   ) $$,
   'an active Admin can close a pickup date'
@@ -126,7 +128,7 @@ select is(
 
 select lives_ok(
   $$ select public.update_pickup_settings(
-    '9a000000-0000-4000-8000-000000000001', 2, '16:30', '07:30', '18:30'
+    (select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000001'), 2, '16:30', '07:30', '18:30'
   ) $$,
   'an active Admin can update pickup rules'
 );
@@ -137,10 +139,10 @@ select is(
 );
 select is((select count(*) from public.business_settings where key = 'pickup_grace_minutes'),
   0::bigint, 'the unused pickup grace setting is removed');
-select ok(to_regprocedure('public.update_pickup_settings(uuid,integer,time,integer,time,time)') is null,
+select ok(to_regprocedure('public.update_pickup_settings(bigint,integer,time,integer,time,time)') is null,
   'the obsolete pickup grace writer signature is removed');
 select throws_ok(
-  $$ select public.update_pickup_settings('9a000000-0000-4000-8000-000000000002', 1, '17:00', '07:00', '19:00') $$,
+  $$ select public.update_pickup_settings((select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000002'), 1, '17:00', '07:00', '19:00') $$,
   'P0001', 'Active administrator access is required', 'the replacement writer still rejects customers');
 select is(
   (select count(*) from public.get_public_pickup_inventory() where pickup_date = '2099-03-01'),
@@ -150,13 +152,13 @@ select is(
 
 insert into auth.users(id,instance_id,aud,role,email,raw_user_meta_data)
 values ('9a000000-0000-4000-8000-000000000099','00000000-0000-0000-0000-000000000000','authenticated','authenticated','pickup-stock-staff@example.test','{"name":"Stock Staff"}');
-update public.profiles set role='staff' where id='9a000000-0000-4000-8000-000000000099';
+update public.profiles set role='staff' where id=(select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000099');
 select public.upsert_daily_inventory(
-  '9a000000-0000-4000-8000-000000000099', '2099-03-01',
-  '10000000-0000-4000-8000-000000000001', 20, 'lock schedule'
+  (select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000099'), '2099-03-01',
+  '1', 20, 'lock schedule'
 );
 select public.set_pickup_date_open(
-  '9a000000-0000-4000-8000-000000000001',
+  (select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000001'),
   (select id from public.pickup_dates where pickup_date = '2099-03-01'), true
 );
 select is(
@@ -171,10 +173,10 @@ select is(
 );
 select throws_ok(
   $$ select public.upsert_pickup_schedule(
-    '9a000000-0000-4000-8000-000000000001',
+    (select id from public.profiles where auth_user_id='9a000000-0000-4000-8000-000000000001'),
     (select id from public.pickup_dates where pickup_date = '2099-03-01'),
     '2099-03-01', 'READY_STOCK', false, 'changed',
-    '[{"start_time":"10:00","end_time":"11:00","location_ids":["14000000-0000-4000-8000-000000000001"]}]'
+    '[{"start_time":"10:00","end_time":"11:00","location_ids":["1"]}]'
   ) $$,
   'P0001',
   'Pickup schedule is locked by orders or inventory',

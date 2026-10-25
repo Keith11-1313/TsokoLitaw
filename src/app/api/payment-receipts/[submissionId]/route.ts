@@ -1,5 +1,5 @@
 import { getAuthProfile } from "@/lib/auth";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -10,7 +10,8 @@ export async function GET(
   const { submissionId } = await params;
   const profile = await getAuthProfile();
   const headers = { "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer" };
-  if (!profile || !isUuid(submissionId)) return new Response("Not found", { status: 404, headers });
+  if (!profile || !isEntityId(submissionId))
+    return new Response("Not found", { status: 404, headers });
   if (profile.role === "admin") return new Response("Not found", { status: 404, headers });
   const client = await createServerSupabaseClient();
   // Submission RLS grants the active customer owner or Staff only.

@@ -1,4 +1,6 @@
 begin;
+create temporary sequence fixture_ids start 10000000000;
+create function pg_temp.fixture_id(legacy text) returns bigint language sql immutable as 'select (''x''||left(legacy,8))::bit(32)::bigint*1000000+right(legacy,12)::bigint';
 
 create extension if not exists pgtap with schema extensions;
 set local role postgres;
@@ -15,26 +17,26 @@ select plan(20);
 insert into auth.users (id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at) values
   ('e2000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','catalog-admin@example.test','{"provider":"google","providers":["google"]}','{"name":"Catalog Admin"}',now(),now()),
   ('e2000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000000','authenticated','authenticated','catalog-customer@example.test','{"provider":"google","providers":["google"]}','{"name":"Catalog Customer"}',now(),now());
-update public.profiles set role = 'admin' where id = 'e2000000-0000-4000-8000-000000000001';
+update public.profiles set role = 'admin' where id = (select id from public.profiles where auth_user_id='e2000000-0000-4000-8000-000000000001');
 
-select ok(not has_function_privilege('authenticated','public.update_catalog_product(uuid,uuid,text,numeric,boolean)','EXECUTE'),'customers cannot call product writer');
-select ok(has_function_privilege('service_role','public.update_catalog_product(uuid,uuid,text,numeric,boolean)','EXECUTE'),'service role can call product writer');
-select throws_ok($$select public.update_catalog_product('e2000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000001','A valid customer-blocked description.',12,true)$$,'P0001','Active administrator access is required','customer cannot update product');
-select lives_ok($$select public.update_catalog_product('e2000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001','Updated chocolate-filled product description.',12,true)$$,'admin updates product');
-select is((select price_per_piece from public.products where id='10000000-0000-4000-8000-000000000001'),12.00::numeric,'product price persisted');
-select lives_ok($$select public.update_catalog_variant('e2000000-0000-4000-8000-000000000001','11000000-0000-4000-8000-000000000006',false,55)$$,'admin updates an approved variant');
-select is((select is_active from public.product_variants where id='11000000-0000-4000-8000-000000000006'),false,'variant availability persisted');
-select ok(not has_function_privilege('authenticated','public.upsert_catalog_coating(uuid,uuid,text,text,text,numeric,boolean,boolean)','EXECUTE'),'customers cannot call coating writer');
-select ok(has_function_privilege('service_role','public.upsert_catalog_coating(uuid,uuid,text,text,text,numeric,boolean,boolean)','EXECUTE'),'service role can call coating writer');
-select lives_ok($$select public.upsert_catalog_coating('e2000000-0000-4000-8000-000000000001',null,'Toasted Coconut','A toasted coconut coating for the filled base.','https://example.test/coating.jpeg',7,true,false)$$,'admin creates coating');
+select ok(not has_function_privilege('authenticated','public.update_catalog_product(bigint,bigint,text,numeric,boolean)','EXECUTE'),'customers cannot call product writer');
+select ok(has_function_privilege('service_role','public.update_catalog_product(bigint,bigint,text,numeric,boolean)','EXECUTE'),'service role can call product writer');
+select throws_ok($$select public.update_catalog_product((select id from public.profiles where auth_user_id='e2000000-0000-4000-8000-000000000002'),'1','A valid customer-blocked description.',12,true)$$,'P0001','Active administrator access is required','customer cannot update product');
+select lives_ok($$select public.update_catalog_product((select id from public.profiles where auth_user_id='e2000000-0000-4000-8000-000000000001'),'1','Updated chocolate-filled product description.',12,true)$$,'admin updates product');
+select is((select price_per_piece from public.products where id='1'),12.00::numeric,'product price persisted');
+select lives_ok($$select public.update_catalog_variant((select id from public.profiles where auth_user_id='e2000000-0000-4000-8000-000000000001'),'2',false,55)$$,'admin updates an approved variant');
+select is((select is_active from public.product_variants where id='2'),false,'variant availability persisted');
+select ok(not has_function_privilege('authenticated','public.upsert_catalog_coating(bigint,bigint,text,text,text,numeric,boolean,boolean)','EXECUTE'),'customers cannot call coating writer');
+select ok(has_function_privilege('service_role','public.upsert_catalog_coating(bigint,bigint,text,text,text,numeric,boolean,boolean)','EXECUTE'),'service role can call coating writer');
+select lives_ok($$select public.upsert_catalog_coating((select id from public.profiles where auth_user_id='e2000000-0000-4000-8000-000000000001'),null,'Toasted Coconut','A toasted coconut coating for the filled base.','https://example.test/coating.jpeg',7,true,false)$$,'admin creates coating');
 select is((select price_per_piece from public.coatings where name='Toasted Coconut'),7.00::numeric,'coating per-piece price persisted');
-select lives_ok($$select public.upsert_catalog_coating('e2000000-0000-4000-8000-000000000001',(select id from public.coatings where name='Toasted Coconut'),'Toasted Coconut','A toasted coconut coating for the filled base.','https://example.test/coating.jpeg',7,true,true)$$,'admin changes the default coating');
+select lives_ok($$select public.upsert_catalog_coating((select id from public.profiles where auth_user_id='e2000000-0000-4000-8000-000000000001'),(select id from public.coatings where name='Toasted Coconut'),'Toasted Coconut','A toasted coconut coating for the filled base.','https://example.test/coating.jpeg',7,true,true)$$,'admin changes the default coating');
 select is((select count(*)::integer from public.coatings where is_default),1,'exactly one coating is the storefront default');
-select lives_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001','13000000-0000-4000-8000-000000000001','Sea salt cream',20,true,true)$$,'admin updates add-on');
-select lives_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001',null,'Gift note',3,true,false)$$,'admin creates add-on');
+select lives_ok($$select public.upsert_catalog_addon((select id from public.profiles where auth_user_id='e2000000-0000-4000-8000-000000000001'),'1','Sea salt cream',20,true,true)$$,'admin updates add-on');
+select lives_ok($$select public.upsert_catalog_addon((select id from public.profiles where auth_user_id='e2000000-0000-4000-8000-000000000001'),null,'Gift note',3,true,false)$$,'admin creates add-on');
 select is((select count(*)::integer from public.addons where is_default),1,'exactly one extra is complimentary');
-select throws_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001','13000000-0000-4000-8000-000000000001','Sea salt cream',20,false,true)$$,'P0001','The complimentary extra must be active','complimentary extra cannot be hidden');
-select throws_ok($$select public.upsert_catalog_addon('e2000000-0000-4000-8000-000000000001','13000000-0000-4000-8000-000000000001','Sea salt cream',20,true,false)$$,'P0001','Choose another complimentary extra before changing this one','complimentary designation cannot be removed without replacement');
+select throws_ok($$select public.upsert_catalog_addon((select id from public.profiles where auth_user_id='e2000000-0000-4000-8000-000000000001'),'1','Sea salt cream',20,false,true)$$,'P0001','The complimentary extra must be active','complimentary extra cannot be hidden');
+select throws_ok($$select public.upsert_catalog_addon((select id from public.profiles where auth_user_id='e2000000-0000-4000-8000-000000000001'),'1','Sea salt cream',20,true,false)$$,'P0001','Choose another complimentary extra before changing this one','complimentary designation cannot be removed without replacement');
 select is((select count(*)::integer from public.admin_audit_logs where action like 'catalog.%'),6,'catalog mutations are audited');
 select ok((select public and file_size_limit=3145728 from storage.buckets where id='catalog-media'),'catalog media bucket is public and size-limited');
 

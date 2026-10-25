@@ -33,7 +33,7 @@ export default async function AccountRolesPage({
     .order("id");
   // Strip filter grammar and wildcard characters; never interpolate raw input.
   const term = q.replace(/[^\p{L}\p{N}\s@+.'-]/gu, "").trim();
-  if (q && !term) query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+  if (q && !term) query = query.eq("id", "0");
   else if (term) query = query.or(`full_name.ilike.%${term}%,email.ilike.%${term}%`);
   if (role) query = query.eq("role", role as "customer" | "staff" | "admin");
   const { data, error, count } = await query.range((page - 1) * size, page * size - 1);

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 import { isJournalContentType, isJournalCoverFormat, isJournalStatus } from "@/lib/journal";
 import {
   deleteAdminJournalDraft,
@@ -40,7 +40,7 @@ export async function saveJournalPostAction(
   const removeCover = formData.get("removeCover") === "on";
   const coverImage = formData.get("coverImage");
 
-  if (postIdValue && !isUuid(postIdValue)) {
+  if (postIdValue && !isEntityId(postIdValue)) {
     return { status: "error", message: "That Journal post is unavailable." };
   }
   const fieldErrors: FieldErrors = {};
@@ -130,7 +130,7 @@ export async function deleteJournalDraftAction(
   const admin = await requireAdmin("/admin/journal");
   const postId = String(formData.get("postId") ?? "").trim();
 
-  if (!isUuid(postId)) {
+  if (!isEntityId(postId)) {
     return { status: "error", message: "That Journal draft is unavailable." };
   }
 

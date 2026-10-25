@@ -2,12 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 import { moderateAdminReview } from "@/lib/server-reviews";
-import {
-  enforceMutationRateLimit,
-  MutationRateLimitError,
-} from "@/lib/server-rate-limit";
+import { enforceMutationRateLimit, MutationRateLimitError } from "@/lib/server-rate-limit";
 
 export type ReviewModerationResult = {
   status: "success" | "error";
@@ -20,7 +17,7 @@ export async function moderateReviewAction(input: {
   isFeatured: boolean;
 }): Promise<ReviewModerationResult> {
   const admin = await requireAdmin("/admin/journal");
-  if (!isUuid(input.reviewId) || (input.isFeatured && !input.isVisible)) {
+  if (!isEntityId(input.reviewId) || (input.isFeatured && !input.isVisible)) {
     return { status: "error", message: "That moderation update is invalid." };
   }
 
@@ -38,9 +35,10 @@ export async function moderateReviewAction(input: {
   } catch (error) {
     return {
       status: "error",
-      message: error instanceof MutationRateLimitError
-        ? `Too many updates. Try again in about ${error.retryAfterSeconds} seconds.`
-        : "Review moderation could not be saved.",
+      message:
+        error instanceof MutationRateLimitError
+          ? `Too many updates. Try again in about ${error.retryAfterSeconds} seconds.`
+          : "Review moderation could not be saved.",
     };
   }
 }

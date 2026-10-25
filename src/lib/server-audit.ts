@@ -2,7 +2,7 @@ import "server-only";
 import { requireAdmin } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { auditDayAfter, normalizeAuditFilters, summarizeAuditChange } from "@/lib/audit-log";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 
 export async function getAdminAuditLog(parameters: Record<string, unknown>) {
   await requireAdmin("/admin/audit");
@@ -20,7 +20,7 @@ export async function getAdminAuditLog(parameters: Record<string, unknown>) {
   if (filters.from) query = query.gte("created_at", `${filters.from}T00:00:00+08:00`);
   if (filters.to) query = query.lt("created_at", `${auditDayAfter(filters.to)}T00:00:00+08:00`);
   const term = filters.q.replace(/[^\p{L}\p{N}\s@+.'-]/gu, "").trim();
-  if (filters.q && !term) query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+  if (filters.q && !term) query = query.eq("id", "0");
   else if (term) {
     // Search actor names/emails without a privileged Auth directory request.
     const actors = await client
@@ -29,7 +29,7 @@ export async function getAdminAuditLog(parameters: Record<string, unknown>) {
       .or(`full_name.ilike.%${term}%,email.ilike.%${term}%`)
       .limit(1000);
     if (actors.error) throw new Error("Audit search could not be loaded.");
-    const ids = (actors.data ?? []).map((actor) => actor.id).filter(isUuid);
+    const ids = (actors.data ?? []).map((actor) => actor.id).filter(isEntityId);
     query = query.or(
       `action.ilike.%${term}%,entity_type.ilike.%${term}%,entity_id.ilike.%${term}%${ids.length ? `,admin_id.in.(${ids.join(",")})` : ""}`,
     );
@@ -42,14 +42,14 @@ export async function getAdminAuditLog(parameters: Record<string, unknown>) {
   const accountIds = [
     ...new Set(
       (data ?? [])
-        .filter((row) => row.entity_type === "profile" && isUuid(row.entity_id ?? ""))
+        .filter((row) => row.entity_type === "profile" && isEntityId(row.entity_id ?? ""))
         .map((row) => row.entity_id!),
     ),
   ];
   const orderIds = [
     ...new Set(
       (data ?? [])
-        .filter((row) => row.entity_type === "order" && isUuid(row.entity_id ?? ""))
+        .filter((row) => row.entity_type === "order" && isEntityId(row.entity_id ?? ""))
         .map((row) => row.entity_id!),
     ),
   ];
@@ -73,7 +73,7 @@ export async function getAdminAuditLog(parameters: Record<string, unknown>) {
       id: row.id,
       action: row.action.slice(0, 100),
       entityType: row.entity_type.slice(0, 80),
-      entityId: isUuid(row.entity_id ?? "") ? row.entity_id! : "",
+      entityId: isEntityId(row.entity_id ?? "") ? row.entity_id! : "",
       target:
         names.get(row.entity_id ?? "") ??
         numbers.get(row.entity_id ?? "") ??

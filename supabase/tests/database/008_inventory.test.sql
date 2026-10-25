@@ -1,4 +1,6 @@
 begin;
+create temporary sequence fixture_ids start 10000000000;
+create function pg_temp.fixture_id(legacy text) returns bigint language sql immutable as 'select (''x''||left(legacy,8))::bit(32)::bigint*1000000+right(legacy,12)::bigint';
 
 create extension if not exists pgtap with schema extensions;
 set local role postgres;
@@ -36,15 +38,15 @@ values
   ('99000000-0000-4000-8000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inventory-customer@example.test', '{"provider":"google","providers":["google"]}', '{"name":"Inventory Customer"}', now(), now());
 
 update public.profiles set role = 'staff'
-where id = '99000000-0000-4000-8000-000000000001';
+where id = (select id from public.profiles where auth_user_id='99000000-0000-4000-8000-000000000001');
 
 insert into public.pickup_dates (id, pickup_date, availability_mode, is_open)
-values ('99000000-0000-4000-8000-000000000003', '2099-02-01', 'READY_STOCK', true);
+values ('2566914048000003', '2099-02-01', 'READY_STOCK', true);
 
 select throws_ok(
   $$ select public.upsert_daily_inventory(
-    '99000000-0000-4000-8000-000000000002', '2099-02-01',
-    '10000000-0000-4000-8000-000000000001', 10, 'unauthorized'
+    (select id from public.profiles where auth_user_id='99000000-0000-4000-8000-000000000002'), '2099-02-01',
+    '1', 10, 'unauthorized'
   ) $$,
   'P0001',
   'Active staff access is required',
@@ -53,8 +55,8 @@ select throws_ok(
 
 select lives_ok(
   $$ select public.upsert_daily_inventory(
-    '99000000-0000-4000-8000-000000000001', '2099-02-01',
-    '10000000-0000-4000-8000-000000000001', 10, 'opening stock'
+    (select id from public.profiles where auth_user_id='99000000-0000-4000-8000-000000000001'), '2099-02-01',
+    '1', 10, 'opening stock'
   ) $$,
   'active Staff can publish piece stock'
 );
@@ -73,7 +75,7 @@ select is(
 
 select lives_ok(
   $$ select public.record_inventory_consumption(
-    '99000000-0000-4000-8000-000000000001',
+    (select id from public.profiles where auth_user_id='99000000-0000-4000-8000-000000000001'),
     (select id from public.daily_inventory where pickup_date = '2099-02-01'),
     2, 'WASTE', 'damaged pieces'
   ) $$,
@@ -94,7 +96,7 @@ select is(
 
 select throws_ok(
   $$ select public.record_inventory_consumption(
-    '99000000-0000-4000-8000-000000000001',
+    (select id from public.profiles where auth_user_id='99000000-0000-4000-8000-000000000001'),
     (select id from public.daily_inventory where pickup_date = '2099-02-01'),
     9, 'WASTE', 'too many'
   ) $$,
@@ -105,8 +107,8 @@ select throws_ok(
 
 select throws_ok(
   $$ select public.upsert_daily_inventory(
-    '99000000-0000-4000-8000-000000000001', '2099-02-01',
-    '10000000-0000-4000-8000-000000000001', 1, 'invalid correction'
+    (select id from public.profiles where auth_user_id='99000000-0000-4000-8000-000000000001'), '2099-02-01',
+    '1', 1, 'invalid correction'
   ) $$,
   'P0001',
   'Total stock cannot be lower than committed and consumed pieces',

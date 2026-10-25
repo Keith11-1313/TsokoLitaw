@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       const { data: profile, error: profileError } = await adminSupabase
         .from("profiles")
         .select("is_active, role")
-        .eq("id", userId)
+        .eq("auth_user_id", userId)
         .maybeSingle();
 
       if (profileError || !profile) {

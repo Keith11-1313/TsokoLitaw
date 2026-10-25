@@ -1,16 +1,18 @@
 begin;
+create temporary sequence fixture_ids start 10000000000;
+create function pg_temp.fixture_id(legacy text) returns bigint language sql immutable as 'select (''x''||left(legacy,8))::bit(32)::bigint*1000000+right(legacy,12)::bigint';
 create extension if not exists pgtap with schema extensions;
 set local search_path=extensions,public;
 select no_plan();
 insert into auth.users(id,instance_id,aud,role,email,raw_user_meta_data)
 select ('bd210000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','audit-reader-'||n||'@example.test','{"name":"Audit reader"}' from generate_series(1,3)n;
-update public.profiles set role='admin' where id='bd210000-0000-4000-8000-000000000001';
-update public.profiles set role='staff' where id='bd210000-0000-4000-8000-000000000002';
+update public.profiles set role='admin' where id=(select id from public.profiles where auth_user_id='bd210000-0000-4000-8000-000000000001');
+update public.profiles set role='staff' where id=(select id from public.profiles where auth_user_id='bd210000-0000-4000-8000-000000000002');
 insert into public.admin_audit_logs(admin_id,action,entity_type,entity_id)
-values('bd210000-0000-4000-8000-000000000001','account.role_changed','profile','bd210000-0000-4000-8000-000000000003');
+values((select id from public.profiles where auth_user_id='bd210000-0000-4000-8000-000000000001'),'account.role_changed','profile',(select id from public.profiles where auth_user_id='bd210000-0000-4000-8000-000000000003'));
 select set_config('request.jwt.claim.sub','bd210000-0000-4000-8000-000000000001',true);
 set local role authenticated;
-select is((select count(*) from public.admin_audit_logs where entity_id='bd210000-0000-4000-8000-000000000003'),1::bigint,'active Admin reads audit rows');
+select is((select count(*) from public.admin_audit_logs where entity_id=(select id from public.profiles where auth_user_id='bd210000-0000-4000-8000-000000000003')::text),1::bigint,'active Admin reads audit rows');
 select is(has_table_privilege('authenticated','public.admin_audit_logs','INSERT'),false,'browser cannot insert audit rows');
 select is(has_table_privilege('authenticated','public.admin_audit_logs','UPDATE'),false,'browser cannot edit audit rows');
 select is(has_table_privilege('authenticated','public.admin_audit_logs','DELETE'),false,'browser cannot delete audit rows');
@@ -23,7 +25,7 @@ select set_config('request.jwt.claim.sub','bd210000-0000-4000-8000-000000000003'
 set local role authenticated;
 select is((select count(*) from public.admin_audit_logs),0::bigint,'Customer cannot read audit rows');
 reset role;
-update public.profiles set is_active=false,deactivated_at=now() where id='bd210000-0000-4000-8000-000000000001';
+update public.profiles set is_active=false,deactivated_at=now() where id=(select id from public.profiles where auth_user_id='bd210000-0000-4000-8000-000000000001');
 select set_config('request.jwt.claim.sub','bd210000-0000-4000-8000-000000000001',true);
 set local role authenticated;
 select is((select count(*) from public.admin_audit_logs),0::bigint,'inactive Admin cannot read audit rows');

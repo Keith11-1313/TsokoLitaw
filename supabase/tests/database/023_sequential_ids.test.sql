@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select is((select count(*)::integer from information_schema.columns where table_schema='public' and column_name='id' and udt_name='uuid'),0,'Application primary keys no longer use UUID');
+select is((select count(*)::integer from information_schema.columns where table_schema='public' and column_name='id' and is_identity='YES'),25,'All 25 entity IDs have identity sequences');
+select col_type_is('public','profiles','auth_user_id','uuid','Auth identity remains UUID');
+select col_type_is('public','orders','checkout_idempotency_key','uuid','Checkout retry token remains UUID');
+select col_type_is('public','manual_payment_submissions','upload_token','uuid','Receipt upload token remains UUID');
+select ok(not has_schema_privilege('authenticated','migration_support','USAGE'),'Authenticated users cannot read the recovery map');
+select ok(not exists(select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='S' and (has_sequence_privilege('anon',c.oid,'USAGE') or has_sequence_privilege('authenticated',c.oid,'USAGE'))),'Browser roles cannot allocate sequence IDs');
+select ok(not exists(select 1 from public.profiles p left join auth.users u on u.id=p.auth_user_id where u.id is null),'Every profile retains a valid Auth identity');
+select * from finish();
+rollback;

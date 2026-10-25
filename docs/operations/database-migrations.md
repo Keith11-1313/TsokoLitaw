@@ -1,5 +1,37 @@
 # Database changes and promotion
 
+## October 26 sequential-ID candidate — not activated
+
+Owner approved a Dev-only conversion that preserves records. Migration
+`20261026010000_sequential_application_ids.sql` converts application entities to bigint identities,
+retains Auth UUIDs through `profiles.auth_user_id`, and updates SQL ownership, functions, grants,
+policies and foreign keys together. Production remains outside this approval.
+
+A private Dev export was restored into an isolated local Docker database before running the
+migration. Preservation assertions passed: 27 orders, PHP2,335 total, 40 profiles linked to 40 Auth
+identities, three receipt submissions, and 476 mapped entity IDs. Non-ID business-field hashes
+and row counts matched before/after. Existing receipt paths and audit metadata are preserved;
+typed audit entity references follow their mapped IDs. No hosted writes or provider calls ran.
+
+Local validation passed: 307 application tests, 637 database assertions across 24 SQL files,
+TypeScript, ESLint, edited-file formatting, SQL lint, diff whitespace checks, and the optimized
+webpack production build. The optional dashboard fixture also completed its isolated rollback
+dry run (96 customers, 420 orders); that fixture was not inserted into either hosted database.
+
+Cutover must coordinate SQL and the matching application build: the old deployed code expects
+UUID profile/entity keys and cannot safely run against the new schema. Keep Dev unavailable to
+testers during that interval. Before activation, verify the exact Dev project
+`mgkzphpznamjlgrpumjd`, refresh the private export, inspect migration drift, and resolve all active
+orders/receipt reviews. Apply this forward migration once, deploy the matching code, then test
+Google login, roles, checkout, payment verification, receipt access, inventory and cancellation.
+The owner performs Git operations manually. Do not apply the SQL alone and leave old code live.
+
+Old UUID entity URLs and persisted carts must be reopened/rebuilt after cutover. Supabase Auth
+sessions and managed Storage paths remain intact. Never reset sequence counters to fill gaps.
+The private recovery map and export are recovery evidence, not public tables or fixtures.
+The earlier ERD/PDF reflects the pre-conversion schema and needs a fresh schema export after
+activation. Migration and build checks do not replace authenticated operational acceptance.
+
 ## October 23 Dev base-price snapshot correction
 
 After the quantity correction below, fourteen older synthetic items still stored the configured

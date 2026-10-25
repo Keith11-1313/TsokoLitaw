@@ -13,7 +13,7 @@ export type Database = {
       addons: {
         Row: {
           created_at: string
-          id: string
+          id: number
           is_active: boolean
           is_default: boolean
           name: string
@@ -23,7 +23,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          id?: string
+          id?: number
           is_active?: boolean
           is_default?: boolean
           name: string
@@ -33,7 +33,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          id?: string
+          id?: number
           is_active?: boolean
           is_default?: boolean
           name?: string
@@ -46,29 +46,29 @@ export type Database = {
       admin_audit_logs: {
         Row: {
           action: string
-          admin_id: string
+          admin_id: number
           created_at: string
           entity_id: string | null
           entity_type: string
-          id: string
+          id: number
           metadata: Json
         }
         Insert: {
           action: string
-          admin_id: string
+          admin_id: number
           created_at?: string
           entity_id?: string | null
           entity_type: string
-          id?: string
+          id?: number
           metadata?: Json
         }
         Update: {
           action?: string
-          admin_id?: string
+          admin_id?: number
           created_at?: string
           entity_id?: string | null
           entity_type?: string
-          id?: string
+          id?: number
           metadata?: Json
         }
         Relationships: [
@@ -103,7 +103,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string
-          id: string
+          id: number
           image_url: string | null
           is_active: boolean
           is_default: boolean
@@ -116,7 +116,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string
-          id?: string
+          id?: number
           image_url?: string | null
           is_active?: boolean
           is_default?: boolean
@@ -129,7 +129,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string
-          id?: string
+          id?: number
           image_url?: string | null
           is_active?: boolean
           is_default?: boolean
@@ -144,9 +144,9 @@ export type Database = {
       daily_inventory: {
         Row: {
           created_at: string
-          id: string
+          id: number
           pickup_date: string
-          product_id: string
+          product_id: number
           stock_reserved: number
           stock_sold: number
           stock_total: number
@@ -154,9 +154,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          id?: string
+          id?: number
           pickup_date: string
-          product_id: string
+          product_id: number
           stock_reserved?: number
           stock_sold?: number
           stock_total: number
@@ -164,9 +164,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          id?: string
+          id?: number
           pickup_date?: string
-          product_id?: string
+          product_id?: number
           stock_reserved?: number
           stock_sold?: number
           stock_total?: number
@@ -207,27 +207,27 @@ export type Database = {
       inventory_adjustments: {
         Row: {
           created_at: string
-          created_by: string
-          daily_inventory_id: string
-          id: string
+          created_by: number
+          daily_inventory_id: number
+          id: number
           notes: string | null
           quantity_delta: number
           reason: string
         }
         Insert: {
           created_at?: string
-          created_by: string
-          daily_inventory_id: string
-          id?: string
+          created_by: number
+          daily_inventory_id: number
+          id?: number
           notes?: string | null
           quantity_delta: number
           reason: string
         }
         Update: {
           created_at?: string
-          created_by?: string
-          daily_inventory_id?: string
-          id?: string
+          created_by?: number
+          daily_inventory_id?: number
+          id?: number
           notes?: string | null
           quantity_delta?: number
           reason?: string
@@ -251,7 +251,7 @@ export type Database = {
       }
       journal_posts: {
         Row: {
-          author_id: string
+          author_id: number
           content: string
           content_type: string
           cover_format: string
@@ -259,7 +259,7 @@ export type Database = {
           created_at: string
           display_date: string
           excerpt: string | null
-          id: string
+          id: number
           published_at: string | null
           slug: string
           status: Database["public"]["Enums"]["journal_status"]
@@ -267,7 +267,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          author_id: string
+          author_id: number
           content: string
           content_type: string
           cover_format?: string
@@ -275,7 +275,7 @@ export type Database = {
           created_at?: string
           display_date?: string
           excerpt?: string | null
-          id?: string
+          id?: number
           published_at?: string | null
           slug: string
           status?: Database["public"]["Enums"]["journal_status"]
@@ -283,7 +283,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          author_id?: string
+          author_id?: number
           content?: string
           content_type?: string
           cover_format?: string
@@ -291,7 +291,7 @@ export type Database = {
           created_at?: string
           display_date?: string
           excerpt?: string | null
-          id?: string
+          id?: number
           published_at?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["journal_status"]
@@ -311,21 +311,21 @@ export type Database = {
       loyalty_accounts: {
         Row: {
           completed_order_count: number
-          id: string
+          id: number
           updated_at: string
-          user_id: string
+          user_id: number
         }
         Insert: {
           completed_order_count?: number
-          id?: string
+          id?: number
           updated_at?: string
-          user_id: string
+          user_id: number
         }
         Update: {
           completed_order_count?: number
-          id?: string
+          id?: number
           updated_at?: string
-          user_id?: string
+          user_id?: number
         }
         Relationships: [
           {
@@ -341,38 +341,38 @@ export type Database = {
         Row: {
           created_at: string
           earned_at: string
-          id: string
+          id: number
           redeemed_at: string | null
-          redeemed_order_id: string | null
+          redeemed_order_id: number | null
           reward_type: string
-          source_order_id: string
+          source_order_id: number
           status: Database["public"]["Enums"]["loyalty_reward_status"]
           threshold: number
-          user_id: string
+          user_id: number
         }
         Insert: {
           created_at?: string
           earned_at?: string
-          id?: string
+          id?: number
           redeemed_at?: string | null
-          redeemed_order_id?: string | null
+          redeemed_order_id?: number | null
           reward_type: string
-          source_order_id: string
+          source_order_id: number
           status?: Database["public"]["Enums"]["loyalty_reward_status"]
           threshold: number
-          user_id: string
+          user_id: number
         }
         Update: {
           created_at?: string
           earned_at?: string
-          id?: string
+          id?: number
           redeemed_at?: string | null
-          redeemed_order_id?: string | null
+          redeemed_order_id?: number | null
           reward_type?: string
-          source_order_id?: string
+          source_order_id?: number
           status?: Database["public"]["Enums"]["loyalty_reward_status"]
           threshold?: number
-          user_id?: string
+          user_id?: number
         }
         Relationships: [
           {
@@ -400,8 +400,8 @@ export type Database = {
       }
       manual_payment_submissions: {
         Row: {
-          id: string
-          order_id: string
+          id: number
+          order_id: number
           receipt_path: string
           rejection_reason: string | null
           reported_amount: number
@@ -409,13 +409,14 @@ export type Database = {
           reported_recipient: string
           reported_reference: string
           reviewed_at: string | null
-          reviewed_by: string | null
+          reviewed_by: number | null
           status: string
           submitted_at: string
+          upload_token: string
         }
         Insert: {
-          id?: string
-          order_id: string
+          id?: number
+          order_id: number
           receipt_path: string
           rejection_reason?: string | null
           reported_amount: number
@@ -423,13 +424,14 @@ export type Database = {
           reported_recipient: string
           reported_reference: string
           reviewed_at?: string | null
-          reviewed_by?: string | null
+          reviewed_by?: number | null
           status?: string
           submitted_at?: string
+          upload_token: string
         }
         Update: {
-          id?: string
-          order_id?: string
+          id?: number
+          order_id?: number
           receipt_path?: string
           rejection_reason?: string | null
           reported_amount?: number
@@ -437,9 +439,10 @@ export type Database = {
           reported_recipient?: string
           reported_reference?: string
           reviewed_at?: string | null
-          reviewed_by?: string | null
+          reviewed_by?: number | null
           status?: string
           submitted_at?: string
+          upload_token?: string
         }
         Relationships: [
           {
@@ -485,13 +488,13 @@ export type Database = {
           created_at: string
           delivered_at: string | null
           event_type: string
-          id: string
+          id: number
           idempotency_key: string
           last_attempt_at: string | null
           last_error: string | null
           last_event_type: string | null
           next_attempt_at: string
-          order_id: string | null
+          order_id: number | null
           provider: string
           provider_event_at: string | null
           provider_message_id: string | null
@@ -499,20 +502,20 @@ export type Database = {
           sent_at: string | null
           status: string
           updated_at: string
-          user_id: string | null
+          user_id: number | null
         }
         Insert: {
           attempt_count?: number
           created_at?: string
           delivered_at?: string | null
           event_type: string
-          id?: string
+          id?: number
           idempotency_key: string
           last_attempt_at?: string | null
           last_error?: string | null
           last_event_type?: string | null
           next_attempt_at?: string
-          order_id?: string | null
+          order_id?: number | null
           provider?: string
           provider_event_at?: string | null
           provider_message_id?: string | null
@@ -520,20 +523,20 @@ export type Database = {
           sent_at?: string | null
           status?: string
           updated_at?: string
-          user_id?: string | null
+          user_id?: number | null
         }
         Update: {
           attempt_count?: number
           created_at?: string
           delivered_at?: string | null
           event_type?: string
-          id?: string
+          id?: number
           idempotency_key?: string
           last_attempt_at?: string | null
           last_error?: string | null
           last_event_type?: string | null
           next_attempt_at?: string
-          order_id?: string | null
+          order_id?: number | null
           provider?: string
           provider_event_at?: string | null
           provider_message_id?: string | null
@@ -541,7 +544,7 @@ export type Database = {
           sent_at?: string | null
           status?: string
           updated_at?: string
-          user_id?: string | null
+          user_id?: number | null
         }
         Relationships: [
           {
@@ -565,7 +568,7 @@ export type Database = {
           created_at: string
           event_created_at: string
           event_type: string
-          id: string
+          id: number
           processed_at: string | null
           provider: string
           provider_event_id: string
@@ -575,7 +578,7 @@ export type Database = {
           created_at?: string
           event_created_at: string
           event_type: string
-          id?: string
+          id?: number
           processed_at?: string | null
           provider?: string
           provider_event_id: string
@@ -585,7 +588,7 @@ export type Database = {
           created_at?: string
           event_created_at?: string
           event_type?: string
-          id?: string
+          id?: number
           processed_at?: string | null
           provider?: string
           provider_event_id?: string
@@ -595,35 +598,35 @@ export type Database = {
       }
       order_item_addons: {
         Row: {
-          addon_id: string
+          addon_id: number
           addon_name_snapshot: string
           created_at: string
-          id: string
+          id: number
           is_complimentary: boolean
           line_total: number
-          order_item_id: string
+          order_item_id: number
           quantity: number
           unit_price_snapshot: number
         }
         Insert: {
-          addon_id: string
+          addon_id: number
           addon_name_snapshot: string
           created_at?: string
-          id?: string
+          id?: number
           is_complimentary?: boolean
           line_total: number
-          order_item_id: string
+          order_item_id: number
           quantity: number
           unit_price_snapshot: number
         }
         Update: {
-          addon_id?: string
+          addon_id?: number
           addon_name_snapshot?: string
           created_at?: string
-          id?: string
+          id?: number
           is_complimentary?: boolean
           line_total?: number
-          order_item_id?: string
+          order_item_id?: number
           quantity?: number
           unit_price_snapshot?: number
         }
@@ -647,29 +650,29 @@ export type Database = {
       order_item_coatings: {
         Row: {
           additional_price_snapshot: number
-          coating_id: string
+          coating_id: number
           coating_name_snapshot: string
           created_at: string
-          id: string
-          order_item_id: string
+          id: number
+          order_item_id: number
           piece_count: number
         }
         Insert: {
           additional_price_snapshot?: number
-          coating_id: string
+          coating_id: number
           coating_name_snapshot: string
           created_at?: string
-          id?: string
-          order_item_id: string
+          id?: number
+          order_item_id: number
           piece_count: number
         }
         Update: {
           additional_price_snapshot?: number
-          coating_id?: string
+          coating_id?: number
           coating_name_snapshot?: string
           created_at?: string
-          id?: string
-          order_item_id?: string
+          id?: number
+          order_item_id?: number
           piece_count?: number
         }
         Relationships: [
@@ -693,43 +696,43 @@ export type Database = {
         Row: {
           coating_total_snapshot: number
           created_at: string
-          id: string
+          id: number
           line_subtotal: number
-          order_id: string
+          order_id: number
           piece_count_snapshot: number
-          product_id: string
+          product_id: number
           product_name_snapshot: string
           quantity: number
           unit_price_snapshot: number
-          variant_id: string
+          variant_id: number
           variant_name_snapshot: string
         }
         Insert: {
           coating_total_snapshot?: number
           created_at?: string
-          id?: string
+          id?: number
           line_subtotal: number
-          order_id: string
+          order_id: number
           piece_count_snapshot: number
-          product_id: string
+          product_id: number
           product_name_snapshot: string
           quantity: number
           unit_price_snapshot: number
-          variant_id: string
+          variant_id: number
           variant_name_snapshot: string
         }
         Update: {
           coating_total_snapshot?: number
           created_at?: string
-          id?: string
+          id?: number
           line_subtotal?: number
-          order_id?: string
+          order_id?: number
           piece_count_snapshot?: number
-          product_id?: string
+          product_id?: number
           product_name_snapshot?: string
           quantity?: number
           unit_price_snapshot?: number
-          variant_id?: string
+          variant_id?: number
           variant_name_snapshot?: string
         }
         Relationships: [
@@ -766,15 +769,15 @@ export type Database = {
           customer_name: string
           customer_notes: string | null
           discount_total: number
-          id: string
+          id: number
           order_number: string
           payment_expires_at: string | null
           payment_method: string
           payment_status: Database["public"]["Enums"]["payment_status"]
           pickup_date: string
-          pickup_location_id: string
+          pickup_location_id: number
           pickup_location_snapshot: string
-          pickup_window_id: string
+          pickup_window_id: number
           pickup_window_snapshot: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
@@ -782,7 +785,7 @@ export type Database = {
           terms_version: string
           total: number
           updated_at: string
-          user_id: string | null
+          user_id: number | null
         }
         Insert: {
           cancelled_at?: string | null
@@ -793,15 +796,15 @@ export type Database = {
           customer_name: string
           customer_notes?: string | null
           discount_total?: number
-          id?: string
+          id?: number
           order_number: string
           payment_expires_at?: string | null
           payment_method?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
           pickup_date: string
-          pickup_location_id: string
+          pickup_location_id: number
           pickup_location_snapshot: string
-          pickup_window_id: string
+          pickup_window_id: number
           pickup_window_snapshot: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
@@ -809,7 +812,7 @@ export type Database = {
           terms_version: string
           total: number
           updated_at?: string
-          user_id?: string | null
+          user_id?: number | null
         }
         Update: {
           cancelled_at?: string | null
@@ -820,15 +823,15 @@ export type Database = {
           customer_name?: string
           customer_notes?: string | null
           discount_total?: number
-          id?: string
+          id?: number
           order_number?: string
           payment_expires_at?: string | null
           payment_method?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
           pickup_date?: string
-          pickup_location_id?: string
+          pickup_location_id?: number
           pickup_location_snapshot?: string
-          pickup_window_id?: string
+          pickup_window_id?: number
           pickup_window_snapshot?: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
@@ -836,7 +839,7 @@ export type Database = {
           terms_version?: string
           total?: number
           updated_at?: string
-          user_id?: string | null
+          user_id?: number | null
         }
         Relationships: [
           {
@@ -866,7 +869,7 @@ export type Database = {
         Row: {
           created_at: string
           event_type: string
-          id: string
+          id: number
           payload: Json
           processed_at: string | null
           provider: string
@@ -875,7 +878,7 @@ export type Database = {
         Insert: {
           created_at?: string
           event_type: string
-          id?: string
+          id?: number
           payload: Json
           processed_at?: string | null
           provider: string
@@ -884,7 +887,7 @@ export type Database = {
         Update: {
           created_at?: string
           event_type?: string
-          id?: string
+          id?: number
           payload?: Json
           processed_at?: string | null
           provider?: string
@@ -897,9 +900,9 @@ export type Database = {
           amount: number
           created_at: string
           currency: string
-          id: string
+          id: number
           manual_qr_payload: string | null
-          order_id: string
+          order_id: number
           paid_at: string | null
           provider: string
           provider_checkout_id: string | null
@@ -912,9 +915,9 @@ export type Database = {
           amount: number
           created_at?: string
           currency?: string
-          id?: string
+          id?: number
           manual_qr_payload?: string | null
-          order_id: string
+          order_id: number
           paid_at?: string | null
           provider?: string
           provider_checkout_id?: string | null
@@ -927,9 +930,9 @@ export type Database = {
           amount?: number
           created_at?: string
           currency?: string
-          id?: string
+          id?: number
           manual_qr_payload?: string | null
-          order_id?: string
+          order_id?: number
           paid_at?: string | null
           provider?: string
           provider_checkout_id?: string | null
@@ -952,7 +955,7 @@ export type Database = {
         Row: {
           availability_mode: Database["public"]["Enums"]["pickup_availability_mode"]
           created_at: string
-          id: string
+          id: number
           is_open: boolean
           notes: string | null
           pickup_date: string
@@ -961,7 +964,7 @@ export type Database = {
         Insert: {
           availability_mode?: Database["public"]["Enums"]["pickup_availability_mode"]
           created_at?: string
-          id?: string
+          id?: number
           is_open?: boolean
           notes?: string | null
           pickup_date: string
@@ -970,7 +973,7 @@ export type Database = {
         Update: {
           availability_mode?: Database["public"]["Enums"]["pickup_availability_mode"]
           created_at?: string
-          id?: string
+          id?: number
           is_open?: boolean
           notes?: string | null
           pickup_date?: string
@@ -982,7 +985,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
-          id: string
+          id: number
           is_active: boolean
           name: string
           sort_order: number
@@ -991,7 +994,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
-          id?: string
+          id?: number
           is_active?: boolean
           name: string
           sort_order?: number
@@ -1000,7 +1003,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
-          id?: string
+          id?: number
           is_active?: boolean
           name?: string
           sort_order?: number
@@ -1011,18 +1014,18 @@ export type Database = {
       pickup_window_locations: {
         Row: {
           is_open: boolean
-          pickup_location_id: string
-          pickup_window_id: string
+          pickup_location_id: number
+          pickup_window_id: number
         }
         Insert: {
           is_open?: boolean
-          pickup_location_id: string
-          pickup_window_id: string
+          pickup_location_id: number
+          pickup_window_id: number
         }
         Update: {
           is_open?: boolean
-          pickup_location_id?: string
-          pickup_window_id?: string
+          pickup_location_id?: number
+          pickup_window_id?: number
         }
         Relationships: [
           {
@@ -1045,9 +1048,9 @@ export type Database = {
         Row: {
           created_at: string
           end_time: string
-          id: string
+          id: number
           is_open: boolean
-          pickup_date_id: string
+          pickup_date_id: number
           sort_order: number
           start_time: string
           updated_at: string
@@ -1055,9 +1058,9 @@ export type Database = {
         Insert: {
           created_at?: string
           end_time: string
-          id?: string
+          id?: number
           is_open?: boolean
-          pickup_date_id: string
+          pickup_date_id: number
           sort_order?: number
           start_time: string
           updated_at?: string
@@ -1065,9 +1068,9 @@ export type Database = {
         Update: {
           created_at?: string
           end_time?: string
-          id?: string
+          id?: number
           is_open?: boolean
-          pickup_date_id?: string
+          pickup_date_id?: number
           sort_order?: number
           start_time?: string
           updated_at?: string
@@ -1086,33 +1089,33 @@ export type Database = {
         Row: {
           base_price: number
           created_at: string
-          id: string
+          id: number
           is_active: boolean
           name: string
           piece_count: number
-          product_id: string
+          product_id: number
           sort_order: number
           updated_at: string
         }
         Insert: {
           base_price: number
           created_at?: string
-          id?: string
+          id?: number
           is_active?: boolean
           name: string
           piece_count: number
-          product_id: string
+          product_id: number
           sort_order?: number
           updated_at?: string
         }
         Update: {
           base_price?: number
           created_at?: string
-          id?: string
+          id?: number
           is_active?: boolean
           name?: string
           piece_count?: number
-          product_id?: string
+          product_id?: number
           sort_order?: number
           updated_at?: string
         }
@@ -1130,7 +1133,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string
-          id: string
+          id: number
           image_url: string | null
           is_active: boolean
           name: string
@@ -1141,7 +1144,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string
-          id?: string
+          id?: number
           image_url?: string | null
           is_active?: boolean
           name: string
@@ -1152,7 +1155,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string
-          id?: string
+          id?: number
           image_url?: string | null
           is_active?: boolean
           name?: string
@@ -1164,37 +1167,40 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auth_user_id: string
           created_at: string
           deactivated_at: string | null
           deletion_requested_at: string | null
           deletion_scheduled_for: string | null
           email: string
           full_name: string
-          id: string
+          id: number
           is_active: boolean
           role: Database["public"]["Enums"]["profile_role"]
           updated_at: string
         }
         Insert: {
+          auth_user_id: string
           created_at?: string
           deactivated_at?: string | null
           deletion_requested_at?: string | null
           deletion_scheduled_for?: string | null
           email: string
           full_name?: string
-          id: string
+          id?: number
           is_active?: boolean
           role?: Database["public"]["Enums"]["profile_role"]
           updated_at?: string
         }
         Update: {
+          auth_user_id?: string
           created_at?: string
           deactivated_at?: string | null
           deletion_requested_at?: string | null
           deletion_scheduled_for?: string | null
           email?: string
           full_name?: string
-          id?: string
+          id?: number
           is_active?: boolean
           role?: Database["public"]["Enums"]["profile_role"]
           updated_at?: string
@@ -1207,42 +1213,42 @@ export type Database = {
           created_at: string
           display_name_snapshot: string
           highlights: string[]
-          id: string
+          id: number
           image_paths: string[]
           is_featured: boolean
           is_visible: boolean
-          order_id: string
+          order_id: number
           rating: number
           updated_at: string
-          user_id: string | null
+          user_id: number | null
         }
         Insert: {
           comment: string
           created_at?: string
           display_name_snapshot: string
           highlights?: string[]
-          id?: string
+          id?: number
           image_paths?: string[]
           is_featured?: boolean
           is_visible?: boolean
-          order_id: string
+          order_id: number
           rating: number
           updated_at?: string
-          user_id?: string | null
+          user_id?: number | null
         }
         Update: {
           comment?: string
           created_at?: string
           display_name_snapshot?: string
           highlights?: string[]
-          id?: string
+          id?: number
           image_paths?: string[]
           is_featured?: boolean
           is_visible?: boolean
-          order_id?: string
+          order_id?: number
           rating?: number
           updated_at?: string
-          user_id?: string | null
+          user_id?: number | null
         }
         Relationships: [
           {
@@ -1266,7 +1272,7 @@ export type Database = {
           content: string
           created_at: string
           effective_at: string
-          id: string
+          id: number
           is_current: boolean
           version: string
         }
@@ -1274,7 +1280,7 @@ export type Database = {
           content: string
           created_at?: string
           effective_at: string
-          id?: string
+          id?: number
           is_current?: boolean
           version: string
         }
@@ -1282,7 +1288,7 @@ export type Database = {
           content?: string
           created_at?: string
           effective_at?: string
-          id?: string
+          id?: number
           is_current?: boolean
           version?: string
         }
@@ -1297,8 +1303,8 @@ export type Database = {
         Args: {
           expected_role: Database["public"]["Enums"]["profile_role"]
           next_role: Database["public"]["Enums"]["profile_role"]
-          target_admin_id: string
-          target_user_id: string
+          target_admin_id: number
+          target_user_id: number
         }
         Returns: boolean
       }
@@ -1306,7 +1312,7 @@ export type Database = {
         Args: {
           checkout_id: string
           checkout_url: string
-          target_payment_id: string
+          target_payment_id: number
         }
         Returns: boolean
       }
@@ -1316,16 +1322,16 @@ export type Database = {
           expected_status: Database["public"]["Enums"]["order_status"]
           expired_checkout_id?: string
           reason_value: string
-          target_admin_id: string
-          target_order_id: string
+          target_admin_id: number
+          target_order_id: number
         }
         Returns: boolean
       }
       cancel_unpaid_order: {
         Args: {
           expired_checkout_id?: string
-          target_order_id: string
-          target_user_id: string
+          target_order_id: number
+          target_user_id: number
         }
         Returns: boolean
       }
@@ -1342,7 +1348,7 @@ export type Database = {
         }[]
       }
       count_admin_customers: {
-        Args: { search_value?: string; target_admin_id: string }
+        Args: { search_value?: string; target_admin_id: number }
         Returns: number
       }
       create_checkout_order: {
@@ -1351,35 +1357,36 @@ export type Database = {
           customer_name_value: string
           customer_notes_value: string
           discount_value: number
-          loyalty_reward_id: string
+          loyalty_reward_id: number
           payment_method_value: string
           priced_lines: Json
           qr_payload_value: string
-          selected_pickup_location_id: string
-          selected_pickup_window_id: string
+          selected_pickup_location_id: number
+          selected_pickup_window_id: number
           subtotal_value: number
-          target_user_id: string
+          target_user_id: number
           terms_version_value: string
           total_value: number
         }
         Returns: {
-          created_order_id: string
+          created_order_id: number
           created_order_number: string
           created_payment_method: string
           created_total: number
           was_created: boolean
         }[]
       }
+      current_profile_id: { Args: never; Returns: number }
       deactivate_due_account: {
-        Args: { target_user_id: string }
+        Args: { target_user_id: number }
         Returns: boolean
       }
       delete_journal_draft: {
-        Args: { target_admin_id: string; target_post_id: string }
+        Args: { target_admin_id: number; target_post_id: number }
         Returns: string
       }
       expire_paymongo_order: {
-        Args: { checkout_id: string; target_payment_id: string }
+        Args: { checkout_id: string; target_payment_id: number }
         Returns: boolean
       }
       expire_pending_orders: { Args: never; Returns: number }
@@ -1388,7 +1395,7 @@ export type Database = {
           result_limit?: number
           result_offset?: number
           search_value?: string
-          target_admin_id: string
+          target_admin_id: number
         }
         Returns: {
           account_role: Database["public"]["Enums"]["profile_role"]
@@ -1403,7 +1410,7 @@ export type Database = {
           loyalty_completed_orders: number
           loyalty_threshold: number
           redeemed_rewards: number
-          user_id: string
+          user_id: number
         }[]
       }
       get_admin_dashboard_decisions: {
@@ -1412,7 +1419,7 @@ export type Database = {
           period_start: string
           previous_end: string
           previous_start: string
-          target_admin_id: string
+          target_admin_id: number
         }
         Returns: Json
       }
@@ -1422,7 +1429,7 @@ export type Database = {
           period_start: string
           previous_end: string
           previous_start: string
-          target_admin_id: string
+          target_admin_id: number
         }
         Returns: Json
       }
@@ -1435,7 +1442,7 @@ export type Database = {
           image_count: number
           ordered_items: Json
           rating_value: number
-          review_id: string
+          review_id: number
           reviewed_at: string
         }[]
       }
@@ -1456,7 +1463,7 @@ export type Database = {
         }[]
       }
       get_staff_pickup_overview: {
-        Args: { actor_id: string }
+        Args: { actor_id: number }
         Returns: {
           availability_mode: Database["public"]["Enums"]["pickup_availability_mode"]
           pickup_date: string
@@ -1474,15 +1481,15 @@ export type Database = {
         Args: { batch_limit?: number }
         Returns: {
           due_checkout_id: string
-          due_order_id: string
-          due_payment_id: string
+          due_order_id: number
+          due_payment_id: number
         }[]
       }
       moderate_order_review: {
         Args: {
           featured_value: boolean
-          target_admin_id: string
-          target_review_id: string
+          target_admin_id: number
+          target_review_id: number
           visible_value: boolean
         }
         Returns: boolean
@@ -1490,8 +1497,8 @@ export type Database = {
       prepare_admin_order_cancellation: {
         Args: {
           expected_status: Database["public"]["Enums"]["order_status"]
-          target_admin_id: string
-          target_order_id: string
+          target_admin_id: number
+          target_order_id: number
         }
         Returns: {
           already_cancelled: boolean
@@ -1499,26 +1506,26 @@ export type Database = {
         }[]
       }
       prepare_order_cancellation: {
-        Args: { target_order_id: string; target_user_id: string }
+        Args: { target_order_id: number; target_user_id: number }
         Returns: {
           cancellation_amount: number
           cancellation_checkout_id: string
           cancellation_kind: string
-          cancellation_payment_id: string
+          cancellation_payment_id: number
           cancellation_provider_payment_id: string
         }[]
       }
       prepare_paymongo_checkout: {
-        Args: { target_order_id: string; target_user_id: string }
+        Args: { target_order_id: number; target_user_id: number }
         Returns: {
           existing_checkout_id: string
           existing_checkout_url: string
           prepared_amount: number
           prepared_customer_email: string
           prepared_customer_name: string
-          prepared_order_id: string
+          prepared_order_id: number
           prepared_order_number: string
-          prepared_payment_id: string
+          prepared_payment_id: number
         }[]
       }
       process_paymongo_paid_event: {
@@ -1528,7 +1535,7 @@ export type Database = {
           event_summary: Json
           paid_amount: number
           payment_id: string
-          target_order_id: string
+          target_order_id: number
           target_order_number: string
         }
         Returns: boolean
@@ -1544,11 +1551,11 @@ export type Database = {
       }
       promote_admin_by_email: {
         Args: { target_email: string }
-        Returns: string
+        Returns: number
       }
       prune_mutation_rate_limit_buckets: { Args: never; Returns: number }
       record_counter_payment: {
-        Args: { target_admin_id: string; target_order_id: string }
+        Args: { target_admin_id: number; target_order_id: number }
         Returns: boolean
       }
       record_inventory_consumption: {
@@ -1556,8 +1563,8 @@ export type Database = {
           notes_value: string
           quantity_value: number
           reason_value: string
-          target_admin_id: string
-          target_inventory_id: string
+          target_admin_id: number
+          target_inventory_id: number
         }
         Returns: number
       }
@@ -1566,26 +1573,26 @@ export type Database = {
           checkout_id: string
           checkout_url: string
           expected_checkout_id: string
-          target_payment_id: string
+          target_payment_id: number
         }
         Returns: boolean
       }
       request_account_deletion: { Args: never; Returns: string }
-      require_staff_actor: { Args: { actor_id: string }; Returns: undefined }
+      require_staff_actor: { Args: { actor_id: number }; Returns: undefined }
       review_manual_payment: {
         Args: {
           approve: boolean
           reason_value: string
-          target_admin_id: string
-          target_submission_id: string
+          target_admin_id: number
+          target_submission_id: number
         }
         Returns: boolean
       }
       set_pickup_date_open: {
         Args: {
           open_value: boolean
-          target_admin_id: string
-          target_pickup_date_id: string
+          target_admin_id: number
+          target_pickup_date_id: number
         }
         Returns: boolean
       }
@@ -1597,8 +1604,8 @@ export type Database = {
           reported_recipient_value: string
           reported_reference_value: string
           submission_id: string
-          target_order_id: string
-          target_user_id: string
+          target_order_id: number
+          target_user_id: number
         }
         Returns: boolean
       }
@@ -1608,17 +1615,17 @@ export type Database = {
           highlights_value?: string[]
           image_paths_value?: string[]
           rating_value: number
-          target_order_id: string
-          target_user_id: string
+          target_order_id: number
+          target_user_id: number
         }
-        Returns: string
+        Returns: number
       }
       transition_order_status: {
         Args: {
           expected_status: Database["public"]["Enums"]["order_status"]
           next_status: Database["public"]["Enums"]["order_status"]
-          target_admin_id: string
-          target_order_id: string
+          target_admin_id: number
+          target_order_id: number
         }
         Returns: Database["public"]["Enums"]["order_status"]
       }
@@ -1627,8 +1634,8 @@ export type Database = {
           active_value: boolean
           description_value: string
           price_per_piece_value: number
-          target_admin_id: string
-          target_product_id: string
+          target_admin_id: number
+          target_product_id: number
         }
         Returns: boolean
       }
@@ -1636,8 +1643,8 @@ export type Database = {
         Args: {
           active_value: boolean
           base_price_value: number
-          target_admin_id: string
-          target_variant_id: string
+          target_admin_id: number
+          target_variant_id: number
         }
         Returns: boolean
       }
@@ -1647,7 +1654,7 @@ export type Database = {
           minimum_lead_days_value: number
           operating_end_value: string
           operating_start_value: string
-          target_admin_id: string
+          target_admin_id: number
         }
         Returns: boolean
       }
@@ -1657,10 +1664,10 @@ export type Database = {
           default_value: boolean
           name_value: string
           price_value: number
-          target_addon_id: string
-          target_admin_id: string
+          target_addon_id: number
+          target_admin_id: number
         }
-        Returns: string
+        Returns: number
       }
       upsert_catalog_coating: {
         Args: {
@@ -1670,20 +1677,20 @@ export type Database = {
           image_url_value: string
           name_value: string
           price_per_piece_value: number
-          target_admin_id: string
-          target_coating_id: string
+          target_admin_id: number
+          target_coating_id: number
         }
-        Returns: string
+        Returns: number
       }
       upsert_daily_inventory: {
         Args: {
           notes_value: string
           stock_total_value: number
-          target_admin_id: string
+          target_admin_id: number
           target_pickup_date: string
-          target_product_id: string
+          target_product_id: number
         }
-        Returns: string
+        Returns: number
       }
       upsert_journal_post: {
         Args: {
@@ -1694,21 +1701,21 @@ export type Database = {
           display_date_value: string
           excerpt_value: string
           status_value: Database["public"]["Enums"]["journal_status"]
-          target_admin_id: string
-          target_post_id: string
+          target_admin_id: number
+          target_post_id: number
           title_value: string
         }
-        Returns: string
+        Returns: number
       }
       upsert_pickup_location: {
         Args: {
           active_value: boolean
           description_value: string
           name_value: string
-          target_admin_id: string
-          target_location_id: string
+          target_admin_id: number
+          target_location_id: number
         }
-        Returns: string
+        Returns: number
       }
       upsert_pickup_schedule: {
         Args: {
@@ -1716,11 +1723,11 @@ export type Database = {
           notes_value: string
           open_value: boolean
           pickup_date_value: string
-          target_admin_id: string
-          target_pickup_date_id: string
+          target_admin_id: number
+          target_pickup_date_id: number
           windows_value: Json
         }
-        Returns: string
+        Returns: number
       }
     }
     Enums: {

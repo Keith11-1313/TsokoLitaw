@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { requireCustomer } from "@/lib/auth";
-import { isUuid } from "@/lib/identifiers";
+import { isEntityId } from "@/lib/identifiers";
 import { enforceMutationRateLimit } from "@/lib/server-rate-limit";
 import { validateUploadedImage } from "@/lib/server-image-validation";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -10,7 +10,7 @@ import { isReceiptTimePlausible } from "@/lib/receipt-details";
 
 export async function submitManualReceipt(orderId: string, form: FormData) {
   const profile = await requireCustomer(`/orders/${orderId}/payment`);
-  if (!isUuid(orderId)) return { status: "error", message: "Invalid order." };
+  if (!isEntityId(orderId)) return { status: "error", message: "Invalid order." };
   try {
     await enforceMutationRateLimit({
       scope: "manual-receipt",
@@ -94,7 +94,7 @@ export async function submitManualReceipt(orderId: string, form: FormData) {
       const { data: committedSubmission } = await client
         .from("manual_payment_submissions")
         .select("id")
-        .eq("id", submissionId)
+        .eq("upload_token", submissionId)
         .eq("order_id", orderId)
         .maybeSingle();
       if (committedSubmission) {

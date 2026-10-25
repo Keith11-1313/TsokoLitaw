@@ -34,7 +34,7 @@ it("denies an Admin before any inventory mutation", async () => {
 });
 it("uses the verified Staff identity, not a submitted actor", async () => {
   const form = new FormData();
-  form.set("productId", "10000000-0000-4000-8000-000000000001");
+  form.set("productId", "1");
   form.set("pickupDate", "2099-11-01");
   form.set("stockTotal", "10");
   form.set("adminId", "forged");
