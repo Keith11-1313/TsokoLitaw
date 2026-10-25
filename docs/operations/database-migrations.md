@@ -1,6 +1,23 @@
 # Database changes and promotion
 
-## October 26 sequential-ID candidate — not activated
+## October 26 sequential IDs: activated on Dev
+
+Activated on Dev `mgkzphpznamjlgrpumjd` after the owner pushed commit
+`e3ac276039636f262fdaf65b601f35ecab79b524` to `development`. GitHub's Vercel status reported
+successful deployment for that exact commit. A fresh private recovery export preceded the single
+forward migration; migration history now matches the repository. No reset, reseed, provider call,
+email event or Production operation ran.
+
+Independent read-back preserved all 29 public table row counts, including 27 orders totaling
+PHP2,335, 40 profiles/Auth identities and three receipts. Hosted verification found 25 bigint
+identity tables, 476 mapped IDs, zero UUID entity primary keys, no invalid foreign keys, zero
+browser sequence grants and a private recovery map. All three private receipt objects were
+successfully read from their preserved Storage paths without exposing URLs or images. Hosted
+SQL lint passed. Dev Home, catalog,
+Journal and login returned HTTP 200; unauthenticated Orders/Admin responses contained streamed
+login redirects without an application error. Authenticated login, customer checkout, Staff
+payments/receipts/inventory and Admin role controls still require browser acceptance. Production
+is unchanged. Before/after exports remain outside Git.
 
 Owner approved a Dev-only conversion that preserves records. Migration
 `20261026010000_sequential_application_ids.sql` converts application entities to bigint identities,

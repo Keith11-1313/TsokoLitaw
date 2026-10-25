@@ -1,8 +1,8 @@
 # TsokoLitaw maintainer guide
 
-October 26: sequential application IDs are a locally verified candidate, **not activated on hosted
-Dev or Production**. The [migration runbook](operations/database-migrations.md#october-26-sequential-id-candidate--not-activated)
-records preservation evidence and the coordinated code/schema cutover requirement.
+October 26: sequential application IDs are activated on **Dev only**, with matching deployed code.
+The [migration runbook](operations/database-migrations.md#october-26-sequential-ids-activated-on-dev)
+records preservation evidence. Authenticated acceptance remains open; Production is unchanged.
 
 October 21 follow-up: Staff inventory management/Admin read-only inventory SQL is activated on Dev
 only. Production is unchanged; authenticated acceptance remains required. See the migration runbook.

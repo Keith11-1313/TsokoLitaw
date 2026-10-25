@@ -1,10 +1,10 @@
 # Database: rules that intentionally live in SQL
 
-## Sequential identifiers — October 26 candidate
+## Sequential identifiers — activated on Dev October 26
 
 The forward migration `20261026010000_sequential_application_ids.sql` converts 25 application
-entity keys and their foreign keys in place to bigint identities. It is verified locally but
-not activated on hosted Dev or Production. Date and composite keys keep their existing meaning.
+entity keys and their foreign keys in place to bigint identities. It is activated on hosted Dev
+with matching code; Production is unchanged. Date and composite keys keep their existing meaning.
 Sequences allocate increasing values independently per table; gaps after rollback/deletion are
 normal. They are identifiers, not counts or authorization secrets.
 

@@ -1,10 +1,11 @@
 # Authentication and accounts
 
-October 26 candidate: Supabase Auth still identifies people with UUIDs. The application resolves
+October 26 Dev activation: Supabase Auth still identifies people with UUIDs. The application resolves
 `claims.sub` against `profiles.auth_user_id` and uses the separate sequential `profiles.id` for
 orders, roles, loyalty and SQL ownership. Never compare an Auth UUID directly with an application
 foreign key. Admin avatars resolve the authorized page's profile IDs to Auth UUIDs server-side.
-This code requires the matching sequential-ID migration; neither hosted project is activated yet.
+Dev has the matching sequential-ID migration and deployed code. Authenticated acceptance remains
+open; Production keeps the previous schema/code until a separately approved coordinated promotion.
 
 Entry: `/login`, `src/app/auth/actions.ts`, and `src/app/auth/callback/route.ts`.
 Google → environment-specific Supabase Auth → `/auth/callback` → cookie-backed app session.

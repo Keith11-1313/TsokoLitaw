@@ -115,11 +115,12 @@ moderation for public visibility. Admin has one equal-permission role with at mo
 
 ## Implementation
 
-- October 26 candidate (not activated on either hosted project): application entity IDs are
+- October 26 sequential IDs are activated on Dev with matching deployed commit `e3ac276`;
+  authenticated operational acceptance remains open and Production is unchanged. Application entity IDs are
   PostgreSQL bigint identities. Supabase Auth retains UUIDs via `profiles.auth_user_id`;
   `profiles.id` is the application account key. At the REST boundary IDs become canonical decimal
   strings for existing DTOs/forms/URLs. UUID checkout/upload tokens are not entity IDs.
-  Coordinate matching code and SQL before any hosted cutover; see the migration runbook.
+  Any later Production cutover needs separate approval and matching code/SQL; see the migration runbook.
 
 - Next.js App Router, strict TypeScript, existing Tailwind tokens. Prefer Server Components unless
   interaction requires a client. Use type-only imports across DTO boundaries, not runtime server imports.

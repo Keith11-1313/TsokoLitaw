@@ -1,8 +1,8 @@
 # TsokoLitaw
 
-October 26 candidate: sequential application IDs are implemented and verified locally with a
-populated Dev export. Hosted Dev and Production still use the previous schema. See the
-[coordinated cutover instructions](docs/operations/database-migrations.md#october-26-sequential-id-candidate--not-activated).
+October 26: sequential application IDs are activated on Dev with matching commit `e3ac276`.
+Record preservation and public smoke checks passed; authenticated acceptance remains open.
+Production is unchanged. See the [activation evidence](docs/operations/database-migrations.md#october-26-sequential-ids-activated-on-dev).
 
 Mobile-first storefront and Admin interface for a student-operated chocolate-filled Litaw business.
 Customers configure 4-, 6-, or 8-piece boxes, complete website checkout, and collect at published
